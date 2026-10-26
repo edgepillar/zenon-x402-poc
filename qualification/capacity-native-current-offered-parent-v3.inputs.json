@@ -1,0 +1,106 @@
+{
+  "sourceSelectionVersion": 3,
+  "kind": "CURRENT_V5_OFFERED_PARENT_162_404_SOURCE_NOT_NATIVE_EXECUTION",
+  "sourceParent": "0784067aad904ae43a2572202fb6c092f0207762",
+  "parentRole": {
+    "profileKind": "NATIVE_CAPACITY_CURRENT_OFFERED_SUPERVISOR_NODE24_V3",
+    "profileVersion": 6,
+    "entry": "app/qualification/capacity-native-current-offered-v3.entry.draft.mjs",
+    "preloader": "app/qualification/capacity-native-current-offered-v3.namespace.preload.draft.mjs",
+    "namespace": "getPinnedNativeCapacityCurrentOfferedSupervisorNamespaceSnapshotV3"
+  },
+  "childGraph": {
+    "manifest": {
+      "path": "qualification/capacity-native-current-roles-v5.inputs.json",
+      "bytes": 8835,
+      "LF": 230,
+      "sha256": "468d202518c01f456c520860468994202a7f4df86d168fa5e0d1a871e6b106f5",
+      "gitBlob": "153bc732168756385193d1528013eadb460a361e"
+    },
+    "producer": {
+      "path": "qualification/native_capacity_current_role_profiles_v5.py",
+      "bytes": 17540,
+      "LF": 179,
+      "sha256": "ec6aed07ce441669aa4f4ecff6a416c7b49e6f648e70d108dade283f3911735d",
+      "gitBlob": "898b972b3a6ebf7e2c9c5eae7079b8aa62fbd4c0"
+    },
+    "sourceRowsSha256": "be5952dbf0e5fe17dbdd16549f2ac039802abbb92f541deb31c2591f4db653d7",
+    "applicationFiles": 154,
+    "packageFiles": 404,
+    "profileVersion": 5,
+    "completeCurrentChildRowsPreserved": true
+  },
+  "additionalParentApplicationInputs": [
+    {
+      "path": "app/qualification/capacity-native-current-offered-adapter-v4.draft.mjs",
+      "bytes": 18583,
+      "LF": 270,
+      "sha256": "9418b7e35d0ca2c84190503c7a33bd1926d8f21e6d4cce4d30ed5f6b9eee61ee",
+      "gitBlob": "27a6f5eb89185b034b0ee7b8963ead6373acf442"
+    },
+    {
+      "path": "app/qualification/capacity-native-current-offered-pair-v3.supervisor.draft.mjs",
+      "bytes": 26578,
+      "LF": 294,
+      "sha256": "7bc3e811c91df7594ab51f9b414b6a33ccc0bb353b58b6b620fb12eab4bdaa2d",
+      "gitBlob": "7eb52e4c03123ab771f971e631cea6ff985d4e46"
+    },
+    {
+      "path": "app/qualification/capacity-native-current-offered-v3.entry.draft.mjs",
+      "bytes": 10184,
+      "LF": 123,
+      "sha256": "321bd4d19ce5190dcd581f0fb48412d3c16999b73bd60459b2a0b012f26573a1",
+      "gitBlob": "705a345ff865649974305207ac9786b656451523"
+    },
+    {
+      "path": "app/qualification/capacity-native-current-offered-v3.namespace.preload.draft.mjs",
+      "bytes": 27416,
+      "LF": 376,
+      "sha256": "2a1d7e6f27fbbdfb71be7e46541a359fee1ebcd5b2e2c96ca6f369560f1bf16c",
+      "gitBlob": "491826338b331aac101acb44a8e18c7480ca1ea2"
+    },
+    {
+      "path": "app/src/native-profile-byte-fragments.js",
+      "bytes": 2201,
+      "LF": 52,
+      "sha256": "234d270445238674c1c17515e9a4fcc4fef309e976f150242d36e6dc7fd29a98",
+      "gitBlob": "ea4de4f30cd1fd255ed671be11683531eb159503"
+    },
+    {
+      "bytes": 4641,
+      "LF": 74,
+      "sha256": "d502d72ded56965ac9a5a7eec9ce57eb37bc44c78bd584ac84bdbbc5f526c317",
+      "gitBlob": "ded144bc95b92195caab037897c4d0ebcd6b05b7",
+      "path": "app/src/service-credit-capacity-offered-plan-data.js"
+    },
+    {
+      "bytes": 27591,
+      "LF": 522,
+      "sha256": "cc5dc70a0bde13dd9896261d19b6263a3b0ad726113211e1e999d18fba08500e",
+      "gitBlob": "486b53f42725c3c1377d760f69128e261e677838",
+      "path": "app/src/service-credit-capacity-offered-window-owner-core.js"
+    },
+    {
+      "bytes": 26641,
+      "LF": 482,
+      "sha256": "f55a84aee2796374291b837710b27ca96fc031050a8d2a9dab65e334280c526e",
+      "gitBlob": "d3b9faca2a98f6d556d9bd928c1efaf5e68119b7",
+      "path": "app/src/service-credit-capacity-offered-workload-owner-core.js"
+    }
+  ],
+  "parentApplicationFiles": 162,
+  "parentPackageFiles": 404,
+  "parentSourceRows": 566,
+  "parentSourceRowsSha256": "ca05fd25282754823b678051d98907ba34bac1e9ed25128389de9fc816199c8c",
+  "parentDeclaredInputBytes": 5149034,
+  "capture": {
+    "offeredCaptureVersion": 2,
+    "adapterVersion": 4,
+    "wholeOriginalResultAndChildEvidencePreserved": true,
+    "parentAndChildClockDomainsAligned": false
+  },
+  "nativeExecuted": false,
+  "historicalSourcesModified": false,
+  "nativeAuthority": "NOT_GRANTED",
+  "authority": "NONE"
+}
