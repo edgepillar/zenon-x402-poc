@@ -1,0 +1,227 @@
+{
+  "schemaVersion": 1,
+  "status": "SOURCE_AND_DATA_PASSED_NATIVE_NOT_EXECUTED",
+  "date": "2026-10-26",
+  "reviewedMain": "da41797548ca709c301057b72980a2f6e713b3f5",
+  "reviewedDevelopment": "613495e9fbd649776f7ae3991ab3984412b26847",
+  "sourceInputs": [
+    {
+      "path": "qualification/issued_current_close_v6_profile.py",
+      "bytes": 25474,
+      "LF": 288,
+      "sha256": "f5e7b5035ab859a978939288c56c356feefd73af9e1d04140d0f7fa74f3fd4ed",
+      "gitBlob": "2b63f30eab5b42fcb1ce5dba746fb822ce8b7a7d"
+    },
+    {
+      "path": "qualification/run-issued-current-close-v6.local.py",
+      "bytes": 17642,
+      "LF": 307,
+      "sha256": "8545e1eb622aacf395b4eb4ec22d5c3d39b00273ec9795b8bb8a131ef4f10f59",
+      "gitBlob": "e6de77b2580c50bae89abc03df63008cca00ac73"
+    },
+    {
+      "path": "qualification/issued-current-close-v6.case.mjs",
+      "bytes": 35789,
+      "LF": 493,
+      "sha256": "9f69ef8142c7fdedb91d593d771a142f28ea744311fca1d399bd71055a6551bd",
+      "gitBlob": "3ff9c14d91240b8fa1ff77e6221e5f867f359247"
+    },
+    {
+      "path": "qualification/issued-current-close-v6.preload.mjs",
+      "bytes": 13040,
+      "LF": 179,
+      "sha256": "95a8e3026fd3b2ed54947eee2ca8bcb24084839bb337e0664cdd3deb3a4880be",
+      "gitBlob": "e6c51fd7943519d35a5514cdc0dd0b151267527a"
+    },
+    {
+      "path": "qualification/issued-current-close-v6.inputs.json",
+      "bytes": 143355,
+      "LF": 3957,
+      "sha256": "9f5801a55c3a5a520ba1cc458bbc04c9e9118044cb0acee50def5b3289146bbd",
+      "gitBlob": "0036f91edd6ad4fc305e5284cbcb650e4b1def84"
+    },
+    {
+      "path": "qualification/issued-current-close-v6-profile.test.py",
+      "bytes": 24685,
+      "LF": 407,
+      "sha256": "b68b3cca4db503a07a99231f9e6e6a861e6c7c150a8e012d691ccb20941c5f5e",
+      "gitBlob": "8da4d2f248d7904b6c04bf4068adc409a1d53f63"
+    }
+  ],
+  "applicationInputs": 123,
+  "declaredPackageInputs": 404,
+  "totalDeclaredRows": 527,
+  "sourceRowsSha256": "a08f5f9a3e962cca07155c256c107b02b0bff72da8cf3b7ae36360ca801bc1d3",
+  "declaredSourceBytes": 4476572,
+  "exactForwardChanges": {
+    "runtimeRevisions": 3,
+    "versionedCaseAndPreloader": 2
+  },
+  "selectedLocalTests": {
+    "tests": 50,
+    "passed": 50,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "actualCommand": {
+      "actualExit": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 0,
+      "reason": null,
+      "stdoutBytes": 158,
+      "stdoutSha256": "8474f8911a96f3d090dbada4c440360ad6e1da69d767f575cc8b69548eef93b8",
+      "stderrBytes": 8447,
+      "stderrSha256": "ecc06587a84304126582cbbbf95bb7ecf0bcc1b3bdec558cdbbc6640b317fa86"
+    },
+    "audit": {
+      "children": 0,
+      "mutations": 0,
+      "readOpens": 529,
+      "sockets": 0,
+      "sourceReadOpens": 525,
+      "sqlite": 0,
+      "stdlibReadOpens": 4,
+      "writeOpens": 0
+    }
+  },
+  "actualSourceOnlyCli": {
+    "command": {
+      "actualExit": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 0,
+      "reason": null,
+      "stdoutBytes": 341,
+      "stdoutSha256": "20d638ab6f5b23c30f072eb7e59c653b79ac03e19199907ca56f47b85c01e05c",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "applicationInputsVerified": 123,
+    "installedPackageFilesRead": 0,
+    "nativeAuthority": "NONE"
+  },
+  "actualParserOnly": [
+    {
+      "path": "qualification/issued-current-close-v6.case.mjs",
+      "command": {
+        "actualExit": 0,
+        "complete": true,
+        "inputComplete": true,
+        "inputBytes": 0,
+        "reason": null,
+        "stdoutBytes": 0,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrBytes": 0,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "importsEvaluated": false
+    },
+    {
+      "path": "qualification/issued-current-close-v6.preload.mjs",
+      "command": {
+        "actualExit": 0,
+        "complete": true,
+        "inputComplete": true,
+        "inputBytes": 0,
+        "reason": null,
+        "stdoutBytes": 0,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrBytes": 0,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "importsEvaluated": false
+    }
+  ],
+  "warmReadReuse": {
+    "realApplicationFilesPerRecheck": 123,
+    "successfulWarmRechecks": 2,
+    "bodyReadOpensDuringThoseRechecks": 0,
+    "changedIdentityFieldsRejected": 9,
+    "symlinksRejected": true,
+    "reducedCapturesRejected": true,
+    "nativePackageWarmBranchExecuted": false,
+    "fullNativePreloaderStillHashesAllDeclaredInputs": true,
+    "wallClockOrHeapSavingMeasured": false
+  },
+  "launcherModuleLoading": {
+    "verifiedSourceCompiledDirectly": true,
+    "optionalPycCacheAdopted": false
+  },
+  "originalCaseAssertionsPreserved": true,
+  "scopeCeilings": {
+    "selectedCases": 1,
+    "maximumRuns": 1,
+    "opensslCommands": 1,
+    "nodeCommands": 1,
+    "nodeChildren": 0,
+    "newSqlitePaths": 5,
+    "independentPinFiles": 2,
+    "syntheticEd25519Keys": 4,
+    "transactionSignatures": 1,
+    "capabilitySignatures": 3,
+    "providerSignatures": 2,
+    "testTlsMaterialSeparate": true,
+    "maxRpcConnections": 174,
+    "maxApplicationConnections": 8,
+    "maxTotalConnections": 182,
+    "expectedTotalConnections": 96,
+    "maxCandidatesPerSearch": 4096,
+    "maxReferenceCandidates": 32768,
+    "producerCandidateReservation": 4096,
+    "fixedVerificationReservation": 16384,
+    "maxAggregateCandidates": 65536,
+    "taskQuotaBytes": 4194304,
+    "maximumSourceReadBytes": 6291456,
+    "existingSourcesRecopied": false,
+    "externalNetwork": false,
+    "install": false,
+    "realWallet": false,
+    "realPayment": false,
+    "sdkPrepareBlock": false,
+    "nativeOsNetworkSandbox": false
+  },
+  "taskPolicy": {
+    "quotaBytes": 4194304,
+    "minimumFreeBytes": 10737418240,
+    "existingApprovedRootOnly": true,
+    "rootPolicyOverride": false,
+    "maximumRuns": 1
+  },
+  "unsuccessfulAttemptsPreserved": [
+    {
+      "attempt": 1,
+      "actualExit": 1,
+      "testCollectionReached": false,
+      "reason": "Audited importlib bytecode-cache probe refused."
+    },
+    {
+      "attempt": 2,
+      "actualExit": 5,
+      "tests": 0,
+      "reason": "The outer unittest wrapper used a separate main namespace."
+    },
+    {
+      "attempt": 3,
+      "actualExit": 1,
+      "tests": 50,
+      "passed": 49,
+      "errors": 1,
+      "reason": "The new synthetic parser fixture retained the old completion footer."
+    }
+  ],
+  "inputUnionUnchanged": 541,
+  "currentNativeGraphQualified": false,
+  "installedPackageFilesRead": 0,
+  "storageAdmissionPerformed": false,
+  "nativeExecutions": 0,
+  "oldNativeAllowanceConsumed": false,
+  "existing108CaseCISelectionChanged": false,
+  "new50CasesAddedToCI": false,
+  "sourceTransforms": false,
+  "nativeBuiltinAliases": false,
+  "osNetworkSandbox": false,
+  "defaultBuyerChanged": false,
+  "economicPilotQualified": false,
+  "productionQualified": false
+}
