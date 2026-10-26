@@ -1,0 +1,729 @@
+{
+  "kind": "OFFERED_WINDOW_CLOCK_RETURN_FENCE_ACTUAL_LOCAL_SOURCE_DATA",
+  "version": 1,
+  "date": "2026-10-26",
+  "sourceParent": "c2c9ed9b1e663a69a780c3f12ba463fe6af88317",
+  "mainBase": "cb273da6c09b8ad58658eef716e06d090f422460",
+  "status": "RUNTIME_SOURCE_CONTROLS_PASSED_NATIVE_NOT_RUN",
+  "authority": "NONE",
+  "change": {
+    "runtimeSource": "src/service-credit-capacity-offered-window-owner-core.js",
+    "previousRuntimeSha256": "3ba123064f4b8da1d1fbd7003e239e9284584b27274632a7fcb7f9686dc8d4fc",
+    "currentRuntimeSha256": "cc5dc70a0bde13dd9896261d19b6263a3b0ad726113211e1e999d18fba08500e",
+    "behavior": "Revalidate captured Promise intrinsics after the trusted monotonic clock returns, before its timestamp can admit a new timer, balance callback, source call or ledger observation.",
+    "originalOperationsRetained": true,
+    "automaticRetry": false,
+    "replacement": false,
+    "defaultOrNativeActivationAdded": false
+  },
+  "actualRegression": {
+    "scenarios": 13,
+    "changedContractScenarios": 12,
+    "healthyBaselineScenarios": 1,
+    "descriptorTargets": [
+      "Promise.prototype.then",
+      "Promise.prototype.constructor",
+      "Promise[Symbol.species]"
+    ],
+    "testedClockBoundaries": [
+      "initial-clock",
+      "precheck-clock",
+      "dispatch-clock",
+      "ledger-clock"
+    ],
+    "before": [
+      {
+        "boundary": "baseline",
+        "intrinsic": "then",
+        "mutationReached": false,
+        "unintendedEntry": 0,
+        "scheduleUnderChange": 0,
+        "balanceUnderChange": 0,
+        "sourceUnderChange": 0,
+        "ledgerHandleUnderChange": 0,
+        "sourceEntries": 3,
+        "pendingOriginalOperations": 0,
+        "outcome": "OBSERVED_SOURCES_SETTLED",
+        "issue": null
+      },
+      {
+        "boundary": "initial-clock",
+        "intrinsic": "then",
+        "mutationReached": true,
+        "unintendedEntry": 1,
+        "scheduleUnderChange": 1,
+        "balanceUnderChange": 0,
+        "sourceUnderChange": 0,
+        "ledgerHandleUnderChange": 0,
+        "sourceEntries": 0,
+        "pendingOriginalOperations": 0,
+        "outcome": "HELD_UNKNOWN",
+        "issue": "SETUP_CLOCK_UNKNOWN"
+      },
+      {
+        "boundary": "initial-clock",
+        "intrinsic": "constructor",
+        "mutationReached": true,
+        "unintendedEntry": 1,
+        "scheduleUnderChange": 1,
+        "balanceUnderChange": 0,
+        "sourceUnderChange": 0,
+        "ledgerHandleUnderChange": 0,
+        "sourceEntries": 0,
+        "pendingOriginalOperations": 0,
+        "outcome": "HELD_UNKNOWN",
+        "issue": "SETUP_CLOCK_UNKNOWN"
+      },
+      {
+        "boundary": "initial-clock",
+        "intrinsic": "species",
+        "mutationReached": true,
+        "unintendedEntry": 1,
+        "scheduleUnderChange": 1,
+        "balanceUnderChange": 0,
+        "sourceUnderChange": 0,
+        "ledgerHandleUnderChange": 0,
+        "sourceEntries": 0,
+        "pendingOriginalOperations": 0,
+        "outcome": "HELD_UNKNOWN",
+        "issue": "SETUP_CLOCK_UNKNOWN"
+      },
+      {
+        "boundary": "precheck-clock",
+        "intrinsic": "then",
+        "mutationReached": true,
+        "unintendedEntry": 1,
+        "scheduleUnderChange": 0,
+        "balanceUnderChange": 1,
+        "sourceUnderChange": 0,
+        "ledgerHandleUnderChange": 0,
+        "sourceEntries": 0,
+        "pendingOriginalOperations": 0,
+        "outcome": "HELD_UNKNOWN",
+        "issue": "BALANCE_UNKNOWN"
+      },
+      {
+        "boundary": "precheck-clock",
+        "intrinsic": "constructor",
+        "mutationReached": true,
+        "unintendedEntry": 1,
+        "scheduleUnderChange": 0,
+        "balanceUnderChange": 1,
+        "sourceUnderChange": 0,
+        "ledgerHandleUnderChange": 0,
+        "sourceEntries": 0,
+        "pendingOriginalOperations": 0,
+        "outcome": "HELD_UNKNOWN",
+        "issue": "BALANCE_UNKNOWN"
+      },
+      {
+        "boundary": "precheck-clock",
+        "intrinsic": "species",
+        "mutationReached": true,
+        "unintendedEntry": 1,
+        "scheduleUnderChange": 0,
+        "balanceUnderChange": 1,
+        "sourceUnderChange": 0,
+        "ledgerHandleUnderChange": 0,
+        "sourceEntries": 0,
+        "pendingOriginalOperations": 0,
+        "outcome": "HELD_UNKNOWN",
+        "issue": "BALANCE_UNKNOWN"
+      },
+      {
+        "boundary": "dispatch-clock",
+        "intrinsic": "then",
+        "mutationReached": true,
+        "unintendedEntry": 1,
+        "scheduleUnderChange": 0,
+        "balanceUnderChange": 0,
+        "sourceUnderChange": 1,
+        "ledgerHandleUnderChange": 0,
+        "sourceEntries": 1,
+        "pendingOriginalOperations": 1,
+        "outcome": "HELD_UNKNOWN",
+        "issue": "SOURCE_PROMISE_UNKNOWN"
+      },
+      {
+        "boundary": "dispatch-clock",
+        "intrinsic": "constructor",
+        "mutationReached": true,
+        "unintendedEntry": 1,
+        "scheduleUnderChange": 0,
+        "balanceUnderChange": 0,
+        "sourceUnderChange": 1,
+        "ledgerHandleUnderChange": 0,
+        "sourceEntries": 1,
+        "pendingOriginalOperations": 1,
+        "outcome": "HELD_UNKNOWN",
+        "issue": "SOURCE_PROMISE_UNKNOWN"
+      },
+      {
+        "boundary": "dispatch-clock",
+        "intrinsic": "species",
+        "mutationReached": true,
+        "unintendedEntry": 1,
+        "scheduleUnderChange": 0,
+        "balanceUnderChange": 0,
+        "sourceUnderChange": 1,
+        "ledgerHandleUnderChange": 0,
+        "sourceEntries": 1,
+        "pendingOriginalOperations": 1,
+        "outcome": "HELD_UNKNOWN",
+        "issue": "SOURCE_PROMISE_UNKNOWN"
+      },
+      {
+        "boundary": "ledger-clock",
+        "intrinsic": "then",
+        "mutationReached": true,
+        "unintendedEntry": 1,
+        "scheduleUnderChange": 0,
+        "balanceUnderChange": 0,
+        "sourceUnderChange": 0,
+        "ledgerHandleUnderChange": 1,
+        "sourceEntries": 1,
+        "pendingOriginalOperations": 1,
+        "outcome": "HELD_UNKNOWN",
+        "issue": "LEDGER_RECORDING_UNKNOWN"
+      },
+      {
+        "boundary": "ledger-clock",
+        "intrinsic": "constructor",
+        "mutationReached": true,
+        "unintendedEntry": 1,
+        "scheduleUnderChange": 0,
+        "balanceUnderChange": 0,
+        "sourceUnderChange": 0,
+        "ledgerHandleUnderChange": 1,
+        "sourceEntries": 1,
+        "pendingOriginalOperations": 1,
+        "outcome": "HELD_UNKNOWN",
+        "issue": "LEDGER_RECORDING_UNKNOWN"
+      },
+      {
+        "boundary": "ledger-clock",
+        "intrinsic": "species",
+        "mutationReached": true,
+        "unintendedEntry": 1,
+        "scheduleUnderChange": 0,
+        "balanceUnderChange": 0,
+        "sourceUnderChange": 0,
+        "ledgerHandleUnderChange": 1,
+        "sourceEntries": 1,
+        "pendingOriginalOperations": 1,
+        "outcome": "HELD_UNKNOWN",
+        "issue": "LEDGER_RECORDING_UNKNOWN"
+      }
+    ],
+    "after": [
+      {
+        "boundary": "baseline",
+        "intrinsic": "then",
+        "mutationReached": false,
+        "unintendedEntry": 0,
+        "scheduleUnderChange": 0,
+        "balanceUnderChange": 0,
+        "sourceUnderChange": 0,
+        "ledgerHandleUnderChange": 0,
+        "sourceEntries": 3,
+        "pendingOriginalOperations": 0,
+        "outcome": "OBSERVED_SOURCES_SETTLED",
+        "issue": null
+      },
+      {
+        "boundary": "initial-clock",
+        "intrinsic": "then",
+        "mutationReached": true,
+        "unintendedEntry": 0,
+        "scheduleUnderChange": 0,
+        "balanceUnderChange": 0,
+        "sourceUnderChange": 0,
+        "ledgerHandleUnderChange": 0,
+        "sourceEntries": 0,
+        "pendingOriginalOperations": 0,
+        "outcome": "HELD_UNKNOWN",
+        "issue": "SETUP_CLOCK_UNKNOWN"
+      },
+      {
+        "boundary": "initial-clock",
+        "intrinsic": "constructor",
+        "mutationReached": true,
+        "unintendedEntry": 0,
+        "scheduleUnderChange": 0,
+        "balanceUnderChange": 0,
+        "sourceUnderChange": 0,
+        "ledgerHandleUnderChange": 0,
+        "sourceEntries": 0,
+        "pendingOriginalOperations": 0,
+        "outcome": "HELD_UNKNOWN",
+        "issue": "SETUP_CLOCK_UNKNOWN"
+      },
+      {
+        "boundary": "initial-clock",
+        "intrinsic": "species",
+        "mutationReached": true,
+        "unintendedEntry": 0,
+        "scheduleUnderChange": 0,
+        "balanceUnderChange": 0,
+        "sourceUnderChange": 0,
+        "ledgerHandleUnderChange": 0,
+        "sourceEntries": 0,
+        "pendingOriginalOperations": 0,
+        "outcome": "HELD_UNKNOWN",
+        "issue": "SETUP_CLOCK_UNKNOWN"
+      },
+      {
+        "boundary": "precheck-clock",
+        "intrinsic": "then",
+        "mutationReached": true,
+        "unintendedEntry": 0,
+        "scheduleUnderChange": 0,
+        "balanceUnderChange": 0,
+        "sourceUnderChange": 0,
+        "ledgerHandleUnderChange": 0,
+        "sourceEntries": 0,
+        "pendingOriginalOperations": 0,
+        "outcome": "HELD_UNKNOWN",
+        "issue": "SETUP_CLOCK_UNKNOWN"
+      },
+      {
+        "boundary": "precheck-clock",
+        "intrinsic": "constructor",
+        "mutationReached": true,
+        "unintendedEntry": 0,
+        "scheduleUnderChange": 0,
+        "balanceUnderChange": 0,
+        "sourceUnderChange": 0,
+        "ledgerHandleUnderChange": 0,
+        "sourceEntries": 0,
+        "pendingOriginalOperations": 0,
+        "outcome": "HELD_UNKNOWN",
+        "issue": "SETUP_CLOCK_UNKNOWN"
+      },
+      {
+        "boundary": "precheck-clock",
+        "intrinsic": "species",
+        "mutationReached": true,
+        "unintendedEntry": 0,
+        "scheduleUnderChange": 0,
+        "balanceUnderChange": 0,
+        "sourceUnderChange": 0,
+        "ledgerHandleUnderChange": 0,
+        "sourceEntries": 0,
+        "pendingOriginalOperations": 0,
+        "outcome": "HELD_UNKNOWN",
+        "issue": "SETUP_CLOCK_UNKNOWN"
+      },
+      {
+        "boundary": "dispatch-clock",
+        "intrinsic": "then",
+        "mutationReached": true,
+        "unintendedEntry": 0,
+        "scheduleUnderChange": 0,
+        "balanceUnderChange": 0,
+        "sourceUnderChange": 0,
+        "ledgerHandleUnderChange": 0,
+        "sourceEntries": 0,
+        "pendingOriginalOperations": 0,
+        "outcome": "HELD_UNKNOWN",
+        "issue": "ARRIVAL_OR_RECORDING_UNKNOWN"
+      },
+      {
+        "boundary": "dispatch-clock",
+        "intrinsic": "constructor",
+        "mutationReached": true,
+        "unintendedEntry": 0,
+        "scheduleUnderChange": 0,
+        "balanceUnderChange": 0,
+        "sourceUnderChange": 0,
+        "ledgerHandleUnderChange": 0,
+        "sourceEntries": 0,
+        "pendingOriginalOperations": 0,
+        "outcome": "HELD_UNKNOWN",
+        "issue": "ARRIVAL_OR_RECORDING_UNKNOWN"
+      },
+      {
+        "boundary": "dispatch-clock",
+        "intrinsic": "species",
+        "mutationReached": true,
+        "unintendedEntry": 0,
+        "scheduleUnderChange": 0,
+        "balanceUnderChange": 0,
+        "sourceUnderChange": 0,
+        "ledgerHandleUnderChange": 0,
+        "sourceEntries": 0,
+        "pendingOriginalOperations": 0,
+        "outcome": "HELD_UNKNOWN",
+        "issue": "ARRIVAL_OR_RECORDING_UNKNOWN"
+      },
+      {
+        "boundary": "ledger-clock",
+        "intrinsic": "then",
+        "mutationReached": true,
+        "unintendedEntry": 0,
+        "scheduleUnderChange": 0,
+        "balanceUnderChange": 0,
+        "sourceUnderChange": 0,
+        "ledgerHandleUnderChange": 0,
+        "sourceEntries": 1,
+        "pendingOriginalOperations": 1,
+        "outcome": "HELD_UNKNOWN",
+        "issue": "LEDGER_BOUNDARY_UNKNOWN"
+      },
+      {
+        "boundary": "ledger-clock",
+        "intrinsic": "constructor",
+        "mutationReached": true,
+        "unintendedEntry": 0,
+        "scheduleUnderChange": 0,
+        "balanceUnderChange": 0,
+        "sourceUnderChange": 0,
+        "ledgerHandleUnderChange": 0,
+        "sourceEntries": 1,
+        "pendingOriginalOperations": 1,
+        "outcome": "HELD_UNKNOWN",
+        "issue": "LEDGER_BOUNDARY_UNKNOWN"
+      },
+      {
+        "boundary": "ledger-clock",
+        "intrinsic": "species",
+        "mutationReached": true,
+        "unintendedEntry": 0,
+        "scheduleUnderChange": 0,
+        "balanceUnderChange": 0,
+        "sourceUnderChange": 0,
+        "ledgerHandleUnderChange": 0,
+        "sourceEntries": 1,
+        "pendingOriginalOperations": 1,
+        "outcome": "HELD_UNKNOWN",
+        "issue": "LEDGER_BOUNDARY_UNKNOWN"
+      }
+    ],
+    "beforeAllChangedCasesEnteredWork": true,
+    "afterAllChangedCasesEnteredNoNewWork": true,
+    "existingOriginalAtLedgerBoundaryRemainsPending": true,
+    "historicalHeldReportNeverUpgraded": true,
+    "clocksTimersAndLaneResults": "CALLER_DECLARED_SOURCE_CALLBACKS"
+  },
+  "existingRuntimeSuites": {
+    "window": {
+      "entered": 67,
+      "completed": 67
+    },
+    "workload": {
+      "entered": 45,
+      "completed": 45
+    },
+    "node": "24.19.0",
+    "newNativeProcesses": 0
+  },
+  "developmentPipelineData": {
+    "testsRun": 311,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "successful": true,
+    "sourceOnlyGate": {
+      "actualApplicationFilesRead": 160,
+      "installedPackageFilesRead": 0,
+      "managerImported": false,
+      "nativeExecuted": false
+    },
+    "parentApplicationFiles": 160,
+    "installedPackageFiles": 404,
+    "sourceRows": 564,
+    "parentSourceRowsSha256": "ac68afce186b6862eac33cbb3ee88944d5e8985976e0391fedb961213bd25732",
+    "previousParentSourceRowsSha256": "f5ba2a28fe30f6ff1b5d54a45c1c3e424806ad6fa858fe2d0d57d11ba41b4b84",
+    "parentDeclaredInputBytes": 5134626,
+    "changedApplicationRows": 1,
+    "childRowsUnchanged": true,
+    "childSourceRowsSha256": "db33115ac37137f5b0212cb33d748154b498ec1b15ca106dfb757575da692a6e",
+    "sourceCopies": 0,
+    "packageFilesRead": 0,
+    "profilesWritten": 0,
+    "nativeExecutions": 0,
+    "auditedEffects": {
+      "subprocesses": 0,
+      "sockets": 0,
+      "sqlite": 0,
+      "writeOpens": 0,
+      "outsideSourceReads": 0,
+      "mutations": 0
+    },
+    "mainIncludesTheseProfileChanges": false
+  },
+  "runtimeSourceBindings": [
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "LF": 40,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "qualification/service-credit-capacity-offered-clock-return-fence.behavior.mjs",
+      "bytes": 6424,
+      "LF": 121,
+      "sha256": "cb7eb51c80e641a25fe939cbd02717b178b2ea176d7fe10da28c4b4fb58fbce1",
+      "gitBlob": "3f065cd9e5bf90292c2e980feedf6497bebc08f9"
+    },
+    {
+      "path": "qualification/service-credit-capacity-offered-window-owner-core.behavior.mjs",
+      "bytes": 32626,
+      "LF": 449,
+      "sha256": "b6cb1510c3d8b65143f2bee9a1b433021d096bcb1bb259d4bf52dbf82371ad4f",
+      "gitBlob": "7645710d6f3879bf2594cbbca12ec23425b6d023"
+    },
+    {
+      "path": "qualification/service-credit-capacity-offered-workload-owner-core.behavior.mjs",
+      "bytes": 24188,
+      "LF": 342,
+      "sha256": "0c82e399e1494eb844e63136f7b1ab3112a4e2f5c1b066a8df2139378db324aa",
+      "gitBlob": "7adb1cc9d497193e2c7e4fe5320184df70c925b1"
+    },
+    {
+      "path": "src/service-credit-capacity-offered-window-owner-core.js",
+      "bytes": 27591,
+      "LF": 522,
+      "sha256": "cc5dc70a0bde13dd9896261d19b6263a3b0ad726113211e1e999d18fba08500e",
+      "gitBlob": "486b53f42725c3c1377d760f69128e261e677838"
+    },
+    {
+      "path": "src/service-credit-capacity-offered-workload-owner-core.js",
+      "bytes": 26641,
+      "LF": 482,
+      "sha256": "f55a84aee2796374291b837710b27ca96fc031050a8d2a9dab65e334280c526e",
+      "gitBlob": "d3b9faca2a98f6d556d9bd928c1efaf5e68119b7"
+    },
+    {
+      "path": "src/service-credit-capacity-recorder.js",
+      "bytes": 10801,
+      "LF": 236,
+      "sha256": "eca9bf4cad4717df5d61457044c2c5d0a6bc00b6af81964d09bf18325d4a46ad",
+      "gitBlob": "bc9b0a8a9abd48033e698e100cdc6ef90d2152c9"
+    }
+  ],
+  "developmentProfileSourceBindings": [
+    {
+      "path": "qualification/native_capacity_current_offered_resource_v1.py",
+      "bytes": 13667,
+      "LF": 219,
+      "sha256": "89f8fbd2bc0c74542d75380fa2f17d965a5e6e6c6d1639d84bcb366a5b7a1f3b",
+      "gitBlob": "7a46c9ceeeb60a0ceeb4bd53960801b7bf5e6593"
+    },
+    {
+      "path": "qualification/native_capacity_current_offered_command_v1.py",
+      "bytes": 9960,
+      "LF": 170,
+      "sha256": "2a9ff244b67a418caa06697407030f6e9c31ba0432242bfc5a5a6b4bc46cc205",
+      "gitBlob": "e1d86200e937f9b7a970d5e59f565f9c0740445f"
+    },
+    {
+      "path": "qualification/native_capacity_current_offered_capture_v1.py",
+      "bytes": 39786,
+      "LF": 565,
+      "sha256": "e9f5d3d75067028039fbedd5f1728835cbc44bb7518d01f8f22725afc069a60e",
+      "gitBlob": "f4f667419991790f5ab4232136ddcf68ac9d5fbd"
+    },
+    {
+      "path": "qualification/run-capacity-native-current-offered-v2.local.py",
+      "bytes": 32188,
+      "LF": 504,
+      "sha256": "d7176d1824ae15b74917d5ea157844c303a3871deab6703f34d24d332f1131be",
+      "gitBlob": "cca1b81d6944dc43d42ecb1352c1f3d7b8fde4a4"
+    },
+    {
+      "path": "qualification/capacity-native-current-offered-v2.launch-inputs.json",
+      "bytes": 7455,
+      "LF": 193,
+      "sha256": "0654e76b965ae60885ad352a4c97894f43c5c2f7781b701e27b6dc55ea88e1da",
+      "gitBlob": "d4adea72b9069ccf55b25b51b62e905762492e49"
+    },
+    {
+      "path": "qualification/capacity-native-current-offered-v2.plan.json",
+      "bytes": 506,
+      "LF": 22,
+      "sha256": "9edfca67cf300fb6f9a3b938bb902bc6ceded2eec199e647a5064f16f3eb268d",
+      "gitBlob": "a63243117a8223f2974c39ba09fe0e502db23ce2"
+    },
+    {
+      "path": "qualification/native_capacity_current_offered_pipeline_v1.behavior.py",
+      "bytes": 43081,
+      "LF": 533,
+      "sha256": "a6248574ba63fcfe95fb036dcbde1f33e305b2da8759cd869ed54b5a4f647224",
+      "gitBlob": "cb4a68191c45d62deb08e53c13fbfb5359f04f9d"
+    },
+    {
+      "path": "qualification/native_capacity_current_offered_parent_v2.py",
+      "bytes": 19695,
+      "LF": 290,
+      "sha256": "59017e3e71fe1bcb038eb39a38cc483a8f1c612268639ffb90329ee53dad89b1",
+      "gitBlob": "ce676f8bd236277aa74b43b06a9f5e3fa8a7df02"
+    },
+    {
+      "path": "qualification/capacity-native-current-offered-parent-v2.inputs.json",
+      "bytes": 4680,
+      "LF": 122,
+      "sha256": "ef0202ada8a55d8e1659be944555bd2111d50181ad00afa2c284cce4007d9eaa",
+      "gitBlob": "b75b5b2d5ad3c224d01bf3e321110ad9f2c8905a"
+    },
+    {
+      "path": "qualification/native_capacity_current_role_profiles_v4.py",
+      "bytes": 19763,
+      "LF": 295,
+      "sha256": "a32d566f61c7093464a8c84e543965d82bf9fedf45741e65101ae28f331db24f",
+      "gitBlob": "3d99b2ab631c1ef1857f0c90af7330340410eb52"
+    },
+    {
+      "path": "qualification/capacity-native-current-roles-v4.inputs.json",
+      "bytes": 5209,
+      "LF": 132,
+      "sha256": "6a819a3e87e89927c05e292f8f0ee4332ac0a884199ab68d0f6cf286327a1662",
+      "gitBlob": "bc9977247b11a3edea32398969a9a4049f59c289"
+    },
+    {
+      "path": "qualification/recovery_crash_native_profile.py",
+      "bytes": 33443,
+      "LF": 538,
+      "sha256": "75c2c9478b7e792a7bade739161af2bb8fb624cd407924ead2cf822dc23dacbd",
+      "gitBlob": "dc93890c4f9772b726e015ddd11d63bfa1a48ad4"
+    },
+    {
+      "path": "qualification/issued_current_close_v4_profile.py",
+      "bytes": 24610,
+      "LF": 297,
+      "sha256": "b3a8edc522471b0d34f33857e6bd2aae9286b101ec7ea24b6a0f0275e6e447e7",
+      "gitBlob": "7ce435651b6d853baa06856ce5f0b04aef58c5c4"
+    },
+    {
+      "path": "qualification/native_capacity_full_profile_v3.py",
+      "bytes": 23435,
+      "LF": 353,
+      "sha256": "6928303c36f034fc295145563e40304641a91fe7db35d62eb364031bbcff7e6a",
+      "gitBlob": "6268ca35b32c32611b9663e964ddf2485b941ddc"
+    },
+    {
+      "path": "qualification/capacity-native-full-graph-v3.inputs.json",
+      "bytes": 8697,
+      "LF": 215,
+      "sha256": "3bb597da71736542615047d11af78ad6825df5bdb6e4561747d8c1f9dff7d0df",
+      "gitBlob": "0530e2b08929d45c93b4e4912dc69d27b0645204"
+    },
+    {
+      "path": "qualification/issued-funding-post-native-vertical.inputs-v3.json",
+      "bytes": 138777,
+      "LF": 3836,
+      "sha256": "51ffb5b0ff0052523c1b7f3d75fa24e9be27e60ca3bcc09236b1f439096aaed1",
+      "gitBlob": "3dc05ccffd306e97056b4ed168d8121f63acebbc"
+    },
+    {
+      "path": "qualification/issued-current-close-v4.inputs.json",
+      "bytes": 10437,
+      "LF": 300,
+      "sha256": "8339b2a8e04e7e3c573b1c26d8162f1c821df91182738409693d188121a21893",
+      "gitBlob": "f292abda9f607a7d423f9d32fce2e55472d84a33"
+    },
+    {
+      "path": "qualification/run-capacity-native-paced-timer-managed-v3.local.py",
+      "bytes": 31856,
+      "LF": 518,
+      "sha256": "5f3f6893559a9fdce3d7c19b9d729996a14f157822d1938bbad3ae25daeef22e",
+      "gitBlob": "5956f77026eb0f9f8024318aaa100158ae7b0b30"
+    },
+    {
+      "path": "qualification/run-capacity-native-workload-v3.local.py",
+      "bytes": 26105,
+      "LF": 395,
+      "sha256": "4e2e29c31ae10c661bd5599506cda87482d030fc328dbde1e3e1066db5dba9e6",
+      "gitBlob": "eac94ea35f381307f61db1b7d709f29e1c23b8a5"
+    },
+    {
+      "path": "qualification/funding_tls_current_gate.py",
+      "bytes": 7969,
+      "LF": 145,
+      "sha256": "9777b8dca3c8c86e543c1f202c0cde248280ed3a108df4a688565ccf83132936",
+      "gitBlob": "91362d22ca606a6711612b02ecea3c6e92c55a59"
+    }
+  ],
+  "actualReceipts": [
+    {
+      "label": "before_fix",
+      "actualExit": 0,
+      "complete": true,
+      "stdoutBytes": 4161,
+      "stdoutSha256": "b8b7a426f3d7f3b50e33aeb80e68c81b2906040d3121d5c55e837c3c35423b09",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "clock_return",
+      "actualExit": 0,
+      "complete": true,
+      "stdoutBytes": 4185,
+      "stdoutSha256": "35b24453cb7f3185694c79744d73b4d75618bdd7589d61ed092a49eca8942a6e",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "offered_window",
+      "actualExit": 0,
+      "complete": true,
+      "stdoutBytes": 11568,
+      "stdoutSha256": "4e2e4918a322452b32049555360e0eb3627cbc3d5537252af5014aa6c4ff2b49",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "offered_workload",
+      "actualExit": 0,
+      "complete": true,
+      "stdoutBytes": 8231,
+      "stdoutSha256": "de47ad09a909ad8f999d065bdb8ee9afb67a50f67e901c703db166ee99c14e34",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "managed_pipeline_data",
+      "actualExit": 0,
+      "complete": true,
+      "stdoutBytes": 64280,
+      "stdoutSha256": "4b7f6c9155727dc239f33404bd7df28ae985831c80dc7d896b7b5776de32a263",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "publicationScope": {
+    "mainCandidateFiles": [
+      "src/service-credit-capacity-offered-window-owner-core.js",
+      "qualification/service-credit-capacity-offered-clock-return-fence.behavior.mjs",
+      "qualification/service-credit-capacity-offered-clock-return-fence.actual-local-result.json",
+      "docs/SERVICE_CREDIT_CAPACITY_OFFERED_CLOCK_RETURN_FENCE.md"
+    ],
+    "mainNativeProfileChanges": 0,
+    "CIWorkflowOrProfileChanged": false,
+    "existingApprovedHostedCIControls": 27,
+    "hostedCIForThisChange": "OBSERVE_EXACT_MAIN_HEAD_AFTER_TRANSFER_SEPARATELY",
+    "hostedProfileIncludesNewRegression": false
+  },
+  "evidenceLimits": {
+    "nativeApplicationExecutions": 0,
+    "SDKImported": false,
+    "x402OrNobleImported": false,
+    "SQLite": false,
+    "keysOrSignatures": false,
+    "nonceSearch": false,
+    "sockets": false,
+    "TLS": false,
+    "storageManagerImported": false,
+    "storageRootRead": false,
+    "managedTasksCreated": 0,
+    "cleanup": false,
+    "currentCleanAllowanceConsumed": false,
+    "oldR4AllowanceConsumed": false,
+    "newNativeAuthority": false,
+    "measuredCapacityQualified": false,
+    "economicAcceptance": false,
+    "productionQualified": false,
+    "historicalEvidenceRewritten": false
+  }
+}

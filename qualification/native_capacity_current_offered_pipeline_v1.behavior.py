@@ -51,7 +51,7 @@ with os.fdopen(os.open(path,os.O_RDONLY|os.O_NOFOLLOW),"rb")as stream:
     if identity(os.fstat(stream.fileno()))!=identity(before):raise ValueError("PARENT_PRODUCER_OPEN")
     raw=stream.read(65537)
     if len(raw)!=before.st_size or identity(os.fstat(stream.fileno()))!=identity(before):raise ValueError("PARENT_PRODUCER_READ")
-expected="054b375cd88495796e533749be7e332e7e2d62829beb595b27d33ebe7024f36c"
+expected="59017e3e71fe1bcb038eb39a38cc483a8f1c612268639ffb90329ee53dad89b1"
 if hashlib.sha256(raw).hexdigest()!=expected:raise ValueError("PARENT_PRODUCER_PIN")
 spec=importlib.util.spec_from_file_location("actual_current_offered_parent_v2",path)
 p=importlib.util.module_from_spec(spec);sys.modules[spec.name]=p
