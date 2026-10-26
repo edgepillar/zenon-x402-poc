@@ -65,8 +65,9 @@ export function createServiceCreditCapacityWindowWriterTraceOwnedData(configurat
       // Classification below uses only its validated immutable returned DATA.
       const page=cohort.append(rawPage),staged=[];
       for(const row of page.intervals) {
-        const kind=classify(ns(row.beforeBeginNs),ns(row.afterCommitNs));
-        staged.push({cohort:row.cohort,kind,bracket:BigInt(row.bracketElapsedNs),
+        const before=ns(row.beforeBeginNs),after=ns(row.afterCommitNs);
+        const kind=classify(before,after);
+        staged.push({cohort:row.cohort,kind,bracket:after-before,
           inside:BigInt(row.insideTransactionElapsedNs),changed:row.changed,
           ordinal:row.ordinal,originalOrdinal:row.originalOrdinal});
       }
@@ -74,8 +75,11 @@ export function createServiceCreditCapacityWindowWriterTraceOwnedData(configurat
         const s=samples[row.cohort][row.kind];s.bracket.push(row.bracket);s.inside.push(row.inside);if(row.changed)s.changed++;
       }
       pages=page.pagesAccepted;accepted=page.next;total=page.total;
-      return F({intervals:F(staged.map(r=>F({ordinal:r.ordinal,cohort:r.cohort,originalOrdinal:r.originalOrdinal,
-        windowClass:r.kind,changed:r.changed,bracketElapsedNs:String(r.bracket),insideTransactionElapsedNs:String(r.inside)}))),
+      // The genuine inner page owns these immutable canonical decimal strings.
+      // Reuse them after the whole page has passed; do not render them again.
+      return F({intervals:F(staged.map((r,index)=>F({ordinal:r.ordinal,cohort:r.cohort,originalOrdinal:r.originalOrdinal,
+        windowClass:r.kind,changed:r.changed,bracketElapsedNs:page.intervals[index].bracketElapsedNs,
+        insideTransactionElapsedNs:page.intervals[index].insideTransactionElapsedNs}))),
         next:accepted,total,pagesAccepted:pages,snapshotComplete:page.snapshotComplete,clockDomain:'SERVICE_CHILD_LOCAL',
         rawIdentifiersIncluded:false,nativeEventsAuthenticated:false,authority:'NONE'});
     }catch{hold('DECLARED_WINDOW_TRACE_PAGE_REJECTED');throw problem();}
