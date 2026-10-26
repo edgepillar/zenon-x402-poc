@@ -146,7 +146,7 @@ def source_admission(repo,digest):
     require(type(manifest)is dict and set(manifest)=={"kind","version","sourceParent","pythonControls","profileSelection",
         "childSelection","workload","effectsCeiling","requiredPolicy","nativeSelection","nativeExecuted","nativeAllowanceGranted","authority"}
         and manifest["kind"]==KIND and type(manifest["version"])is int and manifest["version"]==4
-        and manifest["sourceParent"]=="b415370129c3c9041b496bd483249ca4d72dea59"
+        and manifest["sourceParent"]=="abd2039565504ef9dce14d489fe4399ee208b303"
         and manifest["nativeSelection"]==NATIVE_SELECTION and manifest["nativeExecuted"]is False
         and manifest["nativeAllowanceGranted"]is False and manifest["authority"]=="NONE","CURRENT_MANAGED_SOURCE_NOT_AUTHORITY")
     inputs={name:read(repo/name)for name in[SELF]+[name for name,_ in FROZEN]+[PARENT,SOURCE_SELECTION,PLAN]}
@@ -292,6 +292,69 @@ def reservation_capacity_data(roots,effects,reservation_reader,available_reader,
 
 
 
+
+def annotate_capacity_refusal(error, stage, store_index, store_count, store_id=None):
+    """Add bounded location DATA to a native guard failure without changing it.
+
+    No path, project label, task record or exception text is copied. This DATA
+    identifies an observation boundary only; it never grants admission.
+    """
+    supported=(ValueError,OSError,FileNotFoundError,PermissionError,NotADirectoryError,IsADirectoryError,json.JSONDecodeError)
+    stages=("STORE_RESERVATION_CAPTURE","STORE_RESERVATION_RECHECK","STORE_METADATA_RECHECK","CAPACITY_PREDICATE")
+    if type(error) not in supported or type(stage) is not str or stage not in stages:
+        return error
+    attributes=error.__dict__
+    if type(attributes) is not dict:
+        return error
+    if type(store_count) is not int or not 1 <= store_count <= 256:
+        return error
+    if stage == "CAPACITY_PREDICATE":
+        if store_index is not None or store_id is not None:
+            return error
+        digest=None
+    else:
+        if type(store_index) is not int or not 0 <= store_index < store_count:
+            return error
+        if type(store_id) is not str or re.fullmatch(r"[0-9a-f]{32}",store_id) is None:
+            return error
+        digest=sha(store_id.encode("ascii"))
+    attributes["_capacity_scope_data"]=dict(diagnosticVersion=1,stage=stage,
+        storeIndex=store_index,storeCount=store_count,storeIdDigest=digest,
+        admissionGranted=False,authority="NONE")
+    return error
+
+
+def capacity_refusal_data(error):
+    """Return a detached, strict diagnostic projection; never inspect hooks."""
+    supported=(ValueError,OSError,FileNotFoundError,PermissionError,NotADirectoryError,IsADirectoryError,json.JSONDecodeError)
+    if type(error) not in supported:
+        return None
+    fields=("diagnosticVersion","stage","storeIndex","storeCount","storeIdDigest","admissionGranted","authority")
+    attributes=error.__dict__
+    if type(attributes) is not dict:
+        return None
+    value=attributes.get("_capacity_scope_data")
+    if type(value) is not dict or len(value) != len(fields) or not all(type(key) is str and key in fields for key in value):
+        return None
+    if type(value["diagnosticVersion"]) is not int or value["diagnosticVersion"] != 1:
+        return None
+    if value["admissionGranted"] is not False or type(value["authority"]) is not str or value["authority"] != "NONE":
+        return None
+    stage=value["stage"];count=value["storeCount"];index=value["storeIndex"];digest=value["storeIdDigest"]
+    if type(stage) is not str or stage not in ("STORE_RESERVATION_CAPTURE","STORE_RESERVATION_RECHECK","STORE_METADATA_RECHECK","CAPACITY_PREDICATE"):
+        return None
+    if type(count) is not int or not 1 <= count <= 256:
+        return None
+    if stage == "CAPACITY_PREDICATE":
+        if index is not None or digest is not None:
+            return None
+    elif type(index) is not int or not 0 <= index < count or type(digest) is not str or re.fullmatch(r"[0-9a-f]{64}",digest) is None:
+        return None
+    return {name:value[name]for name in fields}
+
+
+
+
 def reservation_capture(root, common, own_task=None):
     """Capture one reservation pass and its full recheck witness together.
 
@@ -409,23 +472,40 @@ def capacity(volume, volume_uuid, root, common, effects, own_task=None):
         and len({v[3] for v in candidates}) == len(candidates), "COMPLETE_DISTINCT_STORE_SCOPE")
     snapshots={}
     def reservation_reader(index):
-        path=candidates[index][0]
-        captured=reservation_capture(path,common,own_task)
-        snapshots[str(path)]=captured["snapshot"]
-        return captured["reservations"]["reservedBytes"]
+        path,_,_,store_id=candidates[index]
+        try:
+            captured=reservation_capture(path,common,own_task)
+            snapshots[str(path)]=captured["snapshot"]
+            return captured["reservations"]["reservedBytes"]
+        except (ValueError,OSError) as error:
+            annotate_capacity_refusal(error,"STORE_RESERVATION_CAPTURE",index,len(candidates),store_id)
+            raise
     def recheck(observed):
         prefix=candidates[:observed]
         require(set(snapshots)=={str(row[0])for row in prefix},"COMPLETE_OBSERVED_RESERVATION_PREFIX")
-        for path,_,_,_ in prefix:
-            require(reservation_snapshot(path,common)==snapshots[str(path)],"RESERVATION_RECORD_OR_SCRATCH_CHANGED")
+        for index,(path,_,_,store_id) in enumerate(prefix):
+            try:
+                require(reservation_snapshot(path,common)==snapshots[str(path)],"RESERVATION_RECORD_OR_SCRATCH_CHANGED")
+            except (ValueError,OSError) as error:
+                annotate_capacity_refusal(error,"STORE_RESERVATION_RECHECK",index,len(candidates),store_id)
+                raise
         # Discovery and metadata remain complete even for a prefix refusal.
-        for path,raw,ident,store_id in candidates:
-            require(read(path/"storage.json",65536)==(raw,ident),"STORAGE_INVENTORY_CHANGED")
+        for index,(path,raw,ident,store_id) in enumerate(candidates):
+            try:
+                require(read(path/"storage.json",65536)==(raw,ident),"STORAGE_INVENTORY_CHANGED")
+            except (ValueError,OSError) as error:
+                annotate_capacity_refusal(error,"STORE_METADATA_RECHECK",index,len(candidates),store_id)
+                raise
         require(identity(root.parent.stat())[:5]==before and set(root.parent.iterdir())==set(siblings),"STORAGE_PARENT_CHANGED")
     def available_reader():
         space=os.statvfs(volume)
         return space.f_bavail*space.f_frsize
-    return reservation_capacity_data(len(candidates),effects,reservation_reader,available_reader,recheck)
+    try:
+        return reservation_capacity_data(len(candidates),effects,reservation_reader,available_reader,recheck)
+    except (ValueError,OSError) as error:
+        if capacity_refusal_data(error) is None:
+            annotate_capacity_refusal(error,"CAPACITY_PREDICATE",None,len(candidates))
+        raise
 
 
 def recheck_profile_sources(profile, common, node):
@@ -632,6 +712,9 @@ if __name__=="__main__":
     try:sys.exit(main())
     except (OSError,ValueError,KeyError,TypeError,RuntimeError,SyntaxError) as problem:
         code=str(problem)if type(problem)is ValueError and re.fullmatch(r"[A-Z0-9_]+",str(problem))else"PRESERVE_CURRENT_PRIVATE_RECEIPTS"
-        print(json.dumps(dict(event="CURRENT_OFFERED_V5_REFUSED_OR_UNKNOWN",code=code,errorType=type(problem).__name__,
-            automaticRetry=False,authority="NONE")),file=sys.stderr,flush=True)
+        event=dict(event="CURRENT_OFFERED_V5_REFUSED_OR_UNKNOWN",code=code,errorType=type(problem).__name__,
+            automaticRetry=False,authority="NONE")
+        location=capacity_refusal_data(problem)
+        if location is not None:event["capacityLocation"]=location
+        print(json.dumps(event),file=sys.stderr,flush=True)
         sys.exit(1)

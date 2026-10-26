@@ -297,7 +297,7 @@ def early_storage_acceptance_order(self):
 check("actual_main_enters_installed_context_only_after_declared_early_preflight_success",early_storage_acceptance_order)
 
 def declared_capacity_inventory(reserved_values,available_values,*,snapshot_change=False,metadata_change=False,
-        membership_change=False,reservation_fault=None):
+        membership_change=False,reservation_fault=None,reservation_error=None):
     """Call actual capacity control flow with DATA-only filesystem callbacks."""
     events=dict(reservations=[],snapshots=[],metadataReads=0,available=[],membershipReads=0)
     paths=["/declared-volume/spv2/store"+format(i,"03d")for i in range(1,len(reserved_values)+1)]
@@ -337,7 +337,8 @@ def declared_capacity_inventory(reserved_values,available_values,*,snapshot_chan
     def reservations(path,selected_own_task):
         if selected_own_task!=own_task:raise AssertionError("SAME_OWN_TASK_EXCLUSION")
         index=paths.index(str(path));events["reservations"].append(index)
-        if reservation_fault is not None and index==reservation_fault:raise ValueError("DECLARED_RESERVATION_READ_FAILURE")
+        if reservation_fault is not None and index==reservation_fault:
+            raise ValueError("DECLARED_RESERVATION_READ_FAILURE") if reservation_error is None else reservation_error
         return dict(reservedBytes=reserved_values[index])
     def available(volume):
         if str(volume)!="/declared-volume":raise AssertionError("DECLARED_VOLUME_ONLY")
@@ -359,7 +360,7 @@ def declared_capacity_inventory(reserved_values,available_values,*,snapshot_chan
     result=error=None
     try:
         try:result=launcher.capacity(volume,uuid,root,common,resource.resource_plan(WORKLOAD),own_task)
-        except (ValueError,AssertionError)as problem:error=problem
+        except (ValueError,OSError,AssertionError)as problem:error=problem
     finally:
         launcher.read,launcher.reservation_snapshot,launcher.subprocess.run,launcher.os.statvfs,launcher.reservation_capture=originals
     return dict(result=result,error=error,events=events)
@@ -684,6 +685,200 @@ def previous_parent_version(self):
     value["parent_input"]=dict(path=STORE+"/objects/"+hashlib.sha256(raw).hexdigest(),sha256=hashlib.sha256(raw).hexdigest(),raw=raw)
     with self.assertRaises(ValueError):command.plan(**value)
 check("rehashed_previous_parent_profile_version_six_cannot_select_packed_v4",previous_parent_version)
+
+
+# Diagnostic projections are DATA only. Exercise the actual capacity wrappers;
+# never open a physical storage root, copy private paths or enter native code.
+def diagnostic_expected(stage,index,count=3):
+    return dict(diagnosticVersion=1,stage=stage,storeIndex=index,storeCount=count,
+        storeIdDigest=None if index is None else hashlib.sha256(format(index+1,"032x").encode("ascii")).hexdigest(),
+        admissionGranted=False,authority="NONE")
+
+def diagnostic_capture_identity(self):
+    error=ValueError("DECLARED_RESERVATION_READ_FAILURE");original=error.args
+    base_bytes=resource.resource_plan(WORKLOAD)["requiredFreeBytesBeforeOtherReservations"]
+    value=declared_capacity_inventory([1,1,1],[base_bytes+100],reservation_fault=1,reservation_error=error)
+    self.assertIs(value["error"],error);self.assertEqual(error.args,original)
+    self.assertEqual(value["events"]["reservations"],[0,1]);self.assertIsNone(value["result"])
+    self.assertEqual(launcher.capacity_refusal_data(error),diagnostic_expected("STORE_RESERVATION_CAPTURE",1))
+check("capacity_capture_diagnostic_preserves_same_exception_arguments_and_stop",diagnostic_capture_identity)
+
+def diagnostic_oserror(self):
+    error=OSError(13,"DECLARED_PRIVATE_MESSAGE","/declared/private/record.json");original=error.args
+    base_bytes=resource.resource_plan(WORKLOAD)["requiredFreeBytesBeforeOtherReservations"]
+    value=declared_capacity_inventory([1,1,1],[base_bytes+100],reservation_fault=1,reservation_error=error)
+    self.assertIs(value["error"],error);self.assertEqual(error.args,original)
+    data=launcher.capacity_refusal_data(error)
+    self.assertEqual(data,diagnostic_expected("STORE_RESERVATION_CAPTURE",1))
+    self.assertNotIn("private",json.dumps(data));self.assertNotIn("MESSAGE",json.dumps(data))
+    self.assertNotIn("filename",data);self.assertEqual(error.filename,"/declared/private/record.json")
+check("capacity_oserror_diagnostic_omits_original_filename_and_message",diagnostic_oserror)
+
+for label,kw,stage,index in [
+ ("snapshot",dict(snapshot_change=True),"STORE_RESERVATION_RECHECK",0),
+ ("metadata",dict(metadata_change=True),"STORE_METADATA_RECHECK",0),
+ ("parent",dict(membership_change=True),"CAPACITY_PREDICATE",None)]:
+    def run(self,kw=kw,stage=stage,index=index):
+        base_bytes=resource.resource_plan(WORKLOAD)["requiredFreeBytesBeforeOtherReservations"]
+        value=declared_capacity_inventory([1,1,1],[base_bytes],**kw)
+        self.assertIsInstance(value["error"],ValueError);self.assertIsNone(value["result"])
+        self.assertEqual(launcher.capacity_refusal_data(value["error"]),diagnostic_expected(stage,index))
+        self.assertEqual(value["events"]["reservations"],[0])
+    check("actual_capacity_"+label+"_recheck_keeps_precise_diagnostic_boundary",run)
+
+def diagnostic_predicate(self):
+    base_bytes=resource.resource_plan(WORKLOAD)["requiredFreeBytesBeforeOtherReservations"]
+    for available_values,code,observed in [
+        ([base_bytes],"KNOWN_RESERVATION_LOWER_BOUND_EXCEEDS_AVAILABLE",[0]),
+        ([base_bytes+3,base_bytes+2],"PRODUCTION_FLOOR_AND_ALL_STORE_RESERVATIONS",[0,1,2])]:
+        value=declared_capacity_inventory([1,1,1],available_values)
+        self.assertEqual(str(value["error"]),code);self.assertIsNone(value["result"])
+        self.assertEqual(value["events"]["reservations"],observed)
+        self.assertEqual(launcher.capacity_refusal_data(value["error"]),diagnostic_expected("CAPACITY_PREDICATE",None))
+check("early_and_complete_capacity_refusals_remain_refusals_with_data",diagnostic_predicate)
+
+def diagnostic_detached(self):
+    error=ValueError("UNCHANGED")
+    self.assertIs(launcher.annotate_capacity_refusal(error,"STORE_RESERVATION_CAPTURE",1,3,format(2,"032x")),error)
+    a=launcher.capacity_refusal_data(error);b=launcher.capacity_refusal_data(error)
+    self.assertEqual(a,b);self.assertIsNot(a,b)
+    a["admissionGranted"]=True;a["stage"]="CHANGED"
+    self.assertEqual(launcher.capacity_refusal_data(error),diagnostic_expected("STORE_RESERVATION_CAPTURE",1))
+    self.assertEqual(str(error),"UNCHANGED")
+check("capacity_diagnostic_returns_detached_data_and_no_admission",diagnostic_detached)
+
+for label,field,replacement in [
+ ("boolean_version","diagnosticVersion",True),("new_version","diagnosticVersion",2),
+ ("boolean_count","storeCount",True),("float_count","storeCount",3.0),("zero_count","storeCount",0),
+ ("large_count","storeCount",257),("boolean_index","storeIndex",True),("negative_index","storeIndex",-1),
+ ("outside_index","storeIndex",3),("unknown_stage","stage","UNKNOWN"),
+ ("uppercase_digest","storeIdDigest","A"*64),("short_digest","storeIdDigest","a"*63),
+ ("granted","admissionGranted",True),("other_authority","authority","NATIVE")]:
+    def run(self,field=field,replacement=replacement):
+        error=ValueError("UNCHANGED")
+        launcher.annotate_capacity_refusal(error,"STORE_RESERVATION_CAPTURE",1,3,format(2,"032x"))
+        error.__dict__["_capacity_scope_data"][field]=replacement
+        self.assertIsNone(launcher.capacity_refusal_data(error));self.assertEqual(error.args,("UNCHANGED",))
+    check("capacity_diagnostic_rejects_"+label,run)
+
+def diagnostic_extra_or_missing(self):
+    error=ValueError("UNCHANGED")
+    self.assertIsNone(launcher.capacity_refusal_data(error))
+    for change in ("extra","missing"):
+        launcher.annotate_capacity_refusal(error,"STORE_RESERVATION_CAPTURE",1,3,format(2,"032x"))
+        value=error.__dict__["_capacity_scope_data"]
+        if change=="extra":value["privatePath"]="/declared/private/record.json"
+        else:value.pop("authority")
+        self.assertIsNone(launcher.capacity_refusal_data(error))
+    launcher.annotate_capacity_refusal(error,"CAPACITY_PREDICATE",None,3)
+    error.__dict__["_capacity_scope_data"]["storeIndex"]=0
+    self.assertIsNone(launcher.capacity_refusal_data(error))
+check("capacity_diagnostic_rejects_extra_missing_and_predicate_identity",diagnostic_extra_or_missing)
+
+def diagnostic_no_hooks(self):
+    entered=[]
+    class UnknownError(ValueError):
+        def __getattribute__(self,name):
+            entered.append(name);raise AssertionError("NO_EXCEPTION_SUBCLASS_HOOK")
+    error=UnknownError()
+    self.assertIs(launcher.annotate_capacity_refusal(error,"STORE_RESERVATION_CAPTURE",1,3,format(2,"032x")),error)
+    self.assertIsNone(launcher.capacity_refusal_data(error))
+    class UnknownDict(dict):
+        def __iter__(self):entered.append("iter");raise AssertionError("NO_DICT_SUBCLASS_HOOK")
+        def __len__(self):entered.append("len");raise AssertionError("NO_DICT_SUBCLASS_HOOK")
+    plain=ValueError("UNCHANGED");plain.__dict__["_capacity_scope_data"]=UnknownDict()
+    self.assertIsNone(launcher.capacity_refusal_data(plain))
+    class UnknownText(str):
+        def __eq__(self,other):entered.append("eq");raise AssertionError("NO_TEXT_SUBCLASS_HOOK")
+    launcher.annotate_capacity_refusal(plain,"STORE_RESERVATION_CAPTURE",1,3,format(2,"032x"))
+    plain.__dict__["_capacity_scope_data"]["authority"]=UnknownText("NONE")
+    self.assertIsNone(launcher.capacity_refusal_data(plain))
+    self.assertEqual(entered,[])
+check("capacity_diagnostic_does_not_enter_exception_dict_or_text_subclass_hooks",diagnostic_no_hooks)
+
+def diagnostic_key_hook(self):
+    entered=[]
+    class UnknownKey:
+        active=False
+        def __hash__(self):
+            if self.active:entered.append("hash");raise AssertionError("NO_UNKNOWN_KEY_HASH")
+            return 7
+        def __eq__(self,other):entered.append("eq");raise AssertionError("NO_UNKNOWN_KEY_EQUALITY")
+    key=UnknownKey();value=diagnostic_expected("STORE_RESERVATION_CAPTURE",1)
+    value.pop("authority");value[key]="NONE";key.active=True
+    error=ValueError("UNCHANGED");error.__dict__["_capacity_scope_data"]=value
+    self.assertIsNone(launcher.capacity_refusal_data(error));self.assertEqual(entered,[])
+check("capacity_diagnostic_rejects_nonstring_key_before_hash_or_equality_hooks",diagnostic_key_hook)
+
+def diagnostic_bad_annotation(self):
+    for args in [
+        ("STORE_RESERVATION_CAPTURE",True,3,format(2,"032x")),
+        ("STORE_RESERVATION_CAPTURE",1,True,format(2,"032x")),
+        ("STORE_RESERVATION_CAPTURE",1,3,"A"*32),
+        ("STORE_RESERVATION_CAPTURE",3,3,format(2,"032x")),
+        ("CAPACITY_PREDICATE",0,3,None),
+        ("CAPACITY_PREDICATE",None,3,format(2,"032x")),
+        ("UNKNOWN",1,3,format(2,"032x"))]:
+        error=ValueError("UNCHANGED");self.assertIs(launcher.annotate_capacity_refusal(error,*args),error)
+        self.assertIsNone(launcher.capacity_refusal_data(error));self.assertEqual(error.__dict__,{})
+check("invalid_capacity_annotation_is_inert_without_replacing_original_failure",diagnostic_bad_annotation)
+
+def declared_cli_diagnostic(error=None):
+    tree=ast.parse((repo/"qualification/run-capacity-native-current-offered-v5.local.py").read_bytes())
+    guard=next(node for node in tree.body if isinstance(node,ast.If)and isinstance(node.test,ast.Compare)
+        and isinstance(node.test.left,ast.Name)and node.test.left.id=="__name__")
+    stderr=io.StringIO()
+    def main():
+        if error is not None:raise error
+        return 0
+    def exit_once(code):raise SystemExit(code)
+    context=dict(__name__="__main__",main=main,sys=types.SimpleNamespace(exit=exit_once,stderr=stderr),
+        re=launcher.re,json=json,capacity_refusal_data=launcher.capacity_refusal_data)
+    try:exec(compile(ast.Module(body=[guard],type_ignores=[]),"<actual-current-cli-guard>","exec"),context)
+    except SystemExit as stopped:return stopped.code,stderr.getvalue()
+    raise AssertionError("EXACT_CLI_EXIT_REQUIRED")
+
+def diagnostic_actual_cli(self):
+    for error in (ValueError("UNCHANGED_ORIGINAL_CODE"),OSError(13,"DECLARED_PRIVATE_MESSAGE","/declared/private/record.json")):
+        launcher.annotate_capacity_refusal(error,"STORE_RESERVATION_CAPTURE",1,3,format(2,"032x"))
+        code,text=declared_cli_diagnostic(error);self.assertEqual(code,1)
+        event=json.loads(text);self.assertEqual(event["event"],"CURRENT_OFFERED_V5_REFUSED_OR_UNKNOWN")
+        self.assertEqual(event["code"],"UNCHANGED_ORIGINAL_CODE"if type(error)is ValueError else"PRESERVE_CURRENT_PRIVATE_RECEIPTS")
+        self.assertEqual(event["errorType"],type(error).__name__)
+        self.assertEqual(event["capacityLocation"],diagnostic_expected("STORE_RESERVATION_CAPTURE",1))
+        self.assertFalse(event["automaticRetry"]);self.assertEqual(event["authority"],"NONE")
+        self.assertNotIn("private",text);self.assertNotIn("MESSAGE",text);self.assertEqual(len(text.splitlines()),1)
+check("actual_cli_guard_emits_bounded_location_without_original_private_oserror",diagnostic_actual_cli)
+
+def diagnostic_cli_absent_or_success(self):
+    code,text=declared_cli_diagnostic(ValueError("UNCHANGED_CODE"));self.assertEqual(code,1)
+    self.assertNotIn("capacityLocation",json.loads(text))
+    code,text=declared_cli_diagnostic();self.assertEqual(code,0);self.assertEqual(text,"")
+check("actual_cli_guard_keeps_legacy_refusal_and_success_without_diagnostic",diagnostic_cli_absent_or_success)
+
+def diagnostic_success(self):
+    base_bytes=resource.resource_plan(WORKLOAD)["requiredFreeBytesBeforeOtherReservations"]
+    value=declared_capacity_inventory([1,1,1],[base_bytes+100])
+    self.assertIsNone(value["error"]);self.assertEqual(value["result"]["reservedBytes"],3)
+    self.assertNotIn("capacityLocation",value["result"]);self.assertEqual(value["events"]["reservations"],[0,1,2])
+    summary["capacityDiagnosticBoundary"]=dict(version=1,storeIdentifier="SHA256_OF_VALIDATED_STORE_ID",
+        privatePathsIncluded=False,exceptionIdentityAndArgumentsPreserved=True,admissionGranted=False,authority="NONE")
+check("complete_capacity_success_has_unchanged_result_and_no_diagnostic",diagnostic_success)
+
+
+
+def diagnostic_exception_attribute_map(self):
+    entered=[]
+    class UnknownAttributes(dict):
+        def get(self,*args):entered.append("get");raise AssertionError("NO_ATTRIBUTE_MAP_GET_HOOK")
+        def __setitem__(self,*args):entered.append("set");raise AssertionError("NO_ATTRIBUTE_MAP_SET_HOOK")
+    error=ValueError("UNCHANGED");error.__dict__=UnknownAttributes()
+    self.assertIsNone(launcher.capacity_refusal_data(error))
+    self.assertIs(launcher.annotate_capacity_refusal(error,"STORE_RESERVATION_CAPTURE",1,3,format(2,"032x")),error)
+    self.assertEqual(error.args,("UNCHANGED",));self.assertEqual(entered,[])
+    self.assertIs(type(error.__dict__),UnknownAttributes)
+check("capacity_diagnostic_rejects_exception_attribute_map_subclass_before_hooks",diagnostic_exception_attribute_map)
+
 
 if __name__=="__main__":
     output=io.StringIO();result=unittest.TextTestRunner(stream=output,verbosity=0).run(unittest.defaultTestLoader.loadTestsFromTestCase(Pipeline))
