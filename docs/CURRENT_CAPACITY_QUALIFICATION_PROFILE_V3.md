@@ -1,14 +1,16 @@
 # Current P2 and capacity qualification profile V3
 
-V3 is a new opt-in, source-pinned local lane. It combines 13 current profile
+V3 is a source-pinned current lane selected by the main Test workflow. It combines 13 current profile
 contract cases, one accepted-receipt case, seven abort/drain composition cases,
 seven dependency-text contract cases and 80 actual capacity-window component
 cases: **108 tests** over **22 selected source files**.
 
-The prior V1/V2 manifests, validators, launchers, tests, results, package scripts
-and active workflow remain unchanged. This is not broad test discovery.
-The current npm test and automatic main workflow still select the reviewed
-27-control V2 lane. V3 hosted execution is not established by this local result.
+The prior V1/V2 manifests, validators, launchers, tests, results and package
+scripts remain unchanged. npm test still selects the 27-control V2 lane.
+The main Test workflow explicitly selects V3 after a separate hosted-scope
+decision. It does not discover other tests or install dependencies. The retained
+local result below predates this workflow switch and does not prove hosted
+execution; each hosted outcome belongs to its own exact workflow commit.
 
 ## Closed selection and actual local result
 
@@ -59,7 +61,7 @@ The new value is observed function-entry allocation length, not measured heap,
 RSS, OS allocation, disk I/O, APFS reclaim or speedup. The single extra regression
 inspection is included in the 108 tests.
 
-## Reproduction and proposed hosted selection
+## Reproduction and hosted selection
 
 The [reviewed workflow diff](../qualification/current-p2-capacity-profile-v3.workflow.diff)
 contains the exact restricted Node argv used locally, with a portable node
@@ -67,14 +69,23 @@ command in place of the verified local runtime path. Its allow-read paths and
 flags can be used from the repository root. Append --plan to inspect the
 selection without executing test entries. The runner accepts no case filter.
 
-The diff is DATA only and has not been applied. It proposes replacing the one
-existing workflow job's npm test command with this explicit V3 command, without
-an install, extra job, altered timeout, expanded permissions or action/runtime
-upgrade. Checkout/setup/clean-tree checks and action pins remain preserved.
-A new hosted-scope decision is required before this switch: existing authority
-covers the unchanged 27-control CI selection.
+The retained diff records the exact workflow switch applied after explicit
+approval of this 108-case CI scope. It replaces the one existing job's npm test
+command with the restricted V3 command, without an install, extra job, altered
+timeout, expanded permissions or action/runtime upgrade. Checkout/setup/clean-tree
+checks and action pins remain preserved. CI selection grants no native or pilot
+authority.
+
+The retained actual-local result is a pre-activation snapshot at main parent
+98cef878b41e7ee5814ea04d161e1c862855574b and development parent
+6716859ef30314ce66072f9ed842d5345ea6db9b. Its workflowUnchanged/applied=false
+fields describe that local attempt and are intentionally not relabeled.
+The sourceBase remains the reviewed pre-profile base; exact source hashes,
+rather than an ancestry label, admit every execution. A hosted run must report
+its own actual head and job outcome separately.
 
 See the [source-bound local result](../qualification/current-p2-capacity-profile-v3.actual-local-result.json).
-P0 now has a broader locally executed candidate. Actual V3 hosted CI, full P1
-SDK/HTTPS/SQLite composition, native P2 closure/recovery, economic pilot and
-measured native P4 capacity remain separate acceptance gates.
+P0 now has a broader locally executed selection and an explicit hosted entry.
+This document does not predeclare a successful CI run. Full P1 SDK/HTTPS/SQLite
+composition, native P2 closure/recovery, economic pilot and measured native P4
+capacity remain separate acceptance gates.
