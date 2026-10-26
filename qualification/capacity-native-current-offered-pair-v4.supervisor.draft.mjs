@@ -132,11 +132,18 @@ export function createNativeCapacityCurrentOfferedPairV4(options){
         child.send(message,undefined,{keepOpen:false},error=>{if(error)bad();});}catch{bad();}
       return cap.promise;
     }
-    function stream(cap){const pieces=[];let size=0,retained=0,overflow=false;const digest=createHash('sha256');
-      return{eof:false,add(bytes){size+=bytes.length;if(overflow)return;const part=Buffer.from(bytes.subarray(0,Math.max(0,cap-retained)));
-        retained+=part.length;pieces.push(part);digest.update(part);if(size>cap){overflow=true;bad();}},
+    function stream(cap){let prefix=null,size=0,retained=0,overflow=false;const digest=createHash('sha256');
+      return{eof:false,add(bytes){size+=bytes.length;if(overflow)return;
+        const count=Math.min(bytes.length,cap-retained);
+        if(count>0){
+          if(prefix===null)prefix=Buffer.alloc(cap);
+          prefix.set(bytes.subarray(0,count),retained);
+          digest.update(prefix.subarray(retained,retained+count));retained+=count;
+        }
+        if(size>cap){overflow=true;bad();}},
       facts(){return F({observedBytes:size,retainedBytes:retained,overflow,eof:this.eof,prefixSha256:digest.copy().digest('hex')});},
-      privateBytes(){return Buffer.concat(pieces,retained);}};}
+      // Copy only on an explicit snapshot; never return the private backing.
+      privateBytes(){return prefix===null?Buffer.alloc(0):Buffer.from(prefix.subarray(0,retained));}};}
     return F({command,exit:exit.promise,snapshot:F(()=>F({role:selected.role,exited,closed,disconnected,exitCode,signal,fault,
       pending:pending.size,stdout:out.facts(),stderr:err.facts()})),
       operationTimings:F(()=>F([...operationTimings])),

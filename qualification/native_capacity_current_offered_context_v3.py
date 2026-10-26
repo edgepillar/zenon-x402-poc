@@ -13,9 +13,9 @@ import stat
 import sys
 
 PARENT="qualification/native_capacity_current_offered_parent_v4.py"
-PARENT_SHA="7740c8b67bf876a8b58d680d1b9e8664e7d7dd6b8f9017f6572969478cf5e6d1"
+PARENT_SHA="d9c8721836c1a59d246aa388826ca589f98a7bdc391a3851cb0cdcd32058f3cb"
 SELECTION="qualification/capacity-native-current-offered-parent-v4.inputs.json"
-SELECTION_SHA="19735c4633cfe7b851d4286795ce9253d5cb14252273544c8417a6c4b7180d27"
+SELECTION_SHA="d65741b39885872f5d71ed3d3dbf7992a46966f66c64328850b2536dc91e0b83"
 def require(value,code):
     if not value:raise ValueError(code)
 def identity(s):
