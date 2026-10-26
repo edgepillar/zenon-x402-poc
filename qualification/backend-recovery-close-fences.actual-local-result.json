@@ -1,0 +1,164 @@
+{
+  "schemaVersion": 1,
+  "status": "CURRENT_RECOVERY_CORE_COMPONENTS_PASSED_NATIVE_BINDING_SOURCE_AND_PARSE_ONLY",
+  "date": "2026-10-26",
+  "reviewedMain": "8cb79c1738c5811fd053c615580e89ea51f7bb84",
+  "reviewedDevelopment": "633d1cac0ae214571227df4ba7fc47088a78ac98",
+  "currentSourceInputs": [
+    {
+      "path": "src/service-credit-custodied-backend-recovery-client.js",
+      "bytes": 25033,
+      "LF": 492,
+      "sha256": "c588141db56295a4770f0b1392a7c5b541b9b01bd8140fd036c8d883f98128a7",
+      "gitBlob": "926db25bd01768cc459b5f16b6fd3abec837ceb3"
+    },
+    {
+      "path": "src/service-credit-custodied-backend-recovery-core.js",
+      "bytes": 9518,
+      "LF": 215,
+      "sha256": "54afa41816c0b971d49b80281bd0391563efa31644077cfa6204714eca74659a",
+      "gitBlob": "533a759d6b8735d57b5d15bce241cf43048ecddf"
+    },
+    {
+      "path": "qualification/backend-recovery-close-fences.behavior.mjs",
+      "bytes": 16636,
+      "LF": 232,
+      "sha256": "718a1c1f7e9650fc845ae37e960ec0661f02a992a37ebe80647ca8277d230a5c",
+      "gitBlob": "0a7c9528a56a8d84f9c5c3482e1252251a607e85"
+    },
+    {
+      "path": "scripts/run-current-backend-recovery-close-fences.mjs",
+      "bytes": 1099,
+      "LF": 21,
+      "sha256": "c92569c46696d6aced2d20511e21b6941dfa018f801b7820766fd3a8f070b579",
+      "gitBlob": "fb3b81b5fb8e9468a2bda6ae4e195b1fbcc53077"
+    }
+  ],
+  "before": {
+    "actualCommand": {
+      "actualExit": 1,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 0,
+      "reason": null,
+      "stdoutBytes": 11610,
+      "stdoutSha256": "8ab9923ce6b334cb7be0c4918f7a3cbb294c7941a1d63d056b85ca87320f5102",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "totals": {
+      "tests": 35,
+      "pass": 31,
+      "fail": 4,
+      "skipped": 0,
+      "cancelled": 0,
+      "todo": 0
+    },
+    "failedTestNames": [
+      "closing inside the first V6 checkpoint must fence the first local read",
+      "closing inside the active-state snapshot must fence later recovery reads",
+      "standalone checkpoint must not escape when its child closes the connection",
+      "standalone checkpoint holds the recovery-read lock during child entry"
+    ],
+    "unchangedExtractionMatchedOriginalPrivateConnectionBody": true
+  },
+  "after": {
+    "actualCommand": {
+      "actualExit": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 0,
+      "reason": null,
+      "stdoutBytes": 7191,
+      "stdoutSha256": "128417d6495d0be38e814da5694e51cadf4b05ff46f1dc3857a9a10f33107d90",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "totals": {
+      "tests": 35,
+      "pass": 35,
+      "fail": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "todo": 0
+    },
+    "failedTestNames": []
+  },
+  "fixedBoundaries": [
+    "Closing during the pre-read client active-state snapshot prevents subsequent recovery child calls.",
+    "Closing during the first independent V6 checkpoint read prevents the following local-original read.",
+    "A standalone checkpoint cannot be returned after its child closes the recovery connection.",
+    "A standalone checkpoint holds the shared recovery-read lock until its child call returns."
+  ],
+  "originalBindingPreserved": {
+    "nativePublicFactories": 15,
+    "sharedConnectionCallSites": 4,
+    "acquisitionAndStoreOwnershipChanged": false,
+    "actualRootNodeParserCommand": {
+      "actualExit": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 0,
+      "reason": null,
+      "stdoutBytes": 0,
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "actualNativeRootImports": 0,
+    "literalRelativeSourceClosureFiles": 24,
+    "literalRelativeSourceClosureBytes": 603124
+  },
+  "preservedBehavior": {
+    "freshLocalReads": 2,
+    "freshV6CheckpointReads": 2,
+    "exactEightOriginalFieldsForwarded": true,
+    "independentPinsReusedWithoutLearningFromBackend": true,
+    "originalProofForwardedWithoutRegeneration": true,
+    "fundingIntentUncertaintyResponseRereadFences": true,
+    "backendSuccessDoesNotClearLocalUncertainty": true,
+    "sameChildClosePromiseReturned": true,
+    "backendStoreClosedByThisCore": false,
+    "defaultBuyerChanged": false
+  },
+  "scope": {
+    "localCases": 35,
+    "actualProductionCoreImported": true,
+    "declaredChildCapabilities": true,
+    "backendProofAuthenticityQualified": false,
+    "actualSQLiteQualified": false,
+    "nativeApplicationQualified": false,
+    "liveRecoveryOrRestartQualified": false,
+    "SDKImported": false,
+    "SQLite": false,
+    "keysOrSignatures": false,
+    "nonceSearch": false,
+    "sockets": false,
+    "managedTasksCreated": 0,
+    "approvedNative123SourceGraphChanged": false,
+    "unconsumedV6NativeAllowanceUsed": false,
+    "existing108CaseHostedProfileChanged": false,
+    "new35CasesHosted": false,
+    "physicalDurabilityQualified": false,
+    "serviceDeliveryQualified": false,
+    "economicPilotQualified": false,
+    "productionQualified": false
+  },
+  "existingBranchDependencyReview": {
+    "path": "src/service-credit-custodied-sqlite-http-client.js",
+    "existingMainGitBlob": "86ac76593fa9c9a6b39bb6a39c1a2ef994aff7f2",
+    "existingDevelopmentGitBlob": "e8082803bb8f0f2c780d660c897bfb6856ba7932",
+    "legacyFactoryNames": [
+      "openServiceCreditCustodiedSqliteHttpClient",
+      "openServiceCreditCustodiedSqliteHttpClientV3",
+      "openServiceCreditCustodiedSqliteHttpClientV4",
+      "openServiceCreditCustodiedSqliteHttpClientV5",
+      "openServiceCreditCustodiedSqliteHttpClientV6"
+    ],
+    "legacyFactoryBodiesIdentical": true,
+    "separateGuardedV6FactoryUsedByRecovery": false,
+    "dependencyBlobsChangedByPatch": false,
+    "wholeNativeIntegrationExecuted": false,
+    "conclusion": "The old recovery root itself is byte-identical on both branches. All five existing SQLite HTTP factories selected by it retain identical bodies; the development-only native-close-guard extension is not selected by this recovery binding. Preserve each branch's existing dependency blob; qualify the common production core and source/parser binding only."
+  }
+}
