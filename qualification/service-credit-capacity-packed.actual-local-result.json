@@ -1,0 +1,163 @@
+{
+  "event": "PACKED_CAPACITY_RECORDER_AND_GENUINE_OFFERED_CHAIN_ACTUAL_LOCAL_COMPONENT_RESULT",
+  "date": "2026-10-26",
+  "developmentSourceParent": "f8fb3d30b8f4facbd53a73bf4477fb0b3aef3568",
+  "mainSourceParent": "38c4a5dd4e470f839270df14f27a94bc85a09a20",
+  "sourcePins": [
+    {
+      "path": "src/service-credit-capacity-recorder-packed.js",
+      "bytes": 11763,
+      "LF": 253,
+      "sha256": "bd15ef2f4ba1ab7d340f0a66934bfc12ad7af392379f63c538dffebcb37861d1",
+      "gitBlob": "712018855423009cd1c0ce8e5237fe3c201f898f"
+    },
+    {
+      "path": "src/service-credit-capacity-offered-window-packed-owner-core.js",
+      "bytes": 27649,
+      "LF": 522,
+      "sha256": "3d1af0000f0367993179304353be01acc4bcc8eba7749fa558f06bc79cc35ad0",
+      "gitBlob": "845b89486da508caf7b93c5603070fa07db21acf"
+    },
+    {
+      "path": "src/service-credit-capacity-offered-workload-packed-owner-core.js",
+      "bytes": 26765,
+      "LF": 482,
+      "sha256": "306599767cad346528b6358dea522823ffa74512752694f725a8e88920481e10",
+      "gitBlob": "4ba4176c6d817d7faca88e16795e8e2d540e5805"
+    },
+    {
+      "path": "qualification/service-credit-capacity-packed-fixtures.mjs",
+      "bytes": 7469,
+      "LF": 126,
+      "sha256": "c76a53232da8ed9ec104cd67b446d4b06346f268f7a10a681b6acf17d7645cc3",
+      "gitBlob": "2715e7b8aedcaa99967180c1eac84e48eac656a4"
+    },
+    {
+      "path": "qualification/service-credit-capacity-packed.behavior.mjs",
+      "bytes": 13886,
+      "LF": 226,
+      "sha256": "56c582837c6222bab3a0fb109ebe9ec3b53896ebf54122e5548bd4e1e4f0abbd",
+      "gitBlob": "91f934da859bbbad1796e94228611fec530a4405"
+    }
+  ],
+  "unchangedProtectedFiles": 394,
+  "runtime": {
+    "node": "24.19.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "nodeBytes": 121304480,
+    "nodeSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+    "previousHashReusedWithExactUnchangedFileIdentity": true,
+    "newBinaryHashReads": 0
+  },
+  "firstAttempt": {
+    "actual": {
+      "actualExit": 1,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 0,
+      "reason": null,
+      "elapsedSeconds": 0.04008304200033308,
+      "stdoutBytes": 0,
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrBytes": 693,
+      "stderrSha256": "1d56dfdee5d4aef2ab4b73d031ff097b29a4929a00606d3d9e6d880b0e14d55f"
+    },
+    "selectedCasesEntered": 0,
+    "selectionEnvironmentMissing": true,
+    "refusal": "EXACT_PACKED_CAPACITY_DATA_SELECTION_REQUIRED",
+    "failedEvidencePreserved": true
+  },
+  "successfulAttempt": {
+    "actual": {
+      "actualExit": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 0,
+      "reason": null,
+      "elapsedSeconds": 1.42243254099958,
+      "stdoutBytes": 5280,
+      "stdoutSha256": "53632e29abd860f23403b4d84e22825ba0c917f9dcea46cd9a2417a9a21269be",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "testsRun": 29,
+    "testsCompleted": 29,
+    "names": [
+      "empty reports and deeply frozen public records preserve the existing schema",
+      "all 364 short outcome streams retain exact independent terminal and successful ranks",
+      "64 concurrent out-of-order completions preserve FUNDING ranks",
+      "64 concurrent out-of-order completions preserve FUNDED_CALL ranks",
+      "64 concurrent out-of-order completions preserve LEDGER_TRANSACTION ranks",
+      "exact duration survives the success bit at 0",
+      "exact duration survives the success bit at 1",
+      "exact duration survives the success bit at 9007199254740993",
+      "exact duration survives the success bit at 340282366920938463463374607431768211455",
+      "full 12288-sample all-success recording halves duration references and sort calls",
+      "a full rejected-only phase needs one sort and produces an empty success series",
+      "limits unknown duplicate finish and finalization retain exact refusal states",
+      "configuration balance and accessor boundaries are unchanged",
+      "window packed chain is inert then completes the genuine source-owner lifecycle",
+      "window packed chain preserves rejected source outcomes and denominators",
+      "window packed chain preserves UNKNOWN with one original and no replacement",
+      "window packed chain preserves unresolved original at its bounded deadline",
+      "window packed chain preserves stop and delegated ownership rules",
+      "window packed chain preserves late timer observations",
+      "workload packed chain is inert then completes the genuine source-owner lifecycle",
+      "workload packed chain preserves rejected source outcomes and denominators",
+      "workload packed chain preserves UNKNOWN with one original and no replacement",
+      "workload packed chain preserves unresolved original at its bounded deadline",
+      "workload packed chain preserves stop and delegated ownership rules",
+      "workload packed chain preserves late timer observations",
+      "packed workload keeps an unresolved delegated close HELD",
+      "packed workload preserves malformed close uncertainty",
+      "window full 16-lane 4096-offer composition has identical complete reports",
+      "workload full 16-lane 4096-offer composition has identical complete reports"
+    ],
+    "exhaustiveOutcomeStreams": 364,
+    "ownerCompositionsCompared": 16,
+    "fullBudget": {
+      "samples": 12288,
+      "durationReferencesBefore": 24576,
+      "durationReferencesAfter": 12288,
+      "sortCallsBefore": 6,
+      "sortCallsAfter": 3,
+      "finalDurationReferences": 0,
+      "heapBytesMeasured": false
+    },
+    "allBeforeAfterInputsMatched": true
+  },
+  "implementation": {
+    "singlePackedBigIntPerSettledSample": true,
+    "successFlagBits": 1,
+    "maximumPackedBits": 129,
+    "oneSortPerNonemptyPhase": true,
+    "successfulRanksDerivedInOnePass": true,
+    "successfulDurationArrayAllocated": false,
+    "exactNearestRankAndBigIntPreserved": true,
+    "publicReportSchemaUnchanged": true,
+    "currentLegacyModulesModified": false,
+    "bothNewOwnerCompositionsUsePackedRecorder": true,
+    "existingNativeProfilesSwitched": false
+  },
+  "qualification": {
+    "actualNodeComponentsExecuted": true,
+    "callerClocksAndLaneResultsDeclared": true,
+    "physicalHeapBytesMeasured": false,
+    "sourceCallbacksAreNotNativeAuthentication": true,
+    "nativeApplicationExecutions": 0,
+    "SDKImported": false,
+    "SQLite": false,
+    "sockets": false,
+    "keysOrSignatures": false,
+    "nonce": false,
+    "storageRootRead": false,
+    "managerImported": false,
+    "managedTasksCreated": 0,
+    "profilesWritten": 0,
+    "finiteNativeAllowancesConsumed": false,
+    "newNativeAuthorityGranted": false,
+    "productionQualified": false,
+    "authority": "NONE"
+  }
+}
