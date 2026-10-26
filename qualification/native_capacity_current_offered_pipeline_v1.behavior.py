@@ -409,11 +409,71 @@ mutations=[
 ("changed_prefix_completion",["result","core","prefixRecording","phases","FUNDED_CALL","succeeded"],0),
 ("changed_measured_completion",["result","core","offeredMeasurement","dispatchedCallRecording","phases","FUNDED_CALL","entered"],1),
 ("unknown_aggregate",["result","core","prefixRecording","recordingIssue"],"UNKNOWN")]
+# Every original aggregate position is checked; recomputing the outer receipt
+# digest cannot convert malformed wire DATA into a matching current record.
+strict_records=[
+ ("prefix",["result","core","prefixRecording"]),
+ ("post_prefix",["result","core","postStopPrefixLedgerRecording"]),
+ ("measured",["result","core","offeredMeasurement","dispatchedCallRecording"]),
+ ("start_delay",["result","core","offeredMeasurement","sourceStartDelayRecording"]),
+ ("post_measurement",["result","core","offeredMeasurement","postStopLedgerRecording"])]
+strict_edits=[
+ ("boolean_version",["capacityRecorderVersion"],True),
+ ("wrong_scope",["scope"],"WRONG"),
+ ("wrong_clock",["clock"],"WRONG"),
+ ("wrong_percentile_method",["percentileMethod"],"WRONG"),
+ ("boolean_pending",["pendingObservations"],False),
+ ("boolean_refused",["refusedStarts"],False),
+ ("stopped_recording",["stopReason"],"outcome_unknown"),
+ ("boolean_sample_limit",["limits","maxSamplesPerPhase"],True),
+ ("boolean_in_flight_limit",["limits","maxInFlightPerPhase"],True),
+ ("changed_original_sample_limit",["limits","maxSamplesPerPhase"],63),
+ ("negative_balance_samples",["ledgerBalanceChecks","samples"],-1),
+ ("boolean_balance_samples",["ledgerBalanceChecks","samples"],False),
+ ("boolean_balance_mismatches",["ledgerBalanceChecks","mismatches"],False),
+ ("balance_result_mismatch",["ledgerBalanceChecks","result"],"MATCHES_CALLER_DECLARED_EXPECTATIONS"),
+ ("extra_recording_field",["extra"],False),
+ ("boolean_phase_pending",["phases","FUNDING","pending"],False),
+ ("boolean_phase_peak",["phases","FUNDING","peakInFlight"],False),
+ ("extra_phase_field",["phases","FUNDING","extra"],0)]
+for tag,root_path in strict_records:
+    for label,at,value in strict_edits:
+        mutations.append(("strict_"+tag+"_"+label,root_path+at,value))
+    strict_record_snapshot=outer_fixture()
+    for key in root_path:strict_record_snapshot=strict_record_snapshot[key]
+    mutations.append(("strict_"+tag+"_state_mismatch",root_path+["recordingState"],"COMPLETE"if strict_record_snapshot["recordingState"]=="EMPTY"else"EMPTY"))
+    mutations.append(("strict_"+tag+"_null_clock",root_path+["clock"],None))
+    for phase in("FUNDING","FUNDED_CALL","LEDGER_TRANSACTION"):
+        fraction=None if strict_record_snapshot["phases"][phase]["settled"]else dict(numerator=0,denominator=0)
+        mutations.append(("strict_"+tag+"_fraction_"+phase,root_path+["phases",phase,"nonSuccessFraction"],fraction))
+mutations.extend([
+ ("strict_integer_funded",["result","core","lanes",0,"funded"],1),
+ ("strict_boolean_warmup_count",["result","core","lanes",0,"warmupCompleted"],True),
+ ("strict_integer_close_entered",["result","core","lanes",0,"closeEntered"],1),
+ ("strict_forged_denominator",["result","core","prefixRecording","phases","FUNDING","nonSuccessFraction","denominator"],99),
+ ("strict_boolean_denominator",["result","core","prefixRecording","phases","FUNDING","nonSuccessFraction","denominator"],True),
+ ("strict_boolean_fraction_numerator",["result","core","prefixRecording","phases","FUNDING","nonSuccessFraction","numerator"],False),
+ ("strict_empty_span_with_observations",["result","core","prefixRecording","observedSpanNanoseconds"],None),
+ ("strict_span_below_latency",["result","core","prefixRecording","observedSpanNanoseconds"],"0"),
+ ("strict_span_without_observations",["result","core","postStopPrefixLedgerRecording","observedSpanNanoseconds"],"1"),
+ ("strict_fraction_on_empty_phase",["result","core","postStopPrefixLedgerRecording","phases","FUNDING","nonSuccessFraction"],dict(numerator=0,denominator=1)),
+ ("strict_mismatched_success_series",["result","core","prefixRecording","phases","FUNDING","successfulLatencyNanoseconds"],
+    dict(samples=1,min="0",p50="0",p95="0",p99="0",max="0"))])
 for label,path,value in mutations:
     def run(self,path=path,value=value):
         v=outer_fixture();setat(v,path,value)
         with self.assertRaises((ValueError,KeyError)):validate_fixture(v)
     check("current_outer_recomputed_receipt_digest_cannot_hide_"+label,run)
+def strict_omission(name,path,field):
+    def run(self):
+        v=outer_fixture();record=v
+        for key in path:record=record[key]
+        del record[field]
+        with self.assertRaises(ValueError):validate_fixture(v)
+    check("current_outer_refuses_missing_"+name,run)
+for tag,root_path in strict_records:
+    strict_omission(tag+"_recorder_clock",root_path,"clock")
+    strict_omission(tag+"_phase_fraction",root_path+["phases","FUNDING"],"nonSuccessFraction")
 def missing_child(self):
     v=outer_fixture();v["evidence"][0]["pairSnapshot"]["children"].pop()
     with self.assertRaises(ValueError):validate_fixture(v)

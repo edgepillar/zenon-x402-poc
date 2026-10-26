@@ -334,26 +334,62 @@ def validate_metric(value,samples=None):
     return value
 
 
-def validate_recording(value,expected=None):
-    """Check declared aggregates without claiming unavailable raw timing proof."""
-    require(type(value)is dict and value.get("recordingState")in("EMPTY","COMPLETE")
-        and value.get("recordingIssue")is None and value.get("pendingObservations")==0
-        and value.get("refusedStarts")==0 and value.get("authority")=="NONE"
-        and value.get("authenticatedExecution")is False and value.get("liveOrProduction")is False
-        and value.get("capacityQualification")=="NOT_ESTABLISHED"
-        and value.get("ledgerCorrectness")=="NOT_ESTABLISHED","COMPLETE_SOURCE_AGGREGATE_RECORDING")
-    phases=value.get("phases");fields(phases,("FUNDING","FUNDED_CALL","LEDGER_TRANSACTION"),"ALL_RECORDED_PHASES")
+def validate_recording(value,expected=None,limits=None):
+    """The exact clean recorder-v1 wire contract, not raw timing proof.
+
+    Python bool/int equality must never normalize recorder versions, counters,
+    rational denominators or owner facts. Scalar summaries remain declarations.
+    """
+    fields(value,("capacityRecorderVersion","scope","clock","percentileMethod","recordingState","recordingIssue",
+        "stopReason","limits","refusedStarts","pendingObservations","observedSpanNanoseconds","phases",
+        "ledgerBalanceChecks","capacityQualification","ledgerCorrectness","authenticatedExecution","liveOrProduction","authority"),
+        "EXACT_SOURCE_RECORDER_V1_FIELDS")
+    fixed=dict(capacityRecorderVersion=1,scope="CALLER_DECLARED_OBSERVATIONS_ONLY",
+        clock="CALLER_SUPPLIED_MONOTONIC_NANOSECONDS",percentileMethod="NEAREST_RANK",recordingIssue=None,stopReason=None,
+        capacityQualification="NOT_ESTABLISHED",ledgerCorrectness="NOT_ESTABLISHED",
+        authenticatedExecution=False,liveOrProduction=False,authority="NONE")
+    require(all(same(value[k],v)for k,v in fixed.items()),"EXACT_CLEAN_RECORDER_SCHEMA_AND_AUTHORITY")
+    integer(value["pendingObservations"],0,0,"EXACT_ZERO_PENDING_OBSERVATIONS")
+    integer(value["refusedStarts"],0,0,"EXACT_ZERO_REFUSED_STARTS")
+    bound=value["limits"];fields(bound,("maxSamplesPerPhase","maxInFlightPerPhase"),"EXACT_SOURCE_RECORDER_LIMITS")
+    integer(bound["maxSamplesPerPhase"],1,4096,"EXACT_SOURCE_SAMPLE_LIMIT")
+    integer(bound["maxInFlightPerPhase"],1,64,"EXACT_SOURCE_IN_FLIGHT_LIMIT")
+    require(bound["maxInFlightPerPhase"]<=bound["maxSamplesPerPhase"],"SOURCE_RECORDER_LIMIT_ORDER")
+    if limits is not None:require(same(bound,limits),"RECORDER_LIMITS_MATCH_ORIGINAL_WORKLOAD")
+    phases=value["phases"];fields(phases,("FUNDING","FUNDED_CALL","LEDGER_TRANSACTION"),"ALL_RECORDED_PHASES")
+    total=0
     for name,row in phases.items():
-        require(type(row)is dict,"DECLARED_PHASE")
-        for key in("entered","settled","pending","succeeded","rejected","unknown","peakInFlight"):
-            integer(row.get(key),0,4096,"EXACT_PHASE_COUNTER")
+        fields(row,("entered","settled","pending","succeeded","rejected","unknown","peakInFlight","nonSuccessFraction",
+            "terminalLatencyNanoseconds","successfulLatencyNanoseconds"),"EXACT_SOURCE_PHASE_FIELDS")
+        for key in("entered","settled","pending","succeeded","rejected","unknown"):
+            integer(row[key],0,bound["maxSamplesPerPhase"],"EXACT_PHASE_COUNTER")
         require(row["entered"]==row["settled"]==row["succeeded"] and row["pending"]==row["rejected"]==row["unknown"]==0,
             "COMPLETE_SUCCESSFUL_PHASE_DATA")
-        if expected is not None and name in expected:integer(row["entered"],expected[name],expected[name],"CROSS_CHECKED_PHASE_COMPLETIONS")
-        validate_metric(row.get("terminalLatencyNanoseconds"),row["settled"])
-        validate_metric(row.get("successfulLatencyNanoseconds"),row["succeeded"])
-    balances=value.get("ledgerBalanceChecks")
-    require(type(balances)is dict and balances.get("mismatches")==0,"NO_DECLARED_BALANCE_MISMATCH")
+        integer(row["peakInFlight"],0 if row["entered"]==0 else 1,
+            min(row["entered"],bound["maxInFlightPerPhase"]),"SOURCE_PHASE_PEAK_CONSISTENCY")
+        fraction=None if row["settled"]==0 else dict(numerator=0,denominator=row["settled"])
+        require(same(row["nonSuccessFraction"],fraction),"EXACT_SUCCESS_DENOMINATOR_NOT_BOOLEAN_ALIAS")
+        if expected is not None and name in expected:
+            integer(row["entered"],expected[name],expected[name],"CROSS_CHECKED_PHASE_COMPLETIONS")
+        validate_metric(row["terminalLatencyNanoseconds"],row["settled"])
+        validate_metric(row["successfulLatencyNanoseconds"],row["succeeded"])
+        require(same(row["terminalLatencyNanoseconds"],row["successfulLatencyNanoseconds"]),
+            "ALL_SUCCESSFUL_SERIES_MUST_MATCH")
+        total+=row["entered"]
+    require(same(value["recordingState"],"COMPLETE"if total else"EMPTY"),"SOURCE_RECORDER_STATE_MATCHES_ENTRIES")
+    if total:
+        span=nanoseconds(value["observedSpanNanoseconds"])
+        require(all(row["entered"]==0 or nanoseconds(row["terminalLatencyNanoseconds"]["max"])<=span
+            for row in phases.values()),"DECLARED_LATENCY_WITHIN_DECLARED_RECORDER_SPAN")
+    else:
+        # Balance checks do not tick this recorder's monotonic observation clock.
+        require(value["observedSpanNanoseconds"]is None,"EMPTY_SOURCE_RECORDER_HAS_NO_TIME_OBSERVATION")
+    balances=value["ledgerBalanceChecks"]
+    fields(balances,("samples","mismatches","result"),"EXACT_BALANCE_CHECK_SUMMARY")
+    integer(balances["samples"],0,bound["maxSamplesPerPhase"],"EXACT_BALANCE_SAMPLE_COUNT")
+    integer(balances["mismatches"],0,0,"EXACT_ZERO_BALANCE_MISMATCHES")
+    expected_result="NOT_RECORDED"if balances["samples"]==0 else"MATCHES_CALLER_DECLARED_EXPECTATIONS"
+    require(same(balances["result"],expected_result),"BALANCE_RESULT_MATCHES_DECLARED_SAMPLES")
 
 
 def validate_lane(row, ev, plan, bound, run_id, dispatched):
@@ -484,7 +520,7 @@ def validate(resource,stdout,stderr,receipt,workload,expected_run_id):
     require(all(k in core and same(core[k],value)for k,value in core_fixed.items())
         and same(core.get("plan"),dict(plan["plan"],closeGraceMs=plan["closeBudgetMs"])),"CURRENT_PREFIX_OWNER_COUNTS_OR_CLOSE_UNKNOWN")
     require(type(core.get("lanes"))is list and len(core["lanes"])==n and all(type(row)is dict and
-        row==dict(funded=True,warmupCompleted=plan["plan"]["warmupCallsPerLane"],closeEntered=True,closeOutcome="RETURNED")for row in core["lanes"]),
+        same(row,dict(funded=True,warmupCompleted=plan["plan"]["warmupCallsPerLane"],closeEntered=True,closeOutcome="RETURNED"))for row in core["lanes"]),
         "COMPLETE_PREFIX_LANE_OWNERS")
     measure=core.get("offeredMeasurement");require(type(measure)is dict,"ACTUAL_OFFERED_MEASUREMENT")
     fixed_measure=dict(offeredWindowOwnerVersion=1,scope="TRUSTED_SOURCE_MEASUREMENT_NOT_NATIVE_QUALIFICATION",
@@ -514,11 +550,11 @@ def validate(resource,stdout,stderr,receipt,workload,expected_run_id):
         count=ev.get("pairSnapshot",{}).get("measuredReserved");integer(count,0,bound["globalScheduledOffers"],"PER_LANE_ACTUAL_GLOBAL_OFFER_DISPATCH")
         done,seen=validate_lane(row,ev,plan,bound,expected_run_id,count);completed+=done;writers+=seen;measured+=count
     require(measured==measure["sourceEntries"],"GLOBAL_DISPATCH_EQUALS_SUM_OF_REAL_LANE_ORIGINALS")
-    validate_recording(core.get("prefixRecording"),{"FUNDING":n,"FUNDED_CALL":n*plan["plan"]["warmupCallsPerLane"]})
-    validate_recording(core.get("postStopPrefixLedgerRecording"))
-    validate_recording(measure.get("dispatchedCallRecording"),{"FUNDING":0,"FUNDED_CALL":measured})
-    validate_recording(measure.get("sourceStartDelayRecording"),{"FUNDING":0,"FUNDED_CALL":measured})
-    validate_recording(measure.get("postStopLedgerRecording"))
+    validate_recording(core.get("prefixRecording"),{"FUNDING":n,"FUNDED_CALL":n*plan["plan"]["warmupCallsPerLane"]},plan["recordingLimits"])
+    validate_recording(core.get("postStopPrefixLedgerRecording"),{"FUNDING":0,"FUNDED_CALL":0},plan["recordingLimits"])
+    validate_recording(measure.get("dispatchedCallRecording"),{"FUNDING":0,"FUNDED_CALL":measured},plan["recordingLimits"])
+    validate_recording(measure.get("sourceStartDelayRecording"),{"FUNDING":0,"FUNDED_CALL":measured,"LEDGER_TRANSACTION":0},plan["recordingLimits"])
+    validate_recording(measure.get("postStopLedgerRecording"),{"FUNDING":0,"FUNDED_CALL":0},plan["recordingLimits"])
     return dict(currentOfferedCaptureDataVersion=1,status="MATCHING_DECLARED_CURRENT_OFFERED_OUTER_DATA",
         completedOriginalCalls=completed,dispatchedGlobalMeasuredOriginals=measured,busyRejectedOffers=measure["busyRejectedOffers"],
         schedulerMissedSlots=measure["schedulerMissedSlots"],fundedReservationsAreNotDispatches=True,

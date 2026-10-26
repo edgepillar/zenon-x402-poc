@@ -1,0 +1,564 @@
+{
+  "kind": "CURRENT_OFFERED_STRICT_RECORDER_V1_WIRE_ACTUAL_LOCAL_DATA_RESULT",
+  "version": 1,
+  "date": "2026-10-26",
+  "sourceParent": "6975c5dd98cd9c765853c3c24a93e12eff58b387",
+  "status": "SOURCE_BOUND_DATA_CONTROLS_PASSED_NATIVE_NOT_RUN",
+  "valid": true,
+  "authority": "NONE",
+  "problem": {
+    "previousCaptureSha256": "271c116f29c8e9d9a25706f675574368db299b4e9d861a2c4559c6b86c0f9ba2",
+    "currentCaptureSha256": "d79248e0f7bfd6ba092c400308b17db6d27912faa9d8532ae50cb2d3584b8ed2",
+    "before": [
+      {
+        "name": "valid_baseline",
+        "accepted": true,
+        "status": "MATCHING_DECLARED_CURRENT_OFFERED_OUTER_DATA"
+      },
+      {
+        "name": "integer_funded",
+        "accepted": true,
+        "status": "MATCHING_DECLARED_CURRENT_OFFERED_OUTER_DATA"
+      },
+      {
+        "name": "boolean_warmup_count",
+        "accepted": true,
+        "status": "MATCHING_DECLARED_CURRENT_OFFERED_OUTER_DATA"
+      },
+      {
+        "name": "integer_close_entered",
+        "accepted": true,
+        "status": "MATCHING_DECLARED_CURRENT_OFFERED_OUTER_DATA"
+      },
+      {
+        "name": "boolean_pending_observations",
+        "accepted": true,
+        "status": "MATCHING_DECLARED_CURRENT_OFFERED_OUTER_DATA"
+      },
+      {
+        "name": "boolean_refused_starts",
+        "accepted": true,
+        "status": "MATCHING_DECLARED_CURRENT_OFFERED_OUTER_DATA"
+      },
+      {
+        "name": "boolean_balance_mismatches",
+        "accepted": true,
+        "status": "MATCHING_DECLARED_CURRENT_OFFERED_OUTER_DATA"
+      },
+      {
+        "name": "negative_balance_sample_count",
+        "accepted": true,
+        "status": "MATCHING_DECLARED_CURRENT_OFFERED_OUTER_DATA"
+      },
+      {
+        "name": "boolean_recorder_version",
+        "accepted": true,
+        "status": "MATCHING_DECLARED_CURRENT_OFFERED_OUTER_DATA"
+      },
+      {
+        "name": "wrong_aggregate_schema",
+        "accepted": true,
+        "status": "MATCHING_DECLARED_CURRENT_OFFERED_OUTER_DATA"
+      },
+      {
+        "name": "false_empty_recording_state",
+        "accepted": true,
+        "status": "MATCHING_DECLARED_CURRENT_OFFERED_OUTER_DATA"
+      },
+      {
+        "name": "forged_non_success_fraction",
+        "accepted": true,
+        "status": "MATCHING_DECLARED_CURRENT_OFFERED_OUTER_DATA"
+      }
+    ],
+    "after": [
+      {
+        "name": "valid_baseline",
+        "accepted": true,
+        "status": "MATCHING_DECLARED_CURRENT_OFFERED_OUTER_DATA"
+      },
+      {
+        "name": "integer_funded",
+        "accepted": false,
+        "code": "COMPLETE_PREFIX_LANE_OWNERS"
+      },
+      {
+        "name": "boolean_warmup_count",
+        "accepted": false,
+        "code": "COMPLETE_PREFIX_LANE_OWNERS"
+      },
+      {
+        "name": "integer_close_entered",
+        "accepted": false,
+        "code": "COMPLETE_PREFIX_LANE_OWNERS"
+      },
+      {
+        "name": "boolean_pending_observations",
+        "accepted": false,
+        "code": "EXACT_ZERO_PENDING_OBSERVATIONS"
+      },
+      {
+        "name": "boolean_refused_starts",
+        "accepted": false,
+        "code": "EXACT_ZERO_REFUSED_STARTS"
+      },
+      {
+        "name": "boolean_balance_mismatches",
+        "accepted": false,
+        "code": "EXACT_ZERO_BALANCE_MISMATCHES"
+      },
+      {
+        "name": "negative_balance_sample_count",
+        "accepted": false,
+        "code": "EXACT_BALANCE_SAMPLE_COUNT"
+      },
+      {
+        "name": "boolean_recorder_version",
+        "accepted": false,
+        "code": "EXACT_CLEAN_RECORDER_SCHEMA_AND_AUTHORITY"
+      },
+      {
+        "name": "wrong_aggregate_schema",
+        "accepted": false,
+        "code": "EXACT_CLEAN_RECORDER_SCHEMA_AND_AUTHORITY"
+      },
+      {
+        "name": "false_empty_recording_state",
+        "accepted": false,
+        "code": "SOURCE_RECORDER_STATE_MATCHES_ENTRIES"
+      },
+      {
+        "name": "forged_non_success_fraction",
+        "accepted": false,
+        "code": "EXACT_SUCCESS_DENOMINATOR_NOT_BOOLEAN_ALIAS"
+      }
+    ],
+    "rootCause": "Python bool/int equality and incomplete recorder schema checks accepted malformed clean-result declarations even after outer stream digests were recomputed."
+  },
+  "change": {
+    "ownerFacts": "Exact recursive type comparison for complete prefix-lane owner facts.",
+    "recorderSchema": "Exact 18-field clean recorder-v1 schema, exact integer counters, original workload limits, phase counts, peaks, fractions, summary samples, state, observed span and balance results.",
+    "originalAggregatePositions": [
+      "prefixRecording",
+      "postStopPrefixLedgerRecording",
+      "offeredMeasurement.dispatchedCallRecording",
+      "offeredMeasurement.sourceStartDelayRecording",
+      "offeredMeasurement.postStopLedgerRecording"
+    ],
+    "parserCustody": "Decode the original outer frame once. Do not reserialize or copy the whole capture to establish matching DATA.",
+    "nativeEffectsChanged": false
+  },
+  "actualPythonSuite": {
+    "tests": 311,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "successful": true,
+    "previousPublishedCases": 175,
+    "newCases": 136,
+    "firstExpandedAttempt": {
+      "tests": 311,
+      "failures": 0,
+      "errors": 1,
+      "successful": false,
+      "cause": "A regression-loop variable shadowed the current profile metadata module; the sixteen-lane test errored before profile expansion.",
+      "fix": "Rename the loop snapshot to strict_record_snapshot; retain the failed attempt and its actual exit and stream hashes."
+    },
+    "audit": {
+      "subprocesses": 0,
+      "sockets": 0,
+      "sqlite": 0,
+      "writeOpens": 0,
+      "outsideSourceReads": 0,
+      "mutations": 0
+    },
+    "allSourceBindingsStableDuringExecution": true,
+    "SDK": false,
+    "SQLite": false,
+    "nativeApplications": 0
+  },
+  "actualJavaScriptWire": {
+    "node": "v24.19.0",
+    "recorderSource": "src/service-credit-capacity-recorder.js",
+    "recorderSourceSha256": "eca9bf4cad4717df5d61457044c2c5d0a6bc00b6af81964d09bf18325d4a46ad",
+    "cases": 12,
+    "observations": 4238,
+    "inputBytes": 2990,
+    "inputSha256": "27a434734f3b8364435738095a36fea1c80a92723032a6a921646b2773c5d965",
+    "stdoutBytes": 21123,
+    "stdoutSha256": "2d2f9775e0a12705f1c83bdb5a702401d5c6032fde2f6c777a1bfe2ee959f5a5",
+    "originalWirePassedUnchangedToPython": true,
+    "recordsAccepted": 12,
+    "alteredRecordsRefused": 216,
+    "perOriginalRecordMutations": 18,
+    "scenarios": [
+      {
+        "name": "empty",
+        "state": "EMPTY",
+        "phaseEntries": 0,
+        "balanceSamples": 0,
+        "span": null
+      },
+      {
+        "name": "one_funding",
+        "state": "COMPLETE",
+        "phaseEntries": 1,
+        "balanceSamples": 0,
+        "span": "1"
+      },
+      {
+        "name": "zero_duration",
+        "state": "COMPLETE",
+        "phaseEntries": 1,
+        "balanceSamples": 0,
+        "span": "0"
+      },
+      {
+        "name": "three_phases",
+        "state": "COMPLETE",
+        "phaseEntries": 3,
+        "balanceSamples": 0,
+        "span": "5"
+      },
+      {
+        "name": "overlapping_calls",
+        "state": "COMPLETE",
+        "phaseEntries": 2,
+        "balanceSamples": 0,
+        "span": "3"
+      },
+      {
+        "name": "balance_only",
+        "state": "EMPTY",
+        "phaseEntries": 0,
+        "balanceSamples": 2,
+        "span": null
+      },
+      {
+        "name": "balance_after_funding",
+        "state": "COMPLETE",
+        "phaseEntries": 1,
+        "balanceSamples": 1,
+        "span": "1"
+      },
+      {
+        "name": "full_4096_sample_boundary",
+        "state": "COMPLETE",
+        "phaseEntries": 4096,
+        "balanceSamples": 0,
+        "span": "8191"
+      },
+      {
+        "name": "maximum_source_timestamp",
+        "state": "COMPLETE",
+        "phaseEntries": 1,
+        "balanceSamples": 0,
+        "span": "1"
+      },
+      {
+        "name": "high_inflight_limit",
+        "state": "COMPLETE",
+        "phaseEntries": 2,
+        "balanceSamples": 0,
+        "span": "3"
+      },
+      {
+        "name": "serial_ledger_observations",
+        "state": "COMPLETE",
+        "phaseEntries": 128,
+        "balanceSamples": 0,
+        "span": "383"
+      },
+      {
+        "name": "mixed_balances",
+        "state": "COMPLETE",
+        "phaseEntries": 3,
+        "balanceSamples": 2,
+        "span": "5"
+      }
+    ],
+    "cachedFinalizeIdentityAsserted": true,
+    "retainedDurationReferencesAfterFinalize": 0,
+    "timeSource": "CALLER_SUPPLIED_DATA_ONLY_NO_CLOCK_READS",
+    "nativeLatencyOrConcurrencyMeasurement": false
+  },
+  "actualReceipts": [
+    {
+      "name": "before_fix_reproduction",
+      "observedAt": "2026-10-25T22:40:12.476Z",
+      "actualExit": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 0,
+      "stdoutBytes": 1747,
+      "stdoutSha256": "347efa0466428d351dac52d5c208058174ef78d1ec35740199f1cc45667adf82",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "first_expanded_suite_failed",
+      "observedAt": "2026-10-25T22:46:26.530Z",
+      "actualExit": 1,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 0,
+      "stdoutBytes": 64281,
+      "stdoutSha256": "d752ef4ca914754b23a5d8d9a82c38b2b26d8289552438dc448cc8602e80e90e",
+      "stderrBytes": 3058,
+      "stderrSha256": "10fb0bcaceec8e0b02b188b610d57b25e1daade6aa2751e486aab6424f3b72db"
+    },
+    {
+      "name": "corrected_expanded_suite_passed",
+      "observedAt": "2026-10-25T22:48:03.465Z",
+      "actualExit": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 0,
+      "stdoutBytes": 64280,
+      "stdoutSha256": "c2ddd97b4656ca220ab96b0e3fd6ceb1812c4da4d083e41b204b8edc7fb1966d",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "genuine_javascript_recorder_wire",
+      "observedAt": "2026-10-25T22:48:26.658Z",
+      "actualExit": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 2990,
+      "stdoutBytes": 21123,
+      "stdoutSha256": "2d2f9775e0a12705f1c83bdb5a702401d5c6032fde2f6c777a1bfe2ee959f5a5",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "original_wire_python_roundtrip",
+      "observedAt": "2026-10-25T22:50:03.811Z",
+      "actualExit": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 21123,
+      "stdoutBytes": 1811,
+      "stdoutSha256": "0e9183b7e94199955e86cb5764b876bf291f9fdbbb836f718ef16074bbe0a566",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "after_fix_reproduction",
+      "observedAt": "2026-10-25T22:51:14.100Z",
+      "actualExit": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 0,
+      "stdoutBytes": 1606,
+      "stdoutSha256": "f6ebdb3d34bd790dd8575ff2f9745908bc75e8e4361b68e57e08a59270cd3419",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "sourceBindings": [
+    {
+      "path": "qualification/native_capacity_current_offered_resource_v1.py",
+      "bytes": 13667,
+      "LF": 219,
+      "sha256": "85a97cafa15e9e8801bdb09d184464720128cce4ad4025ee83bd029365d7bf91",
+      "gitBlob": "4f05e8ab0c9c3a290a87e00c0e776cfa53e51c08"
+    },
+    {
+      "path": "qualification/native_capacity_current_offered_command_v1.py",
+      "bytes": 9960,
+      "LF": 170,
+      "sha256": "9c1096aa49191db783dc9d1a23f4d205a31af1a1eca335f23044c9651b8516d6",
+      "gitBlob": "16162a928c84d83c294b3d042a289de63c89d762"
+    },
+    {
+      "path": "qualification/native_capacity_current_offered_capture_v1.py",
+      "bytes": 39786,
+      "LF": 565,
+      "sha256": "d79248e0f7bfd6ba092c400308b17db6d27912faa9d8532ae50cb2d3584b8ed2",
+      "gitBlob": "85e5df3c5799c761ccd78a5fc1d4f9a05851bb49"
+    },
+    {
+      "path": "qualification/run-capacity-native-current-offered-v2.local.py",
+      "bytes": 32188,
+      "LF": 504,
+      "sha256": "0e8265185b2c961ad7c9df2a73adcce5ba9185f4c50c6c3c59964224b5c8c2ec",
+      "gitBlob": "dd8addc00bc9757f9b4b54fe723a4b970e890136"
+    },
+    {
+      "path": "qualification/capacity-native-current-offered-v2.launch-inputs.json",
+      "bytes": 7455,
+      "LF": 193,
+      "sha256": "6a749bd4b816bba637a95e53da1ab662137ad1a196bf30594e47f73f757b7798",
+      "gitBlob": "6b2534460d0d5649eebacf19f0d7fd24c53ef907"
+    },
+    {
+      "path": "qualification/capacity-native-current-offered-v2.plan.json",
+      "bytes": 506,
+      "LF": 22,
+      "sha256": "9edfca67cf300fb6f9a3b938bb902bc6ceded2eec199e647a5064f16f3eb268d",
+      "gitBlob": "a63243117a8223f2974c39ba09fe0e502db23ce2"
+    },
+    {
+      "path": "qualification/native_capacity_current_offered_pipeline_v1.behavior.py",
+      "bytes": 43081,
+      "LF": 533,
+      "sha256": "223d3cc7ab1190f94fc9f4abcbb750c43627670948eed6c44a80411280ef48f7",
+      "gitBlob": "14ad28e615cb3ab7313424c6f15c76f797bb9803"
+    },
+    {
+      "path": "qualification/native_capacity_current_offered_parent_v2.py",
+      "bytes": 19695,
+      "LF": 290,
+      "sha256": "054b375cd88495796e533749be7e332e7e2d62829beb595b27d33ebe7024f36c",
+      "gitBlob": "907345ea429acead2b05bd11f22e82300d7b756f"
+    },
+    {
+      "path": "qualification/capacity-native-current-offered-parent-v2.inputs.json",
+      "bytes": 4680,
+      "LF": 122,
+      "sha256": "c9eb8a699217aade0e5e09de014045fcf912c5f554246a1dd4dddd6ef78d530d",
+      "gitBlob": "1fdab64c3b4466e6292ff81a85ab2878e7c528d3"
+    },
+    {
+      "path": "qualification/native_capacity_current_role_profiles_v4.py",
+      "bytes": 19763,
+      "LF": 295,
+      "sha256": "a32d566f61c7093464a8c84e543965d82bf9fedf45741e65101ae28f331db24f",
+      "gitBlob": "3d99b2ab631c1ef1857f0c90af7330340410eb52"
+    },
+    {
+      "path": "qualification/capacity-native-current-roles-v4.inputs.json",
+      "bytes": 5209,
+      "LF": 132,
+      "sha256": "6a819a3e87e89927c05e292f8f0ee4332ac0a884199ab68d0f6cf286327a1662",
+      "gitBlob": "bc9977247b11a3edea32398969a9a4049f59c289"
+    },
+    {
+      "path": "qualification/recovery_crash_native_profile.py",
+      "bytes": 33443,
+      "LF": 538,
+      "sha256": "75c2c9478b7e792a7bade739161af2bb8fb624cd407924ead2cf822dc23dacbd",
+      "gitBlob": "dc93890c4f9772b726e015ddd11d63bfa1a48ad4"
+    },
+    {
+      "path": "qualification/issued_current_close_v4_profile.py",
+      "bytes": 24610,
+      "LF": 297,
+      "sha256": "b3a8edc522471b0d34f33857e6bd2aae9286b101ec7ea24b6a0f0275e6e447e7",
+      "gitBlob": "7ce435651b6d853baa06856ce5f0b04aef58c5c4"
+    },
+    {
+      "path": "qualification/native_capacity_full_profile_v3.py",
+      "bytes": 23435,
+      "LF": 353,
+      "sha256": "6928303c36f034fc295145563e40304641a91fe7db35d62eb364031bbcff7e6a",
+      "gitBlob": "6268ca35b32c32611b9663e964ddf2485b941ddc"
+    },
+    {
+      "path": "qualification/capacity-native-full-graph-v3.inputs.json",
+      "bytes": 8697,
+      "LF": 215,
+      "sha256": "3bb597da71736542615047d11af78ad6825df5bdb6e4561747d8c1f9dff7d0df",
+      "gitBlob": "0530e2b08929d45c93b4e4912dc69d27b0645204"
+    },
+    {
+      "path": "qualification/issued-funding-post-native-vertical.inputs-v3.json",
+      "bytes": 138777,
+      "LF": 3836,
+      "sha256": "51ffb5b0ff0052523c1b7f3d75fa24e9be27e60ca3bcc09236b1f439096aaed1",
+      "gitBlob": "3dc05ccffd306e97056b4ed168d8121f63acebbc"
+    },
+    {
+      "path": "qualification/issued-current-close-v4.inputs.json",
+      "bytes": 10437,
+      "LF": 300,
+      "sha256": "8339b2a8e04e7e3c573b1c26d8162f1c821df91182738409693d188121a21893",
+      "gitBlob": "f292abda9f607a7d423f9d32fce2e55472d84a33"
+    },
+    {
+      "path": "qualification/run-capacity-native-paced-timer-managed-v3.local.py",
+      "bytes": 31856,
+      "LF": 518,
+      "sha256": "5f3f6893559a9fdce3d7c19b9d729996a14f157822d1938bbad3ae25daeef22e",
+      "gitBlob": "5956f77026eb0f9f8024318aaa100158ae7b0b30"
+    },
+    {
+      "path": "qualification/run-capacity-native-workload-v3.local.py",
+      "bytes": 26105,
+      "LF": 395,
+      "sha256": "4e2e29c31ae10c661bd5599506cda87482d030fc328dbde1e3e1066db5dba9e6",
+      "gitBlob": "eac94ea35f381307f61db1b7d709f29e1c23b8a5"
+    },
+    {
+      "path": "qualification/funding_tls_current_gate.py",
+      "bytes": 7969,
+      "LF": 145,
+      "sha256": "9777b8dca3c8c86e543c1f202c0cde248280ed3a108df4a688565ccf83132936",
+      "gitBlob": "91362d22ca606a6711612b02ecea3c6e92c55a59"
+    },
+    {
+      "path": "qualification/native-capacity-current-recorder-wire-v1.mjs",
+      "bytes": 2921,
+      "LF": 58,
+      "sha256": "4131d091d7de6d89f93cbff4f10a72e8a89aaee534e60240dfe1b971e25ee005",
+      "gitBlob": "88f108c097af5be2bbbd0d5bb344e37f14c70e8f"
+    },
+    {
+      "path": "src/service-credit-capacity-recorder.js",
+      "bytes": 10801,
+      "LF": 236,
+      "sha256": "eca9bf4cad4717df5d61457044c2c5d0a6bc00b6af81964d09bf18325d4a46ad",
+      "gitBlob": "bc9b0a8a9abd48033e698e100cdc6ef90d2152c9"
+    },
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "LF": 40,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    }
+  ],
+  "unchangedGraph": {
+    "childApplicationRows": 153,
+    "parentApplicationRows": 160,
+    "installedPackageRows": 404,
+    "childRowsSha256": "db33115ac37137f5b0212cb33d748154b498ec1b15ca106dfb757575da692a6e",
+    "parentRowsSha256": "f5ba2a28fe30f6ff1b5d54a45c1c3e424806ad6fa858fe2d0d57d11ba41b4b84",
+    "packageFilesReadOrImported": 0,
+    "currentNativeContextQualified": false
+  },
+  "evidenceRetention": {
+    "firstFailedAttemptRetained": true,
+    "actualChildStreamDigestsRecoveredFromRecordedCommandReceipts": true,
+    "completeSmallSummariesAndOriginalJavaScriptWireRetainedPrivately": true,
+    "twoVerboseControllerAggregatesTruncatedInStoredUIObservation": true,
+    "originalChildStdoutCompleteAsRecorded": true,
+    "verboseSuiteRawBytesClaimedRecoverable": false,
+    "testsRepeatedForObservationRecovery": false,
+    "historicalReportsRewritten": false
+  },
+  "limits": {
+    "SDKImported": false,
+    "x402OrNobleImported": false,
+    "SQLite": false,
+    "keysOrSignatures": false,
+    "nonceSearch": false,
+    "sockets": false,
+    "TLS": false,
+    "nativeApplicationExecutions": 0,
+    "storageManagerImported": false,
+    "storageRootRead": false,
+    "managedTasksCreated": 0,
+    "cleanup": false,
+    "installedPackageChanges": false,
+    "currentCleanAllowanceConsumed": false,
+    "oldR4AllowanceConsumed": false,
+    "newNativeAuthority": false,
+    "hostedCIForThisChange": "NOT_RUN",
+    "latencyQualification": "NOT_ESTABLISHED",
+    "sustainableCapacityQualification": "NOT_ESTABLISHED",
+    "economicAcceptance": "NOT_ESTABLISHED",
+    "productionQualification": "NOT_ESTABLISHED"
+  }
+}
