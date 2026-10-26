@@ -1,0 +1,220 @@
+{
+  "event": "CURRENT_COMMAND_SOURCE_URL_CANONICAL_CONTRACT_ACTUAL_LOCAL_DATA",
+  "date": "2026-10-26",
+  "sourceParent": "166b9a0fa711de90bad97539e702b1c9d5239cd8",
+  "sourcePins": [
+    {
+      "path": "qualification/native_capacity_current_offered_command_v2.py",
+      "bytes": 10040,
+      "LF": 171,
+      "sha256": "eed9b5e3147c536af9093a7bf8c50c195679fdb184306d09719c6d5b0ed79bc9",
+      "gitBlob": "f031baf307a226807492698360a552e4cb9dc3ec"
+    },
+    {
+      "path": "qualification/run-capacity-native-current-offered-v3.local.py",
+      "bytes": 35886,
+      "LF": 539,
+      "sha256": "4f7bb1f89aa54e88f875bd541bd06ca27fcd1ec0568501b8394b358d565e1d2e",
+      "gitBlob": "f405c6dfc970dfe1bdb76749a4d6bd359a5fb9d4"
+    },
+    {
+      "path": "qualification/capacity-native-current-offered-v3.launch-inputs.json",
+      "bytes": 7727,
+      "LF": 200,
+      "sha256": "561baf969908c4c9176a6aae626fe3a463b63f8f500c258f05ac39f42b1209cd",
+      "gitBlob": "0c7723472df05c37040e5b24a0c68f093122a4be"
+    },
+    {
+      "path": "qualification/native_capacity_current_offered_pipeline_v2.behavior.py",
+      "bytes": 28712,
+      "LF": 394,
+      "sha256": "61a91122a6e0e5d5fec989120b46c31c997fa7aa24c4a2fec3583fe087e75355",
+      "gitBlob": "74750663256ec4b8b9e43665b8d381cfc70c1ab4"
+    }
+  ],
+  "previousSourcePins": [
+    {
+      "path": "qualification/native_capacity_current_offered_command_v2.py",
+      "bytes": 9960,
+      "LF": 170,
+      "sha256": "d0c2c96a34c2b0ce5af1cc076b1677f15b048db7f8c7913cd3567365d3b8b4e7",
+      "gitBlob": "3052b7f247e6f0af4ec061a9ef81491fd9f80d45"
+    },
+    {
+      "path": "qualification/run-capacity-native-current-offered-v3.local.py",
+      "bytes": 35886,
+      "LF": 539,
+      "sha256": "fced31981a158a684285c8367bdce1ddc062dc0fbea7894d2509865c06626e53",
+      "gitBlob": "0c7e1259a979c062add6a8dd062fbf0f704cf345"
+    },
+    {
+      "path": "qualification/capacity-native-current-offered-v3.launch-inputs.json",
+      "bytes": 7726,
+      "LF": 200,
+      "sha256": "101b673c0fcf942ec253cd5eebe96352e263779a2e2088b5a6da830180f33d84",
+      "gitBlob": "036964d084ad6e910288e7b3c80721cd283274fb"
+    },
+    {
+      "path": "qualification/native_capacity_current_offered_pipeline_v2.behavior.py",
+      "bytes": 25516,
+      "LF": 354,
+      "sha256": "8e385bd126a81880a30831534bdaef287e780ac90f42dc3f752c8cde807804d8",
+      "gitBlob": "91cc3a9464765dca08cf012d450c5ec54a1a9f4b"
+    }
+  ],
+  "unchangedProtectedFiles": 386,
+  "beforeFix": {
+    "testsRun": 292,
+    "actual": {
+      "actualExit": 1,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 0,
+      "reason": null,
+      "elapsedSeconds": 1.6211528750009165,
+      "stdoutBytes": 23567,
+      "stdoutSha256": "d3dee8a4c04a621080e33aa116d0d8eab6557bb675d8c05d782f8187d317e750",
+      "stderrBytes": 5700,
+      "stderrSha256": "64655f4e5b8ee286faea123e33774454b5ead5a8ab2ad88bb2e6f0d5e7bdf8a8"
+    },
+    "errors": 4,
+    "failures": 0,
+    "successful": false,
+    "errorCode": "CURRENT_COMMAND_SOURCE_ROOT",
+    "failingCases": [
+      "at_repository",
+      "at_and_space_repository",
+      "at_parent_repository",
+      "mixed_roots"
+    ],
+    "originalFailurePreserved": true
+  },
+  "afterFix": {
+    "testsRun": 292,
+    "errors": 0,
+    "failures": 0,
+    "skipped": 0,
+    "successful": true,
+    "canonicalSourceRootCases": [
+      "at_and_space_repository",
+      "at_packages",
+      "at_parent_repository",
+      "at_repository",
+      "canonical_plain",
+      "mixed_roots",
+      "scoped_packages",
+      "space_repository"
+    ],
+    "differentCommandSourceRootRefused": true,
+    "invalidSourceRootCases": [
+      "percent",
+      "fragment",
+      "authority"
+    ],
+    "completeChildProfilesPlannedAndBound": 32,
+    "effectsCeilingFieldsBound": 89,
+    "nativeCommandCallArgumentsBound": 11,
+    "sourceAdmissionFacts": {
+      "applicationFilesVerified": 162,
+      "applicationBytesVerified": 3116247,
+      "installedPackageFilesRead": 0,
+      "applicationCodeBytesRetained": 0,
+      "unchangedSourceByteReads": 0,
+      "nativeExecuted": false,
+      "authority": "NONE"
+    },
+    "auditedEffects": {
+      "children": 0,
+      "sockets": 0,
+      "sqlite": 0,
+      "writeOpens": 0,
+      "outsideSourceReads": 0,
+      "mutations": 0
+    },
+    "earlyStorageRefusalOrderingData": [
+      {
+        "mode": "--execute",
+        "capacityCalls": 1,
+        "installedContextCalls": 0,
+        "nativeExecuteCalls": 0
+      },
+      {
+        "mode": "--pre-native-plan",
+        "capacityCalls": 1,
+        "installedContextCalls": 0,
+        "nativeExecuteCalls": 0
+      }
+    ],
+    "earlyStorageAcceptanceOrderingData": [
+      {
+        "mode": "--execute",
+        "declaredPreflightCalls": 1,
+        "installedContextBoundaryCalls": 1,
+        "nativeExecuteCalls": 0
+      },
+      {
+        "mode": "--pre-native-plan",
+        "declaredPreflightCalls": 1,
+        "installedContextBoundaryCalls": 1,
+        "nativeExecuteCalls": 0
+      }
+    ],
+    "actualUnchangedOpenEvents": 0,
+    "attempts": [
+      {
+        "label": "complete_current_pipeline_green",
+        "actual": {
+          "actualExit": 0,
+          "complete": true,
+          "inputComplete": true,
+          "inputBytes": 0,
+          "reason": null,
+          "elapsedSeconds": 1.619490290999238,
+          "stdoutBytes": 23649,
+          "stdoutSha256": "4b92091d851cddba7b41933df67a55772ca753874ff1597401f78ef4682e943e",
+          "stderrBytes": 0,
+          "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "allBeforeAfterInputsMatched": true
+      },
+      {
+        "label": "actual_default_source_only_cli",
+        "actual": {
+          "actualExit": 0,
+          "complete": true,
+          "inputComplete": true,
+          "inputBytes": 0,
+          "reason": null,
+          "elapsedSeconds": 0.1092905419991439,
+          "stdoutBytes": 3858,
+          "stdoutSha256": "9e9fb1d6b3fbf16179a698d660216bfeb24659997dd0b08ad74f289dd3c1514b",
+          "stderrBytes": 0,
+          "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "allBeforeAfterInputsMatched": true
+      }
+    ]
+  },
+  "qualificationScope": {
+    "realPythonProfileAndCommandProducersExecuted": true,
+    "declaredSyntheticCaptureIdentities": true,
+    "physicalSourceRootAdmissionTested": false,
+    "NodePathToFileURLExecuted": false,
+    "nativeApplicationExecutions": 0,
+    "installedPackageFilesRead": 0,
+    "NodeBinaryReadOrExecuted": false,
+    "SDKImported": false,
+    "SQLite": false,
+    "keysOrSignatures": false,
+    "nonce": false,
+    "sockets": false,
+    "managerImported": false,
+    "storageRootRead": false,
+    "managedTasksCreated": 0,
+    "profilesWritten": 0,
+    "finiteNativeAllowancesConsumed": false,
+    "newNativeAuthorityGranted": false,
+    "productionQualified": false,
+    "authority": "NONE"
+  }
+}

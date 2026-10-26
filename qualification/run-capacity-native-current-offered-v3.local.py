@@ -30,7 +30,7 @@ PARENT="qualification/capacity-native-current-offered-parent-v3.inputs.json"
 SOURCE_SELECTION="qualification/capacity-native-current-roles-v5.inputs.json"
 KIND="CURRENT_OFFERED_V3_COMPLETE_MANAGED_SOURCE_NOT_NATIVE_EXECUTION"
 NATIVE_SELECTION="one-new-approved-native-current-offered-parent-v3"
-FROZEN=[["qualification/native_capacity_current_offered_resource_v2.py","093563b971d524f97801baca7eacb48b3d96e91012151abeabf27d512a94c4cc"],["qualification/native_capacity_current_offered_command_v2.py","d0c2c96a34c2b0ce5af1cc076b1677f15b048db7f8c7913cd3567365d3b8b4e7"],["qualification/native_capacity_current_offered_capture_v2.py","e458f3636008d46f0eb2923a3ae9079b8afce6003a13fc5458f79af558693d27"],["qualification/native_capacity_current_offered_context_v2.py","9cedfff86073319942d11bedfd42095a7f0ba54d221fd6ad7723d82279ede065"],["qualification/native_capacity_current_offered_parent_v3.py","ec8e8633dd13ec31def4b3c57fd9abcba704216f1212dad1c27e7fdb001cbcc0"],["qualification/run-capacity-native-paced-timer-managed-v3.local.py","5f3f6893559a9fdce3d7c19b9d729996a14f157822d1938bbad3ae25daeef22e"],["qualification/run-capacity-native-workload-v3.local.py","4e2e29c31ae10c661bd5599506cda87482d030fc328dbde1e3e1066db5dba9e6"],["qualification/funding_tls_current_gate.py","9777b8dca3c8c86e543c1f202c0cde248280ed3a108df4a688565ccf83132936"]]
+FROZEN=[["qualification/native_capacity_current_offered_resource_v2.py","093563b971d524f97801baca7eacb48b3d96e91012151abeabf27d512a94c4cc"],["qualification/native_capacity_current_offered_command_v2.py","eed9b5e3147c536af9093a7bf8c50c195679fdb184306d09719c6d5b0ed79bc9"],["qualification/native_capacity_current_offered_capture_v2.py","e458f3636008d46f0eb2923a3ae9079b8afce6003a13fc5458f79af558693d27"],["qualification/native_capacity_current_offered_context_v2.py","9cedfff86073319942d11bedfd42095a7f0ba54d221fd6ad7723d82279ede065"],["qualification/native_capacity_current_offered_parent_v3.py","ec8e8633dd13ec31def4b3c57fd9abcba704216f1212dad1c27e7fdb001cbcc0"],["qualification/run-capacity-native-paced-timer-managed-v3.local.py","5f3f6893559a9fdce3d7c19b9d729996a14f157822d1938bbad3ae25daeef22e"],["qualification/run-capacity-native-workload-v3.local.py","4e2e29c31ae10c661bd5599506cda87482d030fc328dbde1e3e1066db5dba9e6"],["qualification/funding_tls_current_gate.py","9777b8dca3c8c86e543c1f202c0cde248280ed3a108df4a688565ccf83132936"]]
 STORAGE_SHA="a4d82a72214c9698fda7ae363c38b2470c08da5e2e04c63ee9284e43f638f081"
 CLI_SHA="0bf13cdc1f25a6b31ab14cfb124908808ca7ddc89073ecbcd0263bef4d52238c"
 OPENSSL_SHA="49db04c17e3a8c169ebc48a1149d78c165a86c04913203f46b2a14ce7f4a14fc"
@@ -146,7 +146,7 @@ def source_admission(repo,digest):
     require(type(manifest)is dict and set(manifest)=={"kind","version","sourceParent","pythonControls","profileSelection",
         "childSelection","workload","effectsCeiling","requiredPolicy","nativeSelection","nativeExecuted","nativeAllowanceGranted","authority"}
         and manifest["kind"]==KIND and type(manifest["version"])is int and manifest["version"]==2
-        and manifest["sourceParent"]=="30e5bd3af8976a2563707efc2572293c4e094ca5"
+        and manifest["sourceParent"]=="166b9a0fa711de90bad97539e702b1c9d5239cd8"
         and manifest["nativeSelection"]==NATIVE_SELECTION and manifest["nativeExecuted"]is False
         and manifest["nativeAllowanceGranted"]is False and manifest["authority"]=="NONE","CURRENT_MANAGED_SOURCE_NOT_AUTHORITY")
     inputs={name:read(repo/name)for name in[SELF]+[name for name,_ in FROZEN]+[PARENT,SOURCE_SELECTION,PLAN]}
