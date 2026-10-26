@@ -1,0 +1,351 @@
+{
+  "schemaVersion": 1,
+  "status": "PREPARED_HASH_WALLET_ADAPTER_COMPONENTS_PASSED_WITH_DECLARED_KEYPAIR",
+  "date": "2026-10-26",
+  "reviewedMain": "7755e12359a882fd63aeacca7a02bc9926f96844",
+  "reviewedDevelopment": "a9d924b3474e2455adf40f8586b9f2554fee15e2",
+  "currentSourceInputs": [
+    {
+      "path": "src/zenon/wallet-adapter.js",
+      "bytes": 1211,
+      "LF": 38,
+      "sha256": "0fcbc4daa8ce08ccd0b95cfa793572994516edf0a2a75e648b559015b96a8554",
+      "gitBlob": "7c190a6f09892344c0e935cc0439db7ddd25fab9"
+    },
+    {
+      "path": "src/zenon/prepared-hash-wallet-adapter.js",
+      "bytes": 9266,
+      "LF": 175,
+      "sha256": "113c275a38aaec45a347666b28fdc43c70704973b8d1c20956ebacad18db3e25",
+      "gitBlob": "7b9230b51429cce8547bb12cdd4d109bcdef4e34"
+    },
+    {
+      "path": "qualification/prepared-hash-wallet-adapter.behavior.mjs",
+      "bytes": 15165,
+      "LF": 197,
+      "sha256": "f8cc1e9feaae4e0f9a9550fafa84da969f2ba664e9149d6506789b9506ab8b22",
+      "gitBlob": "1c768bea3c679bac53567f8df06999455e514f65"
+    },
+    {
+      "path": "scripts/run-current-prepared-hash-wallet-adapter.mjs",
+      "bytes": 1099,
+      "LF": 20,
+      "sha256": "a5e35cf934f32c0efa97cb319212dd66527cd4f5211fa0405837800bceeb3c1b",
+      "gitBlob": "1f8f790e2614737f09fd4944cf6052c8e959acbf"
+    }
+  ],
+  "literalRelativeImportInputs": [
+    {
+      "path": "scripts/run-current-prepared-hash-wallet-adapter.mjs",
+      "bytes": 1099,
+      "LF": 20,
+      "sha256": "a5e35cf934f32c0efa97cb319212dd66527cd4f5211fa0405837800bceeb3c1b",
+      "gitBlob": "1f8f790e2614737f09fd4944cf6052c8e959acbf"
+    },
+    {
+      "path": "qualification/prepared-hash-wallet-adapter.behavior.mjs",
+      "bytes": 15165,
+      "LF": 197,
+      "sha256": "f8cc1e9feaae4e0f9a9550fafa84da969f2ba664e9149d6506789b9506ab8b22",
+      "gitBlob": "1c768bea3c679bac53567f8df06999455e514f65"
+    },
+    {
+      "path": "qualification/dynamic-plasma-retained-input.fixture.mjs",
+      "bytes": 1749,
+      "LF": 31,
+      "sha256": "38f46d337f2c6a0584e779d26c75a5a5bccc56a42a2c6bbd1e06add4730c10de",
+      "gitBlob": "5bb61e6a3161e4d0d50e97544a86308574e48d24"
+    },
+    {
+      "path": "qualification/dynamic-plasma-funding-post-input.fixture.mjs",
+      "bytes": 3939,
+      "LF": 58,
+      "sha256": "22d291367a3e9b8e8bf56f2a40acacfa2ea40b6050f2aee41da06bba9aa699a2",
+      "gitBlob": "46f914fbce51b6790aa08836567ba12f9e6be6f6"
+    },
+    {
+      "path": "src/service-credit-pilot-original-payment-checkpoint.js",
+      "bytes": 4003,
+      "LF": 89,
+      "sha256": "930905f31824a6cadc16dfb84572cd4dc38a81e2fce4569b73b6bef29dec97d1",
+      "gitBlob": "51c6391bc22f561ebff0005ced31e538aa83f4fa"
+    },
+    {
+      "path": "src/x402-wire.js",
+      "bytes": 39886,
+      "LF": 934,
+      "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+      "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+    },
+    {
+      "path": "src/zenon/transaction-planner.js",
+      "bytes": 22611,
+      "LF": 464,
+      "sha256": "079fe8da938e08e33a20ca1076492a829afa6fce3ae7f9b9f68d3bf4bff94233",
+      "gitBlob": "17b49a3d53974c9b3846ec6f352d6e8974bad7d3"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-json-rpc-read-transport.js",
+      "bytes": 10832,
+      "LF": 283,
+      "sha256": "fd03b2ad87d16660aa61d3961c163d724d5f89cd6d4bb9c4391d739566d5e5ca",
+      "gitBlob": "0475b7ab42889f67fb030fa7344d73d8bd6957d7"
+    },
+    {
+      "path": "src/zenon/bounded-json-rpc-read-core.js",
+      "bytes": 22116,
+      "LF": 586,
+      "sha256": "1d8873868274045825717ee70b9a402d91cd6235fdaf410d93ddb365fc2d7ca3",
+      "gitBlob": "82d49d18a92c1074819e8976d94a2cfef3975466"
+    },
+    {
+      "path": "src/canonical.js",
+      "bytes": 967,
+      "LF": 26,
+      "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+      "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-original-funding-data.js",
+      "bytes": 16557,
+      "LF": 312,
+      "sha256": "8a416a548e827dc71bc6f87e675e265d01c20d6e8147de8617d47b8b8b8b0770",
+      "gitBlob": "8d8e44fba2bd093ec0d0c909530a570b7eb104ce"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-user-send-key-binding.js",
+      "bytes": 4237,
+      "LF": 91,
+      "sha256": "37ad7e74b038801297e4bffb0cb8ba92cbd79009ed32c4ae5b134fe2cb154be2",
+      "gitBlob": "c366f0fee4132604b40604547fe22f1bc1dba65d"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-user-send-work-binding.js",
+      "bytes": 1940,
+      "LF": 42,
+      "sha256": "79eba29a05427128ae3a12346fd3ee7cbaa526d6f39eb36ed58d388640638266",
+      "gitBlob": "a329d521458a5c5b6dbc87194d91d4165d5e759c"
+    },
+    {
+      "path": "src/zenon/bounded-dynamic-plasma-strategy.js",
+      "bytes": 15729,
+      "LF": 353,
+      "sha256": "7b82560bdeb25e573912090a2fe8de7b45912500a7a7c4434fe06dcf94e06d62",
+      "gitBlob": "ee85b7a4da8bf4190ae099e6bc5074059fccebbc"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-required-fused-policy-adapter.js",
+      "bytes": 12024,
+      "LF": 272,
+      "sha256": "e2b693d4df9065d44ba590f4d0c8dffeb8e55187668eedfa396b4026c9905c3e",
+      "gitBlob": "b592aafd4c41461318376ea9acc1373f99317455"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-price-policy.js",
+      "bytes": 16224,
+      "LF": 444,
+      "sha256": "eba3225c4d26cbb6e0be575ac4fd5073bc8b0c4454eb51e2bea4d91856d0c65e",
+      "gitBlob": "649dd09b60236b43c91d22e34b76f71f4b661361"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-observation-normalizer.js",
+      "bytes": 28398,
+      "LF": 698,
+      "sha256": "2c3f7d42ded21a5513ff26c23a00a35a53aa334f053d10930f1571a020286897",
+      "gitBlob": "c406db8471aa6c8afd812c222c673c809491cf00"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-required-fused-quote.js",
+      "bytes": 5416,
+      "LF": 133,
+      "sha256": "f5e10ff2dbfff3b6b63d87f0abadd0bb52b5d6b8fe0ead6a55fc5ea14207b730",
+      "gitBlob": "e820fd31ffde4ef77a2efa6e1fd3ed1775778726"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-compatibility.js",
+      "bytes": 7732,
+      "LF": 225,
+      "sha256": "b3989ce15e5f2e9d07b0ed035fe96bcce9f22cac93f5e497fdca5c37bf7618dd",
+      "gitBlob": "3811b748b3f905e454c8a4af4650bb7f89eb1cf2"
+    },
+    {
+      "path": "src/zenon/plasma-strategy.js",
+      "bytes": 974,
+      "LF": 32,
+      "sha256": "1c597d4e169ba8a5e6d2b7852c4ffa3a8ec9b854332fe354b9b013c36ebae093",
+      "gitBlob": "5cddc2d270aaf043e6e43145e95ffe0be3dde475"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-user-send-fixed-work.js",
+      "bytes": 3475,
+      "LF": 77,
+      "sha256": "4ee83870df0b25c34d35c0f0d0ceb894ca9dab8c047f81b34a48dd816f1fbf38",
+      "gitBlob": "4ce2a790df84c77bc76615e5eebc309ecd2868ac"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-user-send-work-input.js",
+      "bytes": 2853,
+      "LF": 59,
+      "sha256": "2ff9c089e5903c059746d0a1c38688a2849f94d04d429279811fbbfbb40450a4",
+      "gitBlob": "dad4febf4ef6f09216640245c7e3805e01ad0127"
+    },
+    {
+      "path": "src/zenon/wallet-adapter.js",
+      "bytes": 1211,
+      "LF": 38,
+      "sha256": "0fcbc4daa8ce08ccd0b95cfa793572994516edf0a2a75e648b559015b96a8554",
+      "gitBlob": "7c190a6f09892344c0e935cc0439db7ddd25fab9"
+    },
+    {
+      "path": "src/zenon/prepared-hash-wallet-adapter.js",
+      "bytes": 9266,
+      "LF": 175,
+      "sha256": "113c275a38aaec45a347666b28fdc43c70704973b8d1c20956ebacad18db3e25",
+      "gitBlob": "7b9230b51429cce8547bb12cdd4d109bcdef4e34"
+    }
+  ],
+  "priorWalletInterface": {
+    "sha256": "1d39e4fd1c7411c50aad8695ad3fe458a284da2ddd7f2b8eecf7c30674ff3757",
+    "existingAbstractBodyUnchanged": true
+  },
+  "firstAttempt": {
+    "actualCommand": {
+      "actualExit": 1,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 0,
+      "reason": null,
+      "stdoutBytes": 7739,
+      "stdoutSha256": "86e1591187e052fb3a7d97545102bc6dc18abdd90f952c52cc6e64d8e8aaadb0",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "totals": {
+      "tests": 32,
+      "pass": 31,
+      "fail": 1,
+      "skipped": 0,
+      "cancelled": 0,
+      "todo": 0
+    },
+    "failedTestNames": [
+      "signature proxies shared bytes and string substitutes are rejected"
+    ],
+    "cause": "The declared callback's Promise.resolve performs a then lookup before adapter fulfillment. The fixture incorrectly attributed it to adapter inspection.",
+    "runtimeCodeChangedForCorrection": false,
+    "failedEvidencePreserved": true
+  },
+  "currentAttempt": {
+    "actualCommand": {
+      "actualExit": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 0,
+      "reason": null,
+      "stdoutBytes": 7022,
+      "stdoutSha256": "825f2c174a4d1642d85afbb2ecbe8497fbbc4ea0e267ca97a3dec2e844a382a7",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "totals": {
+      "tests": 32,
+      "pass": 32,
+      "fail": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "todo": 0
+    },
+    "testNames": [
+      "the exported concrete adapter satisfies the existing WalletAdapter interface",
+      "one declared callback receives only the exact original 32-byte hash",
+      "captured KeyPair methods survive replacement without calling composite preparation",
+      "a synchronous SDK-style Address value is read through its data method",
+      "a Buffer callback result becomes detached canonical signature DATA",
+      "a Uint8Array callback result retains every original block field",
+      "an inconsistent block hash is rejected before entering the borrowed owner",
+      "already signed input cannot enter the signer",
+      "changed public bytes are rejected even though they are outside the block hash",
+      "a caller-selected different payer cannot substitute for the original block payer",
+      "public bytes must derive the payer address even when both selections agree",
+      "a mismatching current KeyPair address refuses before hash signing",
+      "the owner address is rechecked after the initial address query",
+      "pending signing holds a detached unsigned original across caller mutation",
+      "a concurrent second call cannot poison the pending original attempt",
+      "synchronous signer reentry is refused while the outer candidate completes",
+      "a synchronous throw after signer entry preserves unknown outcome and original",
+      "a rejected callback has a fixed public error without arbitrary reason data",
+      "a malformed signature byte count is terminal without repairing the output",
+      "an arbitrary thenable is refused without reading its then accessor",
+      "a proxy native Promise is refused without invoking its traps",
+      "a foreign Promise subclass cannot replace the supported result boundary",
+      "a native Promise constructor getter is refused without invoking it",
+      "signature proxies shared bytes and string substitutes are rejected",
+      "configuration getters proxy owners and accessor methods are rejected without invocation",
+      "block accessors and proxy blocks are rejected before the owner is called",
+      "an Address toString accessor is refused before signing without invoking it",
+      "invalid factory options and call arities do not grant another operation",
+      "inspection preserves signed originals without clearing or exporting borrowed private state",
+      "address callback reentry cannot start signing while address inspection is active",
+      "a changed hash buffer during the callback leaves the signing outcome unknown",
+      "the actual funding DATA codec retains the adapter output and exact independent checkpoint pins"
+    ]
+  },
+  "implementedContract": {
+    "configurationFields": [
+      "keyPair",
+      "expectedAddress",
+      "expectedPublicKey"
+    ],
+    "borrowedOwnerProtocol": "Synchronous getAddress returns a string or Address-like object; sign accepts 32 hash bytes and returns a native Promise for 64 signature bytes.",
+    "independentlySelectedPublicIdentity": true,
+    "originalUnsignedHashRecomputed": true,
+    "publicKeyAddressBindingChecked": true,
+    "originalFieldsExceptSignaturePreserved": true,
+    "signerEntriesPerAdapterAtMost": 1,
+    "pendingReentryDoesNotPoisonOriginal": true,
+    "unknownOutcomeRetainsOriginal": true,
+    "noReassemblyOrReplacementOrAutomaticResign": true,
+    "noCompositePreparation": true,
+    "borrowedPrivateKeyCleared": false
+  },
+  "actualComposition": {
+    "existingWalletInterface": true,
+    "currentProductionAdapter": true,
+    "currentUnsignedHashValidation": true,
+    "currentFundingDataAssembly": true,
+    "currentCheckpointRestorationWithIndependentPins": true,
+    "inputData": "Fixed public zero-difficulty DTO and constant deliberately invalid signature bytes.",
+    "nativeNodeProcessCount": 1,
+    "nodeChildren": 0,
+    "nodeVersion": "v24.19.0",
+    "nodePlatform": "darwin-arm64",
+    "sourceImportClosureFiles": 24,
+    "declaredKeyPairCallbacks": true
+  },
+  "limits": {
+    "realSDKImported": false,
+    "realKeyPairOrWalletExecuted": false,
+    "keyGeneration": false,
+    "cryptographicSigning": false,
+    "cryptographicSignatureVerification": false,
+    "positiveWorkQualified": false,
+    "nonceSearch": false,
+    "currentPriceOrChainAuthenticated": false,
+    "actualSQLite": false,
+    "sockets": false,
+    "nativeFundingApplicationExecuted": false,
+    "managedTasksCreated": 0,
+    "physicalKeyReleaseOrGCQualified": false,
+    "wholeWalletDeadlineOrOSIsolationClaim": false,
+    "defaultBuyerCutover": false,
+    "Phase2CCutover": false,
+    "approvedV6Native123SourceGraphChanged": false,
+    "unconsumedV6NativeAllowanceUsed": false,
+    "existing108CaseHostedProfileChanged": false,
+    "new32CasesHosted": false,
+    "durableRecoveryQualified": false,
+    "serviceDeliveryQualified": false,
+    "economicPilotQualified": false,
+    "productionQualified": false
+  }
+}
