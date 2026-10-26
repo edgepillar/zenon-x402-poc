@@ -104,13 +104,19 @@ export function createSdk105FundingServiceLifecycle(configuration) {
     retained=F({resourceUrl:url,serializedCheckpoint:serialized,paymentRequiredHeader:required});
     transaction=F({hash,signature,publicKey});
   }
-  function start(work,count,input){
+  function start(work,count,input,voidResult=false){
     if(count!==1||active!==null||closing!==null||held||!invariant())return rejected('operation_unavailable');
     const out=capability();active=out;let operation;
     try{operation=work(input);}catch{active=null;out.reject(error('operation_refused_or_unknown'));finishClose();return out.promise;}
     try{observe(operation,value=>{
       active=null;
-      if(closing!==null||held)out.reject(error('operation_unavailable'));else{try{plainResult(value);out.resolve(value);}catch{hold();out.reject(error('operation_unknown'));}}
+      if(closing!==null||held)out.reject(error('operation_unavailable'));else{try{
+        // The actual service owner returns Promise<void>: callback completion
+        // only, never a manufactured delivery/settlement receipt. Funding and
+        // handoff operations still require their original frozen DATA record.
+        if(voidResult){if(value!==undefined)fail('observation_rejected');}else plainResult(value);
+        out.resolve(value);
+      }catch{hold();out.reject(error('operation_unknown'));}}
       finishClose();
     },()=>{active=null;out.reject(error('operation_refused_or_unknown'));finishClose();});}
     catch{active=null;hold();out.reject(error('operation_unknown'));finishClose();}
@@ -178,7 +184,7 @@ export function createSdk105FundingServiceLifecycle(configuration) {
     handoffToService:F(function handoffToService(input){return start(handoff,arguments.length,input);}),
     submitOriginal:F(function submitOriginal(input){return start(x=>{
       if(phase!=='SERVICE'||!walletReceipt(true))fail('service_unavailable');try{return APPLY(SERVICE,client,[x]);}catch{hold();fail('operation_unknown');}
-    },arguments.length,input);}),inspect,close});
+    },arguments.length,input,true);}),inspect,close});
 }
 function plainResult(value){
   if(value===null||typeof value!=='object'||PROXY(value)||PROTO(value)!==Object.prototype||!Object.isFrozen(value))fail('observation_rejected');
