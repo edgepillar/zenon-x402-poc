@@ -31,7 +31,8 @@ function fixture(mode={}){
       if(f.prepareGate)await f.prepareGate.promise;
       return F({phase:'AWAITING_INDEPENDENT_PINS',packet:f.packet});
     }),
-    commitOriginalFunding:F(function commit(input){f.commits++;f.commitInput=input;return Promise.resolve(F({phase:'COMMITTED_DECLARED'}));}),
+    commitOriginalFunding:F(function commit(input){f.commits++;f.commitInput=input;
+      return Promise.resolve(Object.hasOwn(mode,'commitResult')?mode.commitResult:F({phase:'COMMITTED_DECLARED'}));}),
     submitOriginalFunding:F(function submit(input){f.submits++;f.submitInput=input;
       return Promise.resolve(F({phase:mode.unbound?'SUBMISSION_OUTCOME_UNKNOWN':'FUNDING_INTAKE_BOUND',fundingIntakeStatus:mode.unbound?'UNKNOWN':'BOUND'}));}),
     handoffToService:F(function handoff(input){
@@ -39,7 +40,9 @@ function fixture(mode={}){
       if(f.onHandoff)return f.onHandoff(input);
       return Promise.resolve(F({phase:'SERVICE_CLIENT_OPEN_ORIGINAL_RESTORED',authority:'NONE'}));
     }),
-    submitOriginal:F(function service(input){f.services++;f.serviceInput=input;return Promise.resolve(F({phase:'DECLARED_SERVICE_RESULT'}));}),
+    submitOriginal:F(function service(input){f.services++;f.serviceInput=input;
+      if(f.onService)return f.onService(input);
+      return Promise.resolve(Object.hasOwn(mode,'serviceResult')?mode.serviceResult:undefined);}),
     inspect:F(function inspect(){return F({lifecycle:f.childLifecycle,held:f.childHeld,declared:true});}),
     close:F(function close(){f.closes++;f.trace.push('client-close');
       if(f.onClose)return f.onClose();f.childLifecycle='CLOSED';return Promise.resolve(undefined);}),
@@ -67,7 +70,7 @@ test('real signed DATA and independent original pins reach handoff only after ke
 test('service operations are unavailable before explicit key-closed handoff',async()=>{
   const f=fixture();await f.ready();await assert.rejects(f.owner.submitOriginal({proof:'declared'}));assert.equal(f.services,0);
   await f.owner.handoffToService(f.request());const input=F({proof:'declared'});
-  const r=await f.owner.submitOriginal(input);assert.equal(r.phase,'DECLARED_SERVICE_RESULT');assert.equal(f.serviceInput,input);await f.owner.close();
+  const r=await f.owner.submitOriginal(input);assert.equal(r,undefined);assert.equal(f.serviceInput,input);await f.owner.close();
 });
 test('wrong independent pins refuse without consuming key close or handoff',async()=>{
   const f=fixture();await f.ready();const bad=f.request();bad.originalPayment.expectedPins.binding.paymentHash='e'.repeat(64);
@@ -198,4 +201,37 @@ test('a coherent foreign hash or signature packet cannot replace this wallet res
     assert.equal(f.handoffs,0);assert.equal(f.clears,0);assert.equal(f.owner.inspect().handoffAttempts,0);
     await f.owner.close();assert.equal(f.clears,1);assert.equal(f.signs,1);
   }
+});
+
+test('the actual native service void success is accepted without inventing a result',async()=>{
+  const f=fixture({serviceResult:undefined});await f.ready();await f.owner.handoffToService(f.request());
+  try{
+    assert.equal(await f.owner.submitOriginal(F({proof:'declared-original'})),undefined);
+    assert.equal(f.services,1);assert.equal(f.owner.inspect().held,false);
+  }finally{try{await f.owner.close();}catch{}}
+});
+
+test('a manufactured service result record is refused and retained HELD',async()=>{
+  const f=fixture({serviceResult:F({phase:'DECLARED_SERVICE_RESULT'})});await f.ready();await f.owner.handoffToService(f.request());
+  await assert.rejects(f.owner.submitOriginal(F({proof:'declared-original'})),/operation_unknown/);
+  assert.equal(f.services,1);assert.equal(f.owner.inspect().held,true);
+  await assert.rejects(f.owner.close());assert.equal(f.closes,1);assert.equal(f.clears,1);
+});
+
+test('undefined remains invalid for a funding commit record',async()=>{
+  const f=fixture({commitResult:undefined});await f.owner.prepareOriginalFunding(f.base.input);
+  await assert.rejects(f.owner.commitOriginalFunding({expectedPins:copy(f.packet.expectedPins)}),/operation_refused_or_unknown/);
+  assert.equal(f.owner.inspect().held,true);assert.equal(f.commits,1);assert.equal(f.submits+f.handoffs+f.services,0);
+  await assert.rejects(f.owner.close());assert.equal(f.closes,1);assert.equal(f.clears,1);
+});
+
+test('a late void service completion joins close without escaping or replaying',async()=>{
+  const f=fixture();await f.ready();await f.owner.handoffToService(f.request());
+  const late=gate();f.onService=()=>late.promise;
+  const operation=f.owner.submitOriginal(F({proof:'declared-original'})),refusal=assert.rejects(operation,/operation_unavailable/);
+  const close=f.owner.close();let done=false;close.then(()=>{done=true;});
+  await tick();assert.equal(done,false);assert.equal(f.services,1);assert.equal(f.closes,1);
+  late.resolve(undefined);await refusal;await close;
+  assert.equal(f.owner.close(),close);assert.equal(f.owner.inspect().lifecycle,'CLOSED');
+  assert.equal(f.owner.inspect().publicOperationActive,false);assert.equal(f.signs,1);assert.equal(f.clears,1);assert.equal(f.services,1);
 });

@@ -10,4 +10,4 @@ stream.on('data',e=>{if(e.type==='test:pass'&&e.data.nesting===0){passed++;if(e.
   if(e.type==='test:fail')failed++;});
 for await(const part of stream.compose(tap)){const text=String(part);bytes+=Buffer.byteLength(text);
   if(bytes>196608)throw Error('SDK105_SERVICE_LIFETIME_TAP_CAP');process.stdout.write(text);}
-if(passed!==21||failed!==0||skipped!==0)process.exitCode=1;
+if(passed!==25||failed!==0||skipped!==0)process.exitCode=1;

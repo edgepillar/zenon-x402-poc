@@ -1,6 +1,6 @@
 # SDK105 key lifetime across funding and service
 
-Date: 2026-10-27. All 21 current builtin component controls passed.
+Date: 2026-10-27. All 25 current builtin component controls passed.
 
 The new lifecycle connects the existing SDK105 wallet owner to the actual
 funding/service client's public operations. The preparation's original packet
@@ -41,7 +41,7 @@ because of a late completion. These failure paths are source-reviewed only.
 
 ## Actual verification and limits
 
-The [source-bound local result](../qualification/sdk105-funding-service-lifecycle.actual-local-result.json)
+The [source-bound local result](../qualification/sdk105-funding-service-void.actual-local-result.json)
 pins the 30-file builtin component closure, exact cases, actual exits and stream
 hashes. Tests execute the actual SDK105 owner, unsigned-hash/signed-DATA assembly,
 original checkpoint codec, external handoff capture and new lifecycle. Native
@@ -56,20 +56,41 @@ post-close view drift. Coherent foreign hash and signature packets are rejected
 even when their own checkpoint and independent pins agree. They cannot be
 substituted for this wallet owner's actual returned DATA.
 
-The earlier 20-case result is preserved. The added provenance case exercises
-both foreign-hash and foreign-signature variants; all 21 current cases pass.
+The earlier 20/21-case results remain preserved as historical component
+evidence. Their declared service capability returned a record, which did not
+model the actual native service return contract. A subsequent source review and
+a new declared-void regression found the mismatch: 22 cases ran with 21 passes
+and one failure. The source contract is traced to the actual request owner's
+callbackCompleted path and its Promise<void> completion; the existing native
+case source also explicitly expects undefined. This is source inspection and
+a component reproduction, not an executed native service reproduction.
+
+The corrected lifecycle accepts undefined only for submitOriginal. Preparation,
+commit, funding submission and handoff still require their frozen DATA records.
+A manufactured service record is refused and retained HELD. Undefined funding
+commit remains invalid. A late void service completion during close is joined
+without escaping the closed public operation or causing another dispatch.
+All 25 current cases pass with the corrected fixture.
+
+Void completion means only that the existing callback completed. It creates no
+delivery, service-success or settlement receipt. The original-payment, one-shot
+signing, independent pins, key clear, cached close and uncertainty rules remain
+in force. The failing 22-case evidence and its exact selected sources are retained.
 No SDK/Noble/x402 package, real key/private material, cryptographic signature,
 SQLite file, socket, positive-work/nonce search or native application is run.
 There is no source-tree/package copy, managed task or Node child.
 
-The new native entry passes one parser-only command. Its 90-file relative
-source closure is reviewed without evaluation. Main receives five new builtin
+The unchanged native entry retains its earlier successful parser-only command.
+Its current 90-file relative source closure is reviewed without evaluation.
+Only the builtin lifecycle dependency changed since that root parse; the
+changed dependency was parsed and executed in the 25 current component cases.
+No native command or unchanged root parser was repeated. Main receives five new builtin
 component/test/runner/evidence paths; the SDK/SQLite/native entry is published
 only on development. Existing native files and all 123 application sources in
 the separately approved V6 selection remain byte-identical. Its different
 one-shot native allowance is unconsumed.
 
-The existing 108-case hosted profile does not run these 21 local cases and is
+The existing 108-case hosted profile does not run these 25 local cases and is
 unchanged. Ordinary buyer/default and Phase2C cutover, real SDK/cryptographic
 interoperability, native key/native/store close, durable pin retention,
 interruption recovery, grant activation, service delivery and economic
