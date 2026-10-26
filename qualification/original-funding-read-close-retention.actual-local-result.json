@@ -1,0 +1,414 @@
+{
+  "kind": "CLEAN_ORIGINAL_FUNDING_READ_CLOSE_REFERENCE_RELEASE_LOCAL_RESULT",
+  "version": 1,
+  "date": "2026-10-26",
+  "sourceParent": "f40a097af3109fa96684e3370fb08bd4047f8cc9",
+  "mainBase": "def563729f31aaebce143a4f819402b4f8318a3c",
+  "status": "SOURCE_GC_AND_LIFECYCLE_CONTROLS_PASSED",
+  "authority": "NONE",
+  "change": {
+    "source": "src/zenon/dynamic-plasma-original-funding-read-close.js",
+    "before": {
+      "path": "src/zenon/dynamic-plasma-original-funding-read-close.js",
+      "bytes": 9568,
+      "LF": 178,
+      "sha256": "5086567b2c0cce0fc3419db69641beb7e5e434d47f83e17015682964ad482a45",
+      "gitBlob": "f2a1b30bb02a6b192fc3b0fe0b4fc5b65e2d297b"
+    },
+    "after": {
+      "path": "src/zenon/dynamic-plasma-original-funding-read-close.js",
+      "bytes": 9801,
+      "LF": 183,
+      "sha256": "b7b33770b774a506b09cef81550a5b39d62480968f1a3c567ad9bc018ad79470",
+      "gitBlob": "1c7a832c3704b25ee8f5ded10fad5d4b9d54fc8c"
+    },
+    "releasePoint": "After the existing clean joined CLOSED result has resolved the cached public Promise.",
+    "releasedOwnedReferences": [
+      "captured source callback record",
+      "read-close Promise alias",
+      "active-operation Promise alias"
+    ],
+    "openOrPendingOrHeldReferencesPreserved": true,
+    "publicAPIOrCloseReportShapeChanged": false,
+    "newResourceCloseCalls": false,
+    "automaticRetry": false,
+    "replacement": false
+  },
+  "gcControl": {
+    "node": "24.19.0",
+    "cases": 12,
+    "weakReferencesPerFixture": 5,
+    "observedObjects": "Four captured callback functions and one common synthetic source-callback object.",
+    "before": [
+      {
+        "kind": "discarded-control",
+        "phase": "DISCARDED_CONTROL",
+        "observedLiveReferences": 0,
+        "observedCollectedReferences": 5,
+        "gcPasses": 1
+      },
+      {
+        "kind": "open",
+        "phase": "OPEN",
+        "observedLiveReferences": 5,
+        "observedCollectedReferences": 0,
+        "gcPasses": 8
+      },
+      {
+        "kind": "read-pending",
+        "phase": "CLOSING",
+        "observedLiveReferences": 5,
+        "observedCollectedReferences": 0,
+        "gcPasses": 8
+      },
+      {
+        "kind": "read-pending-after-close",
+        "phase": "CLOSED",
+        "observedLiveReferences": 5,
+        "observedCollectedReferences": 0,
+        "gcPasses": 8
+      },
+      {
+        "kind": "operation-pending",
+        "phase": "CLOSING",
+        "observedLiveReferences": 5,
+        "observedCollectedReferences": 0,
+        "gcPasses": 8
+      },
+      {
+        "kind": "operation-pending-after-close",
+        "phase": "CLOSED",
+        "observedLiveReferences": 5,
+        "observedCollectedReferences": 0,
+        "gcPasses": 8
+      },
+      {
+        "kind": "funding-pending",
+        "phase": "CLOSING",
+        "observedLiveReferences": 5,
+        "observedCollectedReferences": 0,
+        "gcPasses": 8
+      },
+      {
+        "kind": "funding-pending-after-close",
+        "phase": "CLOSED",
+        "observedLiveReferences": 5,
+        "observedCollectedReferences": 0,
+        "gcPasses": 8
+      },
+      {
+        "kind": "guard-held",
+        "phase": "CLOSE_OUTCOME_UNKNOWN",
+        "observedLiveReferences": 5,
+        "observedCollectedReferences": 0,
+        "gcPasses": 8
+      },
+      {
+        "kind": "funding-alias",
+        "phase": "CLOSE_OUTCOME_UNKNOWN",
+        "observedLiveReferences": 5,
+        "observedCollectedReferences": 0,
+        "gcPasses": 8
+      },
+      {
+        "kind": "funding-rejected",
+        "phase": "CLOSE_OUTCOME_UNKNOWN",
+        "observedLiveReferences": 5,
+        "observedCollectedReferences": 0,
+        "gcPasses": 8
+      },
+      {
+        "kind": "closed",
+        "phase": "CLOSED",
+        "observedLiveReferences": 5,
+        "observedCollectedReferences": 0,
+        "gcPasses": 8
+      }
+    ],
+    "after": [
+      {
+        "kind": "discarded-control",
+        "phase": "DISCARDED_CONTROL",
+        "observedLiveReferences": 0,
+        "observedCollectedReferences": 5,
+        "gcPasses": 1
+      },
+      {
+        "kind": "open",
+        "phase": "OPEN",
+        "observedLiveReferences": 5,
+        "observedCollectedReferences": 0,
+        "gcPasses": 8
+      },
+      {
+        "kind": "read-pending",
+        "phase": "CLOSING",
+        "observedLiveReferences": 5,
+        "observedCollectedReferences": 0,
+        "gcPasses": 8
+      },
+      {
+        "kind": "read-pending-after-close",
+        "phase": "CLOSED",
+        "observedLiveReferences": 0,
+        "observedCollectedReferences": 5,
+        "gcPasses": 1
+      },
+      {
+        "kind": "operation-pending",
+        "phase": "CLOSING",
+        "observedLiveReferences": 5,
+        "observedCollectedReferences": 0,
+        "gcPasses": 8
+      },
+      {
+        "kind": "operation-pending-after-close",
+        "phase": "CLOSED",
+        "observedLiveReferences": 0,
+        "observedCollectedReferences": 5,
+        "gcPasses": 1
+      },
+      {
+        "kind": "funding-pending",
+        "phase": "CLOSING",
+        "observedLiveReferences": 5,
+        "observedCollectedReferences": 0,
+        "gcPasses": 8
+      },
+      {
+        "kind": "funding-pending-after-close",
+        "phase": "CLOSED",
+        "observedLiveReferences": 0,
+        "observedCollectedReferences": 5,
+        "gcPasses": 1
+      },
+      {
+        "kind": "guard-held",
+        "phase": "CLOSE_OUTCOME_UNKNOWN",
+        "observedLiveReferences": 5,
+        "observedCollectedReferences": 0,
+        "gcPasses": 8
+      },
+      {
+        "kind": "funding-alias",
+        "phase": "CLOSE_OUTCOME_UNKNOWN",
+        "observedLiveReferences": 5,
+        "observedCollectedReferences": 0,
+        "gcPasses": 8
+      },
+      {
+        "kind": "funding-rejected",
+        "phase": "CLOSE_OUTCOME_UNKNOWN",
+        "observedLiveReferences": 5,
+        "observedCollectedReferences": 0,
+        "gcPasses": 8
+      },
+      {
+        "kind": "closed",
+        "phase": "CLOSED",
+        "observedLiveReferences": 0,
+        "observedCollectedReferences": 5,
+        "gcPasses": 1
+      }
+    ],
+    "cleanScenariosCollectedAfterChange": 4,
+    "cleanScenariosCollectedBeforeChange": 0,
+    "droppedCoordinatorControlCollected": true,
+    "openPendingAndHeldReferencesRemainedLive": true,
+    "coordinatorRemainedStronglyReachableDuringObservations": true,
+    "testOnlyExplicitGC": true,
+    "observedCollectionDoesNotProveUniversalTimingOrHeapByteSavings": true
+  },
+  "existingControls": {
+    "coordinatorCases": 24,
+    "responseCloseCases": 10,
+    "responseCloseBooleanRows": 64,
+    "allCommandsActualExit": 0,
+    "casesUseDeclaredResourceCallbacks": true,
+    "nativeOwnerImported": false,
+    "SDK": false,
+    "SQLite": false,
+    "sockets": false
+  },
+  "existingNativeSelection": {
+    "status": "NEW_CURRENT_SELECTION_REQUIRED",
+    "applicationFilesRead": 160,
+    "installedPackageFilesRead": 0,
+    "mismatches": [
+      {
+        "path": "src/zenon/dynamic-plasma-original-funding-read-close.js",
+        "expected": {
+          "path": "app/src/zenon/dynamic-plasma-original-funding-read-close.js",
+          "bytes": 9568,
+          "LF": 178,
+          "sha256": "5086567b2c0cce0fc3419db69641beb7e5e434d47f83e17015682964ad482a45",
+          "gitBlob": "f2a1b30bb02a6b192fc3b0fe0b4fc5b65e2d297b"
+        },
+        "observed": {
+          "path": "app/src/zenon/dynamic-plasma-original-funding-read-close.js",
+          "bytes": 9801,
+          "LF": 183,
+          "sha256": "b7b33770b774a506b09cef81550a5b39d62480968f1a3c567ad9bc018ad79470",
+          "gitBlob": "1c7a832c3704b25ee8f5ded10fad5d4b9d54fc8c"
+        }
+      }
+    ],
+    "selectionFilesUnchanged": [
+      {
+        "path": "qualification/capacity-native-current-offered-parent-v2.inputs.json",
+        "bytes": 4680,
+        "LF": 122,
+        "sha256": "ef0202ada8a55d8e1659be944555bd2111d50181ad00afa2c284cce4007d9eaa",
+        "gitBlob": "b75b5b2d5ad3c224d01bf3e321110ad9f2c8905a"
+      },
+      {
+        "path": "qualification/capacity-native-current-roles-v4.inputs.json",
+        "bytes": 5209,
+        "LF": 132,
+        "sha256": "6a819a3e87e89927c05e292f8f0ee4332ac0a884199ab68d0f6cf286327a1662",
+        "gitBlob": "bc9977247b11a3edea32398969a9a4049f59c289"
+      },
+      {
+        "path": "qualification/issued-current-close-v4.inputs.json",
+        "bytes": 10437,
+        "LF": 300,
+        "sha256": "8339b2a8e04e7e3c573b1c26d8162f1c821df91182738409693d188121a21893",
+        "gitBlob": "f292abda9f607a7d423f9d32fce2e55472d84a33"
+      }
+    ],
+    "sourceGateMustRefuseBeforeNativeAdmission": true,
+    "newCurrentSelectionRequired": true,
+    "nativeExecutionAttempted": false,
+    "historicalSelectionOrEvidenceRewritten": false,
+    "currentCleanAllowanceConsumed": false,
+    "oldR4AllowanceConsumed": false
+  },
+  "actualReceipts": [
+    {
+      "label": "before_gc",
+      "actualExit": 0,
+      "complete": true,
+      "stdoutBytes": 1873,
+      "stdoutSha256": "ae630bac978ab17fcea59f5b055477ee884ab83776e795e8112a25e1d136803d",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "gc_retention",
+      "actualExit": 0,
+      "complete": true,
+      "stdoutBytes": 1879,
+      "stdoutSha256": "8a011cbfd4cbd45d822b1c0f68ea27360537ffd3d8f7ed43a553d42d7d7627d8",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "close_coordinator",
+      "actualExit": 0,
+      "complete": true,
+      "stdoutBytes": 3135,
+      "stdoutSha256": "9c43e1441937f02ceace7451144d4851609b66453f516194f082dc46e7173987",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "response_close_gate",
+      "actualExit": 0,
+      "complete": true,
+      "stdoutBytes": 1470,
+      "stdoutSha256": "495ffef114e66adadab8e41e00f64286a3803698513120d8dbce4bf42d001104",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "sourceBindings": [
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "LF": 40,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "qualification/dynamic-plasma-original-funding-read-close.behavior.draft.mjs",
+      "bytes": 16282,
+      "LF": 194,
+      "sha256": "c9c56cc4f4d0b3663213a057908ce42c21d280ddc8ea3946ed81e56280a4062a",
+      "gitBlob": "b43d9ce8dc9386ded4025deb08b7940f7f854b72"
+    },
+    {
+      "path": "qualification/native-read-response-close-gate.behavior.draft.mjs",
+      "bytes": 8076,
+      "LF": 134,
+      "sha256": "609dfdc79550496cfb8b68ecfe07368d72edc78efa87a2a8a06e93d7536a7f8e",
+      "gitBlob": "404ea6df0eb162139e29bb8e4deb130e8eebae27"
+    },
+    {
+      "path": "qualification/original-funding-read-close-retention.behavior.mjs",
+      "bytes": 5508,
+      "LF": 96,
+      "sha256": "0092c8bcf1703df40ae09d1445f7ead82d8975dae92bf8487e4ffc7845fa0b44",
+      "gitBlob": "5a1dab0869e63a4e6dbd9902eed957064cf30b20"
+    },
+    {
+      "path": "src/zenon/bounded-json-rpc-read-admission.js",
+      "bytes": 2627,
+      "LF": 51,
+      "sha256": "0b0b0806487c2e648a83367a9ebcd48a3a92493158ebca23abe8d6d6849d9ff3",
+      "gitBlob": "9e9ee352d7cf0013d96851c769f2a205ccf98449"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-original-funding-read-close.js",
+      "bytes": 9801,
+      "LF": 183,
+      "sha256": "b7b33770b774a506b09cef81550a5b39d62480968f1a3c567ad9bc018ad79470",
+      "gitBlob": "1c7a832c3704b25ee8f5ded10fad5d4b9d54fc8c"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-retained-read-session-core.js",
+      "bytes": 10450,
+      "LF": 204,
+      "sha256": "a0f91046c47cfa770f30bf299f620086351ee15977f669d9ec6016dd08d65794",
+      "gitBlob": "b9151955b073be614946525e70320600f7a6850b"
+    },
+    {
+      "path": "src/zenon/native-read-generation-handles-closed.js",
+      "bytes": 1194,
+      "LF": 19,
+      "sha256": "136c4088341d71d10ec8a4f07fbfbf959607c6a6676a2f6a86b56f6d3ac92de5",
+      "gitBlob": "466c20d9849c81306ba10f6001eb9951f14cd55d"
+    },
+    {
+      "path": "src/zenon/native-read-retired-error-latch.js",
+      "bytes": 994,
+      "LF": 24,
+      "sha256": "a7c2c242f2df97e8f6fcd6171d0f24b3ec048f25115135dcb08dd83a21f48d84",
+      "gitBlob": "97cff24934379cf9d8b1ae9b5fe43df68afd6483"
+    }
+  ],
+  "mainScope": {
+    "runtimeChanges": 1,
+    "newRegressionAndReports": 3,
+    "hostedProfileChanged": false,
+    "existingApprovedHostedProfileControls": 27,
+    "hostedProfileIncludesNewGCControl": false,
+    "hostedResultForNewMain": "OBSERVE_SEPARATELY_AFTER_TRANSFER"
+  },
+  "evidenceLimits": {
+    "nativeApplicationExecutions": 0,
+    "SDKImported": false,
+    "SQLite": false,
+    "sockets": false,
+    "TLS": false,
+    "keysOrSignatures": false,
+    "nonceSearch": false,
+    "storageRootRead": false,
+    "managerImported": false,
+    "managedTasksCreated": 0,
+    "filesystemCleanup": false,
+    "historicalEvidenceChanged": false,
+    "physicalNativeCleanup": "NOT_QUALIFIED",
+    "livePayment": "NOT_ESTABLISHED",
+    "pilotOrProduction": "NOT_QUALIFIED"
+  }
+}
