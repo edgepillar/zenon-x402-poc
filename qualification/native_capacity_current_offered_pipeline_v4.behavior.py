@@ -349,15 +349,19 @@ def declared_capacity_inventory(reserved_values,available_values,*,snapshot_chan
     def mount_query(argv,**kwargs):
         if argv!=["/usr/sbin/diskutil","info","-plist",str(volume)]:raise AssertionError("DECLARED_MOUNT_QUERY_ONLY")
         return types.SimpleNamespace(returncode=0,stdout=launcher.plistlib.dumps(dict(VolumeUUID=uuid,MountPoint=str(volume))),stderr=b"")
-    originals=launcher.read,launcher.reservation_snapshot,launcher.subprocess.run,launcher.os.statvfs
+    def capture_reservations(path,common,selected_own_task):
+        # Declared aggregate callbacks stand in for the one physical capture.
+        return dict(snapshot=snapshot(path,common),reservations=reservations(path,selected_own_task))
+    originals=launcher.read,launcher.reservation_snapshot,launcher.subprocess.run,launcher.os.statvfs,launcher.reservation_capture
     launcher.read=read_metadata;launcher.reservation_snapshot=snapshot
+    launcher.reservation_capture=capture_reservations
     launcher.subprocess.run=mount_query;launcher.os.statvfs=available
     result=error=None
     try:
         try:result=launcher.capacity(volume,uuid,root,common,resource.resource_plan(WORKLOAD),own_task)
         except (ValueError,AssertionError)as problem:error=problem
     finally:
-        launcher.read,launcher.reservation_snapshot,launcher.subprocess.run,launcher.os.statvfs=originals
+        launcher.read,launcher.reservation_snapshot,launcher.subprocess.run,launcher.os.statvfs,launcher.reservation_capture=originals
     return dict(result=result,error=error,events=events)
 
 def capacity_early_prefix(self):

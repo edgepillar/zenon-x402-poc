@@ -146,7 +146,7 @@ def source_admission(repo,digest):
     require(type(manifest)is dict and set(manifest)=={"kind","version","sourceParent","pythonControls","profileSelection",
         "childSelection","workload","effectsCeiling","requiredPolicy","nativeSelection","nativeExecuted","nativeAllowanceGranted","authority"}
         and manifest["kind"]==KIND and type(manifest["version"])is int and manifest["version"]==4
-        and manifest["sourceParent"]=="3f2e225c66ad8db7bdc671e82703b3d3ad6dc808"
+        and manifest["sourceParent"]=="b415370129c3c9041b496bd483249ca4d72dea59"
         and manifest["nativeSelection"]==NATIVE_SELECTION and manifest["nativeExecuted"]is False
         and manifest["nativeAllowanceGranted"]is False and manifest["authority"]=="NONE","CURRENT_MANAGED_SOURCE_NOT_AUTHORITY")
     inputs={name:read(repo/name)for name in[SELF]+[name for name,_ in FROZEN]+[PARENT,SOURCE_SELECTION,PLAN]}
@@ -291,6 +291,62 @@ def reservation_capacity_data(roots,effects,reservation_reader,available_reader,
     return capacity_data(available(),reserved,effects,roots)
 
 
+
+def reservation_capture(root, common, own_task=None):
+    """Capture one reservation pass and its full recheck witness together.
+
+    The final reservation_snapshot recheck stays independent. This reads only
+    owned metadata, reuses the existing identity-keyed cache and never changes
+    a task, lease, reservation, root policy or cleanup disposition.
+    """
+    common.private_directory(root)
+    raw, metadata_id = common.read(root / "storage.json", 65536)
+    meta = json.loads(raw)
+    require(meta.get("schema") == "zenon-owned-task-storage/v2"
+        and type(meta.get("id")) is str and re.fullmatch(r"[0-9a-f]{32}", meta["id"]),
+        "EXISTING_STORE_IDENTITY")
+    tasks = root / "tasks"; common.private_directory(tasks)
+    directory_id = identity(tasks.lstat())
+    entries = list(tasks.iterdir())
+    require(len(entries) <= 4096, "BOUNDED_ALL_TASK_RECORDS")
+    cache = common._reservation_cache
+    require(type(cache) is dict, "EXISTING_RESERVATION_CACHE")
+    rows = []; reserved = 0
+    for task in entries:
+        common.private_directory(task)
+        require(re.fullmatch(r"[0-9a-f]{32}", task.name), "EXACT_RESERVATION_TASK_NAME")
+        record = task / "task.json"; before = record.lstat()
+        require(stat.S_ISREG(before.st_mode) and before.st_uid == os.getuid()
+            and before.st_nlink == 1 and 0 <= before.st_size <= 4194304,
+            "RESERVATION_RECORD_IDENTITY")
+        current = identity(before); cached = cache.get(str(record))
+        if cached is not None and cached[0] == current:
+            row = cached[1]
+        else:
+            data, file_id = common.read(record, 4194304)
+            require(file_id == current, "RESERVATION_RECORD_CHANGED_DURING_CAPTURE")
+            full = json.loads(data)
+            row = {key: full[key] for key in ("id", "store_id", "state", "expected_bytes")}
+            cache[str(record)] = (file_id, row)
+        require(row["id"] == task.name and row["store_id"] == meta["id"]
+            and row["state"] in ("OPEN", "CLOSED") and type(row["expected_bytes"]) is int
+            and 0 <= row["expected_bytes"] <= 2**53-1, "EXISTING_TASK_RESERVATION")
+        scratch = task / "scratch"
+        try:
+            common.private_directory(scratch); scratch_id = identity(scratch.lstat())[:5]
+        except FileNotFoundError:
+            scratch_id = None
+        if (row["state"] == "OPEN" or scratch_id is not None) and (meta["id"], row["id"]) != own_task:
+            reserved += row["expected_bytes"]
+        rows.append((task.name, identity(task.lstat())[:5], current, scratch_id))
+    require(identity((root / "storage.json").lstat()) == metadata_id,
+        "RESERVATION_METADATA_CHANGED")
+    require(identity(tasks.lstat()) == directory_id and set(tasks.iterdir()) == set(entries),
+        "RESERVATION_TASK_LIST_CHANGED")
+    return dict(snapshot=(directory_id, sorted(rows)),
+        reservations=dict(tasks=len(entries), reservedBytes=reserved, storageSha256=sha(raw)))
+
+
 def reservation_snapshot(root, common):
     """Read stable full identities, not contents or cleanup eligibility.
 
@@ -354,8 +410,9 @@ def capacity(volume, volume_uuid, root, common, effects, own_task=None):
     snapshots={}
     def reservation_reader(index):
         path=candidates[index][0]
-        snapshots[str(path)]=reservation_snapshot(path,common)
-        return common.reservations(path,own_task)["reservedBytes"]
+        captured=reservation_capture(path,common,own_task)
+        snapshots[str(path)]=captured["snapshot"]
+        return captured["reservations"]["reservedBytes"]
     def recheck(observed):
         prefix=candidates[:observed]
         require(set(snapshots)=={str(row[0])for row in prefix},"COMPLETE_OBSERVED_RESERVATION_PREFIX")
