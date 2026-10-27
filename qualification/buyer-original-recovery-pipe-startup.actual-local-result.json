@@ -1,0 +1,4960 @@
+{
+  "qualification": "WHOLE_ORIGINAL_RECOVERY_PIPE_ACQUISITION",
+  "status": "SOURCE_BOUND_REAL_FIFO_COMPONENTS_PASS_NATIVE_CALLBACKS_DECLARED",
+  "date": "2026-10-27",
+  "runtime": {
+    "node": "v24.19.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "binarySha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100"
+  },
+  "selected": 62,
+  "passed": 62,
+  "failed": 0,
+  "skipped": 0,
+  "cancelled": 0,
+  "startupCases": 16,
+  "rerunBackendCases": 33,
+  "rerunLocalCases": 13,
+  "attempt": 1,
+  "elapsedSeconds": 9.000889999995707,
+  "sourcePins": [
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "LF": 40,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "qualification/buyer-original-backend-recovery-pipe.control.mjs",
+      "bytes": 10294,
+      "LF": 138,
+      "sha256": "d857dbc175ea9f7dda404a5cf71fa0d49698e79277f880c6c0650fbea028bcd1",
+      "gitBlob": "750f6fa07dbf31f2fdc5103a0fa63a3bfd0b1e01"
+    },
+    {
+      "path": "qualification/buyer-original-backend-recovery-pipe.fixture.json",
+      "bytes": 18952,
+      "LF": 78,
+      "sha256": "8006b9217d3e43a03f97f9a5f280ae05dd350e6b90f9f4de812bff5cdab67e91",
+      "gitBlob": "6cc3fd6d9921693a897df9f6fd7388fa9a378f50"
+    },
+    {
+      "path": "qualification/buyer-original-recovery-pipe-startup.control.mjs",
+      "bytes": 9547,
+      "LF": 133,
+      "sha256": "36b620cb78ba45b39e69bf6e400f4f86b70fb8e4fb4ea79f1c768ee2877c770f",
+      "gitBlob": "22113e4ca9647bdfc9ab7f3bf8db960bc87541d5"
+    },
+    {
+      "path": "qualification/buyer-original-recovery-pipe.control.mjs",
+      "bytes": 6378,
+      "LF": 93,
+      "sha256": "3e38ad97c89e459fb7674c3bb58388a1b9e3c479134e52fa3d7039ce922f65ee",
+      "gitBlob": "5b95b5816bf693d9399f2f7f697299392d432abf"
+    },
+    {
+      "path": "qualification/buyer-original-recovery-pipe.fixture.json",
+      "bytes": 16195,
+      "LF": 64,
+      "sha256": "aae343d0b33b7f4fd99b5bf7e1db5013a4ffb4d3ea08499f34ac756fcfb59240",
+      "gitBlob": "6136b78c0ce0b06c524f94002f639e53b0de0857"
+    },
+    {
+      "path": "qualification/buyer-original-recovery.fixture.mjs",
+      "bytes": 8444,
+      "LF": 115,
+      "sha256": "9d911626b543d3d0b0ff73ae9654f99294d41f0c706ba0760090b7c311b8922c",
+      "gitBlob": "9892bf7c07f3a870eb80c8f4bdd385648e3d9d81"
+    },
+    {
+      "path": "qualification/dynamic-plasma-funding-post-input.fixture.mjs",
+      "bytes": 3939,
+      "LF": 58,
+      "sha256": "22d291367a3e9b8e8bf56f2a40acacfa2ea40b6050f2aee41da06bba9aa699a2",
+      "gitBlob": "46f914fbce51b6790aa08836567ba12f9e6be6f6"
+    },
+    {
+      "path": "qualification/dynamic-plasma-retained-input.fixture.mjs",
+      "bytes": 1749,
+      "LF": 31,
+      "sha256": "38f46d337f2c6a0584e779d26c75a5a5bccc56a42a2c6bbd1e06add4730c10de",
+      "gitBlob": "5bb61e6a3161e4d0d50e97544a86308574e48d24"
+    },
+    {
+      "path": "scripts/run-current-buyer-original-recovery-pipe.py",
+      "bytes": 18754,
+      "LF": 321,
+      "sha256": "1822ec1813377bf5868490dedcc09326779e8c61c9b15e13f3f6545068edcc78",
+      "gitBlob": "31fd2712e36c112a2b7d5205c485e3f78ad71d1e"
+    },
+    {
+      "path": "src/buyer-command-line-channel.js",
+      "bytes": 11200,
+      "LF": 214,
+      "sha256": "aea944d8fd1b28290c6beafe7d13985da1194ed5be5d0e1957490fe8c13e1fab",
+      "gitBlob": "f20c1fe402ddb0b3f9dee065a31a10ee88bab179"
+    },
+    {
+      "path": "src/buyer-original-command-host.js",
+      "bytes": 8878,
+      "LF": 145,
+      "sha256": "b81bddf6b944aa39521d20ea5c43ce17f15c3a0f39a462de149d399f2ad300b3",
+      "gitBlob": "62a4e1df1d751b37ad24c831dc40dba43297c1fd"
+    },
+    {
+      "path": "src/buyer-original-funding-command-session.js",
+      "bytes": 14884,
+      "LF": 277,
+      "sha256": "19d91c723622e1cb2244c1fa9b3dd59db5fd72120c7163df53076b833ba0c9c5",
+      "gitBlob": "170054dd880ac1efd432f00006815552de4e523b"
+    },
+    {
+      "path": "src/buyer-original-funding-command.js",
+      "bytes": 14077,
+      "LF": 263,
+      "sha256": "064a31640b10da873ecf558b0550024366e50cc9d1a5e91a15cc4e006e05e7e9",
+      "gitBlob": "2e6e234d85a2fc92a2ae9c52a8ea3429f63faad1"
+    },
+    {
+      "path": "src/buyer-original-recovery-client.js",
+      "bytes": 23301,
+      "LF": 407,
+      "sha256": "0657a0052270fa3f61b8d54a01309374622968ceb168d0e57cf464294ad6d8e4",
+      "gitBlob": "28e780694c3cb7157eca4ee5a0cfa69ae4f2a4e4"
+    },
+    {
+      "path": "src/buyer-original-recovery-pipe-bootstrap.js",
+      "bytes": 7403,
+      "LF": 117,
+      "sha256": "83d2bb6ec9ef3303d22a290c2caf502cdff2c9146e46b8e76a112c71f8786538",
+      "gitBlob": "b5a7275b2c6ba1e76a92c94097e4f45057349d74"
+    },
+    {
+      "path": "src/buyer-original-recovery-pipe-host.js",
+      "bytes": 18136,
+      "LF": 338,
+      "sha256": "cda9b1b7b2024e0931c2acf538b8745d266ca74bc7b297ca8aa4e77bd87c8819",
+      "gitBlob": "489b10347aa184dc69581154059f3aeac6190923"
+    },
+    {
+      "path": "src/buyer-owned-backend-recovery-resource.js",
+      "bytes": 4982,
+      "LF": 100,
+      "sha256": "499d192253e6b6a2dcba0317191ae8bf66c1841e5768cd1a4892ddd487429e5a",
+      "gitBlob": "b51428e6c9899c0ca436f79129d38b6fe527883f"
+    },
+    {
+      "path": "src/buyer-owned-pipe-streams.js",
+      "bytes": 4516,
+      "LF": 83,
+      "sha256": "8a32be8a2dd63f4c8681aafb39ac335595380102c19958697a003cbf1cc9e65e",
+      "gitBlob": "5ad5a6c55ef9f057c9259e96df54beb647598250"
+    },
+    {
+      "path": "src/canonical.js",
+      "bytes": 967,
+      "LF": 26,
+      "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+      "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4"
+    },
+    {
+      "path": "src/service-credit-bounded-close-completion.js",
+      "bytes": 6020,
+      "LF": 115,
+      "sha256": "1d59ec72cf9b8877947ba766316746be1e2ca5b82029c9b656757c2953ff7e5e",
+      "gitBlob": "9ccc197dd1090f14bb4c452389be8aa8180d0322"
+    },
+    {
+      "path": "src/service-credit-bounded-operation-drain.js",
+      "bytes": 5474,
+      "LF": 118,
+      "sha256": "4ea81e010451f91bb8f0ca668dd6bd3966763ea23385bdd0d511c200e4b3eecd",
+      "gitBlob": "843f9b0a3adb411471f7e345b97362e9035e094b"
+    },
+    {
+      "path": "src/service-credit-custodied-backend-recovery-core.js",
+      "bytes": 9518,
+      "LF": 215,
+      "sha256": "54afa41816c0b971d49b80281bd0391563efa31644077cfa6204714eca74659a",
+      "gitBlob": "533a759d6b8735d57b5d15bce241cf43048ecddf"
+    },
+    {
+      "path": "src/service-credit-original-request-custody-contract.js",
+      "bytes": 15100,
+      "LF": 376,
+      "sha256": "483d20e90d78ba95a8c5d5458dd201910e8d42aecbdc0dc03812e7044a464054",
+      "gitBlob": "94d67559a11f87f283a5cd99d2aaf8074374eb0a"
+    },
+    {
+      "path": "src/service-credit-pilot-original-payment-checkpoint.js",
+      "bytes": 4003,
+      "LF": 89,
+      "sha256": "930905f31824a6cadc16dfb84572cd4dc38a81e2fce4569b73b6bef29dec97d1",
+      "gitBlob": "51c6391bc22f561ebff0005ced31e538aa83f4fa"
+    },
+    {
+      "path": "src/x402-funding-post-checkpoint-route.js",
+      "bytes": 1310,
+      "LF": 29,
+      "sha256": "157e80e9f14b41c8cacc05423a7acd8616a6f759adac377f04f1fca21869831e",
+      "gitBlob": "777ff48ac9cf255f80cda7e22c68706b7d7084b3"
+    },
+    {
+      "path": "src/x402-official-https-request-binding.js",
+      "bytes": 5085,
+      "LF": 99,
+      "sha256": "dabf215408887bd0d2ba346085c5ab2df13f724e8759b7a98b71b09c8dc8d692",
+      "gitBlob": "47059c772407233b8b6f54632ba065893ff92dd3"
+    },
+    {
+      "path": "src/x402-original-payment-checkpoint-client.js",
+      "bytes": 13457,
+      "LF": 262,
+      "sha256": "bba2439e40a2decb75b330440919d8d1ea1fea53f6e684f77b57a9bb66129af1",
+      "gitBlob": "bd732c2c739e6dbe1d4ed583b6b55040bf8aecfd"
+    },
+    {
+      "path": "src/x402-wire.js",
+      "bytes": 39886,
+      "LF": 934,
+      "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+      "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+    },
+    {
+      "path": "src/zenon/bounded-dynamic-plasma-strategy.js",
+      "bytes": 15729,
+      "LF": 353,
+      "sha256": "7b82560bdeb25e573912090a2fe8de7b45912500a7a7c4434fe06dcf94e06d62",
+      "gitBlob": "ee85b7a4da8bf4190ae099e6bc5074059fccebbc"
+    },
+    {
+      "path": "src/zenon/bounded-json-rpc-read-core.js",
+      "bytes": 22116,
+      "LF": 586,
+      "sha256": "1d8873868274045825717ee70b9a402d91cd6235fdaf410d93ddb365fc2d7ca3",
+      "gitBlob": "82d49d18a92c1074819e8976d94a2cfef3975466"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-compatibility.js",
+      "bytes": 7732,
+      "LF": 225,
+      "sha256": "b3989ce15e5f2e9d07b0ed035fe96bcce9f22cac93f5e497fdca5c37bf7618dd",
+      "gitBlob": "3811b748b3f905e454c8a4af4650bb7f89eb1cf2"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-json-rpc-read-transport.js",
+      "bytes": 10832,
+      "LF": 283,
+      "sha256": "fd03b2ad87d16660aa61d3961c163d724d5f89cd6d4bb9c4391d739566d5e5ca",
+      "gitBlob": "0475b7ab42889f67fb030fa7344d73d8bd6957d7"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-observation-normalizer.js",
+      "bytes": 28398,
+      "LF": 698,
+      "sha256": "2c3f7d42ded21a5513ff26c23a00a35a53aa334f053d10930f1571a020286897",
+      "gitBlob": "c406db8471aa6c8afd812c222c673c809491cf00"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-original-funding-data.js",
+      "bytes": 16557,
+      "LF": 312,
+      "sha256": "8a416a548e827dc71bc6f87e675e265d01c20d6e8147de8617d47b8b8b8b0770",
+      "gitBlob": "8d8e44fba2bd093ec0d0c909530a570b7eb104ce"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-original-funding-service-handoff-request.js",
+      "bytes": 4584,
+      "LF": 75,
+      "sha256": "07affc3e40d785406fea54794ee694c03e31ab49fc8857369cdf52e33a331cab",
+      "gitBlob": "0382f9f6235a4fbc6f5935d3db77b29efaf1a345"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-price-policy.js",
+      "bytes": 16224,
+      "LF": 444,
+      "sha256": "eba3225c4d26cbb6e0be575ac4fd5073bc8b0c4454eb51e2bea4d91856d0c65e",
+      "gitBlob": "649dd09b60236b43c91d22e34b76f71f4b661361"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-required-fused-policy-adapter.js",
+      "bytes": 12024,
+      "LF": 272,
+      "sha256": "e2b693d4df9065d44ba590f4d0c8dffeb8e55187668eedfa396b4026c9905c3e",
+      "gitBlob": "b592aafd4c41461318376ea9acc1373f99317455"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-required-fused-quote.js",
+      "bytes": 5416,
+      "LF": 133,
+      "sha256": "f5e10ff2dbfff3b6b63d87f0abadd0bb52b5d6b8fe0ead6a55fc5ea14207b730",
+      "gitBlob": "e820fd31ffde4ef77a2efa6e1fd3ed1775778726"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-user-send-fixed-work.js",
+      "bytes": 3475,
+      "LF": 77,
+      "sha256": "4ee83870df0b25c34d35c0f0d0ceb894ca9dab8c047f81b34a48dd816f1fbf38",
+      "gitBlob": "4ce2a790df84c77bc76615e5eebc309ecd2868ac"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-user-send-key-binding.js",
+      "bytes": 4237,
+      "LF": 91,
+      "sha256": "37ad7e74b038801297e4bffb0cb8ba92cbd79009ed32c4ae5b134fe2cb154be2",
+      "gitBlob": "c366f0fee4132604b40604547fe22f1bc1dba65d"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-user-send-work-binding.js",
+      "bytes": 1940,
+      "LF": 42,
+      "sha256": "79eba29a05427128ae3a12346fd3ee7cbaa526d6f39eb36ed58d388640638266",
+      "gitBlob": "a329d521458a5c5b6dbc87194d91d4165d5e759c"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-user-send-work-input.js",
+      "bytes": 2853,
+      "LF": 59,
+      "sha256": "2ff9c089e5903c059746d0a1c38688a2849f94d04d429279811fbbfbb40450a4",
+      "gitBlob": "dad4febf4ef6f09216640245c7e3805e01ad0127"
+    },
+    {
+      "path": "src/zenon/plasma-strategy.js",
+      "bytes": 974,
+      "LF": 32,
+      "sha256": "1c597d4e169ba8a5e6d2b7852c4ffa3a8ec9b854332fe354b9b013c36ebae093",
+      "gitBlob": "5cddc2d270aaf043e6e43145e95ffe0be3dde475"
+    },
+    {
+      "path": "src/zenon/transaction-planner.js",
+      "bytes": 22611,
+      "LF": 464,
+      "sha256": "079fe8da938e08e33a20ca1076492a829afa6fce3ae7f9b9f68d3bf4bff94233",
+      "gitBlob": "17b49a3d53974c9b3846ec6f352d6e8974bad7d3"
+    }
+  ],
+  "rows": [
+    {
+      "profile": "STARTUP",
+      "scenario": "LOCAL_OPEN_PENDING",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 5918,
+      "inputSha256": "7a5a41520e3c61dcffab0f44788b49b1450058a0b8a5aab58363493ca9d96bfd",
+      "stopReason": null,
+      "elapsedSeconds": 0.42838225000014063,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "LOCAL_OPEN_PENDING",
+        "passed": true,
+        "result": {
+          "buyerOriginalRecoveryPipeRefusalVersion": 1,
+          "status": "CLOSE_UNKNOWN",
+          "exitCode": 4,
+          "stage": "NATIVE_OPEN",
+          "returnedSession": false,
+          "knownOwnersClosedObserved": true,
+          "nativeOpenEntered": true,
+          "nativeResourceRelease": "NOT_ESTABLISHED",
+          "acquisitionBudgetMs": 30,
+          "acquisitionOutcome": "UNKNOWN",
+          "acquisitionRefusal": "DEADLINE_UNKNOWN",
+          "acquisitionObservationOnly": true,
+          "nativeCancellationOrTermination": "NOT_ESTABLISHED",
+          "historicalObservation": true,
+          "authority": "NONE",
+          "serviceDelivery": "NOT_ESTABLISHED",
+          "grantActivation": "NOT_ESTABLISHED",
+          "automaticRetry": false
+        },
+        "budgetMs": 30,
+        "elapsedMs": 32.771625,
+        "payerOpens": 1,
+        "backendOpens": 0,
+        "payerCloses": 0,
+        "readerCloses": 0,
+        "storeCloses": 0,
+        "closeOrder": [],
+        "observedBeforeLate": {
+          "payerCloses": 0,
+          "readerCloses": 0,
+          "storeCloses": 0
+        },
+        "activeTimeoutsBefore": 0,
+        "activeTimeoutsAfter": 0,
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "lateResultStayedUnknown": true,
+        "serviceCalls": 0,
+        "ipConnections": 0,
+        "nativeCallbacks": "DECLARED",
+        "physicalRelease": "NOT_QUALIFIED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 1061,
+          "sha256": "21048de0f90d9ce9cdf2fa231779c0e6ad73e2fed611f8b284b3007ec73ad7fc"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "profile": "STARTUP",
+      "scenario": "LOCAL_OPEN_LATE",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 5918,
+      "inputSha256": "7a5a41520e3c61dcffab0f44788b49b1450058a0b8a5aab58363493ca9d96bfd",
+      "stopReason": null,
+      "elapsedSeconds": 0.10796100000152364,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "LOCAL_OPEN_LATE",
+        "passed": true,
+        "result": {
+          "buyerOriginalRecoveryPipeRefusalVersion": 1,
+          "status": "CLOSE_UNKNOWN",
+          "exitCode": 4,
+          "stage": "NATIVE_OPEN",
+          "returnedSession": false,
+          "knownOwnersClosedObserved": true,
+          "nativeOpenEntered": true,
+          "nativeResourceRelease": "NOT_ESTABLISHED",
+          "acquisitionBudgetMs": 30,
+          "acquisitionOutcome": "UNKNOWN",
+          "acquisitionRefusal": "DEADLINE_UNKNOWN",
+          "acquisitionObservationOnly": true,
+          "nativeCancellationOrTermination": "NOT_ESTABLISHED",
+          "historicalObservation": true,
+          "authority": "NONE",
+          "serviceDelivery": "NOT_ESTABLISHED",
+          "grantActivation": "NOT_ESTABLISHED",
+          "automaticRetry": false
+        },
+        "budgetMs": 30,
+        "elapsedMs": 35.876416,
+        "payerOpens": 1,
+        "backendOpens": 0,
+        "payerCloses": 1,
+        "readerCloses": 0,
+        "storeCloses": 0,
+        "closeOrder": [
+          "PAYER_CLOSE"
+        ],
+        "observedBeforeLate": {
+          "payerCloses": 0,
+          "readerCloses": 0,
+          "storeCloses": 0
+        },
+        "activeTimeoutsBefore": 0,
+        "activeTimeoutsAfter": 0,
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "lateResultStayedUnknown": true,
+        "serviceCalls": 0,
+        "ipConnections": 0,
+        "nativeCallbacks": "DECLARED",
+        "physicalRelease": "NOT_QUALIFIED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 1071,
+          "sha256": "1ced50162eb993f8d714fb7d8bdd615a7dc6b58a71a0039796c422ffce65a059"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "profile": "STARTUP",
+      "scenario": "LOCAL_LATE_CLOSE_REJECTS",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 5918,
+      "inputSha256": "7a5a41520e3c61dcffab0f44788b49b1450058a0b8a5aab58363493ca9d96bfd",
+      "stopReason": null,
+      "elapsedSeconds": 0.10765129199717194,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "LOCAL_LATE_CLOSE_REJECTS",
+        "passed": true,
+        "result": {
+          "buyerOriginalRecoveryPipeRefusalVersion": 1,
+          "status": "CLOSE_UNKNOWN",
+          "exitCode": 4,
+          "stage": "NATIVE_OPEN",
+          "returnedSession": false,
+          "knownOwnersClosedObserved": true,
+          "nativeOpenEntered": true,
+          "nativeResourceRelease": "NOT_ESTABLISHED",
+          "acquisitionBudgetMs": 30,
+          "acquisitionOutcome": "UNKNOWN",
+          "acquisitionRefusal": "DEADLINE_UNKNOWN",
+          "acquisitionObservationOnly": true,
+          "nativeCancellationOrTermination": "NOT_ESTABLISHED",
+          "historicalObservation": true,
+          "authority": "NONE",
+          "serviceDelivery": "NOT_ESTABLISHED",
+          "grantActivation": "NOT_ESTABLISHED",
+          "automaticRetry": false
+        },
+        "budgetMs": 30,
+        "elapsedMs": 36.151583,
+        "payerOpens": 1,
+        "backendOpens": 0,
+        "payerCloses": 1,
+        "readerCloses": 0,
+        "storeCloses": 0,
+        "closeOrder": [
+          "PAYER_CLOSE"
+        ],
+        "observedBeforeLate": {
+          "payerCloses": 0,
+          "readerCloses": 0,
+          "storeCloses": 0
+        },
+        "activeTimeoutsBefore": 0,
+        "activeTimeoutsAfter": 0,
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "lateResultStayedUnknown": true,
+        "serviceCalls": 0,
+        "ipConnections": 0,
+        "nativeCallbacks": "DECLARED",
+        "physicalRelease": "NOT_QUALIFIED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 1080,
+          "sha256": "4398527b0a0e85ec960d6c8bf7bfd197169502fd07ab3025234a9114eb3171e2"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "profile": "STARTUP",
+      "scenario": "LOCAL_LATE_CLOSE_PENDING",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 5918,
+      "inputSha256": "7a5a41520e3c61dcffab0f44788b49b1450058a0b8a5aab58363493ca9d96bfd",
+      "stopReason": null,
+      "elapsedSeconds": 0.10616633300378453,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "LOCAL_LATE_CLOSE_PENDING",
+        "passed": true,
+        "result": {
+          "buyerOriginalRecoveryPipeRefusalVersion": 1,
+          "status": "CLOSE_UNKNOWN",
+          "exitCode": 4,
+          "stage": "NATIVE_OPEN",
+          "returnedSession": false,
+          "knownOwnersClosedObserved": true,
+          "nativeOpenEntered": true,
+          "nativeResourceRelease": "NOT_ESTABLISHED",
+          "acquisitionBudgetMs": 30,
+          "acquisitionOutcome": "UNKNOWN",
+          "acquisitionRefusal": "DEADLINE_UNKNOWN",
+          "acquisitionObservationOnly": true,
+          "nativeCancellationOrTermination": "NOT_ESTABLISHED",
+          "historicalObservation": true,
+          "authority": "NONE",
+          "serviceDelivery": "NOT_ESTABLISHED",
+          "grantActivation": "NOT_ESTABLISHED",
+          "automaticRetry": false
+        },
+        "budgetMs": 30,
+        "elapsedMs": 35.436125,
+        "payerOpens": 1,
+        "backendOpens": 0,
+        "payerCloses": 1,
+        "readerCloses": 0,
+        "storeCloses": 0,
+        "closeOrder": [
+          "PAYER_CLOSE"
+        ],
+        "observedBeforeLate": {
+          "payerCloses": 0,
+          "readerCloses": 0,
+          "storeCloses": 0
+        },
+        "activeTimeoutsBefore": 0,
+        "activeTimeoutsAfter": 0,
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "lateResultStayedUnknown": true,
+        "serviceCalls": 0,
+        "ipConnections": 0,
+        "nativeCallbacks": "DECLARED",
+        "physicalRelease": "NOT_QUALIFIED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 1080,
+          "sha256": "fdd9e7b5fd54851a6830087efbcb9aeeaa7852b82b27107b6b2f80623d660e09"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "profile": "STARTUP",
+      "scenario": "LOCAL_LATE_CLOSE_THENABLE",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 5918,
+      "inputSha256": "7a5a41520e3c61dcffab0f44788b49b1450058a0b8a5aab58363493ca9d96bfd",
+      "stopReason": null,
+      "elapsedSeconds": 0.11287720799737144,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "LOCAL_LATE_CLOSE_THENABLE",
+        "passed": true,
+        "result": {
+          "buyerOriginalRecoveryPipeRefusalVersion": 1,
+          "status": "CLOSE_UNKNOWN",
+          "exitCode": 4,
+          "stage": "NATIVE_OPEN",
+          "returnedSession": false,
+          "knownOwnersClosedObserved": true,
+          "nativeOpenEntered": true,
+          "nativeResourceRelease": "NOT_ESTABLISHED",
+          "acquisitionBudgetMs": 30,
+          "acquisitionOutcome": "UNKNOWN",
+          "acquisitionRefusal": "DEADLINE_UNKNOWN",
+          "acquisitionObservationOnly": true,
+          "nativeCancellationOrTermination": "NOT_ESTABLISHED",
+          "historicalObservation": true,
+          "authority": "NONE",
+          "serviceDelivery": "NOT_ESTABLISHED",
+          "grantActivation": "NOT_ESTABLISHED",
+          "automaticRetry": false
+        },
+        "budgetMs": 30,
+        "elapsedMs": 38.058542,
+        "payerOpens": 1,
+        "backendOpens": 0,
+        "payerCloses": 1,
+        "readerCloses": 0,
+        "storeCloses": 0,
+        "closeOrder": [
+          "PAYER_CLOSE"
+        ],
+        "observedBeforeLate": {
+          "payerCloses": 0,
+          "readerCloses": 0,
+          "storeCloses": 0
+        },
+        "activeTimeoutsBefore": 0,
+        "activeTimeoutsAfter": 0,
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "lateResultStayedUnknown": true,
+        "serviceCalls": 0,
+        "ipConnections": 0,
+        "nativeCallbacks": "DECLARED",
+        "physicalRelease": "NOT_QUALIFIED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 1081,
+          "sha256": "d75a66b28913105bcbd615a7163da92691130007c09b46690af2c9e06a5ee989"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "profile": "STARTUP",
+      "scenario": "LOCAL_LATE_OWNER_SHAPE",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 5918,
+      "inputSha256": "7a5a41520e3c61dcffab0f44788b49b1450058a0b8a5aab58363493ca9d96bfd",
+      "stopReason": null,
+      "elapsedSeconds": 0.10638225000002421,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "LOCAL_LATE_OWNER_SHAPE",
+        "passed": true,
+        "result": {
+          "buyerOriginalRecoveryPipeRefusalVersion": 1,
+          "status": "CLOSE_UNKNOWN",
+          "exitCode": 4,
+          "stage": "NATIVE_OPEN",
+          "returnedSession": false,
+          "knownOwnersClosedObserved": true,
+          "nativeOpenEntered": true,
+          "nativeResourceRelease": "NOT_ESTABLISHED",
+          "acquisitionBudgetMs": 30,
+          "acquisitionOutcome": "UNKNOWN",
+          "acquisitionRefusal": "DEADLINE_UNKNOWN",
+          "acquisitionObservationOnly": true,
+          "nativeCancellationOrTermination": "NOT_ESTABLISHED",
+          "historicalObservation": true,
+          "authority": "NONE",
+          "serviceDelivery": "NOT_ESTABLISHED",
+          "grantActivation": "NOT_ESTABLISHED",
+          "automaticRetry": false
+        },
+        "budgetMs": 30,
+        "elapsedMs": 36.137208,
+        "payerOpens": 1,
+        "backendOpens": 0,
+        "payerCloses": 0,
+        "readerCloses": 0,
+        "storeCloses": 0,
+        "closeOrder": [],
+        "observedBeforeLate": {
+          "payerCloses": 0,
+          "readerCloses": 0,
+          "storeCloses": 0
+        },
+        "activeTimeoutsBefore": 0,
+        "activeTimeoutsAfter": 0,
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "lateResultStayedUnknown": true,
+        "serviceCalls": 0,
+        "ipConnections": 0,
+        "nativeCallbacks": "DECLARED",
+        "physicalRelease": "NOT_QUALIFIED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 1065,
+          "sha256": "9439796f4327adefd0ebc5097cebd09f37ec58052bd9dbfbfc305bfa9eabcfbb"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "profile": "STARTUP",
+      "scenario": "LOCAL_SYNC_OPEN_EXPIRES",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 5918,
+      "inputSha256": "7a5a41520e3c61dcffab0f44788b49b1450058a0b8a5aab58363493ca9d96bfd",
+      "stopReason": null,
+      "elapsedSeconds": 0.16519645899825264,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "LOCAL_SYNC_OPEN_EXPIRES",
+        "passed": true,
+        "result": {
+          "buyerOriginalRecoveryPipeRefusalVersion": 1,
+          "status": "CLOSE_UNKNOWN",
+          "exitCode": 4,
+          "stage": "NATIVE_OPEN",
+          "returnedSession": false,
+          "knownOwnersClosedObserved": true,
+          "nativeOpenEntered": true,
+          "nativeResourceRelease": "NOT_ESTABLISHED",
+          "acquisitionBudgetMs": 30,
+          "acquisitionOutcome": "UNKNOWN",
+          "acquisitionRefusal": "DEADLINE_UNKNOWN",
+          "acquisitionObservationOnly": true,
+          "nativeCancellationOrTermination": "NOT_ESTABLISHED",
+          "historicalObservation": true,
+          "authority": "NONE",
+          "serviceDelivery": "NOT_ESTABLISHED",
+          "grantActivation": "NOT_ESTABLISHED",
+          "automaticRetry": false
+        },
+        "budgetMs": 30,
+        "elapsedMs": 92.367083,
+        "payerOpens": 1,
+        "backendOpens": 0,
+        "payerCloses": 1,
+        "readerCloses": 0,
+        "storeCloses": 0,
+        "closeOrder": [
+          "PAYER_CLOSE"
+        ],
+        "observedBeforeLate": {
+          "payerCloses": 1,
+          "readerCloses": 0,
+          "storeCloses": 0
+        },
+        "activeTimeoutsBefore": 0,
+        "activeTimeoutsAfter": 0,
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "lateResultStayedUnknown": true,
+        "serviceCalls": 0,
+        "ipConnections": 0,
+        "nativeCallbacks": "DECLARED",
+        "physicalRelease": "NOT_QUALIFIED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 1079,
+          "sha256": "9de17c373c2c3caaf03d1a8f0d7d70c7cf3a76f603d7c55777cfc43ad196ed72"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "profile": "STARTUP",
+      "scenario": "BACKEND_OPEN_PENDING",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 6086,
+      "inputSha256": "b80c0d2c6dcc19dd0c535a8f9520eb4024e617fdb30b1a7caef1d6136f2ebb76",
+      "stopReason": null,
+      "elapsedSeconds": 0.1084803749981802,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "BACKEND_OPEN_PENDING",
+        "passed": true,
+        "result": {
+          "buyerOriginalRecoveryPipeRefusalVersion": 1,
+          "status": "CLOSE_UNKNOWN",
+          "exitCode": 4,
+          "stage": "BACKEND_OPEN",
+          "returnedSession": false,
+          "knownOwnersClosedObserved": false,
+          "nativeOpenEntered": false,
+          "nativeResourceRelease": "NOT_ESTABLISHED",
+          "buyerOriginalBackendRecoveryPipeHostVersion": 1,
+          "backendOpenEntered": true,
+          "backendReaderFencedObserved": false,
+          "ownedBackendStoreClose": "NOT_RETURNED",
+          "ownedBackendStoreResourceCleanup": "NOT_QUALIFIED",
+          "acquisitionBudgetMs": 30,
+          "acquisitionOutcome": "UNKNOWN",
+          "acquisitionRefusal": "DEADLINE_UNKNOWN",
+          "acquisitionObservationOnly": true,
+          "nativeCancellationOrTermination": "NOT_ESTABLISHED",
+          "historicalObservation": true,
+          "authority": "NONE",
+          "serviceDelivery": "NOT_ESTABLISHED",
+          "grantActivation": "NOT_ESTABLISHED",
+          "automaticRetry": false
+        },
+        "budgetMs": 30,
+        "elapsedMs": 36.960166,
+        "payerOpens": 0,
+        "backendOpens": 1,
+        "payerCloses": 0,
+        "readerCloses": 0,
+        "storeCloses": 0,
+        "closeOrder": [],
+        "observedBeforeLate": {
+          "payerCloses": 0,
+          "readerCloses": 0,
+          "storeCloses": 0
+        },
+        "activeTimeoutsBefore": 0,
+        "activeTimeoutsAfter": 0,
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "lateResultStayedUnknown": true,
+        "serviceCalls": 0,
+        "ipConnections": 0,
+        "nativeCallbacks": "DECLARED",
+        "physicalRelease": "NOT_QUALIFIED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 1267,
+          "sha256": "79441c3a80ae01f037d5f06e5fe7309ceb894706c4e02b8868f42ef353aeac5c"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "profile": "STARTUP",
+      "scenario": "BACKEND_OPEN_LATE",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 6086,
+      "inputSha256": "b80c0d2c6dcc19dd0c535a8f9520eb4024e617fdb30b1a7caef1d6136f2ebb76",
+      "stopReason": null,
+      "elapsedSeconds": 0.10950054100248963,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "BACKEND_OPEN_LATE",
+        "passed": true,
+        "result": {
+          "buyerOriginalRecoveryPipeRefusalVersion": 1,
+          "status": "CLOSE_UNKNOWN",
+          "exitCode": 4,
+          "stage": "BACKEND_OPEN",
+          "returnedSession": false,
+          "knownOwnersClosedObserved": false,
+          "nativeOpenEntered": false,
+          "nativeResourceRelease": "NOT_ESTABLISHED",
+          "buyerOriginalBackendRecoveryPipeHostVersion": 1,
+          "backendOpenEntered": true,
+          "backendReaderFencedObserved": false,
+          "ownedBackendStoreClose": "NOT_RETURNED",
+          "ownedBackendStoreResourceCleanup": "NOT_QUALIFIED",
+          "acquisitionBudgetMs": 30,
+          "acquisitionOutcome": "UNKNOWN",
+          "acquisitionRefusal": "DEADLINE_UNKNOWN",
+          "acquisitionObservationOnly": true,
+          "nativeCancellationOrTermination": "NOT_ESTABLISHED",
+          "historicalObservation": true,
+          "authority": "NONE",
+          "serviceDelivery": "NOT_ESTABLISHED",
+          "grantActivation": "NOT_ESTABLISHED",
+          "automaticRetry": false
+        },
+        "budgetMs": 30,
+        "elapsedMs": 35.885542,
+        "payerOpens": 0,
+        "backendOpens": 1,
+        "payerCloses": 0,
+        "readerCloses": 1,
+        "storeCloses": 1,
+        "closeOrder": [
+          "READER_CLOSE",
+          "STORE_CLOSE"
+        ],
+        "observedBeforeLate": {
+          "payerCloses": 0,
+          "readerCloses": 0,
+          "storeCloses": 0
+        },
+        "activeTimeoutsBefore": 0,
+        "activeTimeoutsAfter": 0,
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "lateResultStayedUnknown": true,
+        "serviceCalls": 0,
+        "ipConnections": 0,
+        "nativeCallbacks": "DECLARED",
+        "physicalRelease": "NOT_QUALIFIED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 1292,
+          "sha256": "7740b7ca1e7ec461abcc98614e8053cf6fdb4a4de892738a552f002ffb51172a"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "profile": "STARTUP",
+      "scenario": "BACKEND_LATE_STORE_CLOSE_REJECTS",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 6086,
+      "inputSha256": "b80c0d2c6dcc19dd0c535a8f9520eb4024e617fdb30b1a7caef1d6136f2ebb76",
+      "stopReason": null,
+      "elapsedSeconds": 0.10421962500549853,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "BACKEND_LATE_STORE_CLOSE_REJECTS",
+        "passed": true,
+        "result": {
+          "buyerOriginalRecoveryPipeRefusalVersion": 1,
+          "status": "CLOSE_UNKNOWN",
+          "exitCode": 4,
+          "stage": "BACKEND_OPEN",
+          "returnedSession": false,
+          "knownOwnersClosedObserved": false,
+          "nativeOpenEntered": false,
+          "nativeResourceRelease": "NOT_ESTABLISHED",
+          "buyerOriginalBackendRecoveryPipeHostVersion": 1,
+          "backendOpenEntered": true,
+          "backendReaderFencedObserved": false,
+          "ownedBackendStoreClose": "NOT_RETURNED",
+          "ownedBackendStoreResourceCleanup": "NOT_QUALIFIED",
+          "acquisitionBudgetMs": 30,
+          "acquisitionOutcome": "UNKNOWN",
+          "acquisitionRefusal": "DEADLINE_UNKNOWN",
+          "acquisitionObservationOnly": true,
+          "nativeCancellationOrTermination": "NOT_ESTABLISHED",
+          "historicalObservation": true,
+          "authority": "NONE",
+          "serviceDelivery": "NOT_ESTABLISHED",
+          "grantActivation": "NOT_ESTABLISHED",
+          "automaticRetry": false
+        },
+        "budgetMs": 30,
+        "elapsedMs": 34.375125,
+        "payerOpens": 0,
+        "backendOpens": 1,
+        "payerCloses": 0,
+        "readerCloses": 1,
+        "storeCloses": 1,
+        "closeOrder": [
+          "READER_CLOSE",
+          "STORE_CLOSE"
+        ],
+        "observedBeforeLate": {
+          "payerCloses": 0,
+          "readerCloses": 0,
+          "storeCloses": 0
+        },
+        "activeTimeoutsBefore": 0,
+        "activeTimeoutsAfter": 0,
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "lateResultStayedUnknown": true,
+        "serviceCalls": 0,
+        "ipConnections": 0,
+        "nativeCallbacks": "DECLARED",
+        "physicalRelease": "NOT_QUALIFIED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 1307,
+          "sha256": "d9cead521b4ac503f490af82d8ca003a61098db4711bc6e071a3b0e4f0d611f7"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "profile": "STARTUP",
+      "scenario": "BACKEND_SYNC_OPEN_EXPIRES",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 6086,
+      "inputSha256": "b80c0d2c6dcc19dd0c535a8f9520eb4024e617fdb30b1a7caef1d6136f2ebb76",
+      "stopReason": null,
+      "elapsedSeconds": 0.16856187500525266,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "BACKEND_SYNC_OPEN_EXPIRES",
+        "passed": true,
+        "result": {
+          "buyerOriginalRecoveryPipeRefusalVersion": 1,
+          "status": "CLOSE_UNKNOWN",
+          "exitCode": 4,
+          "stage": "BACKEND_OPEN",
+          "returnedSession": false,
+          "knownOwnersClosedObserved": false,
+          "nativeOpenEntered": false,
+          "nativeResourceRelease": "NOT_ESTABLISHED",
+          "buyerOriginalBackendRecoveryPipeHostVersion": 1,
+          "backendOpenEntered": true,
+          "backendReaderFencedObserved": false,
+          "ownedBackendStoreClose": "NOT_RETURNED",
+          "ownedBackendStoreResourceCleanup": "NOT_QUALIFIED",
+          "acquisitionBudgetMs": 30,
+          "acquisitionOutcome": "UNKNOWN",
+          "acquisitionRefusal": "DEADLINE_UNKNOWN",
+          "acquisitionObservationOnly": true,
+          "nativeCancellationOrTermination": "NOT_ESTABLISHED",
+          "historicalObservation": true,
+          "authority": "NONE",
+          "serviceDelivery": "NOT_ESTABLISHED",
+          "grantActivation": "NOT_ESTABLISHED",
+          "automaticRetry": false
+        },
+        "budgetMs": 30,
+        "elapsedMs": 98.010542,
+        "payerOpens": 0,
+        "backendOpens": 1,
+        "payerCloses": 0,
+        "readerCloses": 1,
+        "storeCloses": 1,
+        "closeOrder": [
+          "READER_CLOSE",
+          "STORE_CLOSE"
+        ],
+        "observedBeforeLate": {
+          "payerCloses": 0,
+          "readerCloses": 1,
+          "storeCloses": 1
+        },
+        "activeTimeoutsBefore": 0,
+        "activeTimeoutsAfter": 0,
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "lateResultStayedUnknown": true,
+        "serviceCalls": 0,
+        "ipConnections": 0,
+        "nativeCallbacks": "DECLARED",
+        "physicalRelease": "NOT_QUALIFIED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 1300,
+          "sha256": "dcde7faac38113aab66ce001c49725f7c4f2ca14c1a15115ca5578a4b40e96a4"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "profile": "STARTUP",
+      "scenario": "BACKEND_PREFIX_PAYER_PENDING",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 6086,
+      "inputSha256": "b80c0d2c6dcc19dd0c535a8f9520eb4024e617fdb30b1a7caef1d6136f2ebb76",
+      "stopReason": null,
+      "elapsedSeconds": 0.11159570800373331,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "BACKEND_PREFIX_PAYER_PENDING",
+        "passed": true,
+        "result": {
+          "buyerOriginalRecoveryPipeRefusalVersion": 1,
+          "status": "CLOSE_UNKNOWN",
+          "exitCode": 4,
+          "stage": "NATIVE_OPEN",
+          "returnedSession": false,
+          "knownOwnersClosedObserved": true,
+          "nativeOpenEntered": true,
+          "nativeResourceRelease": "NOT_ESTABLISHED",
+          "buyerOriginalBackendRecoveryPipeHostVersion": 1,
+          "backendOpenEntered": true,
+          "backendReaderFencedObserved": true,
+          "ownedBackendStoreClose": "RETURNED_UNDEFINED",
+          "ownedBackendStoreResourceCleanup": "NOT_QUALIFIED",
+          "acquisitionBudgetMs": 30,
+          "acquisitionOutcome": "UNKNOWN",
+          "acquisitionRefusal": "DEADLINE_UNKNOWN",
+          "acquisitionObservationOnly": true,
+          "nativeCancellationOrTermination": "NOT_ESTABLISHED",
+          "historicalObservation": true,
+          "authority": "NONE",
+          "serviceDelivery": "NOT_ESTABLISHED",
+          "grantActivation": "NOT_ESTABLISHED",
+          "automaticRetry": false
+        },
+        "budgetMs": 30,
+        "elapsedMs": 38.06975,
+        "payerOpens": 1,
+        "backendOpens": 1,
+        "payerCloses": 0,
+        "readerCloses": 1,
+        "storeCloses": 1,
+        "closeOrder": [
+          "READER_CLOSE",
+          "STORE_CLOSE"
+        ],
+        "observedBeforeLate": {
+          "payerCloses": 0,
+          "readerCloses": 1,
+          "storeCloses": 1
+        },
+        "activeTimeoutsBefore": 0,
+        "activeTimeoutsAfter": 0,
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "lateResultStayedUnknown": true,
+        "serviceCalls": 0,
+        "ipConnections": 0,
+        "nativeCallbacks": "DECLARED",
+        "physicalRelease": "NOT_QUALIFIED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 1304,
+          "sha256": "79ef607d07f51dbcddbb192a2de6a78f29acafbc7135a259790303e65d669201"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "profile": "STARTUP",
+      "scenario": "BACKEND_PREFIX_PAYER_LATE",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 6086,
+      "inputSha256": "b80c0d2c6dcc19dd0c535a8f9520eb4024e617fdb30b1a7caef1d6136f2ebb76",
+      "stopReason": null,
+      "elapsedSeconds": 0.10667941700376105,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "BACKEND_PREFIX_PAYER_LATE",
+        "passed": true,
+        "result": {
+          "buyerOriginalRecoveryPipeRefusalVersion": 1,
+          "status": "CLOSE_UNKNOWN",
+          "exitCode": 4,
+          "stage": "NATIVE_OPEN",
+          "returnedSession": false,
+          "knownOwnersClosedObserved": true,
+          "nativeOpenEntered": true,
+          "nativeResourceRelease": "NOT_ESTABLISHED",
+          "buyerOriginalBackendRecoveryPipeHostVersion": 1,
+          "backendOpenEntered": true,
+          "backendReaderFencedObserved": true,
+          "ownedBackendStoreClose": "RETURNED_UNDEFINED",
+          "ownedBackendStoreResourceCleanup": "NOT_QUALIFIED",
+          "acquisitionBudgetMs": 30,
+          "acquisitionOutcome": "UNKNOWN",
+          "acquisitionRefusal": "DEADLINE_UNKNOWN",
+          "acquisitionObservationOnly": true,
+          "nativeCancellationOrTermination": "NOT_ESTABLISHED",
+          "historicalObservation": true,
+          "authority": "NONE",
+          "serviceDelivery": "NOT_ESTABLISHED",
+          "grantActivation": "NOT_ESTABLISHED",
+          "automaticRetry": false
+        },
+        "budgetMs": 30,
+        "elapsedMs": 35.71675,
+        "payerOpens": 1,
+        "backendOpens": 1,
+        "payerCloses": 1,
+        "readerCloses": 1,
+        "storeCloses": 1,
+        "closeOrder": [
+          "READER_CLOSE",
+          "STORE_CLOSE",
+          "PAYER_CLOSE"
+        ],
+        "observedBeforeLate": {
+          "payerCloses": 0,
+          "readerCloses": 1,
+          "storeCloses": 1
+        },
+        "activeTimeoutsBefore": 0,
+        "activeTimeoutsAfter": 0,
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "lateResultStayedUnknown": true,
+        "serviceCalls": 0,
+        "ipConnections": 0,
+        "nativeCallbacks": "DECLARED",
+        "physicalRelease": "NOT_QUALIFIED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 1315,
+          "sha256": "974704d59d1f52b758eb764d91076443be2a3071602bf207698eb89688037471"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "profile": "STARTUP",
+      "scenario": "BACKEND_SHARED_BUDGET",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 6086,
+      "inputSha256": "f1f0d8c2d372a27a2317dfb08c778169d496c26e939b83581bb464b281c17f33",
+      "stopReason": null,
+      "elapsedSeconds": 0.18212183298601303,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "BACKEND_SHARED_BUDGET",
+        "passed": true,
+        "result": {
+          "buyerOriginalRecoveryPipeRefusalVersion": 1,
+          "status": "CLOSE_UNKNOWN",
+          "exitCode": 4,
+          "stage": "NATIVE_OPEN",
+          "returnedSession": false,
+          "knownOwnersClosedObserved": true,
+          "nativeOpenEntered": true,
+          "nativeResourceRelease": "NOT_ESTABLISHED",
+          "buyerOriginalBackendRecoveryPipeHostVersion": 1,
+          "backendOpenEntered": true,
+          "backendReaderFencedObserved": true,
+          "ownedBackendStoreClose": "RETURNED_UNDEFINED",
+          "ownedBackendStoreResourceCleanup": "NOT_QUALIFIED",
+          "acquisitionBudgetMs": 80,
+          "acquisitionOutcome": "UNKNOWN",
+          "acquisitionRefusal": "DEADLINE_UNKNOWN",
+          "acquisitionObservationOnly": true,
+          "nativeCancellationOrTermination": "NOT_ESTABLISHED",
+          "historicalObservation": true,
+          "authority": "NONE",
+          "serviceDelivery": "NOT_ESTABLISHED",
+          "grantActivation": "NOT_ESTABLISHED",
+          "automaticRetry": false
+        },
+        "budgetMs": 80,
+        "elapsedMs": 83.488792,
+        "payerOpens": 1,
+        "backendOpens": 1,
+        "payerCloses": 1,
+        "readerCloses": 1,
+        "storeCloses": 1,
+        "closeOrder": [
+          "READER_CLOSE",
+          "STORE_CLOSE",
+          "PAYER_CLOSE"
+        ],
+        "observedBeforeLate": {
+          "payerCloses": 0,
+          "readerCloses": 1,
+          "storeCloses": 1
+        },
+        "activeTimeoutsBefore": 0,
+        "activeTimeoutsAfter": 0,
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "lateResultStayedUnknown": true,
+        "serviceCalls": 0,
+        "ipConnections": 0,
+        "nativeCallbacks": "DECLARED",
+        "physicalRelease": "NOT_QUALIFIED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 1312,
+          "sha256": "f789b7e42426227cce99ac0c41d4b51bb6955d634520af6637309bdce52e3d6c"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "profile": "STARTUP",
+      "scenario": "CLIENT_SETUP_BUDGET_EXPIRES",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 5918,
+      "inputSha256": "7a5a41520e3c61dcffab0f44788b49b1450058a0b8a5aab58363493ca9d96bfd",
+      "stopReason": null,
+      "elapsedSeconds": 0.1639007500052685,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "CLIENT_SETUP_BUDGET_EXPIRES",
+        "passed": true,
+        "result": {
+          "buyerOriginalRecoveryPipeRefusalVersion": 1,
+          "status": "CLOSE_UNKNOWN",
+          "exitCode": 4,
+          "stage": "SESSION",
+          "returnedSession": true,
+          "knownOwnersClosedObserved": true,
+          "nativeOpenEntered": true,
+          "nativeResourceRelease": "NOT_ESTABLISHED",
+          "acquisitionBudgetMs": 30,
+          "acquisitionOutcome": "UNKNOWN",
+          "acquisitionRefusal": "DEADLINE_UNKNOWN",
+          "acquisitionObservationOnly": true,
+          "nativeCancellationOrTermination": "NOT_ESTABLISHED",
+          "historicalObservation": true,
+          "authority": "NONE",
+          "serviceDelivery": "NOT_ESTABLISHED",
+          "grantActivation": "NOT_ESTABLISHED",
+          "automaticRetry": false
+        },
+        "budgetMs": 30,
+        "elapsedMs": 92.544708,
+        "payerOpens": 1,
+        "backendOpens": 0,
+        "payerCloses": 1,
+        "readerCloses": 0,
+        "storeCloses": 0,
+        "closeOrder": [
+          "PAYER_CLOSE"
+        ],
+        "observedBeforeLate": {
+          "payerCloses": 1,
+          "readerCloses": 0,
+          "storeCloses": 0
+        },
+        "activeTimeoutsBefore": 0,
+        "activeTimeoutsAfter": 0,
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "lateResultStayedUnknown": true,
+        "serviceCalls": 0,
+        "ipConnections": 0,
+        "nativeCallbacks": "DECLARED",
+        "physicalRelease": "NOT_QUALIFIED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 1078,
+          "sha256": "c2d06a308a939e4cd22e0552c7b9a0ac2c4c1ca5beab356474f667753e47f453"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "profile": "STARTUP",
+      "scenario": "STARTUP_TIMER_CANCELLED",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 6086,
+      "inputSha256": "f1f0d8c2d372a27a2317dfb08c778169d496c26e939b83581bb464b281c17f33",
+      "stopReason": null,
+      "elapsedSeconds": 0.07745129099930637,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "STARTUP_TIMER_CANCELLED",
+        "passed": true,
+        "result": {
+          "buyerOriginalCommandHostResultVersion": 1,
+          "status": "CLOSED",
+          "exitCode": 0,
+          "mode": "RECOVER_EXISTING_ORIGINAL_WITH_BACKEND",
+          "runCompletion": "FULFILLED_UNDEFINED",
+          "closeCompletion": "FULFILLED_UNDEFINED",
+          "sessionLifecycle": "CLOSED",
+          "sessionHeld": false,
+          "ownersClosedObserved": true,
+          "outputOutcomeUnknown": false,
+          "fundingOutcomeUnknown": false,
+          "recoveryOutcomeUnknown": false,
+          "retainedResult": true,
+          "localWriteCallbackCompleted": true,
+          "historicalObservation": true,
+          "authority": "NONE",
+          "grantActivation": "NOT_ESTABLISHED",
+          "serviceDelivery": "NOT_ESTABLISHED",
+          "nativeResourceCleanup": "NOT_QUALIFIED",
+          "buyerOriginalBackendRecoveryPipeHostVersion": 1,
+          "backendOpenEntered": true,
+          "backendReaderFencedObserved": true,
+          "ownedBackendStoreClose": "RETURNED_UNDEFINED",
+          "ownedBackendStoreResourceCleanup": "NOT_QUALIFIED",
+          "sessionStatus": "CLOSED",
+          "sessionExitCode": 0,
+          "acquisitionBudgetMs": 80,
+          "acquisitionOutcome": "TRANSFERRED",
+          "acquisitionRefusal": null,
+          "acquisitionObservationOnly": true,
+          "nativeCancellationOrTermination": "NOT_ESTABLISHED"
+        },
+        "budgetMs": 80,
+        "elapsedMs": 5.802125,
+        "payerOpens": 1,
+        "backendOpens": 1,
+        "payerCloses": 1,
+        "readerCloses": 1,
+        "storeCloses": 1,
+        "closeOrder": [
+          "READER_CLOSE",
+          "PAYER_CLOSE",
+          "STORE_CLOSE"
+        ],
+        "observedBeforeLate": {
+          "payerCloses": 1,
+          "readerCloses": 1,
+          "storeCloses": 1
+        },
+        "activeTimeoutsBefore": 0,
+        "activeTimeoutsAfter": 0,
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "lateResultStayedUnknown": false,
+        "serviceCalls": 0,
+        "ipConnections": 0,
+        "nativeCallbacks": "DECLARED",
+        "physicalRelease": "NOT_QUALIFIED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 1560,
+          "sha256": "43c92d57fb71e73c0760f31be52f8534166e75004a69f8e0987d497419522580"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 1015,
+          "sha256": "c9d15cfd76222298a00e1a3a8f8108e77869ba0b63b17820902073a265a4d8c0"
+        }
+      }
+    },
+    {
+      "profile": "BACKEND",
+      "scenario": "BACKEND_INSPECT",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 6092,
+      "inputSha256": "da8524b7e1163b2f299ba7f33df4e86f4f351b27b07da8fb171bdbd9bf6f55c0",
+      "stopReason": null,
+      "elapsedSeconds": 0.07857333400170319,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "BACKEND_INSPECT",
+        "passed": true,
+        "result": {
+          "buyerOriginalCommandHostResultVersion": 1,
+          "status": "CLOSED",
+          "exitCode": 0,
+          "mode": "RECOVER_EXISTING_ORIGINAL_WITH_BACKEND",
+          "runCompletion": "FULFILLED_UNDEFINED",
+          "closeCompletion": "FULFILLED_UNDEFINED",
+          "sessionLifecycle": "CLOSED",
+          "sessionHeld": false,
+          "ownersClosedObserved": true,
+          "outputOutcomeUnknown": false,
+          "fundingOutcomeUnknown": false,
+          "recoveryOutcomeUnknown": false,
+          "retainedResult": true,
+          "localWriteCallbackCompleted": true,
+          "historicalObservation": true,
+          "authority": "NONE",
+          "grantActivation": "NOT_ESTABLISHED",
+          "serviceDelivery": "NOT_ESTABLISHED",
+          "nativeResourceCleanup": "NOT_QUALIFIED",
+          "buyerOriginalBackendRecoveryPipeHostVersion": 1,
+          "backendOpenEntered": true,
+          "backendReaderFencedObserved": true,
+          "ownedBackendStoreClose": "RETURNED_UNDEFINED",
+          "ownedBackendStoreResourceCleanup": "NOT_QUALIFIED",
+          "sessionStatus": "CLOSED",
+          "sessionExitCode": 0,
+          "acquisitionBudgetMs": 1000,
+          "acquisitionOutcome": "TRANSFERRED",
+          "acquisitionRefusal": null,
+          "acquisitionObservationOnly": true,
+          "nativeCancellationOrTermination": "NOT_ESTABLISHED"
+        },
+        "payerOpens": 1,
+        "backendOpens": 1,
+        "readerCloses": 1,
+        "storeCloses": 1,
+        "backendReads": 0,
+        "checkpointReads": 0,
+        "custodyReads": 0,
+        "closeOrder": [
+          "READER_CLOSE",
+          "PAYER_CLOSE",
+          "STORE_CLOSE"
+        ],
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "serviceCalls": 0,
+        "ipConnections": 0,
+        "nativeCallbacks": "DECLARED",
+        "physicalSQLiteCleanup": "NOT_QUALIFIED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 1410,
+          "sha256": "8ce383cff39cd6aa8a0bb9e9b0cb181aac01daaecce36841cee0b09a30a6a93f"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 1015,
+          "sha256": "c9d15cfd76222298a00e1a3a8f8108e77869ba0b63b17820902073a265a4d8c0"
+        }
+      }
+    },
+    {
+      "profile": "BACKEND",
+      "scenario": "BACKEND_RECONCILE_CACHED",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 6805,
+      "inputSha256": "a991769a222c45792472fc56b65121a2e7ae4a1fab4c26113d4a801ad42e0cdf",
+      "stopReason": null,
+      "elapsedSeconds": 0.07949433299654629,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "BACKEND_RECONCILE_CACHED",
+        "passed": true,
+        "result": {
+          "buyerOriginalCommandHostResultVersion": 1,
+          "status": "RECONCILIATION_REQUIRED",
+          "exitCode": 2,
+          "mode": "RECOVER_EXISTING_ORIGINAL_WITH_BACKEND",
+          "runCompletion": "REJECTED",
+          "closeCompletion": "REJECTED",
+          "sessionLifecycle": "HELD",
+          "sessionHeld": true,
+          "ownersClosedObserved": true,
+          "outputOutcomeUnknown": false,
+          "fundingOutcomeUnknown": false,
+          "recoveryOutcomeUnknown": true,
+          "retainedResult": true,
+          "localWriteCallbackCompleted": true,
+          "historicalObservation": true,
+          "authority": "NONE",
+          "grantActivation": "NOT_ESTABLISHED",
+          "serviceDelivery": "NOT_ESTABLISHED",
+          "nativeResourceCleanup": "NOT_QUALIFIED",
+          "buyerOriginalBackendRecoveryPipeHostVersion": 1,
+          "backendOpenEntered": true,
+          "backendReaderFencedObserved": true,
+          "ownedBackendStoreClose": "RETURNED_UNDEFINED",
+          "ownedBackendStoreResourceCleanup": "NOT_QUALIFIED",
+          "sessionStatus": "RECONCILIATION_REQUIRED",
+          "sessionExitCode": 2,
+          "acquisitionBudgetMs": 1000,
+          "acquisitionOutcome": "TRANSFERRED",
+          "acquisitionRefusal": null,
+          "acquisitionObservationOnly": true,
+          "nativeCancellationOrTermination": "NOT_ESTABLISHED"
+        },
+        "payerOpens": 1,
+        "backendOpens": 1,
+        "readerCloses": 1,
+        "storeCloses": 1,
+        "backendReads": 1,
+        "checkpointReads": 2,
+        "custodyReads": 2,
+        "closeOrder": [
+          "READER_CLOSE",
+          "PAYER_CLOSE",
+          "STORE_CLOSE"
+        ],
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "serviceCalls": 0,
+        "ipConnections": 0,
+        "nativeCallbacks": "DECLARED",
+        "physicalSQLiteCleanup": "NOT_QUALIFIED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 1427,
+          "sha256": "6fcf44670c269640f150f7400ee0401d856273665ee212a45e556340022a223f"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 603,
+          "sha256": "ad9983a09868b9b1c24e8ecf69010b6beca71dbb83c721bd074e13dc2db4e2d6"
+        }
+      }
+    },
+    {
+      "profile": "BACKEND",
+      "scenario": "BACKEND_RECONCILE_ABSENT",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 6805,
+      "inputSha256": "a991769a222c45792472fc56b65121a2e7ae4a1fab4c26113d4a801ad42e0cdf",
+      "stopReason": null,
+      "elapsedSeconds": 0.08116841700393707,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "BACKEND_RECONCILE_ABSENT",
+        "passed": true,
+        "result": {
+          "buyerOriginalCommandHostResultVersion": 1,
+          "status": "RECONCILIATION_REQUIRED",
+          "exitCode": 2,
+          "mode": "RECOVER_EXISTING_ORIGINAL_WITH_BACKEND",
+          "runCompletion": "REJECTED",
+          "closeCompletion": "REJECTED",
+          "sessionLifecycle": "HELD",
+          "sessionHeld": true,
+          "ownersClosedObserved": true,
+          "outputOutcomeUnknown": false,
+          "fundingOutcomeUnknown": false,
+          "recoveryOutcomeUnknown": true,
+          "retainedResult": true,
+          "localWriteCallbackCompleted": true,
+          "historicalObservation": true,
+          "authority": "NONE",
+          "grantActivation": "NOT_ESTABLISHED",
+          "serviceDelivery": "NOT_ESTABLISHED",
+          "nativeResourceCleanup": "NOT_QUALIFIED",
+          "buyerOriginalBackendRecoveryPipeHostVersion": 1,
+          "backendOpenEntered": true,
+          "backendReaderFencedObserved": true,
+          "ownedBackendStoreClose": "RETURNED_UNDEFINED",
+          "ownedBackendStoreResourceCleanup": "NOT_QUALIFIED",
+          "sessionStatus": "RECONCILIATION_REQUIRED",
+          "sessionExitCode": 2,
+          "acquisitionBudgetMs": 1000,
+          "acquisitionOutcome": "TRANSFERRED",
+          "acquisitionRefusal": null,
+          "acquisitionObservationOnly": true,
+          "nativeCancellationOrTermination": "NOT_ESTABLISHED"
+        },
+        "payerOpens": 1,
+        "backendOpens": 1,
+        "readerCloses": 1,
+        "storeCloses": 1,
+        "backendReads": 1,
+        "checkpointReads": 2,
+        "custodyReads": 2,
+        "closeOrder": [
+          "READER_CLOSE",
+          "PAYER_CLOSE",
+          "STORE_CLOSE"
+        ],
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "serviceCalls": 0,
+        "ipConnections": 0,
+        "nativeCallbacks": "DECLARED",
+        "physicalSQLiteCleanup": "NOT_QUALIFIED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 1427,
+          "sha256": "04bf486fb9fbd6edc1ee1f45cfdcd6a9ef0750843e4ff319f66d012cd6661973"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 599,
+          "sha256": "a39d91313fc7e66fb7b6689cc4f8105932db11491c77a683d257c83a336d2b50"
+        }
+      }
+    },
+    {
+      "profile": "BACKEND",
+      "scenario": "BACKEND_LOCAL_ABSENT",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 6805,
+      "inputSha256": "a991769a222c45792472fc56b65121a2e7ae4a1fab4c26113d4a801ad42e0cdf",
+      "stopReason": null,
+      "elapsedSeconds": 0.08086308299971279,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "BACKEND_LOCAL_ABSENT",
+        "passed": true,
+        "result": {
+          "buyerOriginalCommandHostResultVersion": 1,
+          "status": "RECONCILIATION_REQUIRED",
+          "exitCode": 2,
+          "mode": "RECOVER_EXISTING_ORIGINAL_WITH_BACKEND",
+          "runCompletion": "REJECTED",
+          "closeCompletion": "REJECTED",
+          "sessionLifecycle": "HELD",
+          "sessionHeld": true,
+          "ownersClosedObserved": true,
+          "outputOutcomeUnknown": false,
+          "fundingOutcomeUnknown": false,
+          "recoveryOutcomeUnknown": true,
+          "retainedResult": true,
+          "localWriteCallbackCompleted": true,
+          "historicalObservation": true,
+          "authority": "NONE",
+          "grantActivation": "NOT_ESTABLISHED",
+          "serviceDelivery": "NOT_ESTABLISHED",
+          "nativeResourceCleanup": "NOT_QUALIFIED",
+          "buyerOriginalBackendRecoveryPipeHostVersion": 1,
+          "backendOpenEntered": true,
+          "backendReaderFencedObserved": true,
+          "ownedBackendStoreClose": "RETURNED_UNDEFINED",
+          "ownedBackendStoreResourceCleanup": "NOT_QUALIFIED",
+          "sessionStatus": "RECONCILIATION_REQUIRED",
+          "sessionExitCode": 2,
+          "acquisitionBudgetMs": 1000,
+          "acquisitionOutcome": "TRANSFERRED",
+          "acquisitionRefusal": null,
+          "acquisitionObservationOnly": true,
+          "nativeCancellationOrTermination": "NOT_ESTABLISHED"
+        },
+        "payerOpens": 1,
+        "backendOpens": 1,
+        "readerCloses": 1,
+        "storeCloses": 1,
+        "backendReads": 0,
+        "checkpointReads": 1,
+        "custodyReads": 1,
+        "closeOrder": [
+          "READER_CLOSE",
+          "PAYER_CLOSE",
+          "STORE_CLOSE"
+        ],
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "serviceCalls": 0,
+        "ipConnections": 0,
+        "nativeCallbacks": "DECLARED",
+        "physicalSQLiteCleanup": "NOT_QUALIFIED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 1423,
+          "sha256": "b243b150e11183dbc537358ad7a3f15af0337bbf94fa676ba6e450cf29ade597"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 604,
+          "sha256": "ccd26f9e4d21c3c5ac02d9e27de148d50014e1e65e7b056393e1af1dfbb71248"
+        }
+      }
+    },
+    {
+      "profile": "BACKEND",
+      "scenario": "BACKEND_QUEUED_SERVICE_NO_REPLAY",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 8020,
+      "inputSha256": "35fd17d1a596520bc6fb221bf8a20fe03a368abe36329ef4abf9528429b123ca",
+      "stopReason": null,
+      "elapsedSeconds": 0.07930599999963306,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "BACKEND_QUEUED_SERVICE_NO_REPLAY",
+        "passed": true,
+        "result": {
+          "buyerOriginalCommandHostResultVersion": 1,
+          "status": "RECONCILIATION_REQUIRED",
+          "exitCode": 2,
+          "mode": "RECOVER_EXISTING_ORIGINAL_WITH_BACKEND",
+          "runCompletion": "REJECTED",
+          "closeCompletion": "REJECTED",
+          "sessionLifecycle": "HELD",
+          "sessionHeld": true,
+          "ownersClosedObserved": true,
+          "outputOutcomeUnknown": false,
+          "fundingOutcomeUnknown": false,
+          "recoveryOutcomeUnknown": true,
+          "retainedResult": true,
+          "localWriteCallbackCompleted": true,
+          "historicalObservation": true,
+          "authority": "NONE",
+          "grantActivation": "NOT_ESTABLISHED",
+          "serviceDelivery": "NOT_ESTABLISHED",
+          "nativeResourceCleanup": "NOT_QUALIFIED",
+          "buyerOriginalBackendRecoveryPipeHostVersion": 1,
+          "backendOpenEntered": true,
+          "backendReaderFencedObserved": true,
+          "ownedBackendStoreClose": "RETURNED_UNDEFINED",
+          "ownedBackendStoreResourceCleanup": "NOT_QUALIFIED",
+          "sessionStatus": "RECONCILIATION_REQUIRED",
+          "sessionExitCode": 2,
+          "acquisitionBudgetMs": 1000,
+          "acquisitionOutcome": "TRANSFERRED",
+          "acquisitionRefusal": null,
+          "acquisitionObservationOnly": true,
+          "nativeCancellationOrTermination": "NOT_ESTABLISHED"
+        },
+        "payerOpens": 1,
+        "backendOpens": 1,
+        "readerCloses": 1,
+        "storeCloses": 1,
+        "backendReads": 1,
+        "checkpointReads": 2,
+        "custodyReads": 2,
+        "closeOrder": [
+          "READER_CLOSE",
+          "PAYER_CLOSE",
+          "STORE_CLOSE"
+        ],
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "serviceCalls": 0,
+        "ipConnections": 0,
+        "nativeCallbacks": "DECLARED",
+        "physicalSQLiteCleanup": "NOT_QUALIFIED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 1435,
+          "sha256": "1427c898cac5dbb67e78bb666d357ce7393fd871b1eb9f73e0a73d067216052a"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 603,
+          "sha256": "ad9983a09868b9b1c24e8ecf69010b6beca71dbb83c721bd074e13dc2db4e2d6"
+        }
+      }
+    },
+    {
+      "profile": "BACKEND",
+      "scenario": "BACKEND_PRIOR_INTENT",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 6805,
+      "inputSha256": "a991769a222c45792472fc56b65121a2e7ae4a1fab4c26113d4a801ad42e0cdf",
+      "stopReason": null,
+      "elapsedSeconds": 0.07994570900336839,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "BACKEND_PRIOR_INTENT",
+        "passed": true,
+        "result": {
+          "buyerOriginalCommandHostResultVersion": 1,
+          "status": "RECONCILIATION_REQUIRED",
+          "exitCode": 2,
+          "mode": "RECOVER_EXISTING_ORIGINAL_WITH_BACKEND",
+          "runCompletion": "REJECTED",
+          "closeCompletion": "REJECTED",
+          "sessionLifecycle": "HELD",
+          "sessionHeld": true,
+          "ownersClosedObserved": true,
+          "outputOutcomeUnknown": false,
+          "fundingOutcomeUnknown": false,
+          "recoveryOutcomeUnknown": true,
+          "retainedResult": true,
+          "localWriteCallbackCompleted": true,
+          "historicalObservation": true,
+          "authority": "NONE",
+          "grantActivation": "NOT_ESTABLISHED",
+          "serviceDelivery": "NOT_ESTABLISHED",
+          "nativeResourceCleanup": "NOT_QUALIFIED",
+          "buyerOriginalBackendRecoveryPipeHostVersion": 1,
+          "backendOpenEntered": true,
+          "backendReaderFencedObserved": true,
+          "ownedBackendStoreClose": "RETURNED_UNDEFINED",
+          "ownedBackendStoreResourceCleanup": "NOT_QUALIFIED",
+          "sessionStatus": "RECONCILIATION_REQUIRED",
+          "sessionExitCode": 2,
+          "acquisitionBudgetMs": 1000,
+          "acquisitionOutcome": "TRANSFERRED",
+          "acquisitionRefusal": null,
+          "acquisitionObservationOnly": true,
+          "nativeCancellationOrTermination": "NOT_ESTABLISHED"
+        },
+        "payerOpens": 1,
+        "backendOpens": 1,
+        "readerCloses": 1,
+        "storeCloses": 1,
+        "backendReads": 1,
+        "checkpointReads": 2,
+        "custodyReads": 2,
+        "closeOrder": [
+          "READER_CLOSE",
+          "PAYER_CLOSE",
+          "STORE_CLOSE"
+        ],
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "serviceCalls": 0,
+        "ipConnections": 0,
+        "nativeCallbacks": "DECLARED",
+        "physicalSQLiteCleanup": "NOT_QUALIFIED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 1423,
+          "sha256": "858c363cb5d1cb42b4926dd4b8fe2319323e4d9c5017587cf6313b3566d801c0"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 618,
+          "sha256": "d14610f399562b2297a1608a3855c701ef82a40fcfe2f649939abfedeb5e42a2"
+        }
+      }
+    },
+    {
+      "profile": "BACKEND",
+      "scenario": "BACKEND_FOREIGN_GRANT",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 6746,
+      "inputSha256": "f8ad7d999ac76b13b30fc8f0fda7acda0e79e4c401af72b20118ebf8e3f9a565",
+      "stopReason": null,
+      "elapsedSeconds": 0.08370624999224674,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "BACKEND_FOREIGN_GRANT",
+        "passed": true,
+        "result": {
+          "buyerOriginalCommandHostResultVersion": 1,
+          "status": "OUTCOME_UNKNOWN",
+          "exitCode": 3,
+          "mode": "RECOVER_EXISTING_ORIGINAL_WITH_BACKEND",
+          "runCompletion": "REJECTED",
+          "closeCompletion": "REJECTED",
+          "sessionLifecycle": "HELD",
+          "sessionHeld": true,
+          "ownersClosedObserved": true,
+          "outputOutcomeUnknown": true,
+          "fundingOutcomeUnknown": false,
+          "recoveryOutcomeUnknown": false,
+          "retainedResult": false,
+          "localWriteCallbackCompleted": false,
+          "historicalObservation": true,
+          "authority": "NONE",
+          "grantActivation": "NOT_ESTABLISHED",
+          "serviceDelivery": "NOT_ESTABLISHED",
+          "nativeResourceCleanup": "NOT_QUALIFIED",
+          "buyerOriginalBackendRecoveryPipeHostVersion": 1,
+          "backendOpenEntered": true,
+          "backendReaderFencedObserved": true,
+          "ownedBackendStoreClose": "RETURNED_UNDEFINED",
+          "ownedBackendStoreResourceCleanup": "NOT_QUALIFIED",
+          "sessionStatus": "OUTCOME_UNKNOWN",
+          "sessionExitCode": 3,
+          "acquisitionBudgetMs": 1000,
+          "acquisitionOutcome": "TRANSFERRED",
+          "acquisitionRefusal": null,
+          "acquisitionObservationOnly": true,
+          "nativeCancellationOrTermination": "NOT_ESTABLISHED"
+        },
+        "payerOpens": 1,
+        "backendOpens": 1,
+        "readerCloses": 1,
+        "storeCloses": 1,
+        "backendReads": 0,
+        "checkpointReads": 0,
+        "custodyReads": 0,
+        "closeOrder": [
+          "READER_CLOSE",
+          "PAYER_CLOSE",
+          "STORE_CLOSE"
+        ],
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "serviceCalls": 0,
+        "ipConnections": 0,
+        "nativeCallbacks": "DECLARED",
+        "physicalSQLiteCleanup": "NOT_QUALIFIED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 1410,
+          "sha256": "719dff7fa4d6eab005d09e09b91d835a935593600b38ac96971fbc2ab7edc091"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "profile": "BACKEND",
+      "scenario": "BACKEND_CHANGED_CONTEXT",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 6805,
+      "inputSha256": "a991769a222c45792472fc56b65121a2e7ae4a1fab4c26113d4a801ad42e0cdf",
+      "stopReason": null,
+      "elapsedSeconds": 0.3281788750027772,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "BACKEND_CHANGED_CONTEXT",
+        "passed": true,
+        "result": {
+          "buyerOriginalCommandHostResultVersion": 1,
+          "status": "CLOSE_UNKNOWN",
+          "exitCode": 4,
+          "mode": "RECOVER_EXISTING_ORIGINAL_WITH_BACKEND",
+          "runCompletion": "REJECTED",
+          "closeCompletion": "REJECTED",
+          "sessionLifecycle": "HELD",
+          "sessionHeld": true,
+          "ownersClosedObserved": false,
+          "outputOutcomeUnknown": true,
+          "fundingOutcomeUnknown": false,
+          "recoveryOutcomeUnknown": false,
+          "retainedResult": false,
+          "localWriteCallbackCompleted": false,
+          "historicalObservation": true,
+          "authority": "NONE",
+          "grantActivation": "NOT_ESTABLISHED",
+          "serviceDelivery": "NOT_ESTABLISHED",
+          "nativeResourceCleanup": "NOT_QUALIFIED",
+          "buyerOriginalBackendRecoveryPipeHostVersion": 1,
+          "backendOpenEntered": true,
+          "backendReaderFencedObserved": false,
+          "ownedBackendStoreClose": "HELD",
+          "ownedBackendStoreResourceCleanup": "NOT_QUALIFIED",
+          "sessionStatus": "CLOSE_UNKNOWN",
+          "sessionExitCode": 4,
+          "acquisitionBudgetMs": 1000,
+          "acquisitionOutcome": "TRANSFERRED",
+          "acquisitionRefusal": null,
+          "acquisitionObservationOnly": true,
+          "nativeCancellationOrTermination": "NOT_ESTABLISHED"
+        },
+        "payerOpens": 1,
+        "backendOpens": 1,
+        "readerCloses": 1,
+        "storeCloses": 0,
+        "backendReads": 1,
+        "checkpointReads": 2,
+        "custodyReads": 2,
+        "closeOrder": [
+          "READER_CLOSE",
+          "PAYER_CLOSE"
+        ],
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "serviceCalls": 0,
+        "ipConnections": 0,
+        "nativeCallbacks": "DECLARED",
+        "physicalSQLiteCleanup": "NOT_QUALIFIED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 1382,
+          "sha256": "588c897ff1e49a82bd7d8a0d9d0c267f56e78b742e7cffba13bbef2c6312b014"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "profile": "BACKEND",
+      "scenario": "BACKEND_STORE_CLOSE_THROWS",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 6092,
+      "inputSha256": "da8524b7e1163b2f299ba7f33df4e86f4f351b27b07da8fb171bdbd9bf6f55c0",
+      "stopReason": null,
+      "elapsedSeconds": 0.07659704200341366,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "BACKEND_STORE_CLOSE_THROWS",
+        "passed": true,
+        "result": {
+          "buyerOriginalCommandHostResultVersion": 1,
+          "status": "CLOSE_UNKNOWN",
+          "exitCode": 4,
+          "mode": "RECOVER_EXISTING_ORIGINAL_WITH_BACKEND",
+          "runCompletion": "FULFILLED_UNDEFINED",
+          "closeCompletion": "FULFILLED_UNDEFINED",
+          "sessionLifecycle": "CLOSED",
+          "sessionHeld": false,
+          "ownersClosedObserved": false,
+          "outputOutcomeUnknown": false,
+          "fundingOutcomeUnknown": false,
+          "recoveryOutcomeUnknown": false,
+          "retainedResult": true,
+          "localWriteCallbackCompleted": true,
+          "historicalObservation": true,
+          "authority": "NONE",
+          "grantActivation": "NOT_ESTABLISHED",
+          "serviceDelivery": "NOT_ESTABLISHED",
+          "nativeResourceCleanup": "NOT_QUALIFIED",
+          "buyerOriginalBackendRecoveryPipeHostVersion": 1,
+          "backendOpenEntered": true,
+          "backendReaderFencedObserved": true,
+          "ownedBackendStoreClose": "UNKNOWN",
+          "ownedBackendStoreResourceCleanup": "NOT_QUALIFIED",
+          "sessionStatus": "CLOSED",
+          "sessionExitCode": 0,
+          "acquisitionBudgetMs": 1000,
+          "acquisitionOutcome": "TRANSFERRED",
+          "acquisitionRefusal": null,
+          "acquisitionObservationOnly": true,
+          "nativeCancellationOrTermination": "NOT_ESTABLISHED"
+        },
+        "payerOpens": 1,
+        "backendOpens": 1,
+        "readerCloses": 1,
+        "storeCloses": 1,
+        "backendReads": 0,
+        "checkpointReads": 0,
+        "custodyReads": 0,
+        "closeOrder": [
+          "READER_CLOSE",
+          "PAYER_CLOSE",
+          "STORE_CLOSE"
+        ],
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "serviceCalls": 0,
+        "ipConnections": 0,
+        "nativeCallbacks": "DECLARED",
+        "physicalSQLiteCleanup": "NOT_QUALIFIED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 1418,
+          "sha256": "b75e4759f2691b1ea6f0f47d2923fe18c8dc05e3e25f28fe194df0733f5663a5"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 1015,
+          "sha256": "c9d15cfd76222298a00e1a3a8f8108e77869ba0b63b17820902073a265a4d8c0"
+        }
+      }
+    },
+    {
+      "profile": "BACKEND",
+      "scenario": "BACKEND_STORE_CLOSE_NONVOID",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 6092,
+      "inputSha256": "da8524b7e1163b2f299ba7f33df4e86f4f351b27b07da8fb171bdbd9bf6f55c0",
+      "stopReason": null,
+      "elapsedSeconds": 0.07771904199034907,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "BACKEND_STORE_CLOSE_NONVOID",
+        "passed": true,
+        "result": {
+          "buyerOriginalCommandHostResultVersion": 1,
+          "status": "CLOSE_UNKNOWN",
+          "exitCode": 4,
+          "mode": "RECOVER_EXISTING_ORIGINAL_WITH_BACKEND",
+          "runCompletion": "FULFILLED_UNDEFINED",
+          "closeCompletion": "FULFILLED_UNDEFINED",
+          "sessionLifecycle": "CLOSED",
+          "sessionHeld": false,
+          "ownersClosedObserved": false,
+          "outputOutcomeUnknown": false,
+          "fundingOutcomeUnknown": false,
+          "recoveryOutcomeUnknown": false,
+          "retainedResult": true,
+          "localWriteCallbackCompleted": true,
+          "historicalObservation": true,
+          "authority": "NONE",
+          "grantActivation": "NOT_ESTABLISHED",
+          "serviceDelivery": "NOT_ESTABLISHED",
+          "nativeResourceCleanup": "NOT_QUALIFIED",
+          "buyerOriginalBackendRecoveryPipeHostVersion": 1,
+          "backendOpenEntered": true,
+          "backendReaderFencedObserved": true,
+          "ownedBackendStoreClose": "UNKNOWN",
+          "ownedBackendStoreResourceCleanup": "NOT_QUALIFIED",
+          "sessionStatus": "CLOSED",
+          "sessionExitCode": 0,
+          "acquisitionBudgetMs": 1000,
+          "acquisitionOutcome": "TRANSFERRED",
+          "acquisitionRefusal": null,
+          "acquisitionObservationOnly": true,
+          "nativeCancellationOrTermination": "NOT_ESTABLISHED"
+        },
+        "payerOpens": 1,
+        "backendOpens": 1,
+        "readerCloses": 1,
+        "storeCloses": 1,
+        "backendReads": 0,
+        "checkpointReads": 0,
+        "custodyReads": 0,
+        "closeOrder": [
+          "READER_CLOSE",
+          "PAYER_CLOSE",
+          "STORE_CLOSE"
+        ],
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "serviceCalls": 0,
+        "ipConnections": 0,
+        "nativeCallbacks": "DECLARED",
+        "physicalSQLiteCleanup": "NOT_QUALIFIED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 1419,
+          "sha256": "a370bb8f918c9e5fba388faba3d7e53510435fc884cb3f367caa629db1a229b6"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 1015,
+          "sha256": "c9d15cfd76222298a00e1a3a8f8108e77869ba0b63b17820902073a265a4d8c0"
+        }
+      }
+    },
+    {
+      "profile": "BACKEND",
+      "scenario": "BACKEND_READER_CLOSE_THROWS",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 6092,
+      "inputSha256": "da8524b7e1163b2f299ba7f33df4e86f4f351b27b07da8fb171bdbd9bf6f55c0",
+      "stopReason": null,
+      "elapsedSeconds": 0.32789745900663547,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "BACKEND_READER_CLOSE_THROWS",
+        "passed": true,
+        "result": {
+          "buyerOriginalCommandHostResultVersion": 1,
+          "status": "CLOSE_UNKNOWN",
+          "exitCode": 4,
+          "mode": "RECOVER_EXISTING_ORIGINAL_WITH_BACKEND",
+          "runCompletion": "REJECTED",
+          "closeCompletion": "REJECTED",
+          "sessionLifecycle": "HELD",
+          "sessionHeld": true,
+          "ownersClosedObserved": false,
+          "outputOutcomeUnknown": false,
+          "fundingOutcomeUnknown": false,
+          "recoveryOutcomeUnknown": false,
+          "retainedResult": true,
+          "localWriteCallbackCompleted": true,
+          "historicalObservation": true,
+          "authority": "NONE",
+          "grantActivation": "NOT_ESTABLISHED",
+          "serviceDelivery": "NOT_ESTABLISHED",
+          "nativeResourceCleanup": "NOT_QUALIFIED",
+          "buyerOriginalBackendRecoveryPipeHostVersion": 1,
+          "backendOpenEntered": true,
+          "backendReaderFencedObserved": false,
+          "ownedBackendStoreClose": "HELD",
+          "ownedBackendStoreResourceCleanup": "NOT_QUALIFIED",
+          "sessionStatus": "CLOSE_UNKNOWN",
+          "sessionExitCode": 4,
+          "acquisitionBudgetMs": 1000,
+          "acquisitionOutcome": "TRANSFERRED",
+          "acquisitionRefusal": null,
+          "acquisitionObservationOnly": true,
+          "nativeCancellationOrTermination": "NOT_ESTABLISHED"
+        },
+        "payerOpens": 1,
+        "backendOpens": 1,
+        "readerCloses": 1,
+        "storeCloses": 0,
+        "backendReads": 0,
+        "checkpointReads": 0,
+        "custodyReads": 0,
+        "closeOrder": [
+          "READER_CLOSE",
+          "PAYER_CLOSE"
+        ],
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "serviceCalls": 0,
+        "ipConnections": 0,
+        "nativeCallbacks": "DECLARED",
+        "physicalSQLiteCleanup": "NOT_QUALIFIED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 1385,
+          "sha256": "4cf9f8095cd0f0842ac5a23663b4a64e0d43cd0211dbaeb01e1cea9d63137ca8"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 1015,
+          "sha256": "c9d15cfd76222298a00e1a3a8f8108e77869ba0b63b17820902073a265a4d8c0"
+        }
+      }
+    },
+    {
+      "profile": "BACKEND",
+      "scenario": "BACKEND_READER_CLOSE_NONCLOSED",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 6092,
+      "inputSha256": "da8524b7e1163b2f299ba7f33df4e86f4f351b27b07da8fb171bdbd9bf6f55c0",
+      "stopReason": null,
+      "elapsedSeconds": 0.32739608400152065,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "BACKEND_READER_CLOSE_NONCLOSED",
+        "passed": true,
+        "result": {
+          "buyerOriginalCommandHostResultVersion": 1,
+          "status": "CLOSE_UNKNOWN",
+          "exitCode": 4,
+          "mode": "RECOVER_EXISTING_ORIGINAL_WITH_BACKEND",
+          "runCompletion": "REJECTED",
+          "closeCompletion": "REJECTED",
+          "sessionLifecycle": "HELD",
+          "sessionHeld": true,
+          "ownersClosedObserved": false,
+          "outputOutcomeUnknown": false,
+          "fundingOutcomeUnknown": false,
+          "recoveryOutcomeUnknown": false,
+          "retainedResult": true,
+          "localWriteCallbackCompleted": true,
+          "historicalObservation": true,
+          "authority": "NONE",
+          "grantActivation": "NOT_ESTABLISHED",
+          "serviceDelivery": "NOT_ESTABLISHED",
+          "nativeResourceCleanup": "NOT_QUALIFIED",
+          "buyerOriginalBackendRecoveryPipeHostVersion": 1,
+          "backendOpenEntered": true,
+          "backendReaderFencedObserved": false,
+          "ownedBackendStoreClose": "HELD",
+          "ownedBackendStoreResourceCleanup": "NOT_QUALIFIED",
+          "sessionStatus": "CLOSE_UNKNOWN",
+          "sessionExitCode": 4,
+          "acquisitionBudgetMs": 1000,
+          "acquisitionOutcome": "TRANSFERRED",
+          "acquisitionRefusal": null,
+          "acquisitionObservationOnly": true,
+          "nativeCancellationOrTermination": "NOT_ESTABLISHED"
+        },
+        "payerOpens": 1,
+        "backendOpens": 1,
+        "readerCloses": 1,
+        "storeCloses": 0,
+        "backendReads": 0,
+        "checkpointReads": 0,
+        "custodyReads": 0,
+        "closeOrder": [
+          "READER_CLOSE",
+          "PAYER_CLOSE"
+        ],
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "serviceCalls": 0,
+        "ipConnections": 0,
+        "nativeCallbacks": "DECLARED",
+        "physicalSQLiteCleanup": "NOT_QUALIFIED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 1388,
+          "sha256": "f0ff04486d9266e2866f9e6cf150c5cc03c7ddd7a6b6b6f5fd7e3531d444ae31"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 1015,
+          "sha256": "c9d15cfd76222298a00e1a3a8f8108e77869ba0b63b17820902073a265a4d8c0"
+        }
+      }
+    },
+    {
+      "profile": "BACKEND",
+      "scenario": "BACKEND_PAYER_CLOSE_REJECTS",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 6092,
+      "inputSha256": "da8524b7e1163b2f299ba7f33df4e86f4f351b27b07da8fb171bdbd9bf6f55c0",
+      "stopReason": null,
+      "elapsedSeconds": 0.3313860409980407,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "BACKEND_PAYER_CLOSE_REJECTS",
+        "passed": true,
+        "result": {
+          "buyerOriginalCommandHostResultVersion": 1,
+          "status": "CLOSE_UNKNOWN",
+          "exitCode": 4,
+          "mode": "RECOVER_EXISTING_ORIGINAL_WITH_BACKEND",
+          "runCompletion": "REJECTED",
+          "closeCompletion": "REJECTED",
+          "sessionLifecycle": "HELD",
+          "sessionHeld": true,
+          "ownersClosedObserved": false,
+          "outputOutcomeUnknown": false,
+          "fundingOutcomeUnknown": false,
+          "recoveryOutcomeUnknown": false,
+          "retainedResult": true,
+          "localWriteCallbackCompleted": true,
+          "historicalObservation": true,
+          "authority": "NONE",
+          "grantActivation": "NOT_ESTABLISHED",
+          "serviceDelivery": "NOT_ESTABLISHED",
+          "nativeResourceCleanup": "NOT_QUALIFIED",
+          "buyerOriginalBackendRecoveryPipeHostVersion": 1,
+          "backendOpenEntered": true,
+          "backendReaderFencedObserved": false,
+          "ownedBackendStoreClose": "HELD",
+          "ownedBackendStoreResourceCleanup": "NOT_QUALIFIED",
+          "sessionStatus": "CLOSE_UNKNOWN",
+          "sessionExitCode": 4,
+          "acquisitionBudgetMs": 1000,
+          "acquisitionOutcome": "TRANSFERRED",
+          "acquisitionRefusal": null,
+          "acquisitionObservationOnly": true,
+          "nativeCancellationOrTermination": "NOT_ESTABLISHED"
+        },
+        "payerOpens": 1,
+        "backendOpens": 1,
+        "readerCloses": 1,
+        "storeCloses": 0,
+        "backendReads": 0,
+        "checkpointReads": 0,
+        "custodyReads": 0,
+        "closeOrder": [
+          "READER_CLOSE",
+          "PAYER_CLOSE"
+        ],
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "serviceCalls": 0,
+        "ipConnections": 0,
+        "nativeCallbacks": "DECLARED",
+        "physicalSQLiteCleanup": "NOT_QUALIFIED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 1385,
+          "sha256": "00c73a53c3a25210710179df399c66857a6b7f86681f9bbcb1ea38ca537db761"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 1015,
+          "sha256": "c9d15cfd76222298a00e1a3a8f8108e77869ba0b63b17820902073a265a4d8c0"
+        }
+      }
+    },
+    {
+      "profile": "BACKEND",
+      "scenario": "BACKEND_PAYER_CLOSE_LATE",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 6092,
+      "inputSha256": "da8524b7e1163b2f299ba7f33df4e86f4f351b27b07da8fb171bdbd9bf6f55c0",
+      "stopReason": null,
+      "elapsedSeconds": 0.32897220901213586,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "BACKEND_PAYER_CLOSE_LATE",
+        "passed": true,
+        "result": {
+          "buyerOriginalCommandHostResultVersion": 1,
+          "status": "CLOSE_UNKNOWN",
+          "exitCode": 4,
+          "mode": "RECOVER_EXISTING_ORIGINAL_WITH_BACKEND",
+          "runCompletion": "REJECTED",
+          "closeCompletion": "REJECTED",
+          "sessionLifecycle": "HELD",
+          "sessionHeld": true,
+          "ownersClosedObserved": false,
+          "outputOutcomeUnknown": false,
+          "fundingOutcomeUnknown": false,
+          "recoveryOutcomeUnknown": false,
+          "retainedResult": true,
+          "localWriteCallbackCompleted": true,
+          "historicalObservation": true,
+          "authority": "NONE",
+          "grantActivation": "NOT_ESTABLISHED",
+          "serviceDelivery": "NOT_ESTABLISHED",
+          "nativeResourceCleanup": "NOT_QUALIFIED",
+          "buyerOriginalBackendRecoveryPipeHostVersion": 1,
+          "backendOpenEntered": true,
+          "backendReaderFencedObserved": false,
+          "ownedBackendStoreClose": "HELD",
+          "ownedBackendStoreResourceCleanup": "NOT_QUALIFIED",
+          "sessionStatus": "CLOSE_UNKNOWN",
+          "sessionExitCode": 4,
+          "acquisitionBudgetMs": 1000,
+          "acquisitionOutcome": "TRANSFERRED",
+          "acquisitionRefusal": null,
+          "acquisitionObservationOnly": true,
+          "nativeCancellationOrTermination": "NOT_ESTABLISHED"
+        },
+        "payerOpens": 1,
+        "backendOpens": 1,
+        "readerCloses": 1,
+        "storeCloses": 0,
+        "backendReads": 0,
+        "checkpointReads": 0,
+        "custodyReads": 0,
+        "closeOrder": [
+          "READER_CLOSE",
+          "PAYER_CLOSE"
+        ],
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "serviceCalls": 0,
+        "ipConnections": 0,
+        "nativeCallbacks": "DECLARED",
+        "physicalSQLiteCleanup": "NOT_QUALIFIED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 1382,
+          "sha256": "fbecf98abd5e752e7230f0aa476fcdf953142ff44aac866aa614e637f1691859"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 1015,
+          "sha256": "c9d15cfd76222298a00e1a3a8f8108e77869ba0b63b17820902073a265a4d8c0"
+        }
+      }
+    },
+    {
+      "profile": "BACKEND",
+      "scenario": "BACKEND_OPEN_REJECTS",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 5972,
+      "inputSha256": "e502b2944d50dbbd8fdbcd16eb6ffa8638c18fadc8d7e58f62fbdfe855a1b15e",
+      "stopReason": null,
+      "elapsedSeconds": 0.0824434999958612,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "BACKEND_OPEN_REJECTS",
+        "passed": true,
+        "result": {
+          "buyerOriginalRecoveryPipeRefusalVersion": 1,
+          "status": "CLOSE_UNKNOWN",
+          "exitCode": 4,
+          "stage": "BACKEND_OPEN",
+          "returnedSession": false,
+          "knownOwnersClosedObserved": false,
+          "nativeOpenEntered": false,
+          "nativeResourceRelease": "NOT_ESTABLISHED",
+          "buyerOriginalBackendRecoveryPipeHostVersion": 1,
+          "backendOpenEntered": true,
+          "backendReaderFencedObserved": false,
+          "ownedBackendStoreClose": "NOT_RETURNED",
+          "ownedBackendStoreResourceCleanup": "NOT_QUALIFIED",
+          "acquisitionBudgetMs": 1000,
+          "acquisitionOutcome": "UNKNOWN",
+          "acquisitionRefusal": "OPEN_REJECTED_UNKNOWN",
+          "acquisitionObservationOnly": true,
+          "nativeCancellationOrTermination": "NOT_ESTABLISHED",
+          "historicalObservation": true,
+          "authority": "NONE",
+          "serviceDelivery": "NOT_ESTABLISHED",
+          "grantActivation": "NOT_ESTABLISHED",
+          "automaticRetry": false
+        },
+        "payerOpens": 0,
+        "backendOpens": 1,
+        "readerCloses": 0,
+        "storeCloses": 0,
+        "backendReads": 0,
+        "checkpointReads": 0,
+        "custodyReads": 0,
+        "closeOrder": [],
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "serviceCalls": 0,
+        "ipConnections": 0,
+        "nativeCallbacks": "DECLARED",
+        "physicalSQLiteCleanup": "NOT_QUALIFIED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 1130,
+          "sha256": "ecfe3fc16127d535d8b443afe711f8d08c3fe578ca300b0237791627be4317f8"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "profile": "BACKEND",
+      "scenario": "BACKEND_OPEN_THENABLE",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 5972,
+      "inputSha256": "e502b2944d50dbbd8fdbcd16eb6ffa8638c18fadc8d7e58f62fbdfe855a1b15e",
+      "stopReason": null,
+      "elapsedSeconds": 0.08471216598991305,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "BACKEND_OPEN_THENABLE",
+        "passed": true,
+        "result": {
+          "buyerOriginalRecoveryPipeRefusalVersion": 1,
+          "status": "CLOSE_UNKNOWN",
+          "exitCode": 4,
+          "stage": "BACKEND_OPEN",
+          "returnedSession": false,
+          "knownOwnersClosedObserved": false,
+          "nativeOpenEntered": false,
+          "nativeResourceRelease": "NOT_ESTABLISHED",
+          "buyerOriginalBackendRecoveryPipeHostVersion": 1,
+          "backendOpenEntered": true,
+          "backendReaderFencedObserved": false,
+          "ownedBackendStoreClose": "NOT_RETURNED",
+          "ownedBackendStoreResourceCleanup": "NOT_QUALIFIED",
+          "acquisitionBudgetMs": 1000,
+          "acquisitionOutcome": "UNKNOWN",
+          "acquisitionRefusal": "OPEN_RECEIPT_UNKNOWN",
+          "acquisitionObservationOnly": true,
+          "nativeCancellationOrTermination": "NOT_ESTABLISHED",
+          "historicalObservation": true,
+          "authority": "NONE",
+          "serviceDelivery": "NOT_ESTABLISHED",
+          "grantActivation": "NOT_ESTABLISHED",
+          "automaticRetry": false
+        },
+        "payerOpens": 0,
+        "backendOpens": 1,
+        "readerCloses": 0,
+        "storeCloses": 0,
+        "backendReads": 0,
+        "checkpointReads": 0,
+        "custodyReads": 0,
+        "closeOrder": [],
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "serviceCalls": 0,
+        "ipConnections": 0,
+        "nativeCallbacks": "DECLARED",
+        "physicalSQLiteCleanup": "NOT_QUALIFIED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 1130,
+          "sha256": "468393dad01587d6ae175f8054f94a4991c6c73fedd3493a310194e280029bfc"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "profile": "BACKEND",
+      "scenario": "BACKEND_PAYER_OPEN_REJECTS",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 5972,
+      "inputSha256": "e502b2944d50dbbd8fdbcd16eb6ffa8638c18fadc8d7e58f62fbdfe855a1b15e",
+      "stopReason": null,
+      "elapsedSeconds": 0.0786040839884663,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "BACKEND_PAYER_OPEN_REJECTS",
+        "passed": true,
+        "result": {
+          "buyerOriginalRecoveryPipeRefusalVersion": 1,
+          "status": "CLOSE_UNKNOWN",
+          "exitCode": 4,
+          "stage": "NATIVE_OPEN",
+          "returnedSession": false,
+          "knownOwnersClosedObserved": true,
+          "nativeOpenEntered": true,
+          "nativeResourceRelease": "NOT_ESTABLISHED",
+          "buyerOriginalBackendRecoveryPipeHostVersion": 1,
+          "backendOpenEntered": true,
+          "backendReaderFencedObserved": true,
+          "ownedBackendStoreClose": "RETURNED_UNDEFINED",
+          "ownedBackendStoreResourceCleanup": "NOT_QUALIFIED",
+          "acquisitionBudgetMs": 1000,
+          "acquisitionOutcome": "UNKNOWN",
+          "acquisitionRefusal": "OPEN_REJECTED_UNKNOWN",
+          "acquisitionObservationOnly": true,
+          "nativeCancellationOrTermination": "NOT_ESTABLISHED",
+          "historicalObservation": true,
+          "authority": "NONE",
+          "serviceDelivery": "NOT_ESTABLISHED",
+          "grantActivation": "NOT_ESTABLISHED",
+          "automaticRetry": false
+        },
+        "payerOpens": 1,
+        "backendOpens": 1,
+        "readerCloses": 1,
+        "storeCloses": 1,
+        "backendReads": 0,
+        "checkpointReads": 0,
+        "custodyReads": 0,
+        "closeOrder": [
+          "READER_CLOSE",
+          "STORE_CLOSE"
+        ],
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "serviceCalls": 0,
+        "ipConnections": 0,
+        "nativeCallbacks": "DECLARED",
+        "physicalSQLiteCleanup": "NOT_QUALIFIED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 1166,
+          "sha256": "4024dd5ba3fdaae1e6f7bc1b4e82000bc909cf5db84ca670fdbb9e9a1215415f"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "profile": "BACKEND",
+      "scenario": "BACKEND_CLIENT_SETUP_REFUSED",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 5972,
+      "inputSha256": "e502b2944d50dbbd8fdbcd16eb6ffa8638c18fadc8d7e58f62fbdfe855a1b15e",
+      "stopReason": null,
+      "elapsedSeconds": 0.07755929199629463,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "BACKEND_CLIENT_SETUP_REFUSED",
+        "passed": true,
+        "result": {
+          "buyerOriginalRecoveryPipeRefusalVersion": 1,
+          "status": "CLOSE_UNKNOWN",
+          "exitCode": 4,
+          "stage": "CLIENT",
+          "returnedSession": false,
+          "knownOwnersClosedObserved": true,
+          "nativeOpenEntered": true,
+          "nativeResourceRelease": "NOT_ESTABLISHED",
+          "buyerOriginalBackendRecoveryPipeHostVersion": 1,
+          "backendOpenEntered": true,
+          "backendReaderFencedObserved": true,
+          "ownedBackendStoreClose": "RETURNED_UNDEFINED",
+          "ownedBackendStoreResourceCleanup": "NOT_QUALIFIED",
+          "acquisitionBudgetMs": 1000,
+          "acquisitionOutcome": "UNKNOWN",
+          "acquisitionRefusal": "OWNER_SETUP_REFUSED",
+          "acquisitionObservationOnly": true,
+          "nativeCancellationOrTermination": "NOT_ESTABLISHED",
+          "historicalObservation": true,
+          "authority": "NONE",
+          "serviceDelivery": "NOT_ESTABLISHED",
+          "grantActivation": "NOT_ESTABLISHED",
+          "automaticRetry": false
+        },
+        "payerOpens": 1,
+        "backendOpens": 1,
+        "readerCloses": 1,
+        "storeCloses": 1,
+        "backendReads": 0,
+        "checkpointReads": 0,
+        "custodyReads": 0,
+        "closeOrder": [
+          "READER_CLOSE",
+          "PAYER_CLOSE",
+          "STORE_CLOSE"
+        ],
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "serviceCalls": 0,
+        "ipConnections": 0,
+        "nativeCallbacks": "DECLARED",
+        "physicalSQLiteCleanup": "NOT_QUALIFIED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 1175,
+          "sha256": "d4245f6729e857de9e9c3e145edd2b0fd7aea59030712c922975d688599ce3d6"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "profile": "BACKEND",
+      "scenario": "BACKEND_POST_STORE_VIEW_DRIFT",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 6092,
+      "inputSha256": "da8524b7e1163b2f299ba7f33df4e86f4f351b27b07da8fb171bdbd9bf6f55c0",
+      "stopReason": null,
+      "elapsedSeconds": 0.08381320800981484,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "BACKEND_POST_STORE_VIEW_DRIFT",
+        "passed": true,
+        "result": {
+          "buyerOriginalCommandHostResultVersion": 1,
+          "status": "CLOSE_UNKNOWN",
+          "exitCode": 4,
+          "mode": "RECOVER_EXISTING_ORIGINAL_WITH_BACKEND",
+          "runCompletion": "FULFILLED_UNDEFINED",
+          "closeCompletion": "FULFILLED_UNDEFINED",
+          "sessionLifecycle": "CLOSED",
+          "sessionHeld": false,
+          "ownersClosedObserved": false,
+          "outputOutcomeUnknown": false,
+          "fundingOutcomeUnknown": false,
+          "recoveryOutcomeUnknown": false,
+          "retainedResult": true,
+          "localWriteCallbackCompleted": true,
+          "historicalObservation": true,
+          "authority": "NONE",
+          "grantActivation": "NOT_ESTABLISHED",
+          "serviceDelivery": "NOT_ESTABLISHED",
+          "nativeResourceCleanup": "NOT_QUALIFIED",
+          "buyerOriginalBackendRecoveryPipeHostVersion": 1,
+          "backendOpenEntered": true,
+          "backendReaderFencedObserved": true,
+          "ownedBackendStoreClose": "RETURNED_UNDEFINED",
+          "ownedBackendStoreResourceCleanup": "NOT_QUALIFIED",
+          "sessionStatus": "CLOSED",
+          "sessionExitCode": 0,
+          "acquisitionBudgetMs": 1000,
+          "acquisitionOutcome": "TRANSFERRED",
+          "acquisitionRefusal": null,
+          "acquisitionObservationOnly": true,
+          "nativeCancellationOrTermination": "NOT_ESTABLISHED"
+        },
+        "payerOpens": 1,
+        "backendOpens": 1,
+        "readerCloses": 1,
+        "storeCloses": 1,
+        "backendReads": 0,
+        "checkpointReads": 0,
+        "custodyReads": 0,
+        "closeOrder": [
+          "READER_CLOSE",
+          "PAYER_CLOSE",
+          "STORE_CLOSE"
+        ],
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "serviceCalls": 0,
+        "ipConnections": 0,
+        "nativeCallbacks": "DECLARED",
+        "physicalSQLiteCleanup": "NOT_QUALIFIED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 1432,
+          "sha256": "71c585d06a0cfc2b3522343e45287773ce3c6dcd6e245f34d64d46098cd903fd"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 1015,
+          "sha256": "c9d15cfd76222298a00e1a3a8f8108e77869ba0b63b17820902073a265a4d8c0"
+        }
+      }
+    },
+    {
+      "profile": "BACKEND",
+      "scenario": "BACKEND_OUTPUT_PEER_CLOSED",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 6805,
+      "inputSha256": "a991769a222c45792472fc56b65121a2e7ae4a1fab4c26113d4a801ad42e0cdf",
+      "stopReason": null,
+      "elapsedSeconds": 0.33096162500442006,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "BACKEND_OUTPUT_PEER_CLOSED",
+        "passed": true,
+        "result": {
+          "buyerOriginalCommandHostResultVersion": 1,
+          "status": "CLOSE_UNKNOWN",
+          "exitCode": 4,
+          "mode": "RECOVER_EXISTING_ORIGINAL_WITH_BACKEND",
+          "runCompletion": "REJECTED",
+          "closeCompletion": "REJECTED",
+          "sessionLifecycle": "HELD",
+          "sessionHeld": true,
+          "ownersClosedObserved": false,
+          "outputOutcomeUnknown": true,
+          "fundingOutcomeUnknown": false,
+          "recoveryOutcomeUnknown": false,
+          "retainedResult": true,
+          "localWriteCallbackCompleted": false,
+          "historicalObservation": true,
+          "authority": "NONE",
+          "grantActivation": "NOT_ESTABLISHED",
+          "serviceDelivery": "NOT_ESTABLISHED",
+          "nativeResourceCleanup": "NOT_QUALIFIED",
+          "buyerOriginalBackendRecoveryPipeHostVersion": 1,
+          "backendOpenEntered": true,
+          "backendReaderFencedObserved": true,
+          "ownedBackendStoreClose": "RETURNED_UNDEFINED",
+          "ownedBackendStoreResourceCleanup": "NOT_QUALIFIED",
+          "sessionStatus": "CLOSE_UNKNOWN",
+          "sessionExitCode": 4,
+          "acquisitionBudgetMs": 1000,
+          "acquisitionOutcome": "TRANSFERRED",
+          "acquisitionRefusal": null,
+          "acquisitionObservationOnly": true,
+          "nativeCancellationOrTermination": "NOT_ESTABLISHED"
+        },
+        "payerOpens": 1,
+        "backendOpens": 1,
+        "readerCloses": 1,
+        "storeCloses": 1,
+        "backendReads": 1,
+        "checkpointReads": 2,
+        "custodyReads": 2,
+        "closeOrder": [
+          "READER_CLOSE",
+          "PAYER_CLOSE",
+          "STORE_CLOSE"
+        ],
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "serviceCalls": 0,
+        "ipConnections": 0,
+        "nativeCallbacks": "DECLARED",
+        "physicalSQLiteCleanup": "NOT_QUALIFIED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 1411,
+          "sha256": "56cf46f7ac8892b35abf152997a99ad01629147ecf56f0f31b3a061f5d660603"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "profile": "BACKEND",
+      "scenario": "BACKEND_FORBIDDEN_FUNDING",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 6036,
+      "inputSha256": "1f1bccae25d0eacdfcf3b684b6bc5bf42c5e05506905d0a1005773603cdc50fb",
+      "stopReason": null,
+      "elapsedSeconds": 0.07546270899183583,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "BACKEND_FORBIDDEN_FUNDING",
+        "passed": true,
+        "result": {
+          "buyerOriginalCommandHostResultVersion": 1,
+          "status": "INPUT_REFUSED",
+          "exitCode": 1,
+          "mode": "RECOVER_EXISTING_ORIGINAL_WITH_BACKEND",
+          "runCompletion": "REJECTED",
+          "closeCompletion": "REJECTED",
+          "sessionLifecycle": "HELD",
+          "sessionHeld": true,
+          "ownersClosedObserved": true,
+          "outputOutcomeUnknown": false,
+          "fundingOutcomeUnknown": false,
+          "recoveryOutcomeUnknown": false,
+          "retainedResult": false,
+          "localWriteCallbackCompleted": false,
+          "historicalObservation": true,
+          "authority": "NONE",
+          "grantActivation": "NOT_ESTABLISHED",
+          "serviceDelivery": "NOT_ESTABLISHED",
+          "nativeResourceCleanup": "NOT_QUALIFIED",
+          "buyerOriginalBackendRecoveryPipeHostVersion": 1,
+          "backendOpenEntered": true,
+          "backendReaderFencedObserved": true,
+          "ownedBackendStoreClose": "RETURNED_UNDEFINED",
+          "ownedBackendStoreResourceCleanup": "NOT_QUALIFIED",
+          "sessionStatus": "INPUT_REFUSED",
+          "sessionExitCode": 1,
+          "acquisitionBudgetMs": 1000,
+          "acquisitionOutcome": "TRANSFERRED",
+          "acquisitionRefusal": null,
+          "acquisitionObservationOnly": true,
+          "nativeCancellationOrTermination": "NOT_ESTABLISHED"
+        },
+        "payerOpens": 1,
+        "backendOpens": 1,
+        "readerCloses": 1,
+        "storeCloses": 1,
+        "backendReads": 0,
+        "checkpointReads": 0,
+        "custodyReads": 0,
+        "closeOrder": [
+          "READER_CLOSE",
+          "PAYER_CLOSE",
+          "STORE_CLOSE"
+        ],
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "serviceCalls": 0,
+        "ipConnections": 0,
+        "nativeCallbacks": "DECLARED",
+        "physicalSQLiteCleanup": "NOT_QUALIFIED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 1411,
+          "sha256": "220e1d2216e12240158d1e12615215236133480644ca3079bbeb7538fa16b295"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "profile": "BACKEND",
+      "scenario": "BACKEND_BOOTSTRAP_OUTSIDE_ROOT",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 5961,
+      "inputSha256": "0ebfedb7181beea669498d59b47fe93c17eb2e0f7ac47757706f79c92e853c93",
+      "stopReason": null,
+      "elapsedSeconds": 0.07101741699443664,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "BACKEND_BOOTSTRAP_OUTSIDE_ROOT",
+        "passed": true,
+        "result": {
+          "buyerOriginalRecoveryPipeRefusalVersion": 1,
+          "status": "BOOTSTRAP_REFUSED",
+          "exitCode": 1,
+          "stage": "BOOTSTRAP",
+          "returnedSession": false,
+          "knownOwnersClosedObserved": true,
+          "nativeOpenEntered": false,
+          "nativeResourceRelease": "NOT_ESTABLISHED",
+          "acquisitionBudgetMs": null,
+          "acquisitionOutcome": "NOT_STARTED",
+          "acquisitionRefusal": null,
+          "acquisitionObservationOnly": true,
+          "nativeCancellationOrTermination": "NOT_ESTABLISHED",
+          "historicalObservation": true,
+          "authority": "NONE",
+          "serviceDelivery": "NOT_ESTABLISHED",
+          "grantActivation": "NOT_ESTABLISHED",
+          "automaticRetry": false
+        },
+        "payerOpens": 0,
+        "backendOpens": 0,
+        "readerCloses": 0,
+        "storeCloses": 0,
+        "backendReads": 0,
+        "checkpointReads": 0,
+        "custodyReads": 0,
+        "closeOrder": [],
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "serviceCalls": 0,
+        "ipConnections": 0,
+        "nativeCallbacks": "DECLARED",
+        "physicalSQLiteCleanup": "NOT_QUALIFIED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 924,
+          "sha256": "021d12b4812c945ddf9c7fda87668e4de3d4f1be4557ec17253994811fefd8fc"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "profile": "BACKEND",
+      "scenario": "BACKEND_BOOTSTRAP_ALIAS",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 5970,
+      "inputSha256": "de19a933b4d0885d39f6e069c12a1286713d229c4b199e634c3a8b8ec3ef754b",
+      "stopReason": null,
+      "elapsedSeconds": 0.0748025419889018,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "BACKEND_BOOTSTRAP_ALIAS",
+        "passed": true,
+        "result": {
+          "buyerOriginalRecoveryPipeRefusalVersion": 1,
+          "status": "BOOTSTRAP_REFUSED",
+          "exitCode": 1,
+          "stage": "BOOTSTRAP",
+          "returnedSession": false,
+          "knownOwnersClosedObserved": true,
+          "nativeOpenEntered": false,
+          "nativeResourceRelease": "NOT_ESTABLISHED",
+          "acquisitionBudgetMs": null,
+          "acquisitionOutcome": "NOT_STARTED",
+          "acquisitionRefusal": null,
+          "acquisitionObservationOnly": true,
+          "nativeCancellationOrTermination": "NOT_ESTABLISHED",
+          "historicalObservation": true,
+          "authority": "NONE",
+          "serviceDelivery": "NOT_ESTABLISHED",
+          "grantActivation": "NOT_ESTABLISHED",
+          "automaticRetry": false
+        },
+        "payerOpens": 0,
+        "backendOpens": 0,
+        "readerCloses": 0,
+        "storeCloses": 0,
+        "backendReads": 0,
+        "checkpointReads": 0,
+        "custodyReads": 0,
+        "closeOrder": [],
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "serviceCalls": 0,
+        "ipConnections": 0,
+        "nativeCallbacks": "DECLARED",
+        "physicalSQLiteCleanup": "NOT_QUALIFIED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 917,
+          "sha256": "045752ad29d2710cbc714fb1a4b959b45cbc19e2a406b8db23c94e420b3e7736"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "profile": "BACKEND",
+      "scenario": "BACKEND_BOOTSTRAP_SIDECAR",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 5974,
+      "inputSha256": "a72dbfb40df844bc7d86a1d7a59c8b365dc6fdc7b3346fdc8df181b397743923",
+      "stopReason": null,
+      "elapsedSeconds": 0.07553279100102372,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "BACKEND_BOOTSTRAP_SIDECAR",
+        "passed": true,
+        "result": {
+          "buyerOriginalRecoveryPipeRefusalVersion": 1,
+          "status": "BOOTSTRAP_REFUSED",
+          "exitCode": 1,
+          "stage": "BOOTSTRAP",
+          "returnedSession": false,
+          "knownOwnersClosedObserved": true,
+          "nativeOpenEntered": false,
+          "nativeResourceRelease": "NOT_ESTABLISHED",
+          "acquisitionBudgetMs": null,
+          "acquisitionOutcome": "NOT_STARTED",
+          "acquisitionRefusal": null,
+          "acquisitionObservationOnly": true,
+          "nativeCancellationOrTermination": "NOT_ESTABLISHED",
+          "historicalObservation": true,
+          "authority": "NONE",
+          "serviceDelivery": "NOT_ESTABLISHED",
+          "grantActivation": "NOT_ESTABLISHED",
+          "automaticRetry": false
+        },
+        "payerOpens": 0,
+        "backendOpens": 0,
+        "readerCloses": 0,
+        "storeCloses": 0,
+        "backendReads": 0,
+        "checkpointReads": 0,
+        "custodyReads": 0,
+        "closeOrder": [],
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "serviceCalls": 0,
+        "ipConnections": 0,
+        "nativeCallbacks": "DECLARED",
+        "physicalSQLiteCleanup": "NOT_QUALIFIED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 919,
+          "sha256": "3474408dfccdae03033cd237f97f16c60dfb70c5f38597fa6eae8956e66608b6"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "profile": "BACKEND",
+      "scenario": "BACKEND_BOOTSTRAP_LIMIT",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 5974,
+      "inputSha256": "fd09493fea53224f3efb592bfa9f5211feb45f541da5be5cdb31670d8c761d5f",
+      "stopReason": null,
+      "elapsedSeconds": 0.07142154200118966,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "BACKEND_BOOTSTRAP_LIMIT",
+        "passed": true,
+        "result": {
+          "buyerOriginalRecoveryPipeRefusalVersion": 1,
+          "status": "BOOTSTRAP_REFUSED",
+          "exitCode": 1,
+          "stage": "BOOTSTRAP",
+          "returnedSession": false,
+          "knownOwnersClosedObserved": true,
+          "nativeOpenEntered": false,
+          "nativeResourceRelease": "NOT_ESTABLISHED",
+          "acquisitionBudgetMs": null,
+          "acquisitionOutcome": "NOT_STARTED",
+          "acquisitionRefusal": null,
+          "acquisitionObservationOnly": true,
+          "nativeCancellationOrTermination": "NOT_ESTABLISHED",
+          "historicalObservation": true,
+          "authority": "NONE",
+          "serviceDelivery": "NOT_ESTABLISHED",
+          "grantActivation": "NOT_ESTABLISHED",
+          "automaticRetry": false
+        },
+        "payerOpens": 0,
+        "backendOpens": 0,
+        "readerCloses": 0,
+        "storeCloses": 0,
+        "backendReads": 0,
+        "checkpointReads": 0,
+        "custodyReads": 0,
+        "closeOrder": [],
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "serviceCalls": 0,
+        "ipConnections": 0,
+        "nativeCallbacks": "DECLARED",
+        "physicalSQLiteCleanup": "NOT_QUALIFIED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 917,
+          "sha256": "df06744316b7dfcc27980965a25aa4df175d23f819cf26e23f08e1982b31c184"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "profile": "BACKEND",
+      "scenario": "BACKEND_CAPABILITY_MISSING",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 5972,
+      "inputSha256": "e502b2944d50dbbd8fdbcd16eb6ffa8638c18fadc8d7e58f62fbdfe855a1b15e",
+      "stopReason": null,
+      "elapsedSeconds": 0.07544149999739602,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "BACKEND_CAPABILITY_MISSING",
+        "passed": true,
+        "result": {
+          "buyerOriginalRecoveryPipeRefusalVersion": 1,
+          "status": "BOOTSTRAP_REFUSED",
+          "exitCode": 1,
+          "stage": "BOOTSTRAP",
+          "returnedSession": false,
+          "knownOwnersClosedObserved": true,
+          "nativeOpenEntered": false,
+          "nativeResourceRelease": "NOT_ESTABLISHED",
+          "buyerOriginalBackendRecoveryPipeHostVersion": 1,
+          "backendOpenEntered": false,
+          "backendReaderFencedObserved": false,
+          "ownedBackendStoreClose": "NOT_RETURNED",
+          "ownedBackendStoreResourceCleanup": "NOT_QUALIFIED",
+          "acquisitionBudgetMs": null,
+          "acquisitionOutcome": "NOT_STARTED",
+          "acquisitionRefusal": null,
+          "acquisitionObservationOnly": true,
+          "nativeCancellationOrTermination": "NOT_ESTABLISHED",
+          "historicalObservation": true,
+          "authority": "NONE",
+          "serviceDelivery": "NOT_ESTABLISHED",
+          "grantActivation": "NOT_ESTABLISHED",
+          "automaticRetry": false
+        },
+        "payerOpens": 0,
+        "backendOpens": 0,
+        "readerCloses": 0,
+        "storeCloses": 0,
+        "backendReads": 0,
+        "checkpointReads": 0,
+        "custodyReads": 0,
+        "closeOrder": [],
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "serviceCalls": 0,
+        "ipConnections": 0,
+        "nativeCallbacks": "DECLARED",
+        "physicalSQLiteCleanup": "NOT_QUALIFIED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 1122,
+          "sha256": "927fe917e563a6d3f2d8c7a43734f402c5f9016f18dd466735c8cc30bb6966a0"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "profile": "BACKEND",
+      "scenario": "BACKEND_OWNER_SHAPE_REFUSED",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 5972,
+      "inputSha256": "e502b2944d50dbbd8fdbcd16eb6ffa8638c18fadc8d7e58f62fbdfe855a1b15e",
+      "stopReason": null,
+      "elapsedSeconds": 0.07776295801158994,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "BACKEND_OWNER_SHAPE_REFUSED",
+        "passed": true,
+        "result": {
+          "buyerOriginalRecoveryPipeRefusalVersion": 1,
+          "status": "CLOSE_UNKNOWN",
+          "exitCode": 4,
+          "stage": "BACKEND_OPEN",
+          "returnedSession": false,
+          "knownOwnersClosedObserved": false,
+          "nativeOpenEntered": false,
+          "nativeResourceRelease": "NOT_ESTABLISHED",
+          "buyerOriginalBackendRecoveryPipeHostVersion": 1,
+          "backendOpenEntered": true,
+          "backendReaderFencedObserved": false,
+          "ownedBackendStoreClose": "NOT_RETURNED",
+          "ownedBackendStoreResourceCleanup": "NOT_QUALIFIED",
+          "acquisitionBudgetMs": 1000,
+          "acquisitionOutcome": "UNKNOWN",
+          "acquisitionRefusal": "OWNER_SETUP_REFUSED",
+          "acquisitionObservationOnly": true,
+          "nativeCancellationOrTermination": "NOT_ESTABLISHED",
+          "historicalObservation": true,
+          "authority": "NONE",
+          "serviceDelivery": "NOT_ESTABLISHED",
+          "grantActivation": "NOT_ESTABLISHED",
+          "automaticRetry": false
+        },
+        "payerOpens": 0,
+        "backendOpens": 1,
+        "readerCloses": 0,
+        "storeCloses": 0,
+        "backendReads": 0,
+        "checkpointReads": 0,
+        "custodyReads": 0,
+        "closeOrder": [],
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "serviceCalls": 0,
+        "ipConnections": 0,
+        "nativeCallbacks": "DECLARED",
+        "physicalSQLiteCleanup": "NOT_QUALIFIED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 1135,
+          "sha256": "814705a3e2b6c7daecc65e9fa8181eb12027ddb6b406eda4e9ecd3351c629a22"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "profile": "BACKEND",
+      "scenario": "BACKEND_STORE_EARLY_CLOSE",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 6092,
+      "inputSha256": "da8524b7e1163b2f299ba7f33df4e86f4f351b27b07da8fb171bdbd9bf6f55c0",
+      "stopReason": null,
+      "elapsedSeconds": 0.08211224999104161,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "BACKEND_STORE_EARLY_CLOSE",
+        "passed": true,
+        "result": {
+          "buyerOriginalCommandHostResultVersion": 1,
+          "status": "CLOSED",
+          "exitCode": 0,
+          "mode": "RECOVER_EXISTING_ORIGINAL_WITH_BACKEND",
+          "runCompletion": "FULFILLED_UNDEFINED",
+          "closeCompletion": "FULFILLED_UNDEFINED",
+          "sessionLifecycle": "CLOSED",
+          "sessionHeld": false,
+          "ownersClosedObserved": true,
+          "outputOutcomeUnknown": false,
+          "fundingOutcomeUnknown": false,
+          "recoveryOutcomeUnknown": false,
+          "retainedResult": true,
+          "localWriteCallbackCompleted": true,
+          "historicalObservation": true,
+          "authority": "NONE",
+          "grantActivation": "NOT_ESTABLISHED",
+          "serviceDelivery": "NOT_ESTABLISHED",
+          "nativeResourceCleanup": "NOT_QUALIFIED",
+          "buyerOriginalBackendRecoveryPipeHostVersion": 1,
+          "backendOpenEntered": true,
+          "backendReaderFencedObserved": true,
+          "ownedBackendStoreClose": "RETURNED_UNDEFINED",
+          "ownedBackendStoreResourceCleanup": "NOT_QUALIFIED",
+          "sessionStatus": "CLOSED",
+          "sessionExitCode": 0,
+          "acquisitionBudgetMs": 1000,
+          "acquisitionOutcome": "TRANSFERRED",
+          "acquisitionRefusal": null,
+          "acquisitionObservationOnly": true,
+          "nativeCancellationOrTermination": "NOT_ESTABLISHED"
+        },
+        "payerOpens": 1,
+        "backendOpens": 1,
+        "readerCloses": 1,
+        "storeCloses": 1,
+        "backendReads": 0,
+        "checkpointReads": 0,
+        "custodyReads": 0,
+        "closeOrder": [
+          "READER_CLOSE",
+          "PAYER_CLOSE",
+          "STORE_CLOSE"
+        ],
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "serviceCalls": 0,
+        "ipConnections": 0,
+        "nativeCallbacks": "DECLARED",
+        "physicalSQLiteCleanup": "NOT_QUALIFIED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 1420,
+          "sha256": "c13b7fbe04b90a714fec99588f1126598dad20d8c7b8fd202fab6a6428f3e39f"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 1015,
+          "sha256": "c9d15cfd76222298a00e1a3a8f8108e77869ba0b63b17820902073a265a4d8c0"
+        }
+      }
+    },
+    {
+      "profile": "BACKEND",
+      "scenario": "BACKEND_READER_REENTRANT_STOP",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 6805,
+      "inputSha256": "a991769a222c45792472fc56b65121a2e7ae4a1fab4c26113d4a801ad42e0cdf",
+      "stopReason": null,
+      "elapsedSeconds": 0.3289479999948526,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "BACKEND_READER_REENTRANT_STOP",
+        "passed": true,
+        "result": {
+          "buyerOriginalCommandHostResultVersion": 1,
+          "status": "CLOSE_UNKNOWN",
+          "exitCode": 4,
+          "mode": "RECOVER_EXISTING_ORIGINAL_WITH_BACKEND",
+          "runCompletion": "REJECTED",
+          "closeCompletion": "REJECTED",
+          "sessionLifecycle": "HELD",
+          "sessionHeld": true,
+          "ownersClosedObserved": false,
+          "outputOutcomeUnknown": true,
+          "fundingOutcomeUnknown": false,
+          "recoveryOutcomeUnknown": false,
+          "retainedResult": false,
+          "localWriteCallbackCompleted": false,
+          "historicalObservation": true,
+          "authority": "NONE",
+          "grantActivation": "NOT_ESTABLISHED",
+          "serviceDelivery": "NOT_ESTABLISHED",
+          "nativeResourceCleanup": "NOT_QUALIFIED",
+          "buyerOriginalBackendRecoveryPipeHostVersion": 1,
+          "backendOpenEntered": true,
+          "backendReaderFencedObserved": false,
+          "ownedBackendStoreClose": "HELD",
+          "ownedBackendStoreResourceCleanup": "NOT_QUALIFIED",
+          "sessionStatus": "CLOSE_UNKNOWN",
+          "sessionExitCode": 4,
+          "acquisitionBudgetMs": 1000,
+          "acquisitionOutcome": "TRANSFERRED",
+          "acquisitionRefusal": null,
+          "acquisitionObservationOnly": true,
+          "nativeCancellationOrTermination": "NOT_ESTABLISHED"
+        },
+        "payerOpens": 1,
+        "backendOpens": 1,
+        "readerCloses": 1,
+        "storeCloses": 0,
+        "backendReads": 1,
+        "checkpointReads": 1,
+        "custodyReads": 1,
+        "closeOrder": [
+          "READER_CLOSE",
+          "PAYER_CLOSE"
+        ],
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "serviceCalls": 0,
+        "ipConnections": 0,
+        "nativeCallbacks": "DECLARED",
+        "physicalSQLiteCleanup": "NOT_QUALIFIED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 1388,
+          "sha256": "f985bcb6c9da2d69fa9079fb5de32307c47fd7d222d989ec138082ee90ff8dfb"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "profile": "BACKEND",
+      "scenario": "BACKEND_STORE_CLOSE_PENDING_RECEIPT",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 6092,
+      "inputSha256": "da8524b7e1163b2f299ba7f33df4e86f4f351b27b07da8fb171bdbd9bf6f55c0",
+      "stopReason": null,
+      "elapsedSeconds": 0.0766495000134455,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "BACKEND_STORE_CLOSE_PENDING_RECEIPT",
+        "passed": true,
+        "result": {
+          "buyerOriginalCommandHostResultVersion": 1,
+          "status": "CLOSE_UNKNOWN",
+          "exitCode": 4,
+          "mode": "RECOVER_EXISTING_ORIGINAL_WITH_BACKEND",
+          "runCompletion": "FULFILLED_UNDEFINED",
+          "closeCompletion": "FULFILLED_UNDEFINED",
+          "sessionLifecycle": "CLOSED",
+          "sessionHeld": false,
+          "ownersClosedObserved": false,
+          "outputOutcomeUnknown": false,
+          "fundingOutcomeUnknown": false,
+          "recoveryOutcomeUnknown": false,
+          "retainedResult": true,
+          "localWriteCallbackCompleted": true,
+          "historicalObservation": true,
+          "authority": "NONE",
+          "grantActivation": "NOT_ESTABLISHED",
+          "serviceDelivery": "NOT_ESTABLISHED",
+          "nativeResourceCleanup": "NOT_QUALIFIED",
+          "buyerOriginalBackendRecoveryPipeHostVersion": 1,
+          "backendOpenEntered": true,
+          "backendReaderFencedObserved": true,
+          "ownedBackendStoreClose": "UNKNOWN",
+          "ownedBackendStoreResourceCleanup": "NOT_QUALIFIED",
+          "sessionStatus": "CLOSED",
+          "sessionExitCode": 0,
+          "acquisitionBudgetMs": 1000,
+          "acquisitionOutcome": "TRANSFERRED",
+          "acquisitionRefusal": null,
+          "acquisitionObservationOnly": true,
+          "nativeCancellationOrTermination": "NOT_ESTABLISHED"
+        },
+        "payerOpens": 1,
+        "backendOpens": 1,
+        "readerCloses": 1,
+        "storeCloses": 1,
+        "backendReads": 0,
+        "checkpointReads": 0,
+        "custodyReads": 0,
+        "closeOrder": [
+          "READER_CLOSE",
+          "PAYER_CLOSE",
+          "STORE_CLOSE"
+        ],
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "serviceCalls": 0,
+        "ipConnections": 0,
+        "nativeCallbacks": "DECLARED",
+        "physicalSQLiteCleanup": "NOT_QUALIFIED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 1427,
+          "sha256": "243d46db2f2ceabdfdf33c261501f159e9b4082ecbaae0ef8bdd4b2ad2fc3ad7"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 1015,
+          "sha256": "c9d15cfd76222298a00e1a3a8f8108e77869ba0b63b17820902073a265a4d8c0"
+        }
+      }
+    },
+    {
+      "profile": "BACKEND",
+      "scenario": "BACKEND_READ_PROMISE",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 6805,
+      "inputSha256": "a991769a222c45792472fc56b65121a2e7ae4a1fab4c26113d4a801ad42e0cdf",
+      "stopReason": null,
+      "elapsedSeconds": 0.32814462498936336,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "BACKEND_READ_PROMISE",
+        "passed": true,
+        "result": {
+          "buyerOriginalCommandHostResultVersion": 1,
+          "status": "CLOSE_UNKNOWN",
+          "exitCode": 4,
+          "mode": "RECOVER_EXISTING_ORIGINAL_WITH_BACKEND",
+          "runCompletion": "REJECTED",
+          "closeCompletion": "REJECTED",
+          "sessionLifecycle": "HELD",
+          "sessionHeld": true,
+          "ownersClosedObserved": false,
+          "outputOutcomeUnknown": true,
+          "fundingOutcomeUnknown": false,
+          "recoveryOutcomeUnknown": false,
+          "retainedResult": false,
+          "localWriteCallbackCompleted": false,
+          "historicalObservation": true,
+          "authority": "NONE",
+          "grantActivation": "NOT_ESTABLISHED",
+          "serviceDelivery": "NOT_ESTABLISHED",
+          "nativeResourceCleanup": "NOT_QUALIFIED",
+          "buyerOriginalBackendRecoveryPipeHostVersion": 1,
+          "backendOpenEntered": true,
+          "backendReaderFencedObserved": false,
+          "ownedBackendStoreClose": "HELD",
+          "ownedBackendStoreResourceCleanup": "NOT_QUALIFIED",
+          "sessionStatus": "CLOSE_UNKNOWN",
+          "sessionExitCode": 4,
+          "acquisitionBudgetMs": 1000,
+          "acquisitionOutcome": "TRANSFERRED",
+          "acquisitionRefusal": null,
+          "acquisitionObservationOnly": true,
+          "nativeCancellationOrTermination": "NOT_ESTABLISHED"
+        },
+        "payerOpens": 1,
+        "backendOpens": 1,
+        "readerCloses": 1,
+        "storeCloses": 0,
+        "backendReads": 1,
+        "checkpointReads": 1,
+        "custodyReads": 1,
+        "closeOrder": [
+          "READER_CLOSE",
+          "PAYER_CLOSE"
+        ],
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "serviceCalls": 0,
+        "ipConnections": 0,
+        "nativeCallbacks": "DECLARED",
+        "physicalSQLiteCleanup": "NOT_QUALIFIED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 1379,
+          "sha256": "102a5184cd56298692a06598c468b00add378c580536f98da7ddd513a1db5099"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "profile": "BACKEND",
+      "scenario": "BACKEND_DOUBLE_CLOSE_GUARD",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 6092,
+      "inputSha256": "da8524b7e1163b2f299ba7f33df4e86f4f351b27b07da8fb171bdbd9bf6f55c0",
+      "stopReason": null,
+      "elapsedSeconds": 0.07776745900628157,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "BACKEND_DOUBLE_CLOSE_GUARD",
+        "passed": true,
+        "result": {
+          "buyerOriginalCommandHostResultVersion": 1,
+          "status": "CLOSED",
+          "exitCode": 0,
+          "mode": "RECOVER_EXISTING_ORIGINAL_WITH_BACKEND",
+          "runCompletion": "FULFILLED_UNDEFINED",
+          "closeCompletion": "FULFILLED_UNDEFINED",
+          "sessionLifecycle": "CLOSED",
+          "sessionHeld": false,
+          "ownersClosedObserved": true,
+          "outputOutcomeUnknown": false,
+          "fundingOutcomeUnknown": false,
+          "recoveryOutcomeUnknown": false,
+          "retainedResult": true,
+          "localWriteCallbackCompleted": true,
+          "historicalObservation": true,
+          "authority": "NONE",
+          "grantActivation": "NOT_ESTABLISHED",
+          "serviceDelivery": "NOT_ESTABLISHED",
+          "nativeResourceCleanup": "NOT_QUALIFIED",
+          "buyerOriginalBackendRecoveryPipeHostVersion": 1,
+          "backendOpenEntered": true,
+          "backendReaderFencedObserved": true,
+          "ownedBackendStoreClose": "RETURNED_UNDEFINED",
+          "ownedBackendStoreResourceCleanup": "NOT_QUALIFIED",
+          "sessionStatus": "CLOSED",
+          "sessionExitCode": 0,
+          "acquisitionBudgetMs": 1000,
+          "acquisitionOutcome": "TRANSFERRED",
+          "acquisitionRefusal": null,
+          "acquisitionObservationOnly": true,
+          "nativeCancellationOrTermination": "NOT_ESTABLISHED"
+        },
+        "payerOpens": 1,
+        "backendOpens": 1,
+        "readerCloses": 1,
+        "storeCloses": 1,
+        "backendReads": 0,
+        "checkpointReads": 0,
+        "custodyReads": 0,
+        "closeOrder": [
+          "READER_CLOSE",
+          "PAYER_CLOSE",
+          "STORE_CLOSE"
+        ],
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "serviceCalls": 0,
+        "ipConnections": 0,
+        "nativeCallbacks": "DECLARED",
+        "physicalSQLiteCleanup": "NOT_QUALIFIED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 1421,
+          "sha256": "d8ea1a05be8a00066525f2b63d31efb9d44c9b9926a77fff75ec1ad24ebe8f24"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 1015,
+          "sha256": "c9d15cfd76222298a00e1a3a8f8108e77869ba0b63b17820902073a265a4d8c0"
+        }
+      }
+    },
+    {
+      "profile": "BACKEND",
+      "scenario": "BACKEND_PROMISE_ACCESSOR_REFUSED",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 6092,
+      "inputSha256": "da8524b7e1163b2f299ba7f33df4e86f4f351b27b07da8fb171bdbd9bf6f55c0",
+      "stopReason": null,
+      "elapsedSeconds": 0.0794042920024367,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "BACKEND_PROMISE_ACCESSOR_REFUSED",
+        "passed": true,
+        "result": {
+          "buyerOriginalCommandHostResultVersion": 1,
+          "status": "CLOSE_UNKNOWN",
+          "exitCode": 4,
+          "mode": "RECOVER_EXISTING_ORIGINAL_WITH_BACKEND",
+          "runCompletion": "FULFILLED_UNDEFINED",
+          "closeCompletion": "FULFILLED_UNDEFINED",
+          "sessionLifecycle": "CLOSED",
+          "sessionHeld": false,
+          "ownersClosedObserved": false,
+          "outputOutcomeUnknown": false,
+          "fundingOutcomeUnknown": false,
+          "recoveryOutcomeUnknown": false,
+          "retainedResult": true,
+          "localWriteCallbackCompleted": true,
+          "historicalObservation": true,
+          "authority": "NONE",
+          "grantActivation": "NOT_ESTABLISHED",
+          "serviceDelivery": "NOT_ESTABLISHED",
+          "nativeResourceCleanup": "NOT_QUALIFIED",
+          "buyerOriginalBackendRecoveryPipeHostVersion": 1,
+          "backendOpenEntered": true,
+          "backendReaderFencedObserved": true,
+          "ownedBackendStoreClose": "UNKNOWN",
+          "ownedBackendStoreResourceCleanup": "NOT_QUALIFIED",
+          "sessionStatus": "CLOSED",
+          "sessionExitCode": 0,
+          "acquisitionBudgetMs": 1000,
+          "acquisitionOutcome": "TRANSFERRED",
+          "acquisitionRefusal": null,
+          "acquisitionObservationOnly": true,
+          "nativeCancellationOrTermination": "NOT_ESTABLISHED"
+        },
+        "payerOpens": 1,
+        "backendOpens": 1,
+        "readerCloses": 1,
+        "storeCloses": 1,
+        "backendReads": 0,
+        "checkpointReads": 0,
+        "custodyReads": 0,
+        "closeOrder": [
+          "READER_CLOSE",
+          "PAYER_CLOSE",
+          "STORE_CLOSE"
+        ],
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "serviceCalls": 0,
+        "ipConnections": 0,
+        "nativeCallbacks": "DECLARED",
+        "physicalSQLiteCleanup": "NOT_QUALIFIED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 1424,
+          "sha256": "0c3a286e82bfb7c79c5cfa6efb0f9b51dfceed114144ee3b49ca94e2c8d295c7"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 1015,
+          "sha256": "c9d15cfd76222298a00e1a3a8f8108e77869ba0b63b17820902073a265a4d8c0"
+        }
+      }
+    },
+    {
+      "profile": "LOCAL",
+      "scenario": "CLEAN_INSPECT",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 5924,
+      "inputSha256": "97d0014cf59d7f64ee95ffa850ee65c2844ab469e1ad06024a663a24138285ac",
+      "stopReason": null,
+      "elapsedSeconds": 0.08068295900011435,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "CLEAN_INSPECT",
+        "passed": true,
+        "hostStatus": "CLOSED",
+        "hostExitCode": 0,
+        "nativeOpenCalls": 1,
+        "nativeCloseCalls": 1,
+        "restores": 0,
+        "serviceCalls": 0,
+        "stateReads": 0,
+        "callerThenHooks": 0,
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "actualAsyncLocalStorage": true,
+        "declaredNativeCallbacks": true,
+        "rawHeaderOrCheckpointInHostStatus": false,
+        "nodeChildren": 0,
+        "ipConnections": 0,
+        "SQL": false,
+        "SDK": false,
+        "keyGeneration": false,
+        "cryptographicSignatures": false,
+        "authority": "NONE",
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 526,
+          "sha256": "ba22ab985cf9c6a1ceef3810480221141238fbac59ae23fe3b2cbf36c60c6722"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 1002,
+          "sha256": "db5986ba520e94dc2550f7a93d6f546659668505b878826ba6de94b91cf09ca8"
+        }
+      }
+    },
+    {
+      "profile": "LOCAL",
+      "scenario": "RESTORE_ORIGINAL",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 7259,
+      "inputSha256": "2beac563e3299a0b417ae5842ea2c0eb664c807e3f9c4f6afc3921b64ac508ee",
+      "stopReason": null,
+      "elapsedSeconds": 0.08295112499035895,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "RESTORE_ORIGINAL",
+        "passed": true,
+        "hostStatus": "CLOSED",
+        "hostExitCode": 0,
+        "nativeOpenCalls": 1,
+        "nativeCloseCalls": 1,
+        "restores": 1,
+        "serviceCalls": 0,
+        "stateReads": 0,
+        "callerThenHooks": 0,
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "actualAsyncLocalStorage": true,
+        "declaredNativeCallbacks": true,
+        "rawHeaderOrCheckpointInHostStatus": false,
+        "nodeChildren": 0,
+        "ipConnections": 0,
+        "SQL": false,
+        "SDK": false,
+        "keyGeneration": false,
+        "cryptographicSignatures": false,
+        "authority": "NONE",
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 529,
+          "sha256": "d0f2346f768c9ef55c9666ef17886f5cd06a85490ee7129213b40eebcb74462d"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 2429,
+          "sha256": "e01d315603c6a801ad71d705d8a2b639390a2b15c893db461249132414c28440"
+        }
+      }
+    },
+    {
+      "profile": "LOCAL",
+      "scenario": "NONCANONICAL_BOOTSTRAP",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 5804,
+      "inputSha256": "c82b1a241de2d20d300eb12082cf6bc22986efa71eeed8afa02e92309b8f66e6",
+      "stopReason": null,
+      "elapsedSeconds": 0.07294554199324921,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "NONCANONICAL_BOOTSTRAP",
+        "passed": true,
+        "hostStatus": "BOOTSTRAP_REFUSED",
+        "hostExitCode": 1,
+        "nativeOpenCalls": 0,
+        "nativeCloseCalls": 0,
+        "restores": 0,
+        "serviceCalls": 0,
+        "stateReads": 0,
+        "callerThenHooks": 0,
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "actualAsyncLocalStorage": true,
+        "declaredNativeCallbacks": true,
+        "rawHeaderOrCheckpointInHostStatus": false,
+        "nodeChildren": 0,
+        "ipConnections": 0,
+        "SQL": false,
+        "SDK": false,
+        "keyGeneration": false,
+        "cryptographicSignatures": false,
+        "authority": "NONE",
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 546,
+          "sha256": "8465fa46666a3b0033682d47d77fd27211a18441dd47cf5239887db7dae313f0"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "profile": "LOCAL",
+      "scenario": "MISMATCHED_GRANT",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 5803,
+      "inputSha256": "dbd6c31d99981a16b52da45998cb7b520bb5ff08764c8ae2b4f26672d2993380",
+      "stopReason": null,
+      "elapsedSeconds": 0.07437541600666009,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "MISMATCHED_GRANT",
+        "passed": true,
+        "hostStatus": "BOOTSTRAP_REFUSED",
+        "hostExitCode": 1,
+        "nativeOpenCalls": 0,
+        "nativeCloseCalls": 0,
+        "restores": 0,
+        "serviceCalls": 0,
+        "stateReads": 0,
+        "callerThenHooks": 0,
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "actualAsyncLocalStorage": true,
+        "declaredNativeCallbacks": true,
+        "rawHeaderOrCheckpointInHostStatus": false,
+        "nodeChildren": 0,
+        "ipConnections": 0,
+        "SQL": false,
+        "SDK": false,
+        "keyGeneration": false,
+        "cryptographicSignatures": false,
+        "authority": "NONE",
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 540,
+          "sha256": "7dab7624af5e9cdcac48d4705f638c84113518c7663c525d2f302b6d15fb1460"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "profile": "LOCAL",
+      "scenario": "OUTSIDE_ROOT",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 5793,
+      "inputSha256": "002f12035e53eeb2c3888c8ff882355863145bfb2c3033820f7ddb151dd59dab",
+      "stopReason": null,
+      "elapsedSeconds": 0.07509845800814219,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "OUTSIDE_ROOT",
+        "passed": true,
+        "hostStatus": "BOOTSTRAP_REFUSED",
+        "hostExitCode": 1,
+        "nativeOpenCalls": 0,
+        "nativeCloseCalls": 0,
+        "restores": 0,
+        "serviceCalls": 0,
+        "stateReads": 0,
+        "callerThenHooks": 0,
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "actualAsyncLocalStorage": true,
+        "declaredNativeCallbacks": true,
+        "rawHeaderOrCheckpointInHostStatus": false,
+        "nodeChildren": 0,
+        "ipConnections": 0,
+        "SQL": false,
+        "SDK": false,
+        "keyGeneration": false,
+        "cryptographicSignatures": false,
+        "authority": "NONE",
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 536,
+          "sha256": "a28adb1488b00e36cda93e23a8eaddd9c10a6dcb1260db59cfd345e4f74cb15c"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "profile": "LOCAL",
+      "scenario": "BOOTSTRAP_ROOT_CHANGED",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 5782,
+      "inputSha256": "b1e6db6d91b4389ccda6cde84bf8f3c35526f371b0f2e174149423154780dfb9",
+      "stopReason": null,
+      "elapsedSeconds": 0.07416225000633858,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "BOOTSTRAP_ROOT_CHANGED",
+        "passed": true,
+        "hostStatus": "BOOTSTRAP_REFUSED",
+        "hostExitCode": 1,
+        "nativeOpenCalls": 0,
+        "nativeCloseCalls": 0,
+        "restores": 0,
+        "serviceCalls": 0,
+        "stateReads": 0,
+        "callerThenHooks": 0,
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "actualAsyncLocalStorage": true,
+        "declaredNativeCallbacks": true,
+        "rawHeaderOrCheckpointInHostStatus": false,
+        "nodeChildren": 0,
+        "ipConnections": 0,
+        "SQL": false,
+        "SDK": false,
+        "keyGeneration": false,
+        "cryptographicSignatures": false,
+        "authority": "NONE",
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 546,
+          "sha256": "b194bffcdd5f7d581031381d384b737371daf8df1db56ce0e19fd9b6ea112221"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "profile": "LOCAL",
+      "scenario": "NATIVE_OPEN_REJECTS",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 5804,
+      "inputSha256": "d60e1ea78938f61ca093e527ef5aeff8f7c0acda1a8dd42a14f1cf8d52858e83",
+      "stopReason": null,
+      "elapsedSeconds": 0.07169208400591742,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "NATIVE_OPEN_REJECTS",
+        "passed": true,
+        "hostStatus": "CLOSE_UNKNOWN",
+        "hostExitCode": 4,
+        "nativeOpenCalls": 1,
+        "nativeCloseCalls": 0,
+        "restores": 0,
+        "serviceCalls": 0,
+        "stateReads": 0,
+        "callerThenHooks": 0,
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "actualAsyncLocalStorage": true,
+        "declaredNativeCallbacks": true,
+        "rawHeaderOrCheckpointInHostStatus": false,
+        "nodeChildren": 0,
+        "ipConnections": 0,
+        "SQL": false,
+        "SDK": false,
+        "keyGeneration": false,
+        "cryptographicSignatures": false,
+        "authority": "NONE",
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 539,
+          "sha256": "06647f9b45f523771a143813cc17124a8757d8fe041a22fa2239e10a818b395c"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "profile": "LOCAL",
+      "scenario": "CLIENT_SETUP_REFUSED",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 5804,
+      "inputSha256": "d60e1ea78938f61ca093e527ef5aeff8f7c0acda1a8dd42a14f1cf8d52858e83",
+      "stopReason": null,
+      "elapsedSeconds": 0.0740454159968067,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "CLIENT_SETUP_REFUSED",
+        "passed": true,
+        "hostStatus": "CLOSE_UNKNOWN",
+        "hostExitCode": 4,
+        "nativeOpenCalls": 1,
+        "nativeCloseCalls": 1,
+        "restores": 0,
+        "serviceCalls": 0,
+        "stateReads": 0,
+        "callerThenHooks": 0,
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "actualAsyncLocalStorage": true,
+        "declaredNativeCallbacks": true,
+        "rawHeaderOrCheckpointInHostStatus": false,
+        "nodeChildren": 0,
+        "ipConnections": 0,
+        "SQL": false,
+        "SDK": false,
+        "keyGeneration": false,
+        "cryptographicSignatures": false,
+        "authority": "NONE",
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 540,
+          "sha256": "93172ae27860fda5685d06f4faac480948f1fc0a3b76c2bfbe25831fbe481f62"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "profile": "LOCAL",
+      "scenario": "CLIENT_CLOSE_REJECTS",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 5804,
+      "inputSha256": "d60e1ea78938f61ca093e527ef5aeff8f7c0acda1a8dd42a14f1cf8d52858e83",
+      "stopReason": null,
+      "elapsedSeconds": 0.3289815419993829,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "CLIENT_CLOSE_REJECTS",
+        "passed": true,
+        "hostStatus": "CLOSE_UNKNOWN",
+        "hostExitCode": 4,
+        "nativeOpenCalls": 1,
+        "nativeCloseCalls": 1,
+        "restores": 0,
+        "serviceCalls": 0,
+        "stateReads": 0,
+        "callerThenHooks": 0,
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "actualAsyncLocalStorage": true,
+        "declaredNativeCallbacks": true,
+        "rawHeaderOrCheckpointInHostStatus": false,
+        "nodeChildren": 0,
+        "ipConnections": 0,
+        "SQL": false,
+        "SDK": false,
+        "keyGeneration": false,
+        "cryptographicSignatures": false,
+        "authority": "NONE",
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 540,
+          "sha256": "ac3f2f8f460ad2ee0a112f0296b8f2f17a1e2ba90a1f2baf5ade535a120f6080"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "profile": "LOCAL",
+      "scenario": "FINAL_CLOSE_VIEW_DRIFT",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 5804,
+      "inputSha256": "d60e1ea78938f61ca093e527ef5aeff8f7c0acda1a8dd42a14f1cf8d52858e83",
+      "stopReason": null,
+      "elapsedSeconds": 0.07535658299457282,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "FINAL_CLOSE_VIEW_DRIFT",
+        "passed": true,
+        "hostStatus": "CLOSE_UNKNOWN",
+        "hostExitCode": 4,
+        "nativeOpenCalls": 1,
+        "nativeCloseCalls": 1,
+        "restores": 0,
+        "serviceCalls": 0,
+        "stateReads": 0,
+        "callerThenHooks": 0,
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "actualAsyncLocalStorage": true,
+        "declaredNativeCallbacks": true,
+        "rawHeaderOrCheckpointInHostStatus": false,
+        "nodeChildren": 0,
+        "ipConnections": 0,
+        "SQL": false,
+        "SDK": false,
+        "keyGeneration": false,
+        "cryptographicSignatures": false,
+        "authority": "NONE",
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 542,
+          "sha256": "86714df97003fc4243180f5275e3e0a83a943681cc81031ae9500ae0fd648fdc"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "profile": "LOCAL",
+      "scenario": "OUTPUT_PEER_CLOSED",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 7259,
+      "inputSha256": "2beac563e3299a0b417ae5842ea2c0eb664c807e3f9c4f6afc3921b64ac508ee",
+      "stopReason": null,
+      "elapsedSeconds": 0.33034983299148735,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "OUTPUT_PEER_CLOSED",
+        "passed": true,
+        "hostStatus": "CLOSE_UNKNOWN",
+        "hostExitCode": 4,
+        "nativeOpenCalls": 1,
+        "nativeCloseCalls": 1,
+        "restores": 1,
+        "serviceCalls": 0,
+        "stateReads": 0,
+        "callerThenHooks": 0,
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "actualAsyncLocalStorage": true,
+        "declaredNativeCallbacks": true,
+        "rawHeaderOrCheckpointInHostStatus": false,
+        "nodeChildren": 0,
+        "ipConnections": 0,
+        "SQL": false,
+        "SDK": false,
+        "keyGeneration": false,
+        "cryptographicSignatures": false,
+        "authority": "NONE",
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 538,
+          "sha256": "5614c220a4ce94463b61b27d666c82f7070afac7a2b2fcfe983dce828300ee44"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "profile": "LOCAL",
+      "scenario": "FUNDING_COMMAND_REFUSED",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 5868,
+      "inputSha256": "99ac531df9d6a6286cff0a624600e49afe5b74aea7a2fc92314990ff8616e098",
+      "stopReason": null,
+      "elapsedSeconds": 0.074271375007811,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "FUNDING_COMMAND_REFUSED",
+        "passed": true,
+        "hostStatus": "INPUT_REFUSED",
+        "hostExitCode": 1,
+        "nativeOpenCalls": 1,
+        "nativeCloseCalls": 1,
+        "restores": 0,
+        "serviceCalls": 0,
+        "stateReads": 0,
+        "callerThenHooks": 0,
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "actualAsyncLocalStorage": true,
+        "declaredNativeCallbacks": true,
+        "rawHeaderOrCheckpointInHostStatus": false,
+        "nodeChildren": 0,
+        "ipConnections": 0,
+        "SQL": false,
+        "SDK": false,
+        "keyGeneration": false,
+        "cryptographicSignatures": false,
+        "authority": "NONE",
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 543,
+          "sha256": "8893243e015deddf982f187c8a527deeb99f89aac9f28425a09b5313b5956b40"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "profile": "LOCAL",
+      "scenario": "NATIVE_THENABLE_REFUSED",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 5804,
+      "inputSha256": "d60e1ea78938f61ca093e527ef5aeff8f7c0acda1a8dd42a14f1cf8d52858e83",
+      "stopReason": null,
+      "elapsedSeconds": 0.07581399999617133,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "NATIVE_THENABLE_REFUSED",
+        "passed": true,
+        "hostStatus": "CLOSE_UNKNOWN",
+        "hostExitCode": 4,
+        "nativeOpenCalls": 1,
+        "nativeCloseCalls": 0,
+        "restores": 0,
+        "serviceCalls": 0,
+        "stateReads": 0,
+        "callerThenHooks": 0,
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "actualAsyncLocalStorage": true,
+        "declaredNativeCallbacks": true,
+        "rawHeaderOrCheckpointInHostStatus": false,
+        "nodeChildren": 0,
+        "ipConnections": 0,
+        "SQL": false,
+        "SDK": false,
+        "keyGeneration": false,
+        "cryptographicSignatures": false,
+        "authority": "NONE",
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streams": {
+        "stdout": {
+          "bytes": 543,
+          "sha256": "f620a9b7d0809ab4ae4c63e6fffdbd492dd6682f6d8ebf217df318a1fddc9438"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    }
+  ],
+  "earlier128CasesReused": {
+    "path": "qualification/buyer-owned-pipe-streams.actual-local-result.json",
+    "sha256": "25160b45e3ef24c144187479b060ccbda40852843e6d4782cf8e404f25334caf",
+    "componentCases": 124,
+    "pipeCases": 4,
+    "exactUnchangedInputRowsVerified": 48,
+    "rerun": false,
+    "wholeNativeApplicationSuite": false
+  },
+  "protectedManifestReference": {
+    "sha256": "bc6f4995306982ec6d5241b2f175893fe4e5cd8908948f56165c8643749b2dea",
+    "unchangedRowsVerified": 628,
+    "copiedAgain": false
+  },
+  "nativeSourceOnly": {
+    "literalGraphFiles": 117,
+    "reusedUnchangedRootParserObservations": 3,
+    "actualNewRootParserCommands": 0,
+    "changedPureHostParsedAndExecutedByCurrentControls": true,
+    "nativeBindingsLinkedOrEvaluated": false,
+    "currentNativeApplicationQualified": false
+  },
+  "scope": {
+    "actualOSAnonymousPipes": true,
+    "actualMonotonicClock": true,
+    "actualNodeTimers": true,
+    "actualAsyncLocalStorage": true,
+    "fixedBlockingControls": {
+      "method": "Atomics.wait on a new four-byte memory buffer",
+      "millisecondsPerSelectedCase": 80,
+      "workerCreated": false
+    },
+    "actualPureClientCoreResourceSessionHost": true,
+    "nativePayerBackendAndStoreClose": "DECLARED_CALLBACKS",
+    "SDK": false,
+    "x402Package": false,
+    "Noble": false,
+    "SQLite": false,
+    "ipConnections": 0,
+    "keys": false,
+    "signatures": false,
+    "nonceSearch": false,
+    "serviceDispatch": false,
+    "payment": false,
+    "nodeChildren": 0,
+    "filesystemScratch": false,
+    "managedTasks": 0,
+    "sourceOrPackageCopies": 0,
+    "osOrNetworkSandboxClaim": false
+  },
+  "limits": "A cooperative acquisition observation cannot preempt synchronous native work or terminate hidden native handles. Returned UNKNOWN may precede real process termination. Opening receipts and late owners remain retained; no retry, new owner transfer or result replay is authorized.",
+  "hostedCI": {
+    "unchangedApprovedProfileSelectedControls": 108,
+    "these62CasesHosted": false,
+    "workflowChanged": false
+  },
+  "frozenNativeAllowanceConsumed": false,
+  "authority": "NONE",
+  "grantActivation": "NOT_ESTABLISHED",
+  "serviceDelivery": "NOT_ESTABLISHED",
+  "physicalRelease": "NOT_QUALIFIED",
+  "interruptionOrCrashRecovery": "NOT_QUALIFIED",
+  "economicPilot": "NO_GO",
+  "production": "NO_GO"
+}
