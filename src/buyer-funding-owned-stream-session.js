@@ -25,24 +25,25 @@ export async function openBuyerFundingOwnedStreamSession(configuration) {
   const budgetMs = withBudget ? c.openWaitMs : 5000;
   if (!Number.isSafeInteger(budgetMs) || budgetMs < 1 || budgetMs > 60000 || Object.is(budgetMs, -0)) fail();
   const selected = captureBuyerCommandLineChannelConfiguration({ input: c.input, output: c.output, limits: c.limits });
-  const frame = { channel: null, client: null, openReceipt: null, clientStop: null, channelStop: null,
+  const frame = { streams: selected, channel: null, client: null, openReceipt: null, clientStop: null, channelStop: null,
     session: null, sessionStop: null, opening: null, lateClient: null, lateStop: null,
     lateStopRequested: false, lateStopObservation: 'NOT_REQUESTED', nativeEntered: false, cleanupObserved: false };
   try {
+    beginOpening(frame, budgetMs);
     // This constructor reserves both streams before any await/native entry.
     // A partial constructor failure retains its own quarantine; do not compete.
     frame.channel = createBuyerCommandLineChannel(selected);
-    await native(openWithinBudget(frame, c.openClient, budgetMs));
-    requireOpening(frame);
+    await native(openWithinBudget(frame, c.openClient));
+    requireCurrentResources(frame);
     const io = frame.channel.inspect(), client = APPLY(method(frame.client, 'inspect'), frame.client, []);
     if (data(io, 'lifecycle') !== 'OPEN' || data(io, 'held') || data(io, 'closeRequested')
         || data(io, 'reading') || data(io, 'writing') || data(client, 'sdk105FundingServiceLifecycleVersion') !== 1
         || data(client, 'lifecycle') !== 'OPEN' || data(client, 'held') || data(client, 'publicOperationActive')
         || data(client, 'phase') !== 'FUNDING' || data(client, 'preparedOriginalRetained')
         || data(client, 'fundingBound') || data(client, 'handoffAttempts') !== 0 || data(client, 'closeRequested')) fail();
-    requireOpening(frame);
+    requireCurrentResources(frame);
     frame.session = createBuyerOriginalFundingCommandSession({ client: frame.client, channel: frame.channel, limits: selected.limits });
-    requireOpening(frame);
+    requireCurrentResources(frame);
     frame.opening.outcome = 'TRANSFERRED'; stopTimer(frame);
     return frame.session;
   } catch {
@@ -71,37 +72,51 @@ function requireOpening(frame) {
     if (APPLY(CLOCK, hrtime, []) >= a.deadline) { refuseOpening(frame, 'DEADLINE_UNKNOWN'); fail(); }
   } catch { refuseOpening(frame, 'CLOCK_UNKNOWN'); fail(); }
 }
-function openWithinBudget(frame, opener, budgetMs) {
+function requireCurrentResources(frame) {
+  requireOpening(frame);
+  // Stream revocation is synchronous; close/end notification to the channel
+  // may arrive later. That event gap cannot authorize native entry or transfer.
+  const { input, output } = frame.streams;
+  if (input.destroyed || input.closed || input.readableEnded || output.destroyed || output.closed || output.writableEnded) {
+    refuseOpening(frame, 'STREAM_REVOKED_UNKNOWN'); fail();
+  }
+  const v = frame.channel.inspect();
+  if (data(v, 'lifecycle') !== 'OPEN' || data(v, 'held') || data(v, 'closeRequested')
+      || data(v, 'reading') || data(v, 'writing')) { refuseOpening(frame, 'CHANNEL_UNKNOWN'); fail(); }
+  requireOpening(frame);
+}
+function beginOpening(frame, budgetMs) {
   let resolve, reject;
   const signal = new NativePromise((yes, no) => { resolve = yes; reject = no; });
   Object.defineProperty(signal, 'constructor', { value: NativePromise });
   observe(signal, () => {}, () => {});
   frame.opening = { budgetMs, deadline: APPLY(CLOCK, hrtime, []) + BigInt(budgetMs) * 1000000n,
     outcome: 'PENDING', refusal: null, timer: null, resolve, reject, signal };
+  // Includes synchronous channel reservation/setup; inert capture precedes it.
+  frame.opening.timer = START_TIMER(() => refuseOpening(frame, 'DEADLINE_UNKNOWN'), budgetMs);
+}
+function openWithinBudget(frame, opener) {
+  const { resolve, signal } = frame.opening;
   try {
-    frame.opening.timer = START_TIMER(() => refuseOpening(frame, 'DEADLINE_UNKNOWN'), budgetMs);
-    requireOpening(frame);
+    requireCurrentResources(frame);
     frame.nativeEntered = true;
     const requireCurrentOpening = F(function requireCurrentOpening() {
       if (arguments.length !== 0) fail();
-      requireOpening(frame);
-      const view = frame.channel.inspect();
-      if (data(view, 'lifecycle') !== 'OPEN' || data(view, 'held') || data(view, 'closeRequested')
-          || data(view, 'reading') || data(view, 'writing')) fail();
+      requireCurrentResources(frame);
     });
     // A fixed async binding must recheck after SDK module loading, BEFORE it
     // starts a new key/native acquisition. This guard is never command DATA.
     frame.openReceipt = APPLY(opener, undefined, [requireCurrentOpening]);
     observe(frame.openReceipt, owner => {
       try {
-        requireOpening(frame); frame.client = owner;
+        requireCurrentResources(frame); frame.client = owner;
         // Do not resolve the operational owner through Promise assimilation.
         resolve(undefined);
       } catch { stopLateClient(frame, owner); }
     }, () => refuseOpening(frame, 'OPEN_REJECTED_UNKNOWN'));
     // The actual entry can block synchronously beyond its timer. A fulfilled
     // opening Promise must not win merely because its microtask runs first.
-    requireOpening(frame);
+    requireCurrentResources(frame);
   } catch { refuseOpening(frame, 'OPEN_RECEIPT_UNKNOWN'); }
   return signal;
 }
