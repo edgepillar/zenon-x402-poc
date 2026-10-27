@@ -1,0 +1,56 @@
+{
+  "status": "PASS",
+  "scope": "ACTUAL_PURE_GATE_WITH_DECLARED_COMMIT_AND_TRANSPORT_CAPABILITIES",
+  "casesPassed": 18,
+  "casesSkipped": 0,
+  "sourceInputs": [
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f"
+    },
+    {
+      "path": "qualification/committed-response-loss-gate.control.mjs",
+      "bytes": 9851,
+      "sha256": "91217309419fa35aad07499a69079d042dfb6a20f831600db1f002fd216c3d2a"
+    },
+    {
+      "path": "qualification/committed-response-loss-gate.mjs",
+      "bytes": 6307,
+      "sha256": "1c893188e759af900f9a88f55a91ae1af247bfd10954115b0951e113e3f68f7c"
+    },
+    {
+      "path": "scripts/run-current-committed-response-loss-gate.py",
+      "bytes": 3895,
+      "sha256": "0a6b6139f28243510291deade4fa96ab76e916cd890de9f5299f18e2be089664"
+    }
+  ],
+  "builtinImports": [
+    "node:assert/strict",
+    "node:test",
+    "node:util"
+  ],
+  "node": "24.19.0",
+  "oneNodeCommand": true,
+  "elapsedSeconds": 0.4063071250129724,
+  "actualMicrotaskQueue": true,
+  "commitQueueAndStopCapabilities": "DECLARED",
+  "nativeFixtureExecutions": 0,
+  "SDK": 0,
+  "SQLite": 0,
+  "sockets": 0,
+  "keys": 0,
+  "signatures": 0,
+  "nonceSearches": 0,
+  "scratchFiles": 0,
+  "nativeDeliveryLoss": "NOT_ESTABLISHED",
+  "nativePhysicalDrain": "NOT_QUALIFIED",
+  "productionQualified": false,
+  "actualPrivateReceiptSha256": "77235584191fae12fd9f7d3b465537719666e6d2e199729c79afb9c01af81d21",
+  "existingRegressionReuse": {
+    "actualCases": 197,
+    "currentUniqueInputRows": 58,
+    "reexecutedCases": 0,
+    "sourceProofSha256": "f0e7ce5e4fa22730ce42068aa6a2d76a704ca9b703a8e58ff0f8038f8daff3bd"
+  }
+}

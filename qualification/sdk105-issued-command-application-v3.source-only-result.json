@@ -1,0 +1,126 @@
+{
+  "status": "SOURCE_ONLY_ADMITTED_NOT_NATIVE_EXECUTED",
+  "admission": {
+    "event": "SDK105_ISSUED_COMMAND_SOURCE_ADMITTED",
+    "applicationFiles": 134,
+    "packageFilesDeclared": 404,
+    "packageFilesRead": 0,
+    "reviewedLiteralEdges": 601,
+    "startupMatches": true,
+    "selectedMode": "service-response-loss",
+    "allowedModes": [
+      "clean",
+      "pending",
+      "service-response-loss"
+    ],
+    "preloadFixedPinsMatched": true,
+    "sourceTransforms": false,
+    "nativeAuthority": "NONE",
+    "nativeCasesExecuted": 0
+  },
+  "sourceInputs": [
+    {
+      "path": "qualification/sdk105-issued-command-application-v3.case.mjs",
+      "bytes": 45301,
+      "sha256": "b329194482848ba065ccc6df1a8176d53683c46c134f7f26a2eaa29a42e3fd3a"
+    },
+    {
+      "path": "qualification/sdk105-issued-command-application-v3.preload.mjs",
+      "bytes": 13926,
+      "sha256": "a9a598c6132a44aac58d9b050f0e4e38da1c267001675f81e2391e316d7baa9d"
+    },
+    {
+      "path": "qualification/native-committed-response-loss.fixture.mjs",
+      "bytes": 3776,
+      "sha256": "43ea695804782307a8cd4c812a4a9c75f75ead1bfcda7fe0fe6c753972ff20be"
+    },
+    {
+      "path": "qualification/committed-response-loss-gate.mjs",
+      "bytes": 6307,
+      "sha256": "1c893188e759af900f9a88f55a91ae1af247bfd10954115b0951e113e3f68f7c"
+    },
+    {
+      "path": "qualification/run-sdk105-issued-command-application-v3.local.py",
+      "bytes": 27476,
+      "sha256": "f0659323260eaaf96237ddbffa80f07613d6d4627c0db9e334b451b9b7adfbd0"
+    },
+    {
+      "path": "qualification/sdk105-issued-command-application-v3.inputs.json",
+      "bytes": 9651,
+      "sha256": "2f3bea1f6f3390d7f54410ecfc101a2e1d1d1f99c8d292976d7b434de29e26bc"
+    }
+  ],
+  "parseOnly": {
+    "files": [
+      "qualification/sdk105-issued-command-application-v3.case.mjs",
+      "qualification/sdk105-issued-command-application-v3.preload.mjs",
+      "qualification/native-committed-response-loss.fixture.mjs"
+    ],
+    "actualExitCodes": [
+      0,
+      0,
+      0
+    ],
+    "evaluation": false
+  },
+  "preloadLiteralPinSourceControls": [
+    {
+      "scenario": "CURRENT_SIXTEEN_LITERAL_PINS",
+      "passed": true
+    },
+    {
+      "scenario": "ENTRY_DIGEST",
+      "passed": true,
+      "refusal": "EXACT_CURRENT_PRELOAD_FIXED_PINS"
+    },
+    {
+      "scenario": "NATIVE_LOSS_FIXTURE_DIGEST",
+      "passed": true,
+      "refusal": "EXACT_CURRENT_PRELOAD_FIXED_PINS"
+    },
+    {
+      "scenario": "SDK105_UNCERTAINTY_DIGEST",
+      "passed": true,
+      "refusal": "EXACT_CURRENT_PRELOAD_FIXED_PINS"
+    },
+    {
+      "scenario": "MISSING_PIN",
+      "passed": true,
+      "refusal": "EXACT_CURRENT_PRELOAD_FIXED_PINS"
+    },
+    {
+      "scenario": "DUPLICATE_PIN",
+      "passed": true,
+      "refusal": "EXACT_CURRENT_PRELOAD_FIXED_PINS"
+    },
+    {
+      "scenario": "EXTRA_PIN",
+      "passed": true,
+      "refusal": "EXACT_CURRENT_PRELOAD_FIXED_PINS"
+    },
+    {
+      "scenario": "UNKNOWN_PIN",
+      "passed": true,
+      "refusal": "EXACT_CURRENT_PRELOAD_FIXED_PINS"
+    },
+    {
+      "scenario": "PRESERVED_V2_CASE_LITERAL_PIN_DISAGREEMENT_DETECTED",
+      "passed": true,
+      "meaning": "SOURCE_ONLY_INCONSISTENCY_NOT_A_NATIVE_EXECUTION",
+      "caseSha256": "254d5514af5d9c753f2e52ef7a18292bc759b9da415daa7e14f5ee79d96c1979",
+      "preloadLiteralSha256": "8ea0ca2d70656267057e841d66e4b2897a40165c79579e4b0e864d78679954e1"
+    }
+  ],
+  "sourceAndParseReceiptSha256": "2cc874454dffe0642bb58fbb81615251d7353f07568f80b5f08701654230f7b0",
+  "preloadSourceControlsReceiptSha256": "bf73a6380939bb591262f7dd075a6c1e6d5a0a41bdf272128dd85b974995ea40",
+  "nativeAuthority": "NONE",
+  "nativeCasesExecuted": 0,
+  "physicalInstalledPackageFilesRead": 0,
+  "storageManagerImports": 0,
+  "storageTasksOpened": 0,
+  "historicalStorageScans": 0,
+  "oldNativePermissionsConsumed": 0,
+  "existingSourcesRecopied": false,
+  "nativeOsNetworkSandbox": false,
+  "productionQualified": false
+}

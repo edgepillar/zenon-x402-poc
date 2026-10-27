@@ -1,0 +1,281 @@
+{
+  "kind": "SDK105_ISSUED_COMMAND_APPLICATION_NODE24_V3",
+  "version": 1,
+  "baseSelection": {
+    "path": "qualification/issued-current-close-v6.inputs.json",
+    "sha256": "9f5801a55c3a5a520ba1cc458bbc04c9e9118044cb0acee50def5b3289146bbd"
+  },
+  "removedApplicationRows": [
+    "app/qualification/issued-current-close-v6.case.mjs",
+    "app/qualification/issued-current-close-v6.preload.mjs",
+    "app/qualification/issued-funding-post-native-vertical.case.draft.mjs",
+    "app/qualification/issued-funding-post-native-vertical.preload.draft.mjs"
+  ],
+  "addedApplicationRows": [
+    {
+      "path": "app/qualification/committed-response-loss-gate.mjs",
+      "bytes": 6307,
+      "LF": 109,
+      "sha256": "1c893188e759af900f9a88f55a91ae1af247bfd10954115b0951e113e3f68f7c",
+      "gitBlob": "50ffbe6e570ce5ec9164f1d2ee78b981e70c72a7"
+    },
+    {
+      "path": "app/qualification/native-committed-response-loss.fixture.mjs",
+      "bytes": 3776,
+      "LF": 64,
+      "sha256": "43ea695804782307a8cd4c812a4a9c75f75ead1bfcda7fe0fe6c753972ff20be",
+      "gitBlob": "2306e2d519d1061e9f199872058c8b8b25766219"
+    },
+    {
+      "path": "app/qualification/sdk105-issued-command-application-v3.case.mjs",
+      "bytes": 45301,
+      "LF": 636,
+      "sha256": "b329194482848ba065ccc6df1a8176d53683c46c134f7f26a2eaa29a42e3fd3a",
+      "gitBlob": "91760cf2a998c34381fe359d530fb1bb4a04062e"
+    },
+    {
+      "path": "app/qualification/sdk105-issued-command-application-v3.preload.mjs",
+      "bytes": 13926,
+      "LF": 258,
+      "sha256": "a9a598c6132a44aac58d9b050f0e4e38da1c267001675f81e2391e316d7baa9d",
+      "gitBlob": "5ea8a132055bea9b7411fed4d28dba9c6b48adff"
+    },
+    {
+      "path": "app/src/buyer-command-line-channel.js",
+      "bytes": 11200,
+      "LF": 214,
+      "sha256": "aea944d8fd1b28290c6beafe7d13985da1194ed5be5d0e1957490fe8c13e1fab",
+      "gitBlob": "f20c1fe402ddb0b3f9dee065a31a10ee88bab179"
+    },
+    {
+      "path": "app/src/buyer-funding-owned-stream-session.js",
+      "bytes": 11847,
+      "LF": 223,
+      "sha256": "3228e6fc0abcaf9714dca72009b99610808a9cc80674662396cb16a4f0b26ad2",
+      "gitBlob": "3edd1b418be13ff2896db23b4d9a82646cb20595"
+    },
+    {
+      "path": "app/src/buyer-original-command-host.js",
+      "bytes": 8878,
+      "LF": 145,
+      "sha256": "b81bddf6b944aa39521d20ea5c43ce17f15c3a0f39a462de149d399f2ad300b3",
+      "gitBlob": "62a4e1df1d751b37ad24c831dc40dba43297c1fd"
+    },
+    {
+      "path": "app/src/buyer-original-funding-command-session.js",
+      "bytes": 14884,
+      "LF": 277,
+      "sha256": "19d91c723622e1cb2244c1fa9b3dd59db5fd72120c7163df53076b833ba0c9c5",
+      "gitBlob": "170054dd880ac1efd432f00006815552de4e523b"
+    },
+    {
+      "path": "app/src/buyer-original-funding-command.js",
+      "bytes": 14077,
+      "LF": 263,
+      "sha256": "064a31640b10da873ecf558b0550024366e50cc9d1a5e91a15cc4e006e05e7e9",
+      "gitBlob": "2e6e234d85a2fc92a2ae9c52a8ea3429f63faad1"
+    },
+    {
+      "path": "app/src/zenon/prepared-hash-wallet-adapter.js",
+      "bytes": 9266,
+      "LF": 175,
+      "sha256": "113c275a38aaec45a347666b28fdc43c70704973b8d1c20956ebacad18db3e25",
+      "gitBlob": "7b9230b51429cce8547bb12cdd4d109bcdef4e34"
+    },
+    {
+      "path": "app/src/zenon/sdk105-funding-service-lifecycle.js",
+      "bytes": 15388,
+      "LF": 230,
+      "sha256": "f0c1c1aadd46e14af7709ed84afbd96c2d98c93fb7860e189c2ace38e6ad7c3e",
+      "gitBlob": "e7b4955403168b157eedce8d6e68aaee78fee855"
+    },
+    {
+      "path": "app/src/zenon/sdk105-local-funding-service-selection.js",
+      "bytes": 3324,
+      "LF": 60,
+      "sha256": "54c55352bf4f8ca8a70e582c121c4a86ebd3e72b0f58c35bbb91e72218cb0e23",
+      "gitBlob": "6624d251e3dbf119a6a2195475843d924efc16a7"
+    },
+    {
+      "path": "app/src/zenon/sdk105-native-funding-command-session.js",
+      "bytes": 4967,
+      "LF": 93,
+      "sha256": "7312de4f92e9703b522defffed4b845d0f09c444a8e7ec71184aa99f49d51ae2",
+      "gitBlob": "adbf3a24bdf10e742bc076810654fd7a119dbf93"
+    },
+    {
+      "path": "app/src/zenon/sdk105-native-funding-service-client.js",
+      "bytes": 4741,
+      "LF": 79,
+      "sha256": "7297c6ba09dcd311888c8c9142119fe7a40d32dfd937c730aa6b070ac202ae8c",
+      "gitBlob": "4184bbeaa4494e480630e1ea777db2a296e917fb"
+    },
+    {
+      "path": "app/src/zenon/sdk105-prepared-hash-wallet-owner.js",
+      "bytes": 10629,
+      "LF": 186,
+      "sha256": "73f5e3fb4e90f8b93a6063e26cc353530b50b623d3fb3def9b39f00c43445b56",
+      "gitBlob": "01bc44904f6d94980ca6358e2d3a3300e4e29655"
+    }
+  ],
+  "resolvedApplicationFiles": 134,
+  "packageFiles": 404,
+  "resolvedSourceRowsSha256": "ad33e0a1af48af5d74716455e381f24c7a8d8875de51e02ef857775796e277dc",
+  "resolvedSourceBytes": 4560107,
+  "packageRowsSha256": "6de2ebf27c64de96e4823d3c504347593490061b0c6510db378311258730a31f",
+  "entry": "app/qualification/sdk105-issued-command-application-v3.case.mjs",
+  "preload": "app/qualification/sdk105-issued-command-application-v3.preload.mjs",
+  "bareBindings": [
+    {
+      "parent": "app/src/zenon-payment.js",
+      "specifier": "znn-typescript-sdk",
+      "target": "packages/znn-typescript-sdk/dist/index.js"
+    },
+    {
+      "parent": "app/src/zenon-payment.js",
+      "specifier": "@noble/ed25519",
+      "target": "packages/@noble/ed25519/index.js"
+    },
+    {
+      "parent": "app/src/zenon-payment.js",
+      "specifier": "@noble/hashes/sha2",
+      "target": "packages/@noble/hashes/esm/sha2.js"
+    },
+    {
+      "parent": "app/src/x402-official-selected-payment-client.js",
+      "specifier": "@x402/core/client",
+      "target": "packages/@x402/core/dist/esm/client/index.mjs"
+    },
+    {
+      "parent": "app/src/x402-official-selected-settlement-server.js",
+      "specifier": "@x402/core/server",
+      "target": "packages/@x402/core/dist/esm/server/index.mjs"
+    },
+    {
+      "parent": "packages/@x402/core/dist/esm/chunk-N4QXZG2Z.mjs",
+      "specifier": "zod",
+      "target": "packages/zod/index.js"
+    },
+    {
+      "parent": "app/qualification/sdk105-issued-command-application-v3.case.mjs",
+      "specifier": "znn-typescript-sdk",
+      "target": "packages/znn-typescript-sdk/dist/index.js"
+    },
+    {
+      "parent": "app/qualification/sdk105-issued-command-application-v3.case.mjs",
+      "specifier": "@noble/ed25519",
+      "target": "packages/@noble/ed25519/index.js"
+    },
+    {
+      "parent": "app/qualification/sdk105-issued-command-application-v3.case.mjs",
+      "specifier": "@noble/hashes/sha2",
+      "target": "packages/@noble/hashes/esm/sha2.js"
+    }
+  ],
+  "allowedBuiltins": [
+    "node:assert/strict",
+    "node:async_hooks",
+    "node:buffer",
+    "node:crypto",
+    "node:events",
+    "node:fs",
+    "node:fs/promises",
+    "node:http",
+    "node:https",
+    "node:module",
+    "node:net",
+    "node:path",
+    "node:perf_hooks",
+    "node:process",
+    "node:sqlite",
+    "node:stream",
+    "node:test",
+    "node:timers",
+    "node:tls",
+    "node:url",
+    "node:util",
+    "node:vm",
+    "node:zlib"
+  ],
+  "packageVersions": {
+    "packages/@x402/core/package.json": "2.23.0",
+    "packages/zod/package.json": "3.25.76",
+    "packages/znn-typescript-sdk/package.json": "1.0.5",
+    "packages/@noble/ed25519/package.json": "2.3.0",
+    "packages/@noble/hashes/package.json": "1.8.0"
+  },
+  "effectsCeiling": {
+    "selectedCases": 1,
+    "maximumRuns": 1,
+    "opensslCommands": 1,
+    "nodeCommands": 1,
+    "nodeChildren": 0,
+    "newSqlitePaths": 5,
+    "independentPinFiles": 2,
+    "syntheticEd25519Keys": 4,
+    "transactionSignatures": 1,
+    "capabilitySignatures": 3,
+    "providerSignatures": 2,
+    "testTlsMaterialSeparate": true,
+    "maxRpcConnections": 174,
+    "maxApplicationConnections": 8,
+    "maxTotalConnections": 182,
+    "expectedTotalConnections": 96,
+    "maxCandidatesPerSearch": 4096,
+    "maxReferenceCandidates": 32768,
+    "producerCandidateReservation": 4096,
+    "fixedVerificationReservation": 16384,
+    "maxAggregateCandidates": 65536,
+    "taskQuotaBytes": 4194304,
+    "maximumSourceReadBytes": 6291456,
+    "existingSourcesRecopied": false,
+    "externalNetwork": false,
+    "install": false,
+    "realWallet": false,
+    "realPayment": false,
+    "sdkPrepareBlock": false,
+    "nativeOsNetworkSandbox": false,
+    "ownedStreamCommands": 8,
+    "ownedStreamResults": 7,
+    "maximumCommandInputBytes": 262144,
+    "maximumCommandOutputBytes": 262144,
+    "commandResultWaitMs": 7000,
+    "maximumCommittedResponseLossStops": 1,
+    "additionalCompoundCommitReads": 1,
+    "maximumDeferredCommitProbes": 1
+  },
+  "taskPolicy": {
+    "quotaBytes": 4194304,
+    "minimumFreeBytes": 10737418240,
+    "existingApprovedRootOnly": true,
+    "rootPolicyOverride": false,
+    "maximumRuns": 1
+  },
+  "startupExpected": {
+    "PATH": "/usr/bin:/bin",
+    "LANG": "C",
+    "NODE_DISABLE_COMPILE_CACHE": "1",
+    "WS_NO_BUFFER_UTIL": "1",
+    "WS_NO_UTF_8_VALIDATE": "1",
+    "X402_SDK105_ISSUED_COMMAND_SELECTION": "sdk105-issued-command-application-v3",
+    "X402_SDK105_ISSUED_COMMAND_RUN_SCOPE": "one-sdk105-issued-command-application-v3",
+    "X402_SDK105_ISSUED_COMMAND_MODE": "clean",
+    "X402_ISSUED_CLOSE_NATIVE_SELECTION": "current-native-issued-close-source-v4"
+  },
+  "controlInputs": [
+    {
+      "path": "qualification/run-sdk105-issued-command-application-v3.local.py",
+      "bytes": 27476,
+      "LF": 388,
+      "sha256": "f0659323260eaaf96237ddbffa80f07613d6d4627c0db9e334b451b9b7adfbd0",
+      "gitBlob": "44b9642449211331edfb6a217a7ce182e7de51d4"
+    }
+  ],
+  "nativeAuthority": "NONE",
+  "nativeCasesExecuted": 0,
+  "allowedModes": [
+    "clean",
+    "pending",
+    "service-response-loss"
+  ]
+}
