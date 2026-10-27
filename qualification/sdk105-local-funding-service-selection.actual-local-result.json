@@ -1,0 +1,177 @@
+{
+  "kind": "SDK105_LOCAL_FUNDING_SERVICE_TRUST_SELECTION_ACTUAL_LOCAL_RESULT",
+  "date": "2026-10-27",
+  "status": "PASS",
+  "passCount": 22,
+  "failCount": 0,
+  "skipCount": 0,
+  "runtime": {
+    "version": "v24.19.0",
+    "platform": "darwin",
+    "arch": "arm64"
+  },
+  "commandElapsedSeconds": 0.5702968319965294,
+  "commands": {
+    "actualBuiltinTestCommands": 1,
+    "parseOnlyNoModuleEvaluation": 5
+  },
+  "inputPins": [
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "LF": 40,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "qualification/sdk105-local-funding-service-selection.behavior.mjs",
+      "bytes": 14720,
+      "LF": 218,
+      "sha256": "c9fa28f260ee204bf872428010f0daacc3dd7f87b24b5f19034ddce44dbcf454",
+      "gitBlob": "b49bfe557fd482404102d2a5d4e972b4de664c17"
+    },
+    {
+      "path": "scripts/run-current-sdk105-local-funding-selection.mjs",
+      "bytes": 1106,
+      "LF": 21,
+      "sha256": "3c295be0b4d5b7a6b3da7819830c6a94924bffa4e3dde5536732581321529bc7",
+      "gitBlob": "4cb26f39690fffb5eafe4dae3f9fe6748b1cefdd"
+    },
+    {
+      "path": "src/canonical.js",
+      "bytes": 967,
+      "LF": 26,
+      "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+      "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4"
+    },
+    {
+      "path": "src/service-credit-original-request-custody-contract.js",
+      "bytes": 15100,
+      "LF": 376,
+      "sha256": "483d20e90d78ba95a8c5d5458dd201910e8d42aecbdc0dc03812e7044a464054",
+      "gitBlob": "94d67559a11f87f283a5cd99d2aaf8074374eb0a"
+    },
+    {
+      "path": "src/service-credit-pilot-original-payment-checkpoint.js",
+      "bytes": 4003,
+      "LF": 89,
+      "sha256": "930905f31824a6cadc16dfb84572cd4dc38a81e2fce4569b73b6bef29dec97d1",
+      "gitBlob": "51c6391bc22f561ebff0005ced31e538aa83f4fa"
+    },
+    {
+      "path": "src/x402-funding-post-checkpoint-route.js",
+      "bytes": 1310,
+      "LF": 29,
+      "sha256": "157e80e9f14b41c8cacc05423a7acd8616a6f759adac377f04f1fca21869831e",
+      "gitBlob": "777ff48ac9cf255f80cda7e22c68706b7d7084b3"
+    },
+    {
+      "path": "src/x402-official-https-request-binding.js",
+      "bytes": 5085,
+      "LF": 99,
+      "sha256": "dabf215408887bd0d2ba346085c5ab2df13f724e8759b7a98b71b09c8dc8d692",
+      "gitBlob": "47059c772407233b8b6f54632ba065893ff92dd3"
+    },
+    {
+      "path": "src/x402-original-payment-checkpoint-client.js",
+      "bytes": 13457,
+      "LF": 262,
+      "sha256": "bba2439e40a2decb75b330440919d8d1ea1fea53f6e684f77b57a9bb66129af1",
+      "gitBlob": "bd732c2c739e6dbe1d4ed583b6b55040bf8aecfd"
+    },
+    {
+      "path": "src/x402-wire.js",
+      "bytes": 39886,
+      "LF": 934,
+      "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+      "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-original-funding-service-handoff-request.js",
+      "bytes": 4584,
+      "LF": 75,
+      "sha256": "07affc3e40d785406fea54794ee694c03e31ab49fc8857369cdf52e33a331cab",
+      "gitBlob": "0382f9f6235a4fbc6f5935d3db77b29efaf1a345"
+    },
+    {
+      "path": "src/zenon/native-funding-service-loopback-read-selection.js",
+      "bytes": 1927,
+      "LF": 40,
+      "sha256": "fc97d86db3b24ef17572ff2cf14ac0620c422d8a7164de953f7e95b74656ac7c",
+      "gitBlob": "7962084da741d546738a64386428a885ba5d32c9"
+    },
+    {
+      "path": "src/zenon/native-read-loopback-qualification-configuration.js",
+      "bytes": 4126,
+      "LF": 80,
+      "sha256": "1d8c20410d5ab8786c1fbf2dc1ef9c8346bc2b30c1c8146f16e46ff231cd0427",
+      "gitBlob": "15ae6af21f8f07351e7e4f680557d247cc379b88"
+    },
+    {
+      "path": "src/zenon/sdk105-funding-service-lifecycle.js",
+      "bytes": 14952,
+      "LF": 221,
+      "sha256": "26802aa4e059fce0b0bb02a87ee0e432aad90fb152206c1d8317f5e19deb1cf9",
+      "gitBlob": "3eac7417567baf08624201cd64d5fac05cd7962b"
+    },
+    {
+      "path": "src/zenon/sdk105-local-funding-service-selection.js",
+      "bytes": 3324,
+      "LF": 60,
+      "sha256": "54c55352bf4f8ca8a70e582c121c4a86ebd3e72b0f58c35bbb91e72218cb0e23",
+      "gitBlob": "6624d251e3dbf119a6a2195475843d924efc16a7"
+    }
+  ],
+  "actualScope": [
+    "Match explicit RPC trust bytes independently to funding and service CA data before any key callback.",
+    "Detach one owned temporary CA copy and snapshot the captured key/material/transport selection for deferred opening.",
+    "Reject altered trust, malformed descriptors, proxies, coercions, extra factories and out-of-bounds input without caller hooks.",
+    "Retain caller CA bytes unchanged after refusal, later caller mutation and release of owned selection data."
+  ],
+  "developmentOnlyNativeBindingReview": {
+    "files": [
+      {
+        "path": "src/zenon/sdk105-native-funding-service-client.js",
+        "sha256": "7297c6ba09dcd311888c8c9142119fe7a40d32dfd937c730aa6b070ac202ae8c"
+      },
+      {
+        "path": "src/zenon/sdk105-native-funding-command-session.js",
+        "sha256": "7312de4f92e9703b522defffed4b845d0f09c444a8e7ec71184aa99f49d51ae2"
+      }
+    ],
+    "status": "PARSED_AND_SOURCE_REVIEWED_NOT_NATIVE_EXECUTED",
+    "actualFixedLocalConstructorSelected": true,
+    "originalOpeningDeadlineGuardPreserved": true,
+    "pendingOriginalOpenerOwnsTemporaryCaUntilItSettles": true,
+    "noUnreturnedKeyStopAdded": true
+  },
+  "reuse": {
+    "other31EntryCases": "Only at unchanged 40 source pins; not rerun.",
+    "other62PipeCases": "Only at unchanged 45 source pins; not rerun.",
+    "other128ComponentAndPipeCases": "Only at unchanged 48 source pins; not rerun."
+  },
+  "installedPackagesImported": false,
+  "SDK": false,
+  "x402": false,
+  "Noble": false,
+  "SQLite": false,
+  "TLS": false,
+  "applicationSockets": false,
+  "keys": false,
+  "signatures": false,
+  "nonceEvaluations": 0,
+  "filesystemScratch": false,
+  "managedTasks": 0,
+  "packageOrSourceCopies": 0,
+  "historicalEvidenceChanged": false,
+  "existing108HostedProfileChanged": false,
+  "new22ControlsHosted": false,
+  "nativeQualification": false,
+  "certificateValidation": "NOT_TESTED_SYNTHETIC_CA_BYTES_ONLY",
+  "wholeCurrentNativeComposition": "NOT_EXECUTED",
+  "defaultBuyerCutover": false,
+  "authority": "NONE",
+  "serviceDelivery": "NOT_ESTABLISHED",
+  "economicPilot": "NO_GO",
+  "production": "NO_GO"
+}
