@@ -1,0 +1,112 @@
+{
+  "kind": "SDK105_ISSUED_COMMAND_APPLICATION_V4_PENDING_ACTUAL_LOCAL_FAILURE",
+  "version": 1,
+  "date": "2026-10-28",
+  "dateTimezone": "Europe/Istanbul",
+  "status": "FAILURE",
+  "scope": "Exactly one bounded synthetic V4 pending native trial.",
+  "sourceSelection": {
+    "candidateCommit": "d90eb561daa4436d4839fb50fdfcbd03bda816bf",
+    "manifest": "qualification/sdk105-issued-command-application-v4.inputs.json",
+    "manifestSha256": "49cf7277935972adc4a24a0ac5f4a8e178b36427d3cc8c15204aa7036b8c08c2",
+    "sourceRowsSha256": "73101657b88ea60f77b3c9ef4c5a9cbbd54f2c0b213fb2c3bf907e288e561236",
+    "application": "src/x402-official-issued-funding-post-native-application-v2.js",
+    "applicationSha256": "caffd11d190611f29f9c7ebeef88e009804a878715f7702e32e35b71d37524d9",
+    "mode": "pending"
+  },
+  "actualExecution": {
+    "runtime": "Node 24.19.0 / darwin-arm64",
+    "nativeTrials": 1,
+    "testTLSCommands": 1,
+    "testTLSExitCode": 0,
+    "NodeApplicationCommands": 1,
+    "NodeExitCode": 1,
+    "NodeChildren": 0,
+    "tests": 1,
+    "passes": 0,
+    "failures": 1,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "streamsComplete": true,
+    "stdoutBytes": 1825,
+    "stderrBytes": 0,
+    "scratchScanRetries": 1,
+    "scratchScanIncomplete": false
+  },
+  "namespace": {
+    "profileKind": "SDK105_ISSUED_COMMAND_APPLICATION_NODE24_V4",
+    "profileVersion": 1,
+    "mode": "pending",
+    "inputsVerifiedBeforeCase": 539,
+    "applicationFiles": 135,
+    "packageFiles": 404,
+    "declaredSourceBytes": 4563273,
+    "sourceRowsSha256": "73101657b88ea60f77b3c9ef4c5a9cbbd54f2c0b213fb2c3bf907e288e561236",
+    "resolveCalls": 1061,
+    "bareImportOverrideHits": 9,
+    "declaredFilesResolved": 309,
+    "sourceTransforms": 0,
+    "nativeBuiltinAliases": 0,
+    "ordinaryInstalledNamespaceQualified": false,
+    "nativeOsNetworkSandbox": false
+  },
+  "failure": {
+    "source": "qualification/sdk105-issued-command-application-v4.case.mjs",
+    "line": 562,
+    "expected": "PENDING",
+    "actual": "EXHAUSTED",
+    "code": "ERR_ASSERTION",
+    "phase": "SECOND_PENDING_OBSERVATION_EXPECTATION"
+  },
+  "sourceOrderInference": {
+    "status": "INFERRED_FROM_EXECUTED_FAILURE_LOCATION_AND_PINNED_CASE_ORDER",
+    "fundingBoundAssertionCompleted": true,
+    "firstPendingObservationAssertionCompleted": true,
+    "secondObservationReturned": "EXHAUSTED",
+    "completedCaseFooter": false,
+    "fullCountersOrLogicalCloseNotInferred": true
+  },
+  "diagnosis": {
+    "status": "V4_EXPECTATION_CONFLICTS_WITH_EXISTING_BOUNDED_PENDING_CONTRACT",
+    "maxPendingReconciliations": 2,
+    "bridgeAfterTwoUnsuccessfulObservations": "PENDING_EXHAUSTED",
+    "intakeProjection": "INTAKE_BOUND_OFFICIAL_EXHAUSTED",
+    "applicationBindingProjection": "EXHAUSTED",
+    "settlementOrServiceAuthorityImplied": false,
+    "runtimeFixRequiredByThisFinding": false
+  },
+  "retention": {
+    "taskState": "CLOSED",
+    "taskOutcome": "FAILURE",
+    "scratchDisposition": "HOLD_UNREGISTERED_OUTPUT_RETAINED",
+    "newSqliteFilesRetained": 4,
+    "independentPinFilesRetained": 1,
+    "postTrialSqliteEngineOpens": 0,
+    "fixtureBytesHashedReadOnly": true,
+    "unknownFilesAdopted": false,
+    "automaticNativeRetries": 0,
+    "logicalOwnerClosure": "NOT_QUALIFIED",
+    "nativePhysicalDrain": "NOT_QUALIFIED"
+  },
+  "sourceOnlyRepair": {
+    "selection": "SDK105_ISSUED_COMMAND_APPLICATION_NODE24_V5",
+    "manifest": "qualification/sdk105-issued-command-application-v5.inputs.json",
+    "manifestSha256": "087df3b143f1802f75e7bbaaf295371bc32ef82eba2f75f8ee7a644a5b3ceb24",
+    "secondPendingExpectedPhase": "EXHAUSTED",
+    "completionFooterIncludesActualOfficialPhase": true,
+    "resultDecoderRequiresExactTerminalPhase": true,
+    "budgetWidened": false,
+    "runtimeFilesChanged": 0,
+    "nativeExecutions": 0,
+    "status": "SOURCE_ONLY_NOT_EXECUTED"
+  },
+  "limits": [
+    "The frozen V4 native selection failed. Its outcome is not changed to PASS by the source diagnosis or V5 draft.",
+    "The case stopped before complete pending/no-grant/owner-close assertions and did not emit its completion counters.",
+    "A finite two-observation budget does not prove an indefinite waiting scenario. EXHAUSTED does not mean settlement failure, settlement success, recovery or retry authority.",
+    "The previous V4 clean PASS remains a separate exact-source result. V5 clean/pending/loss remain NOT_EXECUTED.",
+    "No response-loss/P2 native trial, installation, external network, real payment, SDK PREPARE or pilot occurred.",
+    "Private paths, TLS material, signed originals and wallet/capability/provider key material remain private."
+  ]
+}
