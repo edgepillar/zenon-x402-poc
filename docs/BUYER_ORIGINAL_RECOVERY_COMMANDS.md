@@ -1,7 +1,7 @@
 # Explicit original-payment recovery commands
 
 Date: 2026-10-27. All 80 local-recovery/lifecycle/funding case bodies passed
-again within the current 104-case backend-recovery component selection.
+again within the current 124-case command-host component selection.
 The native recovery host is SOURCE ONLY on development. The ordinary buyer
 and Phase2C are unchanged.
 
@@ -108,12 +108,12 @@ fulfilled close. Close is not proof of payment outcome or OS termination.
 
 ## Source-bound verification and remaining gates
 
-The [current local result](../qualification/buyer-original-backend-recovery-command.actual-local-result.json)
-pins 42 component modules and the package manifest (43 inputs), 104 exact case
+The [current local result](../qualification/buyer-original-command-host.actual-local-result.json)
+pins 44 component modules and the package manifest (45 inputs), 124 exact case
 names, actual exit and stream digests. It includes these unchanged 80 case bodies
 and 24 [backend reconciliation controls](BUYER_ORIGINAL_BACKEND_RECOVERY_COMMANDS.md).
 The earlier 80-case result remains historical evidence at its original pins.
-One current Node 24.19.0 command passed all 104 cases in about 1.56 seconds, with
+One current Node 24.19.0 command passed all 124 cases in about 1.76 seconds, with
 no failures, skips, cancellations or stderr. It used memory-only fixtures without
 new scratch, source/package copies or child processes.
 
@@ -136,10 +136,21 @@ nonce search or SDK PREPARE ran in the local component selection.
 
 Main receives the qualified pure connector/shared-code changes, fixture/tests/
 runner, result and documentation. The native opener and named CLI export stay
-development-only. The unchanged 108-case hosted profile does not run these 104
+development-only. The unchanged 108-case hosted profile does not run these 124
 local cases. Original historical results remain source-pinned evidence; the
 separate frozen native allowance is unconsumed and has not been retargeted.
 
 Actual durable reopen/crash recovery, native official-client/SQLite/HTTPS
 composition and cleanup, default buyer cutover, grant activation, delivery,
 economic pilot and production acceptance remain unqualified.
+
+## Current terminal host integration
+
+The current 124-case selection also includes 20 [host controls](BUYER_ORIGINAL_COMMAND_HOST.md).
+They exercise the actual command sessions, separate reconciliation and unknown
+outcomes from clean closure, retain original run/close receipts and prevent
+repeated host calls from starting work again. Native CLI run adapters remain
+source-only on development. Only the changed CLI root was parsed in the current
+host step; unchanged native root parser results were reused at identical bytes.
+The earlier 104/80/52-case records remain historical evidence at their original
+source pins; they have not been relabeled as results for this current graph.

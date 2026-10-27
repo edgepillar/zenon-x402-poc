@@ -107,6 +107,37 @@ export async function openBuyerOriginalBackendRecoveryCommandSession(configurati
   return openNativeOriginalBackendRecoveryCommandSession(configuration);
 }
 
+/** Run the real named session through the shared bounded terminal observer.
+ * Return a sanitized host result; do not force process exit or write a second
+ * result after the owned command output has closed. */
+export async function runBuyerOriginalFundingCommands(configuration) {
+  if (arguments.length !== 1) throw new TypeError('buyer_command_configuration_required');
+  return runOriginalCommands(openBuyerOriginalFundingCommandSession, configuration);
+}
+
+export async function runBuyerOriginalRecoveryCommands(configuration) {
+  if (arguments.length !== 1) throw new TypeError('buyer_recovery_configuration_required');
+  return runOriginalCommands(openBuyerOriginalRecoveryCommandSession, configuration);
+}
+
+export async function runBuyerOriginalBackendRecoveryCommands(configuration) {
+  if (arguments.length !== 1) throw new TypeError('buyer_backend_recovery_configuration_required');
+  return runOriginalCommands(openBuyerOriginalBackendRecoveryCommandSession, configuration);
+}
+
+async function runOriginalCommands(open, configuration) {
+  const { runBuyerOriginalCommandHost, buyerOriginalCommandHostRefusalResult } =
+    await import('./buyer-original-command-host.js');
+  let session = null;
+  try {
+    session = await open(configuration);
+    return await runBuyerOriginalCommandHost(session);
+  } catch {
+    if (session !== null) { try { await session.close(); } catch {} }
+    return buyerOriginalCommandHostRefusalResult(session === null ? 'OPEN_REFUSED' : 'HOST_REFUSED');
+  }
+}
+
 async function launchBuyerCli() {
   if (typeof process.argv[1] !== 'string') return;
   const { pathToFileURL } = await import('node:url');

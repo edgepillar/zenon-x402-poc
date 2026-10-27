@@ -1,7 +1,7 @@
 # SDK105 key lifetime across funding and service
 
 Date: 2026-10-27. All 25 lifecycle controls passed again within the current
-104-case backend-recovery component selection.
+124-case command-host component selection.
 
 The new lifecycle connects the existing SDK105 wallet owner to the actual
 funding/service client's public operations. The preparation's original packet
@@ -42,8 +42,8 @@ because of a late completion. These failure paths are source-reviewed only.
 
 ## Actual verification and limits
 
-The [current source-bound local result](../qualification/buyer-original-backend-recovery-command.actual-local-result.json)
-pins 42 component modules and the package manifest (43 inputs), 104 exact cases,
+The [current source-bound local result](../qualification/buyer-original-command-host.actual-local-result.json)
+pins 44 component modules and the package manifest (45 inputs), 124 exact cases,
 actual exit and stream hashes. It includes the unchanged 25 lifecycle test bodies,
 27 funding-command controls, 28 local-recovery controls and 24 backend
 reconciliation controls. Earlier void-contract and command results remain
@@ -100,3 +100,14 @@ unchanged. Ordinary buyer/default and Phase2C cutover, real SDK/cryptographic
 interoperability, native key/native/store close, durable pin retention,
 interruption recovery, grant activation, service delivery and economic
 acceptance remain unqualified.
+
+## Current terminal host integration
+
+The current 124-case selection also includes 20 [host controls](BUYER_ORIGINAL_COMMAND_HOST.md).
+They exercise the actual command sessions, separate reconciliation and unknown
+outcomes from clean closure, retain original run/close receipts and prevent
+repeated host calls from starting work again. Native CLI run adapters remain
+source-only on development. Only the changed CLI root was parsed in the current
+host step; unchanged native root parser results were reused at identical bytes.
+The earlier 104/80/52-case records remain historical evidence at their original
+source pins; they have not been relabeled as results for this current graph.
