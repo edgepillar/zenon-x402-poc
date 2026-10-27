@@ -20,8 +20,11 @@ export function decodeBuyerOriginalRecoveryPipeBootstrap(line, expectedRoot) {
   const root = captureBuyerOriginalRecoveryPipeRoot(expectedRoot);
   let parsed;
   try { parsed = JSON.parse(line); } catch { fail(); }
-  const c = fields(parsed, ['recoveryPipeBootstrapVersion', 'selection', 'payerOptions', 'official', 'transportOptions']);
-  if (c.recoveryPipeBootstrapVersion !== 1) fail();
+  const version = parsed !== null && typeof parsed === 'object'
+    ? DESC(parsed, 'recoveryPipeBootstrapVersion')?.value : null;
+  if (version !== 1 && version !== 2) fail();
+  const c = fields(parsed, ['recoveryPipeBootstrapVersion', 'selection', 'payerOptions', 'official', 'transportOptions',
+    ...(version === 2 ? ['backendOptions'] : [])]);
   const selection = captureBuyerOriginalRecoverySelection(c.selection);
   const payer = fields(c.payerOptions, ['databasePath', 'allowedRoot', 'fundingResourceUrl',
     'custodyPolicy', 'selectedGrantId', 'deadlineMs']);
@@ -62,11 +65,27 @@ export function decodeBuyerOriginalRecoveryPipeBootstrap(line, expectedRoot) {
   integer(transport.requestDeadlineMs, 1, Math.min(30000, payer.deadlineMs));
   integer(transport.handshakeDeadlineMs, 1, transport.requestDeadlineMs);
   integer(transport.closeGraceMs, 1, Math.min(1000, payer.deadlineMs));
+  let backend = null;
+  if (version === 2) {
+    backend = fields(c.backendOptions, ['databasePath', 'limits']);
+    const path = backend.databasePath;
+    if (typeof path !== 'string' || path.length < 2 || Buffer.byteLength(path) > 4096
+        || /[\x00-\x1f\x7f]/.test(path) || !isAbsolute(path) || resolve(path) !== path) fail();
+    const inside = relative(root, path);
+    if (inside === '' || inside === '..' || inside.startsWith('../') || isAbsolute(inside)
+        || ['', '-wal', '-shm', '-journal'].some(suffix => path === payer.databasePath + suffix
+          || payer.databasePath === path + suffix)) fail();
+    const limits = fields(backend.limits, ['busyTimeoutMs', 'maxStateBytes', 'maxOffers', 'maxGrants', 'maxRequests']);
+    integer(limits.busyTimeoutMs, 1, 5000); integer(limits.maxStateBytes, 512, 1048576);
+    for (const name of ['maxOffers', 'maxGrants', 'maxRequests']) integer(limits[name], 1, 1024);
+    backend = F({ databasePath: path, limits: F(limits) });
+  }
   // Closed bounded fields above also bound JSON depth before canonicalization.
   if (canonicalJson(parsed) !== line) fail();
-  return F({ recoveryPipeBootstrapVersion: 1, selection,
+  return F({ recoveryPipeBootstrapVersion: version, selection,
     payerOptions: F({ ...payer, custodyPolicy: policy }),
-    official: F({ assetInfo: F(asset), contextLimit: official.contextLimit }), transportOptions: F(transport) });
+    official: F({ assetInfo: F(asset), contextLimit: official.contextLimit }), transportOptions: F(transport),
+    ...(version === 2 ? { backendOptions: backend } : {}) });
 }
 
 /** The operator supplies this separately from pipe DATA. Lexical capture does
