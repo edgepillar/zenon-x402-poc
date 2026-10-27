@@ -118,7 +118,16 @@ export function createSdk105FundingServiceLifecycle(configuration) {
         out.resolve(value);
       }catch{hold();out.reject(error('operation_unknown'));}}
       finishClose();
-    },()=>{active=null;out.reject(error('operation_refused_or_unknown'));finishClose();});}
+    },()=>{
+      active=null;
+      // A returned service receipt can reject after dispatch or response loss.
+      // Without proof of a pre-dispatch refusal, no further service call may
+      // enter this owner. Match synchronous service failure and malformed void
+      // completion; closing/late child cleanup cannot clear this uncertainty.
+      // Synchronous admission checks before SERVICE remain unconsumed.
+      if(voidResult)hold();
+      out.reject(error('operation_refused_or_unknown'));finishClose();
+    });}
     catch{active=null;hold();out.reject(error('operation_unknown'));finishClose();}
     return out.promise;
   }
