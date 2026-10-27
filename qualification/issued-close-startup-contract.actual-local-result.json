@@ -1,0 +1,192 @@
+{
+  "qualification": "REVIEWED_ISSUED_CLOSE_STARTUP_CONTRACT",
+  "status": "SOURCE_DATA_CONTROLS_AND_CORRECTED_SOURCE_ONLY_CLI_PASS_NATIVE_NOT_EXECUTED",
+  "date": "2026-10-27",
+  "controllerRevision": 7,
+  "applicationVersion": 6,
+  "actualPythonCommands": 2,
+  "actualNodeCommands": 0,
+  "actualExecutions": [
+    {
+      "label": "actual_14_source_data_controls",
+      "actualExit": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 0,
+      "reason": null,
+      "elapsedSeconds": 0.06273608299670741,
+      "stdoutBytes": 105,
+      "stdoutSha256": "1d52ff97c90486d4d5d25ed47cb982949e673c8b9eff8851a28223bd200894be",
+      "stderrBytes": 2147,
+      "stderrSha256": "08212ef0c117b217d56985151c5e9af0c2bce9461947d59e171431116f9d31d7"
+    },
+    {
+      "label": "actual_default_source_only_cli",
+      "actualExit": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 0,
+      "reason": null,
+      "elapsedSeconds": 0.06571633399289567,
+      "stdoutBytes": 442,
+      "stdoutSha256": "7e5b70ae62bb7f86b95f529144c49d4489422961ac2a8159cc7d044a5d3fd35d",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "unitControls": {
+    "selected": 14,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "nativeExecuted": false,
+    "authority": "NONE"
+  },
+  "actualSourceOnlyCli": {
+    "event": "REVIEWED_V7_STARTUP_SOURCE_ADMITTED",
+    "applicationFiles": 123,
+    "packageFilesDeclared": 404,
+    "packageFilesRead": 0,
+    "originalStartupMatches": false,
+    "originalMismatches": {
+      "X402_ISSUED_CLOSE_NATIVE_SELECTION": {
+        "launcher": "current-native-issued-close-source-v4",
+        "required": "current-native-issued-close-source-v6"
+      }
+    },
+    "correctedStartupMatches": true,
+    "sourceTransforms": false,
+    "effectsExecuted": false,
+    "nativeAuthority": "NONE"
+  },
+  "finding": {
+    "type": "STATIC_FROZEN_STARTUP_CONTRACT_MISMATCH",
+    "observedLauncherValue": "current-native-issued-close-source-v4",
+    "requiredByBothPreloadAndCase": "current-native-issued-close-source-v6",
+    "preservedLauncher": "qualification/run-issued-current-close-v6.local.py",
+    "preservedPreload": "qualification/issued-current-close-v6.preload.mjs",
+    "preservedCase": "qualification/issued-current-close-v6.case.mjs",
+    "nativeFailureObserved": false
+  },
+  "correctedController": {
+    "path": "qualification/run-issued-current-close-reviewed-v7.local.py",
+    "selection": "qualification/issued-current-close-reviewed-v7.inputs.json",
+    "defaultSourceOnly": true,
+    "preservedMainCalled": false,
+    "preservedSourcesPatched": false,
+    "environmentObjectPatched": false,
+    "nativeExecutionBranch": "SOURCE_ONLY_NOT_EXECUTED",
+    "actualEnvironmentDATAValidated": true,
+    "actualNativeEnvironmentAcceptance": false,
+    "sourceTransforms": false,
+    "requiresFreshFiniteNativeApproval": true,
+    "earlierFrozenAllowanceTransferred": false
+  },
+  "newSourcePins": [
+    {
+      "path": "qualification/issued_close_startup_contract.py",
+      "bytes": 4791,
+      "LF": 106,
+      "sha256": "1b962a7867a7dff3ae528ea3228ac8489658c485ee2d5c402a7f3e02a5fa3be0",
+      "gitBlob": "1d190fc5be101c42a3883d15c05cf6e5b2914552"
+    },
+    {
+      "path": "qualification/issued-close-startup-contract.test.py",
+      "bytes": 6994,
+      "LF": 121,
+      "sha256": "884fd8e23d34922ec19df0c210b45fe38230812e46652c7688bcec2ffb92fa83",
+      "gitBlob": "86386828f757d2b2c791652595a79d2579c4f38c"
+    },
+    {
+      "path": "qualification/run-issued-current-close-reviewed-v7.local.py",
+      "bytes": 14476,
+      "LF": 231,
+      "sha256": "6b4b28641b7936fca17106ff9099c27aa056b2b7ec17cb3e6e79b8d4d011d59a",
+      "gitBlob": "3ab340c0d4bdd6d8c196ef160b98fa71f1c57678"
+    },
+    {
+      "path": "qualification/issued-current-close-reviewed-v7.inputs.json",
+      "bytes": 2371,
+      "LF": 73,
+      "sha256": "c7f4c77d00708d88298fa282112babd6712b9b15c5ecbf7becc4519d4d11218e",
+      "gitBlob": "ba33f438f2a684c0e19868a982955d66c923b6cd"
+    }
+  ],
+  "preservedSourceSelection": {
+    "commit": "633d1cac0ae214571227df4ba7fc47088a78ac98",
+    "manifest": "qualification/issued-current-close-v6.inputs.json",
+    "sha256": "9f5801a55c3a5a520ba1cc458bbc04c9e9118044cb0acee50def5b3289146bbd",
+    "applicationRows": 123,
+    "packageRowsDeclared": 404,
+    "packageFilesRead": 0,
+    "originalControls": [
+      {
+        "path": "qualification/issued_current_close_v6_profile.py",
+        "bytes": 25474,
+        "LF": 288,
+        "sha256": "f5e7b5035ab859a978939288c56c356feefd73af9e1d04140d0f7fa74f3fd4ed",
+        "gitBlob": "2b63f30eab5b42fcb1ce5dba746fb822ce8b7a7d"
+      },
+      {
+        "path": "qualification/run-issued-current-close-v6.local.py",
+        "bytes": 17642,
+        "LF": 307,
+        "sha256": "8545e1eb622aacf395b4eb4ec22d5c3d39b00273ec9795b8bb8a131ef4f10f59",
+        "gitBlob": "e6de77b2580c50bae89abc03df63008cca00ac73"
+      },
+      {
+        "path": "qualification/funding_tls_current_gate.py",
+        "bytes": 7969,
+        "LF": 145,
+        "sha256": "9777b8dca3c8c86e543c1f202c0cde248280ed3a108df4a688565ccf83132936",
+        "gitBlob": "91362d22ca606a6711612b02ecea3c6e92c55a59"
+      },
+      {
+        "path": "qualification/run-funding-post-native-loopback-tls.local.py",
+        "bytes": 17205,
+        "LF": 311,
+        "sha256": "4535d39c312d9bcd59a0b3890d71f79df46628c1b7d8f8be63b51747e10d33f1",
+        "gitBlob": "e484adeb02800f66c518ce8be52f0de57800b640"
+      }
+    ],
+    "sourceRowsSha256": "a08f5f9a3e962cca07155c256c107b02b0bff72da8cf3b7ae36360ca801bc1d3",
+    "sourceBytes": 4476572
+  },
+  "actualReviewedInputRows": 133,
+  "reviewedInputTableSha256": "90e95af6d6a57bc1fc3f744c8ea9697c0d02a06d3581885a30d8bbca6976ded9",
+  "unchangedProtectedInputs": {
+    "rows": 639,
+    "manifestReferenceSha256": "4ede71d610b4d4a5708577728616faddb73288a6b72683b3fdeca3c2b14f4d19",
+    "copiedAgain": false
+  },
+  "effects": {
+    "SDK": false,
+    "Noble": false,
+    "x402Package": false,
+    "SQLite": false,
+    "applicationSockets": false,
+    "keysOrSignatures": false,
+    "nonceSearch": false,
+    "opensslCommands": 0,
+    "nativeNodeCommands": 0,
+    "managedTasks": 0,
+    "storageManagerImported": false,
+    "newRoot": false,
+    "policyChange": false,
+    "metadataRebinding": false,
+    "cleanup": false,
+    "sourceOrPackageCopies": 0,
+    "filesystemScratch": false
+  },
+  "frozenV6AllowanceConsumed": false,
+  "hostedCI": {
+    "existingSelectedControls": 108,
+    "workflowChanged": false,
+    "new14ControlsHosted": false
+  },
+  "nativePhysicalCleanup": "NOT_QUALIFIED",
+  "grantActivation": "NOT_ESTABLISHED",
+  "serviceDelivery": "NOT_ESTABLISHED",
+  "economicPilot": "NO_GO",
+  "production": "NO_GO"
+}
