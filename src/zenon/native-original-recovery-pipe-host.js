@@ -8,20 +8,28 @@ const F = Object.freeze, DESC = Object.getOwnPropertyDescriptor, OWN = Object.ha
 const BACKEND_HELD = new Set();
 const VALIDATE = F(function validateChallenge(value) { validatePaymentRequiredForOfferSelection(value); });
 const NO_COST = F(function recoveryCannotDeriveCost() { fail(); });
-const OPEN_BACKEND = F(async function openOwnedExistingBackend(bootstrap) {
+const OPEN_BACKEND = F(async function openOwnedExistingBackend(bootstrap, requireCurrentAcquisition) {
+  requireCurrentAcquisition();
   if (bootstrap.recoveryPipeBootstrapVersion !== 2 || BACKEND_HELD.size >= 16) fail();
   const { ServiceCreditSqliteStore } = await import('../service-credit-sqlite-store.js');
+  requireCurrentAcquisition();
   const { createServiceCreditBackendOriginalOutcomeReader } = await import('../service-credit-backend-original-outcome-reader.js');
+  requireCurrentAcquisition();
   const CLOSE = ServiceCreditSqliteStore.prototype.close;
   const frame = { store: null, reader: null, stopRequested: false, stopReceipt: null };
   try {
+    requireCurrentAcquisition();
     frame.store = ServiceCreditSqliteStore.openExisting({
       databasePath: bootstrap.backendOptions.databasePath, allowedRoot: bootstrap.payerOptions.allowedRoot,
       deriveCost: NO_COST, ...bootstrap.backendOptions.limits,
     });
+    // A synchronous open can consume the remaining budget too. Retain/fence
+    // this actually acquired owner through the existing failure path.
+    requireCurrentAcquisition();
     frame.reader = createServiceCreditBackendOriginalOutcomeReader({
       store: frame.store, admittedGrantId: bootstrap.selection.selectedGrantId,
     });
+    requireCurrentAcquisition();
     return createBuyerOwnedBackendRecoveryResource({ reader: frame.reader, closeStore: F(function closeExistingStore() {
       if (frame.stopRequested) fail();
       frame.stopRequested = true;
@@ -46,14 +54,17 @@ const OPEN_BACKEND = F(async function openOwnedExistingBackend(bootstrap) {
     fail();
   }
 });
-const OPEN = F(async function openOriginalOnly(bootstrap) {
+const OPEN = F(async function openOriginalOnly(bootstrap, requireCurrentAcquisition) {
   // Reached only after canonical external bootstrap capture, with one already
   // owned channel. No arbitrary module path, SDK/store factory or signer.
+  requireCurrentAcquisition();
   const { openNativeOfficialV6FundingPostOriginalPaymentClient } =
     await import('../x402-native-v6-funding-post-client.js');
+  requireCurrentAcquisition();
   const { caPem, ...transport } = bootstrap.transportOptions;
   const ca = Buffer.from(caPem, 'ascii');
   try {
+    requireCurrentAcquisition();
     return await openNativeOfficialV6FundingPostOriginalPaymentClient({
       payerOptions: bootstrap.payerOptions, originalPayment: bootstrap.selection.originalPayment,
       official: { ...bootstrap.official, validateChallenge: VALIDATE }, transportOptions: { ...transport, ca },

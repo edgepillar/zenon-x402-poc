@@ -146,9 +146,23 @@ function openWithinAcquisition(frame, kind, opener, bootstrap) {
   const leg = { kind, promise, resolve, reject, receipt: null, owner: null, accepted: false,
     lateStopRequested: false, lateStop: null, lateStopObservation: 'NOT_REQUESTED', lateBackend: null };
   a.current = leg; a.legs.push(leg);
-  if (kind === 'BACKEND') frame.backendEntered = true; else frame.nativeEntered = true;
+  const requireCurrentAcquisition = F(function requireCurrentAcquisition() {
+    // This is an operational scope check, never bootstrap DATA or a reusable
+    // permit. A returned backend's guard cannot admit a later payer opening.
+    if (arguments.length !== 0 || frame.acquisition !== a || a.current !== leg
+        || leg.accepted || leg.lateStopRequested) fail();
+    try {
+      requireAcquisition(frame);
+      if (!channelOpen(frame.channel)) { refuseAcquisition(frame, 'CHANNEL_UNKNOWN'); fail(); }
+    } catch { refuseAcquisition(frame, 'ACQUISITION_GUARD_UNKNOWN'); fail(); }
+  });
   try {
-    leg.receipt = APPLY(opener, undefined, [bootstrap]);
+    requireCurrentAcquisition();
+    if (kind === 'BACKEND') frame.backendEntered = true; else frame.nativeEntered = true;
+    // A fixed async binding must check this same leg after each module load,
+    // BEFORE opening a new native/store owner. Already-entered work retains
+    // its original receipt/late-stop rules; this does not cancel an import.
+    leg.receipt = APPLY(opener, undefined, [bootstrap, requireCurrentAcquisition]);
     observe(leg.receipt, owner => {
       leg.owner = owner;
       try {
