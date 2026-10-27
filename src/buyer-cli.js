@@ -77,6 +77,18 @@ export async function runBuyerCli({
   onOutput('Remote chain authenticated: no');
 }
 
+/**
+ * Explicit existing-key command host. This named entry does not change the
+ * ordinary argv/default buyer, derive keys or acquire process stdio implicitly.
+ * Native SDK/SQLite/HTTPS qualification of this wider graph remains separate.
+ */
+export async function openBuyerOriginalFundingCommandSession(configuration) {
+  if (arguments.length !== 1) throw new TypeError('buyer_command_configuration_required');
+  const { openSdk105NativeFundingCommandSession } =
+    await import('./zenon/sdk105-native-funding-command-session.js');
+  return openSdk105NativeFundingCommandSession(configuration);
+}
+
 async function launchBuyerCli() {
   if (typeof process.argv[1] !== 'string') return;
   const { pathToFileURL } = await import('node:url');
