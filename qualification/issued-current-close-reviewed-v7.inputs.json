@@ -1,0 +1,73 @@
+{
+  "kind": "REVIEWED_ISSUED_CLOSE_STARTUP_V7_NOT_NATIVE_AUTHORITY",
+  "version": 7,
+  "applicationVersion": 6,
+  "baseSelection": {
+    "commit": "633d1cac0ae214571227df4ba7fc47088a78ac98",
+    "path": "qualification/issued-current-close-v6.inputs.json",
+    "sha256": "9f5801a55c3a5a520ba1cc458bbc04c9e9118044cb0acee50def5b3289146bbd"
+  },
+  "controls": [
+    {
+      "path": "qualification/issued_close_startup_contract.py",
+      "bytes": 4791,
+      "LF": 106,
+      "sha256": "1b962a7867a7dff3ae528ea3228ac8489658c485ee2d5c402a7f3e02a5fa3be0",
+      "gitBlob": "1d190fc5be101c42a3883d15c05cf6e5b2914552"
+    },
+    {
+      "path": "qualification/run-issued-current-close-reviewed-v7.local.py",
+      "bytes": 14476,
+      "LF": 231,
+      "sha256": "6b4b28641b7936fca17106ff9099c27aa056b2b7ec17cb3e6e79b8d4d011d59a",
+      "gitBlob": "3ab340c0d4bdd6d8c196ef160b98fa71f1c57678"
+    }
+  ],
+  "effectsCeiling": {
+    "selectedCases": 1,
+    "maximumRuns": 1,
+    "opensslCommands": 1,
+    "nodeCommands": 1,
+    "nodeChildren": 0,
+    "newSqlitePaths": 5,
+    "independentPinFiles": 2,
+    "syntheticEd25519Keys": 4,
+    "transactionSignatures": 1,
+    "capabilitySignatures": 3,
+    "providerSignatures": 2,
+    "testTlsMaterialSeparate": true,
+    "maxRpcConnections": 174,
+    "maxApplicationConnections": 8,
+    "maxTotalConnections": 182,
+    "expectedTotalConnections": 96,
+    "maxCandidatesPerSearch": 4096,
+    "maxReferenceCandidates": 32768,
+    "producerCandidateReservation": 4096,
+    "fixedVerificationReservation": 16384,
+    "maxAggregateCandidates": 65536,
+    "taskQuotaBytes": 4194304,
+    "maximumSourceReadBytes": 6291456,
+    "existingSourcesRecopied": false,
+    "externalNetwork": false,
+    "install": false,
+    "realWallet": false,
+    "realPayment": false,
+    "sdkPrepareBlock": false,
+    "nativeOsNetworkSandbox": false
+  },
+  "taskPolicy": {
+    "quotaBytes": 4194304,
+    "minimumFreeBytes": 10737418240,
+    "existingApprovedRootOnly": true,
+    "rootPolicyOverride": false,
+    "maximumRuns": 1
+  },
+  "startupExpected": {
+    "X402_ISSUED_CLOSE_NATIVE_SELECTION": "current-native-issued-close-source-v6",
+    "X402_ISSUED_CLOSE_NATIVE_RUN_SCOPE": "one-current-clean-issued-close-v6",
+    "X402_ISSUED_CLOSE_NATIVE_MODE": "clean"
+  },
+  "nativeAuthority": "NONE",
+  "nativeCasesExecuted": 0,
+  "requiresFreshNativeApproval": true
+}
