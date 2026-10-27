@@ -89,6 +89,15 @@ export async function openBuyerOriginalFundingCommandSession(configuration) {
   return openSdk105NativeFundingCommandSession(configuration);
 }
 
+/** Explicit existing-original recovery; no funding, key or default CLI switch.
+ * Native SDK/SQLite/HTTPS qualification remains source-bound and separate. */
+export async function openBuyerOriginalRecoveryCommandSession(configuration) {
+  if (arguments.length !== 1) throw new TypeError('buyer_recovery_configuration_required');
+  const { openNativeOriginalRecoveryCommandSession } =
+    await import('./zenon/native-original-recovery-command-session.js');
+  return openNativeOriginalRecoveryCommandSession(configuration);
+}
+
 async function launchBuyerCli() {
   if (typeof process.argv[1] !== 'string') return;
   const { pathToFileURL } = await import('node:url');

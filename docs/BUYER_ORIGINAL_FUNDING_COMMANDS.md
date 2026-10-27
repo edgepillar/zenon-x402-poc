@@ -1,6 +1,6 @@
 # Explicit original funding buyer commands
 
-Date: 2026-10-27. All 52 selected builtin component cases passed.
+Date: 2026-10-27. All 52 funding/lifecycle cases passed again within the\ncurrent 80-case original-recovery component selection.
 The native SDK105 command host is SOURCE ONLY and available on development.
 The ordinary buyer/default and Phase2C routes remain unchanged.
 

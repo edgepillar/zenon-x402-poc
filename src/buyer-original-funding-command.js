@@ -5,6 +5,7 @@ import { canonicalJson } from './canonical.js';
 const F = Object.freeze, DESC = Object.getOwnPropertyDescriptor, KEYS = Reflect.ownKeys;
 const PROTO = Object.getPrototypeOf, OWN = Object.hasOwn, PROXY = utilTypes.isProxy;
 const OPERATIONS = F(['prepare', 'commit', 'submitFunding', 'handoff', 'submitService', 'inspect', 'close']);
+const RECOVERY_OPERATIONS = F(['restoreOriginal', 'readRecoveryState', 'submitService', 'inspect', 'close']);
 const DEFAULTS = F({ maxCommands: 16, maxLineBytes: 262144, maxInputBytes: 1048576,
   maxOutputBytes: 1048576, closeWaitMs: 250 });
 
@@ -27,10 +28,23 @@ export function encodeBuyerOriginalFundingCommand(input, maximumBytes = DEFAULTS
 }
 
 export function decodeBuyerOriginalFundingCommand(line, maximumBytes = DEFAULTS.maxLineBytes) {
+  return decode(line, maximumBytes, OPERATIONS);
+}
+
+/** Separate closed protocol: no preparation, funding commit or funding send. */
+export function encodeBuyerOriginalRecoveryCommand(input, maximumBytes = DEFAULTS.maxLineBytes) {
+  return wire(captureCommand(input, maximumBytes, RECOVERY_OPERATIONS), maximumBytes) + '\n';
+}
+
+export function decodeBuyerOriginalRecoveryCommand(line, maximumBytes = DEFAULTS.maxLineBytes) {
+  return decode(line, maximumBytes, RECOVERY_OPERATIONS);
+}
+
+function decode(line, maximumBytes, operations) {
   boundedString(line, maximumBytes);
   let parsed;
   try { parsed = JSON.parse(line); } catch { fail('input_rejected'); }
-  const command = captureCommand(parsed, maximumBytes);
+  const command = captureCommand(parsed, maximumBytes, operations);
   // Also refuses duplicate keys, alternate number spellings and ambiguous wire
   // forms. The encoder supplies the required canonical JSON object plus LF.
   if (canonicalJson(command) !== line) fail('noncanonical_input');
@@ -44,17 +58,26 @@ export function encodeBuyerOriginalFundingCommandResult(command, result, maximum
     outcome: 'CALLBACK_RETURNED', result: project(selected.operation, result) }, maximumBytes) + '\n';
 }
 
-function captureCommand(input, maximumBytes) {
+export function encodeBuyerOriginalRecoveryCommandResult(command, result, maximumBytes = DEFAULTS.maxLineBytes) {
+  const selected = captureCommand(command, maximumBytes, RECOVERY_OPERATIONS);
+  return wire({ version: 1, id: selected.id, operation: selected.operation,
+    outcome: 'CALLBACK_RETURNED', result: project(selected.operation, result) }, maximumBytes) + '\n';
+}
+
+function captureCommand(input, maximumBytes, operations = OPERATIONS) {
   byteLimit(maximumBytes);
   const c = fields(input, ['version', 'id', 'operation', 'input']);
   if (c.version !== 1 || typeof c.id !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$/.test(c.id)
-      || !OPERATIONS.includes(c.operation)) fail('input_rejected');
+      || !operations.includes(c.operation)) fail('input_rejected');
   const value = snapshot(c.input, maximumBytes);
   fields(value, [], false, true);
   if (c.operation === 'commit' || c.operation === 'submitFunding') fields(value, ['expectedPins']);
   if (c.operation === 'handoff') fields(value, ['originalPayment', 'selectedGrantId', 'paymentRequiredHeader']);
+  if (c.operation === 'restoreOriginal') fields(value, ['paymentRequiredHeader', 'expectedPins']);
+  if (c.operation === 'readRecoveryState') fields(value, ['key', 'expectedPins']);
   if (c.operation === 'submitService') fields(value, [
     'grantId', 'requestId', 'originalRequestJson', 'originalBodyBase64', 'serviceResourceUrl', 'authorizationHeader',
+    ...(operations === RECOVERY_OPERATIONS ? ['expectedPins'] : []),
   ]);
   if ((c.operation === 'inspect' || c.operation === 'close') && KEYS(value).length !== 0) fail('input_rejected');
   const out = F({ version: 1, id: c.id, operation: c.operation, input: value });
@@ -68,6 +91,21 @@ function project(operation, result) {
     return F({ callbackCompleted: true, serviceDelivery: 'NOT_ESTABLISHED', authority: 'NONE' });
   }
   if (operation === 'inspect') return snapshot(result, DEFAULTS.maxLineBytes);
+  if (operation === 'restoreOriginal') {
+    if (data(result, 'source') !== 'EXACT_RETAINED_V6_ORIGINAL' || data(result, 'signatureCreated') !== false
+        || data(result, 'transport') !== 'NOT_INVOKED') fail('result_rejected');
+    const header = data(result, 'paymentSignatureHeader'), resource = data(result, 'resourceUrl');
+    boundedString(header, 8192); boundedString(resource, 4096);
+    return F({ resourceUrl: resource, paymentSignatureHeader: header, source: 'EXACT_RETAINED_V6_ORIGINAL',
+      signatureCreated: false, transport: 'NOT_INVOKED', fundingAcknowledgement: 'NOT_ESTABLISHED',
+      grantActivation: 'NOT_ESTABLISHED', serviceDelivery: 'NOT_ESTABLISHED', authority: 'NONE' });
+  }
+  if (operation === 'readRecoveryState') {
+    if (data(result, 'buyerOriginalRecoveryObservationVersion') !== 1
+        || typeof data(result, 'recordPresent') !== 'boolean'
+        || typeof data(result, 'reconciliationRequired') !== 'boolean') fail('result_rejected');
+    return snapshot(result, DEFAULTS.maxLineBytes);
+  }
   const phase = data(result, 'phase');
   if (typeof phase !== 'string' || !/^[A-Z][A-Z0-9_]{0,79}$/.test(phase)) fail('result_rejected');
   const output = { phase, authority: 'NONE', serviceDelivery: 'NOT_ESTABLISHED' };

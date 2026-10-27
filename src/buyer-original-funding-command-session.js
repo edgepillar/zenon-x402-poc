@@ -3,6 +3,7 @@ import { createServiceCreditBoundedCloseCompletion } from './service-credit-boun
 import {
   captureBuyerOriginalFundingCommandLimits, decodeBuyerOriginalFundingCommand,
   encodeBuyerOriginalFundingCommandResult,
+  decodeBuyerOriginalRecoveryCommand, encodeBuyerOriginalRecoveryCommandResult,
 } from './buyer-original-funding-command.js';
 
 const F = Object.freeze, APPLY = Reflect.apply, DESC = Object.getOwnPropertyDescriptor;
@@ -10,6 +11,8 @@ const OWN = Object.hasOwn, PROTO = Object.getPrototypeOf, PROXY = utilTypes.isPr
 const NativePromise = Promise, PROMISE = NativePromise.prototype, THEN = PROMISE.then;
 const METHODS = F({ prepare: 'prepareOriginalFunding', commit: 'commitOriginalFunding',
   submitFunding: 'submitOriginalFunding', handoff: 'handoffToService', submitService: 'submitOriginal' });
+const RECOVERY_METHODS = F({ restoreOriginal: 'restoreOriginalPayment',
+  readRecoveryState: 'readOriginalRecoveryState', submitService: 'submitOriginal' });
 
 /**
  * Own one actual client and one command channel. Every critical step requires a
@@ -19,10 +22,24 @@ const METHODS = F({ prepare: 'prepareOriginalFunding', commit: 'commitOriginalFu
  */
 export function createBuyerOriginalFundingCommandSession(configuration) {
   if (arguments.length !== 1) fail('configuration_rejected');
+  return createSession(configuration, false);
+}
+
+/** Explicit recovery selection over the real retained-original owner; no
+ * fake SDK105 facade or funding/preparation capability is manufactured. */
+export function createBuyerOriginalRecoveryCommandSession(configuration) {
+  if (arguments.length !== 1) fail('configuration_rejected');
+  return createSession(configuration, true);
+}
+
+function createSession(configuration, recovery) {
   const c = fields(configuration, ['client', 'channel', 'limits']);
   const limits = captureBuyerOriginalFundingCommandLimits(c.limits), client = c.client, channel = c.channel;
   const operations = {};
-  for (const operation of Object.keys(METHODS)) operations[operation] = method(client, METHODS[operation]);
+  const methods = recovery ? RECOVERY_METHODS : METHODS;
+  const DECODE = recovery ? decodeBuyerOriginalRecoveryCommand : decodeBuyerOriginalFundingCommand;
+  const ENCODE = recovery ? encodeBuyerOriginalRecoveryCommandResult : encodeBuyerOriginalFundingCommandResult;
+  for (const operation of Object.keys(methods)) operations[operation] = method(client, methods[operation]);
   const CLIENT_VIEW = method(client, 'inspect'), CLIENT_CLOSE = method(client, 'close');
   const READ = method(channel, 'readCommand'), WRITE = method(channel, 'writeResult');
   const CHANNEL_VIEW = method(channel, 'inspect'), CHANNEL_CLOSE = method(channel, 'close');
@@ -31,11 +48,11 @@ export function createBuyerOriginalFundingCommandSession(configuration) {
   let running = null, closing = null, executionDone = true, activeKind = null, held = false;
   let lifecycle = 'OPEN', clientLeg = 'NOT_REQUESTED', channelLeg = 'NOT_REQUESTED';
   let clientStop = null, channelStop = null, historicalClose = 'NOT_REQUESTED', closeTerminal = false;
-  let commands = 0, admittedOperations = 0, outputUnknown = false, fundingUnknown = false, retained = null;
+  let commands = 0, admittedOperations = 0, outputUnknown = false, fundingUnknown = false, recoveryUnknown = false, retained = null;
   function hold() { held = true; lifecycle = 'HELD'; }
   function clientView() {
     const v = APPLY(CLIENT_VIEW, client, []);
-    if (data(v, 'sdk105FundingServiceLifecycleVersion') !== 1) fail('client_view_unknown');
+    if (data(v, recovery ? 'buyerOriginalRecoveryClientVersion' : 'sdk105FundingServiceLifecycleVersion') !== 1) fail('client_view_unknown');
     return F({ phase: data(v, 'phase'), lifecycle: data(v, 'lifecycle'), held: data(v, 'held'),
       publicOperationActive: data(v, 'publicOperationActive') });
   }
@@ -107,9 +124,11 @@ export function createBuyerOriginalFundingCommandSession(configuration) {
     if (arguments.length !== 0) fail('input_rejected');
     if (lifecycle === 'CLOSED' && !currentClean()) hold();
     return F({ buyerOriginalFundingCommandSessionVersion: 1, lifecycle, held,
+      mode: recovery ? 'RECOVER_EXISTING_ORIGINAL' : 'FUNDING_ORIGINAL',
       runRequested: running !== null, closeRequested: closing !== null, executionDone, activeKind,
       commands, admittedOperations, clientClose: clientLeg, channelClose: channelLeg, historicalClose,
-      outputOutcomeUnknown: outputUnknown, fundingOutcomeUnknown: fundingUnknown, retainedResult: retained !== null,
+      outputOutcomeUnknown: outputUnknown, fundingOutcomeUnknown: fundingUnknown,
+      recoveryOutcomeUnknown: recoveryUnknown, retainedResult: retained !== null,
       retainedWriteCallbackCompleted: retained?.writeCallbackCompleted ?? false,
       clientStopRetained: clientStop !== null, channelStopRetained: channelStop !== null,
       serviceDelivery: 'NOT_ESTABLISHED', grantActivation: 'NOT_ESTABLISHED', authority: 'NONE' });
@@ -123,7 +142,7 @@ export function createBuyerOriginalFundingCommandSession(configuration) {
         if (closing !== null) break;
         if (line === null) break;
         if (commands >= limits.maxCommands) fail('command_limit');
-        const command = decodeBuyerOriginalFundingCommand(line, limits.maxLineBytes);
+        const command = DECODE(line, limits.maxLineBytes);
         if (ids.has(command.id)) fail('duplicate_id');
         ids.add(command.id); commands++;
         if (command.operation === 'close') { activeKind = null; break; }
@@ -136,9 +155,11 @@ export function createBuyerOriginalFundingCommandSession(configuration) {
           activeKind = 'EXECUTE'; admittedOperations++;
           result = await native(APPLY(operations[command.operation], client, [command.input]));
         }
-        const resultLine = encodeBuyerOriginalFundingCommandResult(command, result, limits.maxLineBytes);
+        const resultLine = ENCODE(command, result, limits.maxLineBytes);
         const returnedFundingUnknown = command.operation === 'submitFunding'
           && (/UNKNOWN/.test(data(result, 'phase')) || /UNKNOWN/.test(data(result, 'fundingIntakeStatus')));
+        const returnedRecoveryUnknown = command.operation === 'readRecoveryState'
+          && data(result, 'reconciliationRequired') === true;
         // Retain exact returned DATA even if the following output write fails.
         // Retrieval is read-only and never writes/resubmits the command.
         retained = F({ id: command.id, operation: command.operation, line: resultLine,
@@ -150,6 +171,7 @@ export function createBuyerOriginalFundingCommandSession(configuration) {
         retained = F({ ...retained, writeCallbackCompleted: true });
         activeKind = null;
         if (returnedFundingUnknown) { fundingUnknown = true; hold(); }
+        if (returnedRecoveryUnknown) { recoveryUnknown = true; hold(); }
       }
     } catch {
       failed = true;
