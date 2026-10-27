@@ -1,8 +1,11 @@
 import { captureSdk105FundingServiceConfiguration } from './sdk105-funding-service-lifecycle.js';
+import { captureSdk105LocalFundingServiceSelection } from './sdk105-local-funding-service-selection.js';
 import { openBuyerFundingOwnedStreamSession } from '../buyer-funding-owned-stream-session.js';
+import { Buffer } from 'node:buffer';
 import { types as utilTypes } from 'node:util';
 
 const DESC = Object.getOwnPropertyDescriptor, OWN = Object.hasOwn, F = Object.freeze;
+const APPLY = Reflect.apply, FILL = Buffer.prototype.fill;
 
 /**
  * SOURCE ONLY opt-in host. Hardwire the real existing SDK105 funding/service
@@ -34,6 +37,40 @@ export async function openSdk105NativeFundingCommandSession(configuration) {
     // the real client returns, its quarantine and caller key-cleanup contract
     // remain; no wrapper guesses ownership or clears an unreturned key.
     fail();
+  }
+}
+
+/** Named SOURCE-ONLY local qualification with the SAME actual stream/session
+ * ownership and opening deadline. No command may choose a module, constructor,
+ * CA, key or execution authority. Capture before channel/key acquisition; check
+ * the opening guard after the fixed SDK module import. A timed-out original
+ * opener may still be pending: only that opener's finally releases its owned CA
+ * after it settles. No competing unreturned-key stop or second opening. */
+export async function openSdk105NativeFundingCommandSessionForLocalQualification(configuration, localReadOptions) {
+  if (arguments.length !== 2) fail();
+  const c = capture(configuration);
+  let local = null, entered = false, released = false;
+  function release() {
+    if (local !== null && !released) { released = true; APPLY(FILL, local.localReadOptions.ca, [0]); }
+  }
+  try {
+    local = captureSdk105LocalFundingServiceSelection(c.configuration, localReadOptions);
+    return await openBuyerFundingOwnedStreamSession({ input: c.input, output: c.output, limits: c.limits,
+      openWaitMs: local.configuration.fundingOptions.deadlineMs,
+      openClient: F(async function openCapturedLocalNativeClient(requireCurrentOpening) {
+        entered = true;
+        try {
+          requireCurrentOpening();
+          const { openSdk105NativeFundingServiceClientForLocalQualification } = await import('./sdk105-native-funding-service-client.js');
+          requireCurrentOpening();
+          return await openSdk105NativeFundingServiceClientForLocalQualification(local.configuration, local.localReadOptions);
+        } finally { release(); }
+      }) });
+  } catch { fail(); }
+  finally {
+    // Before opener entry, no asynchronous consumer can retain these bytes.
+    // After entry, an outer timeout must leave release to the original opener.
+    if (!entered) release();
   }
 }
 function capture(value) {

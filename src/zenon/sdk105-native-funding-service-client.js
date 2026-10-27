@@ -1,12 +1,17 @@
 import { createSdk105PreparedHashWalletOwner } from './sdk105-prepared-hash-wallet-owner.js';
 import { captureSdk105FundingServiceConfiguration, createSdk105FundingServiceLifecycle }
   from './sdk105-funding-service-lifecycle.js';
-import { openZenonDynamicPlasmaNativeFundingServiceClient }
+import { openZenonDynamicPlasmaNativeFundingServiceClient,
+  openZenonDynamicPlasmaNativeFundingServiceClientForLocalQualification }
   from './dynamic-plasma-native-funding-service-client.js';
+import { captureSdk105LocalFundingServiceSelection } from './sdk105-local-funding-service-selection.js';
+import { Buffer } from 'node:buffer';
 import { types as utilTypes } from 'node:util';
 
 const CAPTURE=captureSdk105FundingServiceConfiguration,WALLET=createSdk105PreparedHashWalletOwner;
 const OPEN=openZenonDynamicPlasmaNativeFundingServiceClient,JOIN=createSdk105FundingServiceLifecycle;
+const LOCAL_OPEN=openZenonDynamicPlasmaNativeFundingServiceClientForLocalQualification;
+const LOCAL=captureSdk105LocalFundingServiceSelection,FILL=Buffer.prototype.fill;
 const NativePromise=Promise,THEN=NativePromise.prototype.then,APPLY=Reflect.apply,F=Object.freeze;
 const PROMISE=NativePromise.prototype,PROXY=utilTypes.isProxy,IS_PROMISE=utilTypes.isPromise;
 const DESC=Object.getOwnPropertyDescriptor,PROTO=Object.getPrototypeOf,OWN=Object.hasOwn;
@@ -30,11 +35,28 @@ let failedAcquisition=null;
  */
 export async function openSdk105NativeFundingServiceClient(configuration) {
   if(arguments.length!==1||failedAcquisition!==null)fail();
+  return openClient(configuration,null);
+}
+
+/** Named SOURCE-ONLY entry into the existing actual local HTTPS/read client.
+ * Match/detach all three CAs before wallet construction, retain our temporary
+ * selection through actual opening, then clear only that owned copy. The normal
+ * public entry never selects this route. Existing native ownership/quarantine
+ * and caller cleanup of an unreturned key remain unchanged. */
+export async function openSdk105NativeFundingServiceClientForLocalQualification(configuration,localReadOptions) {
+  if(arguments.length!==2||failedAcquisition!==null)fail();
+  const local=LOCAL(configuration,localReadOptions);
+  try{return await openClient(local.configuration,local.localReadOptions);}
+  finally{APPLY(FILL,local.localReadOptions.ca,[0]);}
+}
+
+async function openClient(configuration,localReadOptions) {
   const selected=CAPTURE(configuration),wallet=WALLET(selected.walletOptions);
   let client=null;
   try{
-    client=await OPEN({storeOptions:selected.storeOptions,
-      fundingOptions:{...selected.fundingOptions,wallet},serviceOptions:selected.serviceOptions});
+    const options={storeOptions:selected.storeOptions,
+      fundingOptions:{...selected.fundingOptions,wallet},serviceOptions:selected.serviceOptions};
+    client=await(localReadOptions===null?OPEN(options):LOCAL_OPEN(options,localReadOptions));
     return JOIN({client,walletOwner:wallet,fundingResourceUrl:selected.storeOptions.resourceUrl});
   }catch{
     if(client!==null){
