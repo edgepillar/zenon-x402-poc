@@ -1,0 +1,45 @@
+{
+  "status": "PASS",
+  "scope": "ACTUAL_DATA_VALIDATORS_WITH_DECLARED_COMMIT_AND_EXIT_RECEIPTS",
+  "casesPassed": 12,
+  "sourceInputs": [
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f"
+    },
+    {
+      "path": "qualification/sdk105-p2-recovery-boundary-data.control.mjs",
+      "bytes": 3736,
+      "sha256": "3cfd04c6754470d39feda9ca7c8a059c0ad529258083e8b26ec7da8ee6b594bc"
+    },
+    {
+      "path": "qualification/sdk105-p2-recovery-boundary-data.mjs",
+      "bytes": 2411,
+      "sha256": "4ad69ca87b6e552a686def21aebe947f7852a8534f96f0a5819f146aa8622f58"
+    },
+    {
+      "path": "scripts/run-current-sdk105-p2-boundary-data.py",
+      "bytes": 3552,
+      "sha256": "7bf0996806397e05f3f70275230ba3e3ca828e4d306be2f5b9b305b3ee926144"
+    }
+  ],
+  "builtinImports": [
+    "node:assert/strict",
+    "node:util"
+  ],
+  "node": "24.19.0",
+  "elapsedSeconds": 0.36152424999454524,
+  "actualApplicationChildProcesses": 0,
+  "actualSignals": 0,
+  "actualIPC": 0,
+  "SQLite": 0,
+  "SDK": 0,
+  "sockets": 0,
+  "signatures": 0,
+  "scratchFiles": 0,
+  "receipts": "DECLARED",
+  "physicalResourceRelease": "NOT_QUALIFIED",
+  "productionQualified": false,
+  "actualPrivateReceiptSha256": "16122923d842bf84f92d02e7c3e97dffa952b0b292e2440a87d896949ca9ccff"
+}
