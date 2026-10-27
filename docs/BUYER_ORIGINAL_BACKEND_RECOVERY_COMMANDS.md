@@ -1,8 +1,8 @@
 # Original service backend reconciliation commands
 
-Date: 2026-10-27. All 104 selected builtin component cases passed: the 80
-preserved lifecycle/funding/local-recovery case bodies and 24 new backend
-composition cases. Native two-store qualification remains separate.
+Date: 2026-10-27. All 104 lifecycle/funding/recovery case bodies passed again
+within the current 124-case command-host selection, including 20 new terminal
+host cases. Native two-store qualification remains separate.
 
 ## Connection to the existing recovery API
 
@@ -95,15 +95,15 @@ Reader close never closes the borrowed backend store. Failed construction keeps
 actual acquired owners and their original stop receipts; no reopen, cleanup of
 historical evidence or force-close is added.
 
-The [actual local result](../qualification/buyer-original-backend-recovery-command.actual-local-result.json)
-pins 42 component modules and the package manifest (43 inputs), 104 exact case
+The [actual local result](../qualification/buyer-original-command-host.actual-local-result.json)
+pins 44 component modules and the package manifest (45 inputs), 124 exact case
 names, exits and stream hashes. One Node 24.19.0 run passed all cases in about
-1.56 seconds, with no failures, skips, cancellations or stderr. It used memory
+1.76 seconds, with no failures, skips, cancellations or stderr. It used memory
 fixtures with no new managed task, scratch directory, source/package copy or
-Node child. The existing 80 test bodies are unchanged; the shared fixture now
+Node child. The existing 104 test bodies are unchanged; the shared fixture now
 also selects explicit declared native backend capabilities.
 
-The 24 new cases exercise the real shared recovery core through the buyer
+The 24 backend cases exercise the real shared recovery core through the buyer
 connector: exact proof/eight-field original forwarding, before/after fences,
 missing originals, changed records/checkpoints, prior intent and uncertainty,
 all actual backend outcome statuses, descriptor/Promise refusal, recursive
@@ -119,10 +119,21 @@ without linking or evaluation. Its sole external package specifier remains
 
 Main receives the qualified pure changes, fixtures/tests/runner and result/docs.
 Native host and CLI wiring stay on development. The unchanged 108-case hosted
-profile does not execute these 104 local cases. Historical 80-case and 52-case
+profile does not execute these 124 local cases. Historical 104/80/52-case
 results remain at their original source pins. The separate frozen native
 allowance and its storage refusal are unchanged and have not been retargeted.
 
 Actual native two-store/proof/official/HTTPS composition, existing-store reopen,
 process-interruption recovery, OS resource cleanup, default buyer cutover,
 grant activation, delivery, economic pilot and production remain unqualified.
+
+## Current terminal host integration
+
+The current 124-case selection also includes 20 [host controls](BUYER_ORIGINAL_COMMAND_HOST.md).
+They exercise the actual command sessions, separate reconciliation and unknown
+outcomes from clean closure, retain original run/close receipts and prevent
+repeated host calls from starting work again. Native CLI run adapters remain
+source-only on development. Only the changed CLI root was parsed in the current
+host step; unchanged native root parser results were reused at identical bytes.
+The earlier 104/80/52-case records remain historical evidence at their original
+source pins; they have not been relabeled as results for this current graph.

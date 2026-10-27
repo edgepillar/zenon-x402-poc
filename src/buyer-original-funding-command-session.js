@@ -131,7 +131,8 @@ function createSession(configuration, recovery) {
   });
   const inspect = F(function inspect() {
     if (arguments.length !== 0) fail('input_rejected');
-    if (lifecycle === 'CLOSED' && !currentClean()) hold();
+    const ownersClosed = closing !== null && executionDone ? currentClean() : false;
+    if (lifecycle === 'CLOSED' && !ownersClosed) hold();
     return F({ buyerOriginalFundingCommandSessionVersion: 1, lifecycle, held,
       mode: withBackend ? 'RECOVER_EXISTING_ORIGINAL_WITH_BACKEND' : recovery ? 'RECOVER_EXISTING_ORIGINAL' : 'FUNDING_ORIGINAL',
       runRequested: running !== null, closeRequested: closing !== null, executionDone, activeKind,
@@ -140,6 +141,7 @@ function createSession(configuration, recovery) {
       recoveryOutcomeUnknown: recoveryUnknown, retainedResult: retained !== null,
       retainedWriteCallbackCompleted: retained?.writeCallbackCompleted ?? false,
       clientStopRetained: clientStop !== null, channelStopRetained: channelStop !== null,
+      currentOwnersClosed: ownersClosed,
       serviceDelivery: 'NOT_ESTABLISHED', grantActivation: 'NOT_ESTABLISHED', authority: 'NONE' });
   });
   async function execute() {

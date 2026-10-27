@@ -1,7 +1,7 @@
 # Explicit original funding buyer commands
 
 Date: 2026-10-27. All 52 funding/lifecycle cases passed again within the
-current 104-case backend-recovery component selection.
+current 124-case command-host component selection.
 The native SDK105 command host is SOURCE ONLY and available on development.
 The ordinary buyer/default and Phase2C routes remain unchanged.
 
@@ -114,8 +114,8 @@ only when channel construction begins; unacquired streams remain caller-owned.
 
 ## Verification and remaining gates
 
-The [current local result](../qualification/buyer-original-backend-recovery-command.actual-local-result.json)
-binds 42 component modules and the package manifest (43 inputs), 104 exact cases,
+The [current local result](../qualification/buyer-original-command-host.actual-local-result.json)
+binds 44 component modules and the package manifest (45 inputs), 124 exact cases,
 exit and stream digests. It includes these unchanged 52 case bodies, 28
 [local recovery controls](BUYER_ORIGINAL_RECOVERY_COMMANDS.md) and 24
 [backend reconciliation controls](BUYER_ORIGINAL_BACKEND_RECOVERY_COMMANDS.md).
@@ -146,7 +146,18 @@ passed parser-only checks; the native host's 94-file relative graph was inspecte
 without linking or evaluating its SDK/package imports. Main receives the independently
 qualified codec/session/channel, fixture/tests/runner and evidence/documentation.
 The existing hosted 108-case profile is unchanged and does not run these 52
-local cases or the current 104-case selection. The separate frozen native allowance remains unconsumed and is not
+local cases or the current 124-case selection. The separate frozen native allowance remains unconsumed and is not
 retargeted to this graph. Durable recovery, actual SDK/store/HTTPS/key cleanup,
 default buyer cutover, grant activation, service delivery and economic pilot
 acceptance remain unqualified.
+
+## Current terminal host integration
+
+The current 124-case selection also includes 20 [host controls](BUYER_ORIGINAL_COMMAND_HOST.md).
+They exercise the actual command sessions, separate reconciliation and unknown
+outcomes from clean closure, retain original run/close receipts and prevent
+repeated host calls from starting work again. Native CLI run adapters remain
+source-only on development. Only the changed CLI root was parsed in the current
+host step; unchanged native root parser results were reused at identical bytes.
+The earlier 104/80/52-case records remain historical evidence at their original
+source pins; they have not been relabeled as results for this current graph.
