@@ -186,7 +186,12 @@ function createSession(configuration, recovery) {
       }
     } catch {
       failed = true;
-      if (closing === null || activeKind !== 'READ') { outputUnknown = admittedOperations > 0; hold(); }
+      if (closing === null || activeKind !== 'READ') {
+        // A lost inspection write is uncertain too. Preserve an earlier latch,
+        // including an external close that already revoked a pending write.
+        outputUnknown = outputUnknown || activeKind === 'WRITE' || admittedOperations > 0;
+        hold();
+      }
     } finally {
       activeKind = null;
       // Work-body completion is separate from the public run Promise: close

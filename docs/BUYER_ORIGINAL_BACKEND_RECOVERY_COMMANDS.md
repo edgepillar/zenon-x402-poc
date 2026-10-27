@@ -95,10 +95,10 @@ Reader close never closes the borrowed backend store. Failed construction keeps
 actual acquired owners and their original stop receipts; no reopen, cleanup of
 historical evidence or force-close is added.
 
-The [actual local result](../qualification/buyer-original-command-host.actual-local-result.json)
+The [actual local result](../qualification/buyer-owned-pipe-streams.actual-local-result.json)
 pins 44 component modules and the package manifest (45 inputs), 124 exact case
 names, exits and stream hashes. One Node 24.19.0 run passed all cases in about
-1.76 seconds, with no failures, skips, cancellations or stderr. It used memory
+1.40 seconds, with no failures, skips, cancellations or stderr. It used memory
 fixtures with no new managed task, scratch directory, source/package copy or
 Node child. The existing 104 test bodies are unchanged; the shared fixture now
 also selects explicit declared native backend capabilities.
@@ -137,3 +137,7 @@ source-only on development. Only the changed CLI root was parsed in the current
 host step; unchanged native root parser results were reused at identical bytes.
 The earlier 104/80/52-case records remain historical evidence at their original
 source pins; they have not been relabeled as results for this current graph.
+
+The current result keeps the 124-case componentRegression separate from four
+real provided-pipe controls. All 124 cases were rerun after the shared session
+write-uncertainty fix; earlier command-host results retain their original pins.
