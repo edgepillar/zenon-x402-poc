@@ -1,0 +1,79 @@
+{
+  "kind": "NODE24_POSIX_FILE_URL_PROFILE_LOCAL_QUALIFICATION",
+  "version": 1,
+  "status": "PASS_DATA_AND_LATER_NATIVE_NAMESPACE_ADMISSION",
+  "date": "2026-10-27",
+  "sourceInputs": [
+    {
+      "path": "qualification/node_file_url_profile.py",
+      "sha256": "9f4ca5bc477d9c706870a65d816c7d98dfc27d55befd7780ef934ef8d89ad4a2"
+    },
+    {
+      "path": "qualification/node-file-url-profile.behavior.py",
+      "sha256": "67ab2207f2cd1e0d917023a998861ae82e1e3dffa80938d2a87fe0c51368faff"
+    }
+  ],
+  "actualPureDataControls": {
+    "cases": 32,
+    "exitCode": 0,
+    "stderrBytes": 0,
+    "fixtureFilesCreated": 0,
+    "NodeCommands": 0,
+    "SDK": 0,
+    "SQLite": 0,
+    "signatures": 0,
+    "sockets": 0,
+    "nonceSearches": 0
+  },
+  "cases": [
+    "canonical-URL-vector-1",
+    "canonical-URL-vector-2",
+    "canonical-URL-vector-3",
+    "canonical-URL-vector-4",
+    "canonical-URL-vector-5",
+    "canonical-URL-vector-6",
+    "canonical-URL-vector-7",
+    "canonical-URL-vector-8",
+    "canonical-URL-vector-9",
+    "canonical-URL-vector-10",
+    "canonical-URL-vector-11",
+    "canonical-URL-vector-12",
+    "canonical-URL-vector-13",
+    "canonical-URL-vector-14",
+    "unsupported-source-path-1",
+    "unsupported-source-path-2",
+    "unsupported-source-path-3",
+    "unsupported-source-path-4",
+    "unsupported-source-path-5",
+    "unsupported-source-path-6",
+    "unsupported-source-path-7",
+    "unsupported-source-path-8",
+    "unsupported-source-path-9",
+    "unsupported-source-path-10",
+    "fresh-profile-has-canonical-input-entry-and-binding-URLs",
+    "source-digest-drift-refuses",
+    "missing-package-row-refuses",
+    "wrong-installed-version-refuses",
+    "unknown-binding-target-refuses",
+    "duplicate-binding-refuses",
+    "wrong-file-count-refuses",
+    "physical-source-alias-refuses"
+  ],
+  "laterNativeNamespaceObservation": {
+    "source": "sdk105-issued-command-application-v3.clean.actual-local-failure.json",
+    "runtime": "Node 24.19.0 / darwin-arm64",
+    "inputFilesVerified": 538,
+    "applicationFiles": 134,
+    "packageFiles": 404,
+    "bareImportOverrideHits": 9,
+    "wholeApplicationResult": "FAILURE",
+    "sourceTransforms": 0,
+    "nativeBuiltinAliases": 0
+  },
+  "limits": [
+    "The pure controls are not SDK or HTTP tests.",
+    "The later native namespace admission is not a successful P1 composition.",
+    "Original failed profiles, controllers and source selections are preserved.",
+    "No OS or network sandbox is claimed."
+  ]
+}

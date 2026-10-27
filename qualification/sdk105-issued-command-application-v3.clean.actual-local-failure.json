@@ -1,0 +1,73 @@
+{
+  "kind": "SDK105_ISSUED_COMMAND_APPLICATION_V3_CLEAN_LOCAL_NATIVE_FAILURE",
+  "version": 1,
+  "date": "2026-10-27",
+  "status": "FAILURE",
+  "sourceSelection": {
+    "candidateCommit": "3d952b51306b5055049bf4329c92a2e0451319bf",
+    "manifest": "qualification/sdk105-issued-command-application-v3.inputs.json",
+    "manifestSha256": "2f3bea1f6f3390d7f54410ecfc101a2e1d1d1f99c8d292976d7b434de29e26bc",
+    "sourceRowsSha256": "ad33e0a1af48af5d74716455e381f24c7a8d8875de51e02ef857775796e277dc",
+    "correctedHostProducer": "qualification/node_file_url_profile.py",
+    "correctedHostProducerSha256": "9f4ca5bc477d9c706870a65d816c7d98dfc27d55befd7780ef934ef8d89ad4a2"
+  },
+  "actualExecution": {
+    "runtime": "Node 24.19.0 / darwin-arm64",
+    "nativeTrials": 1,
+    "testTlsCommands": 1,
+    "testTlsExitCode": 0,
+    "NodeApplicationCommands": 1,
+    "NodeExitCode": 1,
+    "tests": 1,
+    "passes": 0,
+    "failures": 1,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "streamsComplete": true,
+    "stdoutBytes": 1881,
+    "stderrBytes": 0
+  },
+  "namespace": {
+    "applicationFiles": 134,
+    "packageFiles": 404,
+    "inputsVerifiedBeforeCase": 538,
+    "declaredSourceBytes": 4560107,
+    "resolveCalls": 1059,
+    "bareImportOverrideHits": 9,
+    "declaredFilesResolved": 308,
+    "sourceTransforms": 0,
+    "nativeBuiltinAliases": 0,
+    "OSNetworkSandbox": false
+  },
+  "failure": {
+    "source": "qualification/sdk105-issued-command-application-v3.case.mjs",
+    "line": 559,
+    "operation": "submitFunding",
+    "expectedPhase": "FUNDING_INTAKE_BOUND",
+    "actualReturnedPhase": "SUBMISSION_OUTCOME_UNKNOWN"
+  },
+  "disposition": {
+    "taskState": "CLOSED",
+    "taskOutcome": "FAILURE",
+    "childScratch": "HOLD_UNREGISTERED_OUTPUT_RETAINED",
+    "automaticNativeRepeats": 0,
+    "newPaymentOrSignatureAfterFailure": false,
+    "postFailureSqliteEngineOpened": false,
+    "fixtureBytesHashedReadOnlyForRetention": true
+  },
+  "sourceDiagnosis": {
+    "status": "SUFFICIENT_WIRE_CONTRACT_INCOMPATIBILITY_FOUND",
+    "serverFundingVary": "PAYMENT-SIGNATURE, Authorization",
+    "clientRequiredVary": "PAYMENT-SIGNATURE",
+    "actualFirstTransportRefusalReason": "NOT_CAPTURED",
+    "repair": "Separately tested route-scoped response writer; opt-in V2 application remains NOT_EXECUTED."
+  },
+  "limits": [
+    "The corrected URL profile passed native namespace admission; the full P1 clean case failed.",
+    "A returned UNKNOWN phase is preserved and is not authorization for retry, resigning or replacement.",
+    "The failed database fixtures are retained; no post-failure SQL replay or recovery was run.",
+    "P1 pending/loss, P2 crash/recovery, economic pilot and production remain unqualified.",
+    "Machine paths, file identities, original payment bytes, keys and raw diagnostics are not published."
+  ]
+}

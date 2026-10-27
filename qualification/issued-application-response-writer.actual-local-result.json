@@ -1,0 +1,87 @@
+{
+  "kind": "ISSUED_APPLICATION_RESPONSE_WRITER_LOCAL_DATA_RESULT",
+  "version": 1,
+  "status": "PASS_COMPONENT_ONLY",
+  "date": "2026-10-27",
+  "runtime": "Node 24.19.0 / darwin-arm64",
+  "sourceInputs": [
+    {
+      "path": "src/x402-issued-application-response-writer.js",
+      "sha256": "929e619c4261befeba8a583a0096688df5ad6ed1cadee774a89aa579a5a60d95"
+    },
+    {
+      "path": "qualification/issued-application-response-writer.behavior.mjs",
+      "sha256": "bb6bd9b6bfce1205c814ee97402db5530de35b4a02c91e7c36b8b4d00ded7d58"
+    },
+    {
+      "path": "src/service-credit-zenon-funding-post-v1-client.js",
+      "sha256": "49ea2adbea7a26a2e87b05a5f96e6bb01230853f91922c531b4fdaf7da3fc22d"
+    },
+    {
+      "path": "package.json",
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f"
+    }
+  ],
+  "actualCases": 32,
+  "exitCode": 0,
+  "stdoutComplete": true,
+  "stderrBytes": 0,
+  "cases": [
+    "funding BOUND frame meets the source-pinned client metadata contract",
+    "previous combined Vary would fail the exact funding contract",
+    "issued challenge retains its original header and body",
+    "funding refusal preserves status and exact Vary: 400",
+    "funding refusal preserves status and exact Vary: 409",
+    "funding refusal preserves status and exact Vary: 503",
+    "service or unclassified response preserves its old combined selector: /service-credit/v1/execute",
+    "service or unclassified response preserves its old combined selector: null",
+    "unclassified caller route cannot acquire funding writer policy: undefined",
+    "unclassified caller route cannot acquire funding writer policy: /funding?x=1",
+    "unclassified caller route cannot acquire funding writer policy: /funding/",
+    "unclassified caller route cannot acquire funding writer policy: /other",
+    "unclassified caller route cannot acquire funding writer policy: https://example.invalid/funding",
+    "unclassified caller route cannot acquire funding writer policy: [object Object]",
+    "unclassified caller route cannot acquire funding writer policy: 0",
+    "already unavailable response cannot report an end entry: {\"destroyed\":true}",
+    "already unavailable response cannot report an end entry: {\"writableEnded\":true}",
+    "already unavailable response cannot report an end entry: null",
+    "optional frame headers cannot override protected metadata: Vary",
+    "optional frame headers cannot override protected metadata: vArY",
+    "optional frame headers cannot override protected metadata: Cache-Control",
+    "optional frame headers cannot override protected metadata: Content-Length",
+    "optional frame headers cannot override protected metadata: Content-Type",
+    "optional frame headers cannot override protected metadata: Connection",
+    "optional frame headers cannot override protected metadata: X-Content-Type-Options",
+    "accessor frame is rejected without invoking it or writing",
+    "proxy frame is refused without entering its traps",
+    "proxy header record is refused without entering its ownKeys trap",
+    "mutable frame cannot be captured across a write entry",
+    "native-shaped write exception remains a false completion",
+    "actual UTF-8 length is retained independently from string length",
+    "missing route argument refuses before response mutation"
+  ],
+  "observedBehavior": {
+    "fundingVary": "PAYMENT-SIGNATURE",
+    "serviceAndUnclassifiedVary": "PAYMENT-SIGNATURE, Authorization",
+    "fundingBoundStatus": 202,
+    "fundingBoundBody": "BOUND",
+    "declaredResponseCapabilities": true,
+    "actualWriterExecuted": true,
+    "consumerReadAsSourceOnly": true
+  },
+  "effects": {
+    "SDK": 0,
+    "SQLite": 0,
+    "sockets": 0,
+    "keys": 0,
+    "signatures": 0,
+    "nonceSearches": 0,
+    "nativeP1TrialsRepeated": 0
+  },
+  "limits": [
+    "Actual wire writer with declared response methods; not a native HTTPS test.",
+    "The funding client module was read as text, not imported.",
+    "The opt-in native application V2 is source-only and has not been executed.",
+    "The existing hosted 108-control selection is unchanged and does not select these new controls."
+  ]
+}
