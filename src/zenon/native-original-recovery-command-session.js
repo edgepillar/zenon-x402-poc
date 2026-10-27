@@ -1,15 +1,8 @@
 import { types as utilTypes } from 'node:util';
-import { openNativeOfficialV6FundingPostOriginalPaymentClient } from '../x402-native-v6-funding-post-client.js';
-import { captureBuyerOriginalRecoverySelection, createBuyerOriginalRecoveryClient,
-  createBuyerOriginalBackendRecoveryClient } from '../buyer-original-recovery-client.js';
-import { createServiceCreditBackendOriginalOutcomeReader } from '../service-credit-backend-original-outcome-reader.js';
-import { captureBuyerCommandLineChannelConfiguration, createBuyerCommandLineChannel } from '../buyer-command-line-channel.js';
-import { createBuyerOriginalRecoveryCommandSession,
-  createBuyerOriginalBackendRecoveryCommandSession } from '../buyer-original-funding-command-session.js';
+import { captureBuyerOriginalRecoverySelection } from '../buyer-original-recovery-client.js';
+import { openBuyerOriginalRecoveryOwnedStreamSession } from '../buyer-recovery-owned-stream-session.js';
 
-const OPEN = openNativeOfficialV6FundingPostOriginalPaymentClient;
 const F = Object.freeze, DESC = Object.getOwnPropertyDescriptor, OWN = Object.hasOwn;
-const NativePromise = Promise, PROMISE = NativePromise.prototype, THEN = PROMISE.then, APPLY = Reflect.apply;
 let failedAcquisition = null;
 
 /** SOURCE ONLY, explicit retained-original entry. Opens the existing V6 store
@@ -45,35 +38,31 @@ async function openSession(configuration, withBackend) {
       || JSON.stringify(configured.originalPayment.expectedPins) !== JSON.stringify(selected.originalPayment.expectedPins)
       || payer.fundingResourceUrl !== selected.originalPayment.resourceUrl) fail();
   const nativeConfiguration = F({ ...raw, payerOptions: F(payer), originalPayment: selected.originalPayment });
-  const streams = captureBuyerCommandLineChannelConfiguration({ input: c.input, output: c.output, limits: c.limits });
-  let native = null, client = null, channel = null, backend = null;
+  let entered = false;
+  const openNativeClient = F(async function openNativeClient(requireCurrentOpening) {
+    requireCurrentOpening(); entered = true;
+    const { openNativeOfficialV6FundingPostOriginalPaymentClient: OPEN } = await import('../x402-native-v6-funding-post-client.js');
+    requireCurrentOpening();
+    return await OPEN(nativeConfiguration);
+  });
+  const openBackendReader = withBackend ? F(async function openBackendReader(requireCurrentOpening) {
+    requireCurrentOpening(); entered = true;
+    const { createServiceCreditBackendOriginalOutcomeReader: READER } = await import('../service-credit-backend-original-outcome-reader.js');
+    requireCurrentOpening();
+    return READER({ store: c.backendStore, admittedGrantId: selected.selectedGrantId });
+  }) : null;
   try {
-    if (withBackend) backend = createServiceCreditBackendOriginalOutcomeReader({
-      store: c.backendStore, admittedGrantId: selected.selectedGrantId });
-    native = await OPEN(nativeConfiguration);
-    client = withBackend ? createBuyerOriginalBackendRecoveryClient({ client: native, selection: selected, backend })
-      : createBuyerOriginalRecoveryClient({ client: native, selection: selected });
-    channel = createBuyerCommandLineChannel(streams);
-    const session = withBackend ? createBuyerOriginalBackendRecoveryCommandSession : createBuyerOriginalRecoveryCommandSession;
-    return session({ client, channel, limits: streams.limits });
+    return await openBuyerOriginalRecoveryOwnedStreamSession({
+      selection: { originalPayment: selected.originalPayment, selectedGrantId: selected.selectedGrantId,
+        paymentRequiredHeader: selected.paymentRequiredHeader },
+      input: c.input, output: c.output, limits: c.limits, openWaitMs: payer.deadlineMs,
+      openNativeClient, ...(withBackend ? { openBackendReader } : {}),
+    });
   } catch {
-    if (native !== null || backend !== null) {
-      const held = { native, client, channel, backend, clientStop: null, channelStop: null, backendStop: null };
-      failedAcquisition = held;
-      // Preserve actual owners and original stop promises independently. A
-      // failed channel constructor retains its own partially acquired streams.
-      if (client !== null || native !== null) {
-        try { held.clientStop = (client ?? native).close(); consume(held.clientStop); } catch {}
-      }
-      // A constructed connector owns this reader and closes it itself. Before
-      // transfer, fence only the reader; never close the borrowed backend store.
-      if (client === null && backend !== null) { try { held.backendStop = backend.close(); } catch {} }
-      if (channel !== null) {
-        try { held.channelStop = channel.close(); consume(held.channelStop); } catch {}
-      }
-    }
-    // Before OPEN returns, its existing guarded construction cleanup applies.
-    // Unacquired streams remain caller-owned; no reopen, retry or force-close.
+    // The actual stream coordinator retains original opening/stop receipts and
+    // owns cleanup exactly once. Never compete with it or the native opener.
+    // Even an unreturned, already-entered import/acquisition prevents a retry.
+    if (entered) failedAcquisition = F({ entered: true, outcome: 'UNKNOWN' });
     fail();
   }
 }
@@ -87,12 +76,6 @@ function fields(value, names) {
     Object.defineProperty(out, name, { value: d.value, enumerable: true });
   }
   return out;
-}
-function consume(value) {
-  if (utilTypes.isProxy(value) || !utilTypes.isPromise(value) || Object.getPrototypeOf(value) !== PROMISE) return;
-  const d = DESC(value, 'constructor');
-  if (d !== undefined && (!OWN(d, 'value') || d.value !== NativePromise)) return;
-  try { APPLY(THEN, value, [() => {}, () => {}]); } catch {}
 }
 function fail() {
   const code = 'buyer_native_original_recovery_command_open_refused', error = new TypeError(code);
