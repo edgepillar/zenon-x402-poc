@@ -19,11 +19,14 @@ export async function openSdk105NativeFundingCommandSession(configuration) {
   const c = capture(configuration);
   // Inert checks before native acquisition. The original closed client
   // configuration is still passed to the actual existing-key entry.
-  captureSdk105FundingServiceConfiguration(c.configuration);
+  const selected = captureSdk105FundingServiceConfiguration(c.configuration);
   try {
     return await openBuyerFundingOwnedStreamSession({ input: c.input, output: c.output, limits: c.limits,
-      openClient: F(async function openCapturedNativeClient() {
+      openWaitMs: selected.fundingOptions.deadlineMs,
+      openClient: F(async function openCapturedNativeClient(requireCurrentOpening) {
+        requireCurrentOpening();
         const { openSdk105NativeFundingServiceClient } = await import('./sdk105-native-funding-service-client.js');
+        requireCurrentOpening();
         return openSdk105NativeFundingServiceClient(c.configuration);
       }) });
   } catch {

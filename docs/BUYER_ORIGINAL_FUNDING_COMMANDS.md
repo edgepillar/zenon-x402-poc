@@ -1,6 +1,7 @@
 # Explicit original funding buyer commands
 
-Date: 2026-10-27. The owned-stream entry passed 17 fresh builtin controls. Prior
+Date: 2026-10-27. The opening-budget selection passed 14 new builtin controls and
+reran all 17 existing owned-stream controls in two fixed Node commands. Prior
 62 pipe controls and 124 component/four pipe controls were reused only after
 their exact 45 and 48 source/control inputs respectively remained unchanged.
 The native SDK105 command host is SOURCE ONLY and available on development.
@@ -129,17 +130,52 @@ suppress the channel stop. Late clean callbacks never rewrite the rejection or
 request another close. A constructor which returned no channel owns any partial
 quarantine; this entry never raw-destroys uncertain streams to compete with it.
 
+The fixed native binding also uses its existing fundingOptions.deadlineMs as
+one cooperative opening-observation budget, including deferred SDK module load,
+native OPEN and returned-client/session setup. The shared operational entry
+accepts an optional own DATA openWaitMs in 1-60000 ms, defaulting to 5000 ms;
+the public native configuration keeps its existing four fields. One actual timer
+starts before the fixed opener, and monotonic checks also reject synchronous
+entry/inspection which blocks beyond the timer. Transfer/refusal cancels that
+timer. This does not impose an OS deadline or stop module/native execution.
+
+The fixed binding receives a frozen current-opening guard and calls it before
+and after its literal SDK import, before starting client/key acquisition. An
+expired opening or closed channel cannot start a fresh native client merely
+because module loading later finishes. This operational guard is not command
+DATA, an argv/module selector, a signer or permission to retry.
+
+Expiry permanently rejects the opening and closes known channel/client owners.
+The original native opening receipt stays retained. If an already-entered native
+opening later returns its client, only that client's own close is requested,
+once; it never enters a session, runs queued commands, writes a result or clears
+the original rejection. A late throwing, pending or rejected close remains
+unknown. If session construction already transferred both owners, its existing
+whole-close owner performs shutdown without competing client/channel stops.
+
 Before the real native client returns, its original construction quarantine and
-caller existing-key cleanup contract remain in force. This entry never clears
-an unreturned key or treats a still-pending opening as key-release evidence.
-Native opening itself can remain pending: this change does not add early key
-cancellation or alter its custody contract. Cleanup observation establishes
-neither actual key erasure nor physical native resource release.
+caller existing-key cleanup duty remain. Timeout is UNKNOWN and gives no new
+authority to reuse or clear a key still held by a pending opening. The lower
+opening may outlive the outer rejection indefinitely. This entry never reads or
+clears an unreturned key; returned-client closure uses its existing key owner.
+Neither a timer nor a clean callback proves private-memory erasure or physical
+native resource release.
 
 ## Verification and remaining gates
 
-The [current owned-entry result](../qualification/buyer-funding-owned-stream-session.actual-local-result.json)
-records 17 selected cases, one shared-process Node 24.19.0 command, actual exit,
+The [current opening-budget result](../qualification/buyer-funding-owned-stream-deadline.actual-local-result.json)
+records the actual 17-case regression command and separate 14-case deadline
+command; all passed in about 1.10 seconds. It retains fixed source inputs, exits
+and separate stream digests. Separate processes preserve the production
+16-failed-owner admission bound; no bound is raised for testing. The new cases
+cover pending/late OPEN, late rejected/pending/throwing stop, late opening
+rejection, blocked entry/inspection, actual timer disposal, inert invalid budgets,
+queued-command nonexecution, and the fixed binding's recheck after deferred
+module loading or channel loss. Native/key callbacks remain declared; the actual
+SDK package is not evaluated.
+
+The [earlier owned-entry result](../qualification/buyer-funding-owned-stream-session.actual-local-result.json)
+preserves its original 17 selected cases, one shared-process Node 24.19.0 command, actual exit,
 separate stdout/stderr digests and source pins. All passed in about 0.72 seconds.
 It exercises actual Node memory streams, exclusive channel construction,
 SDK105 pure wallet/lifecycle owners, command session and host with declared
@@ -187,7 +223,7 @@ changed native funding module has a fresh parser-only check; the literal native
 graph is now 118 files. Existing unchanged root-parser observations are reused,
 without linking/evaluating SDK/native package modules. Main receives the pure
 owned-stream entry, control/runner/result and this documentation. The hosted
-108-case profile is unchanged and does not run these 17 entry controls. The
+108-case profile is unchanged and does not run these 31 entry controls. The
 earlier 52/124/62-case results remain at their own source pins; their unchanged
 selected inputs were verified rather than their native scope being expanded.
 The separate frozen native allowance remains unconsumed and is not
