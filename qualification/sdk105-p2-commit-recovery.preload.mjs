@@ -16,7 +16,7 @@ import { dirname, isAbsolute, resolve } from 'node:path';
 const KIND = 'SDK105_P2_COMMIT_KILL_RECOVERY_NODE24_V4';
 const ENTRIES = new Map([["parent", "app/qualification/sdk105-p2-commit-recovery.parent.mjs"], ["funding-child", "app/qualification/sdk105-p2-funding-child.case.mjs"], ["recovery-child", "app/qualification/sdk105-p2-recovery-child.case.mjs"]]);
 const ENTRY = ENTRIES.get(process.env.X402_P2_COMMIT_RECOVERY_ROLE);
-const APP_FILES = 151, PACKAGE_FILES = 404, INPUTS = APP_FILES + PACKAGE_FILES;
+const APP_FILES = 152, PACKAGE_FILES = 404, INPUTS = APP_FILES + PACKAGE_FILES;
 const MAX_SOURCE_BYTES = 6291456, MAX_PROFILE_BYTES = 524288;
 const FIXED = new Map([
   [
@@ -40,6 +40,10 @@ const FIXED = new Map([
     "b329194482848ba065ccc6df1a8176d53683c46c134f7f26a2eaa29a42e3fd3a"
   ],
   [
+    "app/qualification/sdk105-p2-child-capture.mjs",
+    "de51efa8439ff94d89713d74f70ee0225b198f434289ed53dc382e2c9c978250"
+  ],
+  [
     "app/qualification/sdk105-p2-commit-boundary.fixture.mjs",
     "504bd51d8fe92710bc6f1a1d27b0a59605e387252d278f541095bb331b1557ed"
   ],
@@ -49,7 +53,7 @@ const FIXED = new Map([
   ],
   [
     "app/qualification/sdk105-p2-commit-recovery.parent.mjs",
-    "2392c134bd35fed5e3b1c36faec31be282dd1215d33fba0bc2d8b7cac7256447"
+    "d37203f765717d3c6df900de73bc3caba924f213ab308e1750a8167a691b2c0f"
   ],
   [
     "app/qualification/sdk105-p2-funding-child.case.mjs",

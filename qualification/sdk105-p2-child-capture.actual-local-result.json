@@ -1,0 +1,81 @@
+{
+  "status": "PASS_DECLARED_CHILD_STREAM_AND_EXIT_DATA",
+  "actualJavaScriptCases": 10,
+  "javascriptCases": [
+    "preserve both original streams and independent hashes across two declared roles",
+    "backpressure false is a bounded accepted write, not a missing callback or EOF",
+    "incomplete close retains raw prefix without manufacturing EOF",
+    "overflow retains exactly the declared cap before the failure latch",
+    "fragmentation cannot exceed the explicit total transcript budget",
+    "throwing write latches uncertainty without a second attempted write",
+    "a reentrant write latches uncertainty before a second frame",
+    "data after EOF or close never becomes a complete transcript",
+    "empty streams have actual empty hashes and do not invent byte frames",
+    "binary child text cannot forge an outer footer or frame"
+  ],
+  "crossLanguageRoundTrips": 2,
+  "decoderRefusals": [
+    "incomplete close",
+    "overflow prefix",
+    "missing final close",
+    "truncated frame",
+    "changed bytes",
+    "changed offset",
+    "noncanonical base64",
+    "undeclared field",
+    "data after EOF",
+    "duplicate EOF"
+  ],
+  "totalControls": 22,
+  "elapsedSeconds": 0.46068795799510553,
+  "sourceInputs": [
+    {
+      "path": "scripts/run-current-sdk105-p2-child-capture.py",
+      "bytes": 5224,
+      "sha256": "583419fbaa697028a69d614e2c6d4c922d68d04ed7e1e24ebfe4ae42b82b76c6"
+    },
+    {
+      "path": "qualification/sdk105-p2-child-capture.control.mjs",
+      "bytes": 5727,
+      "sha256": "e159ca53f880fee0e2e735e65f2a09d3e17c12e9e6c0fc446a995b1217ee07fa"
+    },
+    {
+      "path": "qualification/sdk105-p2-child-capture.mjs",
+      "bytes": 4200,
+      "sha256": "de51efa8439ff94d89713d74f70ee0225b198f434289ed53dc382e2c9c978250"
+    },
+    {
+      "path": "qualification/sdk105_p2_child_capture_data.py",
+      "bytes": 4400,
+      "sha256": "b1e3650411d5197e5fe8b83c19ba7e3933197fd19777ac5ddadc1089a99983f3"
+    },
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f"
+    }
+  ],
+  "actualControlProofSha256": "099730f7835059a17919f341ae185c9f16f9b84435c0aa7db41a99f99eccfa5c",
+  "sourceSha256": "bc7722b51bca62dbc1fc26d731b6e0cd9eda9fd0648c30d33ce9eeb8da214a5d",
+  "testNodeCommands": 1,
+  "actualApplicationChildProcesses": 0,
+  "actualSignals": 0,
+  "actualIPC": 0,
+  "SDK": 0,
+  "SQLite": 0,
+  "sockets": 0,
+  "generatedKeys": 0,
+  "cryptographicSignatures": 0,
+  "nonceSearches": 0,
+  "filesystemScratch": 0,
+  "storageManagerImported": false,
+  "privateTranscriptBudgetBytes": 458752,
+  "childRawStreamCapBytes": 65536,
+  "evidence": "DECLARED_CHILD_STREAMS_AND_EXIT_DATA",
+  "authority": "NONE",
+  "physicalNativeRelease": "NOT_QUALIFIED",
+  "nativeApplicationQualification": false,
+  "reusedPriorActualControls": 227,
+  "unchangedPriorInputRows": 64,
+  "priorReuseProofSha256": "53996658557f5dfaf8c7612e3f9754db3da0c635bf391e31e1422a037df93bc6"
+}

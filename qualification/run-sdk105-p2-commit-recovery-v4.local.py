@@ -29,6 +29,8 @@ KIND = 'SDK105_P2_COMMIT_KILL_RECOVERY_NODE24_V4'
 QUOTA, FLOOR = 4194304, 10737418240
 STARTUP = {'PATH': '/usr/bin:/bin', 'LANG': 'C', 'NODE_DISABLE_COMPILE_CACHE': '1', 'WS_NO_BUFFER_UTIL': '1', 'WS_NO_UTF_8_VALIDATE': '1', 'X402_SDK105_ISSUED_COMMAND_SELECTION': 'sdk105-p2-commit-recovery-v4', 'X402_SDK105_ISSUED_COMMAND_RUN_SCOPE': 'one-sdk105-p2-commit-recovery-v4', 'X402_SDK105_ISSUED_COMMAND_MODE': 'commit-kill-recover', 'X402_ISSUED_CLOSE_NATIVE_SELECTION': 'current-native-issued-close-source-v4', 'X402_P2_COMMIT_RECOVERY_ROLE': 'parent'}
 CURRENT_BASE = None
+CURRENT_CAPTURE_DATA = None
+CAPTURE_CODEC = 'qualification/sdk105_p2_child_capture_data.py'
 
 
 def require(value, code):
@@ -53,7 +55,7 @@ def definitions(path, name, raw):
 
 
 def source_selection(repo, expected):
-    global CURRENT_BASE
+    global CURRENT_BASE, CURRENT_CAPTURE_DATA
     require(type(expected) is str and re.fullmatch('[0-9a-f]{64}', expected), 'EXPLICIT_CURRENT_MANIFEST')
     require(repo.is_absolute() and os.path.normpath(repo) == str(repo), 'PHYSICAL_SOURCE_ROOT')
     b = (repo / BASE).read_bytes(); require(sha(b) == BASE_SHA, 'UNCHANGED_V3_SOURCE_DEFINITIONS')
@@ -83,7 +85,9 @@ def source_selection(repo, expected):
     require(selected['packageVersions'] == prior['packageVersions'] and selected['taskPolicy'] == prior['taskPolicy'], 'UNCHANGED_PACKAGE_AND_STORAGE_POLICY')
     effects = dict(prior['effectsCeiling'], expectedTotalConnections=93, nodeChildren=2, plannedChildSigkills=1, maximumFailureChildSigkills=2,
         maximumFailureChildSelfExits=1, childParkTimeoutMs=5000, existingPayerRecoveryOpens=1, existingBackendRecoveryOpens=1,
-        roleProfiles=3, childProfileTables=1, maximumChildCaptureBytes=65536, maximumParentCaptureBytes=65536,
+        roleProfiles=3, childProfileTables=1, maximumChildCaptureBytes=65536, maximumParentCaptureBytes=524288,
+        maximumPrivateChildTranscriptBytes=458752, privateChildCaptureVersion=1, rawChildBytesRetained=True,
+        maximumParentStderrCaptureBytes=1048576,
         maximumParentCommandSeconds=90, recoveryServiceDispatches=0, recoveryFundingPosts=0, recoverySignatures=0)
     require(selected['effectsCeiling'] == effects, 'EXACT_P2_EFFECT_CEILING')
     builtins = sorted(set(prior['allowedBuiltins'] + ['node:child_process']))
@@ -97,9 +101,13 @@ def source_selection(repo, expected):
         file = repo / row['path'][4:]; data, identity = old.read(file); require(old.pin(row['path'],data) == row, 'CURRENT_P2_SOURCE_INPUT')
         captures.append((str(file),tuple(identity))); inputs.append(dict(logicalPath=row['path'],url=file.as_uri(),bytes=len(data),sha256=row['sha256'],identity=identity))
         if file.suffix in ('.js','.mjs'): texts[row['path']] = data.decode('ascii')
-    require([row['path'] for row in selected['controlInputs']] == [SELF], 'EXACT_P2_CONTROLLER')
-    data, controller_id = old.read(repo / SELF); require(selected['controlInputs'] == [old.pin(SELF,data)], 'CURRENT_P2_CONTROLLER_PIN')
-    captures.append((str(repo / SELF),tuple(controller_id))); require(Path(__file__).absolute() == repo / SELF, 'P2_CONTROLLER_LOCATION')
+    require([row['path'] for row in selected['controlInputs']] == [SELF,CAPTURE_CODEC], 'EXACT_P2_CONTROLLER_AND_CODEC')
+    for row in selected['controlInputs']:
+        data, control_id = old.read(repo / row['path']); require(old.pin(row['path'],data) == row, 'CURRENT_P2_CONTROL_PIN')
+        captures.append((str(repo / row['path']),tuple(control_id)))
+        if row['path'] == CAPTURE_CODEC:
+            CURRENT_CAPTURE_DATA = definitions(repo / CAPTURE_CODEC,'p2_current_private_capture_data',data)
+    require(Path(__file__).absolute() == repo / SELF, 'P2_CONTROLLER_LOCATION')
     for role, name in ROLE_ENTRIES.items():
         text = texts['app/' + name]
         require("E.X402_P2_COMMIT_RECOVERY_ROLE !== '" + role + "'" in text, 'EXACT_P2_ROLE_GUARD')
@@ -138,9 +146,14 @@ def build_profile(repo, packages, old, legacy_profile, selected, rows, mode):
     return dict(profiles['parent'], roleProfiles=profiles, _captures=built['_captures'])
 
 
+def child_capture_data(stdout):
+    require(CURRENT_CAPTURE_DATA is not None, 'CURRENT_P2_CAPTURE_CODEC_NOT_ADMITTED')
+    return CURRENT_CAPTURE_DATA.child_capture_data(stdout)
+
+
 def native_result(stdout, stderr, receipt, selected, mode):
     require(mode == 'commit-kill-recover' and type(stdout) is bytes and type(stderr) is bytes
-        and len(stdout) <= 65536 and len(stderr) <= 65536, 'BOUNDED_P2_CAPTURE')
+        and len(stdout) <= 524288 and len(stderr) <= 1048576, 'BOUNDED_P2_CAPTURE')
     require(receipt['state'] == 'COMPLETE' and receipt['output_complete'] is True
         and type(receipt['actual_exit']) is int and receipt['actual_exit'] == 0, 'P2_NATIVE_FAILED_OR_UNKNOWN')
     lines = stdout.decode('utf8').splitlines()
@@ -149,6 +162,9 @@ def native_result(stdout, stderr, receipt, selected, mode):
         require(len(found) == 1, 'ONE_ACTUAL_P2_FOOTER'); return found[0]
     case = footer('# actual-sdk105-p2-commit-recovery-v4 ')
     namespace = footer('# pinned-sdk105-p2-commit-recovery-v4-namespace ')
+    retained = child_capture_data(stdout)
+    require(case['privateChildCaptureVersion'] == 1 and case['privateChildCaptureBytes'] == retained['outputBytes'],
+        'RETAINED_PRIVATE_CHILD_BYTES_REQUIRED')
     for field in ('caseCompleted','boundaryObserved','actualSigkillExitObserved','actualChildCloseObservedBeforeReopen',
         'distinctFreshRecoveryProcess','originalCheckpointMatched','independentPinsUnchanged','sameFiveSqliteFileIdentities',
         'readerClosed','backendClosed','noDispatchSurface'):
@@ -163,13 +179,19 @@ def native_result(stdout, stderr, receipt, selected, mode):
         and children[0]['code'] is None and children[0]['signal'] == 'SIGKILL'
         and children[1]['role'] == 'recovery-child' and children[1]['code'] == 0 and children[1]['signal'] is None
         and all(row['stdoutBytes'] <= 65536 and row['stderrBytes'] <= 65536 for row in children), 'OBSERVED_CHILD_EXITS_AND_CAPTURE')
+    for child in children:
+        raw = retained['roles'][child['role']]
+        for stream in ('stdout','stderr'):
+            require(type(child[stream+'Bytes']) is int and child[stream+'Bytes'] == len(raw[stream])
+                and child[stream+'Sha256'] == sha(raw[stream]), 'ORIGINAL_CHILD_CAPTURE_DIGEST')
     require(namespace['profileKind'] == KIND and namespace['role'] == 'parent' and namespace['mode'] == mode
         and namespace['applicationFiles'] == selected['resolvedApplicationFiles'] and namespace['packageFiles'] == 404
         and namespace['inputsVerifiedBeforeCase'] == selected['resolvedApplicationFiles'] + 404
         and namespace['sourceRowsSha256'] == selected['resolvedSourceRowsSha256']
         and namespace['sourceTransforms'] == namespace['nativeBuiltinAliases'] == 0
         and namespace['nativeOsNetworkSandbox'] is False, 'ACTUAL_P2_PARENT_NAMESPACE')
-    return dict(case=case,namespace=namespace,nativePhysicalDrain='NOT_QUALIFIED',productionQualified=False)
+    return dict(case=case,namespace=namespace,privateChildBytesRetainedInParentStdout=True,
+        nativePhysicalDrain='NOT_QUALIFIED',productionQualified=False)
 
 
 def main():
@@ -258,7 +280,7 @@ def main():
             parts = None; before_native()
             actual = task.run([str(node), '--no-addons', '--disallow-code-generation-from-strings', '--disable-proto=throw',
                 '--unhandled-rejections=strict', '--test-reporter=tap', '--import=' + str(repo / PRELOAD),
-                str(repo / ENTRY), str(task.scratch)], cwd=repo, timeout=90, stdout_limit=65536, retain_argv=False)
+                str(repo / ENTRY), str(task.scratch)], cwd=repo, timeout=90, stdout_limit=524288, retain_argv=False)
             task.record('actual-native-command.json', actual); unchanged()
             stdout = store.object(actual['stdout']['sha256'], actual['stdout']['bytes']).read_bytes()
             stderr = store.object(actual['stderr']['sha256'], actual['stderr']['bytes']).read_bytes()

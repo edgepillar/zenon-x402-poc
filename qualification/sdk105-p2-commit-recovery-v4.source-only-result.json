@@ -2,10 +2,10 @@
   "status": "SOURCE_ONLY_ADMITTED_NOT_NATIVE_EXECUTED",
   "admission": {
     "event": "SDK105_P2_COMMIT_RECOVERY_SOURCE_ADMITTED",
-    "applicationFiles": 151,
+    "applicationFiles": 152,
     "packageFilesDeclared": 404,
     "packageFilesRead": 0,
-    "reviewedLiteralEdges": 696,
+    "reviewedLiteralEdges": 699,
     "startupMatches": true,
     "selectedMode": "commit-kill-recover",
     "allowedModes": [
@@ -21,22 +21,44 @@
     "nativeAuthority": "NONE",
     "nativeCasesExecuted": 0
   },
-  "manifestSha256": "14b602d4fa7fea9e6c4f060050c8371c8f1008e85bb24cf4767aede921312388",
-  "controllerSha256": "0dd1687e8a334388ec482e5ce406bcb9573a91472c61a0a2447afa8993ad69bc",
-  "actualSourceOnlyReceiptSha256": "0dcbce47f5eeafd884ace1ea7ae23d248c56a7f86a68ec314203c0d6b3fb7fe3",
+  "manifestSha256": "6d5c042cf6922be297734bd110fcf2aee29a9a26f9c34cd8b281ecc35a836808",
+  "controllerSha256": "c1edb31873c01193af11d1bad69fdba48833888939024f7489fc1f2ce83a2739",
+  "actualSourceOnlyReceiptSha256": "21e7140b08896fa61fde73ac4620c033292ea0ead116fc557ea58843c80c05cf",
+  "privateCaptureDataProofSha256": "099730f7835059a17919f341ae185c9f16f9b84435c0aa7db41a99f99eccfa5c",
+  "privateCaptureControls": 22,
   "parseOnly": {
-    "currentParentAndPreloadCases": 2,
-    "unchangedFundingRecoveryIpcIoCasesReused": 4,
+    "changedParentAndPreloadCases": 2,
+    "unchangedPriorEntryHelperCasesReused": 4,
+    "unchangedInputs": [
+      {
+        "path": "app/qualification/sdk105-p2-funding-child.case.mjs",
+        "bytes": 45637,
+        "sha256": "5b371bb47cd49e9bfe92ecfcc1e8f4e8482eb4fad539fe010f8b8a63304b558b"
+      },
+      {
+        "path": "app/qualification/sdk105-p2-recovery-child.case.mjs",
+        "bytes": 6382,
+        "sha256": "d85aa6ee1581580c362a0febbe65f92b6a32035c7dcd64c7c3188739857f101b"
+      },
+      {
+        "path": "app/qualification/sdk105-p2-commit-boundary.fixture.mjs",
+        "bytes": 3433,
+        "sha256": "504bd51d8fe92710bc6f1a1d27b0a59605e387252d278f541095bb331b1557ed"
+      },
+      {
+        "path": "app/qualification/sdk105-p2-commit-recovery.io.mjs",
+        "bytes": 3155,
+        "sha256": "66a0e2077e08c01bc9b2123bd6dcc362bf96d2bb72ae02ec92e713f901346330"
+      }
+    ],
     "evaluation": false,
-    "allActualExitsZero": true,
-    "originalParseReceiptSha256": "dee0165a5cfcccaaebbaf7f361a1be4447b41d77c60cb115a0e3399c9b21d2ed",
-    "currentParseReceiptSha256": "0dcbce47f5eeafd884ace1ea7ae23d248c56a7f86a68ec314203c0d6b3fb7fe3"
+    "originalParseReceiptSha256": "dee0165a5cfcccaaebbaf7f361a1be4447b41d77c60cb115a0e3399c9b21d2ed"
   },
-  "initialSourceOnlyDefaultModeIssuePreserved": true,
-  "initialObservationSha256": "dee0165a5cfcccaaebbaf7f361a1be4447b41d77c60cb115a0e3399c9b21d2ed",
+  "hashOnlyCandidatePreservedAtRevision": "495a9e93fe835f12dc32a727ae987b56d4910843",
+  "rawChildBytesRetainedByProposedParent": true,
   "nativeAuthority": "NONE",
   "nativeExecutions": 0,
-  "applicationChildren": 0,
+  "actualApplicationChildren": 0,
   "actualSignals": 0,
   "actualIPC": 0,
   "installedPackageFilesRead": 0,
@@ -45,7 +67,7 @@
   "signatures": 0,
   "nonceSearches": 0,
   "storageManagerImports": 0,
-  "storageTasksOpened": 0,
+  "newStorageTasks": 0,
   "scratchFiles": 0,
   "sourceOrDependencyDirectoryCopies": 0,
   "nativeOsNetworkSandbox": false,

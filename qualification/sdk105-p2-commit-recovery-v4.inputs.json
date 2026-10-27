@@ -23,17 +23,17 @@
     },
     {
       "path": "app/qualification/sdk105-p2-commit-recovery.parent.mjs",
-      "bytes": 12747,
-      "LF": 159,
-      "sha256": "2392c134bd35fed5e3b1c36faec31be282dd1215d33fba0bc2d8b7cac7256447",
-      "gitBlob": "3a7a92d1a1354b9439604dd9fc4ef4276169cc9d"
+      "bytes": 13517,
+      "LF": 172,
+      "sha256": "d37203f765717d3c6df900de73bc3caba924f213ab308e1750a8167a691b2c0f",
+      "gitBlob": "e40e3806af1b71588224b9d71bc0d709bdfc7497"
     },
     {
       "path": "app/qualification/sdk105-p2-commit-recovery.preload.mjs",
-      "bytes": 16938,
-      "LF": 335,
-      "sha256": "eb666adde698b22104bbd5375132daab653a4b77431bc90f970cc31d3dced4e6",
-      "gitBlob": "39d08a0ee9305e63f15b84f7ece5f8f7d25bf663"
+      "bytes": 17071,
+      "LF": 339,
+      "sha256": "4e1eb512189be4c231cc9980e220cbcc625e0aa54746a785c58f46b3ec7221bc",
+      "gitBlob": "a3b6fc360815260bee63755e3fd5e02d8880eb7d"
     },
     {
       "path": "app/qualification/sdk105-p2-funding-child.case.mjs",
@@ -125,12 +125,19 @@
       "LF": 60,
       "sha256": "cf3822d8b9ec4eb4772452ed1888b96d398fd87c1ead44cd155a5acc1a6b66ed",
       "gitBlob": "0890db504e44b704d0434dc309e711743570e652"
+    },
+    {
+      "path": "app/qualification/sdk105-p2-child-capture.mjs",
+      "bytes": 4200,
+      "LF": 84,
+      "sha256": "de51efa8439ff94d89713d74f70ee0225b198f434289ed53dc382e2c9c978250",
+      "gitBlob": "88922b61ee7f1cc370f36d6d838cf20ea8c6dc07"
     }
   ],
-  "resolvedApplicationFiles": 151,
+  "resolvedApplicationFiles": 152,
   "packageFiles": 404,
-  "resolvedSourceRowsSha256": "0c250a439d4baca97ceceae6e87fc3bc9f19bc059e6dab9f727a3695e7dacad6",
-  "resolvedSourceBytes": 4774466,
+  "resolvedSourceRowsSha256": "607dc5d8fb75fb26d8ba95302cca8203070deffedaaf657d10f9e42db368e088",
+  "resolvedSourceBytes": 4779569,
   "packageRowsSha256": "6de2ebf27c64de96e4823d3c504347593490061b0c6510db378311258730a31f",
   "entry": "app/qualification/sdk105-p2-commit-recovery.parent.mjs",
   "preload": "app/qualification/sdk105-p2-commit-recovery.preload.mjs",
@@ -277,11 +284,15 @@
     "roleProfiles": 3,
     "childProfileTables": 1,
     "maximumChildCaptureBytes": 65536,
-    "maximumParentCaptureBytes": 65536,
+    "maximumParentCaptureBytes": 524288,
     "maximumParentCommandSeconds": 90,
     "recoveryServiceDispatches": 0,
     "recoveryFundingPosts": 0,
-    "recoverySignatures": 0
+    "recoverySignatures": 0,
+    "maximumPrivateChildTranscriptBytes": 458752,
+    "privateChildCaptureVersion": 1,
+    "rawChildBytesRetained": true,
+    "maximumParentStderrCaptureBytes": 1048576
   },
   "taskPolicy": {
     "quotaBytes": 4194304,
@@ -305,10 +316,17 @@
   "controlInputs": [
     {
       "path": "qualification/run-sdk105-p2-commit-recovery-v4.local.py",
-      "bytes": 22250,
-      "LF": 286,
-      "sha256": "0dd1687e8a334388ec482e5ce406bcb9573a91472c61a0a2447afa8993ad69bc",
-      "gitBlob": "9a14c494bc87e328e64a47828f8a085907ad4919"
+      "bytes": 23498,
+      "LF": 308,
+      "sha256": "c1edb31873c01193af11d1bad69fdba48833888939024f7489fc1f2ce83a2739",
+      "gitBlob": "ff243999b640cb1ebf43f111d68246fca9d99bca"
+    },
+    {
+      "path": "qualification/sdk105_p2_child_capture_data.py",
+      "bytes": 4400,
+      "LF": 76,
+      "sha256": "b1e3650411d5197e5fe8b83c19ba7e3933197fd19777ac5ddadc1089a99983f3",
+      "gitBlob": "f50a30e03a87bef8315fb7a719ea268914cee129"
     }
   ],
   "nativeAuthority": "NONE",

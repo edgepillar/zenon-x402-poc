@@ -2,8 +2,10 @@
 
 Status: SOURCE_ONLY_ADMITTED, native executions 0, native authority NONE.
 The current [source-only result](../qualification/sdk105-p2-commit-recovery-v4.source-only-result.json)
-records 151 application inputs, the unchanged 404 package rows, 696 literal
-import edges and six parse-only entry/helper checks. Installed packages were
+records 152 application inputs, the unchanged 404 package rows and 699 literal
+import edges. The changed parent/preload pass parse-only checks; four unchanged
+entry/helpers reuse their exact earlier parse records. The added private-output
+encoder/decoder pass their separate actual DATA controls. Installed packages were
 not read or evaluated. V3 case/preload/controller sources remain unchanged.
 
 This candidate joins the current actual issued-funding SDK105 application to
@@ -53,8 +55,13 @@ paths and two independent pin files; four ephemeral synthetic keys, one
 transaction signature, three capability signatures and two provider signatures;
 loopback only, at most 182 connections; nonce windows at most 4096 and aggregate
 reservation at most 65536. One planned SIGKILL, at most two failure-only child
-stops and one failure-only child self-exit are explicit. Each child capture and
-the parent capture are capped at 64 KiB; the managed parent budget is 90 seconds.
+stops and one failure-only child self-exit are explicit. Each child stdout/stderr
+is capped at 64 KiB. A bounded 448 KiB private byte transcript is streamed into
+the ONE managed parent stdout object, capped at 512 KiB; parent stderr uses the
+unchanged manager's policy-derived cap, at most 1 MiB. The managed parent budget
+is 90 seconds. Missing/truncated output remains failure evidence. The original
+hash-only candidate's source and reports remain preserved at their old revision;
+the current selection adds [private byte preservation](P2_PRIVATE_CHILD_CAPTURE_DATA.md).
 
 Existing source and dependency bytes are read in place. One source inventory
 build derives three role-specific profile DATA objects and a private child-profile

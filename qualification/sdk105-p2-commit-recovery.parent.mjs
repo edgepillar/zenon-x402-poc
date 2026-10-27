@@ -11,9 +11,10 @@ if (process.version !== 'v24.19.0' || process.platform !== 'darwin' || process.a
     || process.argv.length !== 3 || process.argv[2] !== E.SPV_TASK_SCRATCH
     || E.NODE_OPTIONS !== undefined || E.NODE_PATH !== undefined || E.NODE_TEST_CONTEXT !== undefined)
   throw new TypeError('SDK105_P2_PARENT_NOT_ADMITTED_BEFORE_EFFECT_IMPORTS');
-const [{ default: assert }, { spawn }, path, fs, url, io, boundary] = await Promise.all([
+const [{ default: assert }, { spawn }, path, fs, url, io, boundary, capture] = await Promise.all([
   import('node:assert/strict'), import('node:child_process'), import('node:path'), import('node:fs'),
   import('node:url'), import('./sdk105-p2-commit-recovery.io.mjs'), import('./sdk105-p2-recovery-boundary-data.mjs'),
+  import('./sdk105-p2-child-capture.mjs'),
 ]);
 const root = process.argv[2], rootId = io.rootP2(root), directory = path.dirname(url.fileURLToPath(import.meta.url));
 const profileRecord = io.readP2(root, rootId, 'p2-child-profiles.json'), profileTable = profileRecord.value;
@@ -24,6 +25,7 @@ assert.match(profileTable.sourceRowsSha256, /^[0-9a-f]{64}$/);
 const fixed = Object.freeze({ 'funding-child': 'sdk105-p2-funding-child.case.mjs',
   'recovery-child': 'sdk105-p2-recovery-child.case.mjs' });
 const owned = [], CAP = 65536;
+const transcript = capture.createP2ChildCapture(line => process.stdout.write(line));
 function physicalFiles(pins) {
   const hash = pins.payment.value.transactionHash;
   return ['native-issued-service.sqlite', 'native-issued-intake.sqlite', 'native-issued-payer-v6.sqlite',
@@ -69,8 +71,15 @@ function launch(role) {
   owned.push(row);
   row.done = new Promise(resolve => { row.settle = resolve; });
   function fail() { row.fault = true; stopFailure(row); }
-  for (const [stream, chunks, count] of [[child.stdout, row.stdout, 'stdoutBytes'], [child.stderr, row.stderr, 'stderrBytes']]) {
-    stream.on('data', bytes => { row[count] += bytes.length; if (row[count] > CAP) { fail(); return; } chunks.push(Buffer.from(bytes)); });
+  for (const [stream, chunks, count, name] of [[child.stdout, row.stdout, 'stdoutBytes', 'stdout'], [child.stderr, row.stderr, 'stderrBytes', 'stderr']]) {
+    stream.on('data', bytes => {
+      row[count] += bytes.length;
+      // Preserve the observed prefix BEFORE a cap failure requests child stop.
+      const retained = transcript.append(role, name, bytes);
+      if (row[count] > CAP || !retained) { fail(); return; }
+      chunks.push(Buffer.from(bytes));
+    });
+    stream.on('end', () => { if (!transcript.eof(role, name)) fail(); });
     stream.on('error', fail);
   }
   child.on('error', fail);
@@ -97,6 +106,8 @@ function launch(role) {
   child.on('close', (code, signal) => {
     row.closeObserved = true; row.closeCode = code; row.closeSignal = signal; clearTimeout(row.timer);
     if (!row.exitObserved || code !== row.code || signal !== row.signal) row.fault = true;
+    if (!transcript.close(role, { exitObserved: row.exitObserved, closeObserved: row.closeObserved,
+      exitCode: row.code, exitSignal: row.signal, closeCode: code, closeSignal: signal })) row.fault = true;
     row.settle(row);
   });
   row.timer = setTimeout(fail, role === 'funding-child' ? 40000 : 20000);
@@ -142,6 +153,7 @@ try {
   const finalPins = io.originalP2(root, rootId);
   assert.equal(finalPins.payment.sha256, first.pins.payment.sha256); assert.equal(finalPins.services.sha256, first.pins.services.sha256);
   assert.deepEqual(physicalFiles(finalPins), first.files);
+  assert.equal(transcript.inspect().unknown, false);
   console.log('# actual-sdk105-p2-commit-recovery-v4 ' + JSON.stringify({ caseCompleted: true,
     boundaryObserved: true, actualSigkillExitObserved: true, actualChildCloseObservedBeforeReopen: true,
     distinctFreshRecoveryProcess: true, childProcesses: 2, plannedKillCalls: 1, failureStopCalls: 0,
@@ -151,6 +163,7 @@ try {
     recoveryDispatches: 0, recoveryFundingPosts: 0, recoverySignatures: 0,
     readerClosed: true, backendClosed: true, noDispatchSurface: true, physicalResourceRelease: 'NOT_QUALIFIED',
     deliveryConfirmed: false, authority: 'NONE', productionQualified: false,
+    privateChildCaptureVersion: 1, privateChildCaptureBytes: transcript.inspect().outputBytes,
     childCaptures: owned.map(row => ({ role: row.role, code: row.code, signal: row.signal,
       stdoutBytes: row.stdoutBytes, stderrBytes: row.stderrBytes,
       stdoutSha256: io.digestP2(Buffer.concat(row.stdout)), stderrSha256: io.digestP2(Buffer.concat(row.stderr)) })) }));
