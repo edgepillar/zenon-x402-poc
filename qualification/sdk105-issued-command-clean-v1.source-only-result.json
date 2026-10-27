@@ -1,0 +1,79 @@
+{
+  "kind": "SDK105_ISSUED_COMMAND_CLEAN_V1_SOURCE_ONLY_RESULT",
+  "date": "2026-10-27",
+  "status": "PASS_SOURCE_ONLY_NATIVE_NOT_EXECUTED",
+  "sourceOnlyCommand": {
+    "actualExit": 0,
+    "complete": true,
+    "elapsedSeconds": 0.11092454098979943,
+    "result": {
+      "event": "SDK105_ISSUED_COMMAND_SOURCE_ADMITTED",
+      "applicationFiles": 132,
+      "packageFilesDeclared": 404,
+      "packageFilesRead": 0,
+      "reviewedLiteralEdges": 596,
+      "startupMatches": true,
+      "sourceTransforms": false,
+      "nativeAuthority": "NONE",
+      "nativeCasesExecuted": 0
+    }
+  },
+  "inputPins": [
+    {
+      "path": "qualification/sdk105-issued-command-clean-v1.case.mjs",
+      "bytes": 41002,
+      "LF": 565,
+      "sha256": "8ea0ca2d70656267057e841d66e4b2897a40165c79579e4b0e864d78679954e1",
+      "gitBlob": "44633f9dba37b983fc2cb99ed0f58d8115bbca1c"
+    },
+    {
+      "path": "qualification/sdk105-issued-command-clean-v1.preload.mjs",
+      "bytes": 13173,
+      "LF": 238,
+      "sha256": "29c97f9481446cc47a7b550479f777187325d8a08aad395a9dac1c03f3260dc7",
+      "gitBlob": "c8dc849a59b61980a1b732506471363eefd7a9af"
+    },
+    {
+      "path": "qualification/sdk105-issued-command-clean-v1.inputs.json",
+      "bytes": 8851,
+      "LF": 259,
+      "sha256": "b6887a1a7ed06ab1bdb754acd1e8d248648fef3b274bf79f9431455185dceb0f",
+      "gitBlob": "e06c65c101e9dadf41e006bb528f88003aa1e8e7"
+    },
+    {
+      "path": "qualification/run-sdk105-issued-command-clean-v1.local.py",
+      "bytes": 24035,
+      "LF": 345,
+      "sha256": "3fe3cbbcdb84348517c3d94683afda186fa1f91936cd46b801a8ae5099847b8f",
+      "gitBlob": "0e163608c498e8a22ac27d280c368f55e343951b"
+    }
+  ],
+  "caseAndPreload": "PARSED_AT_THESE_EXACT_INPUTS_NOT_NATIVE_EVALUATED",
+  "nativeCaseCountProposed": 1,
+  "nativeCasesExecuted": 0,
+  "installedPackageFilesReadBySourceOnlyCommand": 0,
+  "installedPackagesEvaluated": false,
+  "SDK": false,
+  "Noble": false,
+  "x402": false,
+  "SQLite": false,
+  "TLS": false,
+  "applicationSockets": false,
+  "keysOrSignatures": false,
+  "nonceEvaluations": 0,
+  "managedTasks": 0,
+  "applicationOrPackageDirectoriesCopied": 0,
+  "oldApplicationFilesOrControlsModified": false,
+  "sharedFixtureRoleFlag": "current-native-issued-close-source-v4",
+  "newCaseSelection": "sdk105-issued-command-clean-v1",
+  "newRunScope": "one-sdk105-issued-command-clean-v1",
+  "existing108HostedProfileChanged": false,
+  "nativeAuthority": "NONE",
+  "nativeExecutionBranch": "SOURCE_ONLY_NOT_EXECUTED",
+  "requiresFreshFiniteNativeApproval": true,
+  "requiresCurrentStorageAdmission": true,
+  "physicalNativeCleanup": "NOT_QUALIFIED",
+  "serviceDelivery": "NOT_ESTABLISHED",
+  "economicPilot": "NO_GO",
+  "production": "NO_GO"
+}
