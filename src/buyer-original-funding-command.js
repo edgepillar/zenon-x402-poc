@@ -6,6 +6,7 @@ const F = Object.freeze, DESC = Object.getOwnPropertyDescriptor, KEYS = Reflect.
 const PROTO = Object.getPrototypeOf, OWN = Object.hasOwn, PROXY = utilTypes.isProxy;
 const OPERATIONS = F(['prepare', 'commit', 'submitFunding', 'handoff', 'submitService', 'inspect', 'close']);
 const RECOVERY_OPERATIONS = F(['restoreOriginal', 'readRecoveryState', 'submitService', 'inspect', 'close']);
+const BACKEND_RECOVERY_OPERATIONS = F([...RECOVERY_OPERATIONS, 'reconcileOriginal']);
 const DEFAULTS = F({ maxCommands: 16, maxLineBytes: 262144, maxInputBytes: 1048576,
   maxOutputBytes: 1048576, closeWaitMs: 250 });
 
@@ -40,6 +41,14 @@ export function decodeBuyerOriginalRecoveryCommand(line, maximumBytes = DEFAULTS
   return decode(line, maximumBytes, RECOVERY_OPERATIONS);
 }
 
+export function encodeBuyerOriginalBackendRecoveryCommand(input, maximumBytes = DEFAULTS.maxLineBytes) {
+  return wire(captureCommand(input, maximumBytes, BACKEND_RECOVERY_OPERATIONS), maximumBytes) + '\n';
+}
+
+export function decodeBuyerOriginalBackendRecoveryCommand(line, maximumBytes = DEFAULTS.maxLineBytes) {
+  return decode(line, maximumBytes, BACKEND_RECOVERY_OPERATIONS);
+}
+
 function decode(line, maximumBytes, operations) {
   boundedString(line, maximumBytes);
   let parsed;
@@ -64,6 +73,12 @@ export function encodeBuyerOriginalRecoveryCommandResult(command, result, maximu
     outcome: 'CALLBACK_RETURNED', result: project(selected.operation, result) }, maximumBytes) + '\n';
 }
 
+export function encodeBuyerOriginalBackendRecoveryCommandResult(command, result, maximumBytes = DEFAULTS.maxLineBytes) {
+  const selected = captureCommand(command, maximumBytes, BACKEND_RECOVERY_OPERATIONS);
+  return wire({ version: 1, id: selected.id, operation: selected.operation,
+    outcome: 'CALLBACK_RETURNED', result: project(selected.operation, result) }, maximumBytes) + '\n';
+}
+
 function captureCommand(input, maximumBytes, operations = OPERATIONS) {
   byteLimit(maximumBytes);
   const c = fields(input, ['version', 'id', 'operation', 'input']);
@@ -75,9 +90,10 @@ function captureCommand(input, maximumBytes, operations = OPERATIONS) {
   if (c.operation === 'handoff') fields(value, ['originalPayment', 'selectedGrantId', 'paymentRequiredHeader']);
   if (c.operation === 'restoreOriginal') fields(value, ['paymentRequiredHeader', 'expectedPins']);
   if (c.operation === 'readRecoveryState') fields(value, ['key', 'expectedPins']);
+  if (c.operation === 'reconcileOriginal') fields(value, ['key', 'authorizationHeader', 'expectedPins']);
   if (c.operation === 'submitService') fields(value, [
     'grantId', 'requestId', 'originalRequestJson', 'originalBodyBase64', 'serviceResourceUrl', 'authorizationHeader',
-    ...(operations === RECOVERY_OPERATIONS ? ['expectedPins'] : []),
+    ...(operations !== OPERATIONS ? ['expectedPins'] : []),
   ]);
   if ((c.operation === 'inspect' || c.operation === 'close') && KEYS(value).length !== 0) fail('input_rejected');
   const out = F({ version: 1, id: c.id, operation: c.operation, input: value });
@@ -91,6 +107,18 @@ function project(operation, result) {
     return F({ callbackCompleted: true, serviceDelivery: 'NOT_ESTABLISHED', authority: 'NONE' });
   }
   if (operation === 'inspect') return snapshot(result, DEFAULTS.maxLineBytes);
+  if (operation === 'reconcileOriginal') {
+    fields(result, ['buyerOriginalBackendRecoveryObservationVersion', 'grantId', 'requestId', 'status', 'backendStatus',
+      'originalCheckpointPinsMatched', 'localReconciliationRequired', 'reconciliationRequired', 'mayStartPayment',
+      'maySignPayment', 'mayDispatchService', 'deliveryConfirmed', 'serviceDelivery', 'sameProcessObservationOnly',
+      'currentAuthority', 'authority']);
+    if (data(result, 'buyerOriginalBackendRecoveryObservationVersion') !== 1
+        || data(result, 'reconciliationRequired') !== true || data(result, 'mayDispatchService') !== false
+        || data(result, 'mayStartPayment') !== false || data(result, 'maySignPayment') !== false
+        || data(result, 'deliveryConfirmed') !== false || data(result, 'authority') !== 'NONE'
+        || data(result, 'serviceDelivery') !== 'NOT_ESTABLISHED') fail('result_rejected');
+    return snapshot(result, DEFAULTS.maxLineBytes);
+  }
   if (operation === 'restoreOriginal') {
     if (data(result, 'source') !== 'EXACT_RETAINED_V6_ORIGINAL' || data(result, 'signatureCreated') !== false
         || data(result, 'transport') !== 'NOT_INVOKED') fail('result_rejected');

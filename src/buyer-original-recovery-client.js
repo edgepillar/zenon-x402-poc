@@ -1,4 +1,6 @@
 import { types as utilTypes } from 'node:util';
+import { Buffer } from 'node:buffer';
+import { createServiceCreditCustodiedBackendRecoveryCore } from './service-credit-custodied-backend-recovery-core.js';
 import { captureOriginalFundingServiceHandoffRequest } from './zenon/dynamic-plasma-original-funding-service-handoff-request.js';
 import { createFundingPostOriginalPaymentCheckpointClient } from './x402-original-payment-checkpoint-client.js';
 import { restoreOriginalPaymentCheckpoint } from './service-credit-pilot-original-payment-checkpoint.js';
@@ -39,7 +41,20 @@ export function captureBuyerOriginalRecoverySelection(configuration) {
  */
 export function createBuyerOriginalRecoveryClient(configuration) {
   if (arguments.length !== 1) fail('configuration_rejected');
-  const c = fields(configuration, ['client', 'selection']), child = c.client;
+  return createClient(configuration, false);
+}
+
+/** Same original owner with an explicitly supplied existing backend reader.
+ * The actual shared V6 recovery core performs the exact-original query and
+ * both rereads. No second payer, submission or remote status endpoint. */
+export function createBuyerOriginalBackendRecoveryClient(configuration) {
+  if (arguments.length !== 1) fail('configuration_rejected');
+  return createClient(configuration, true);
+}
+
+function createClient(configuration, withBackend) {
+  const c = fields(configuration, withBackend ? ['client', 'selection', 'backend'] : ['client', 'selection']);
+  const child = c.client;
   const selection = captureBuyerOriginalRecoverySelection({
     originalPayment: data(c.selection, 'originalPayment'),
     selectedGrantId: data(c.selection, 'selectedGrantId'),
@@ -48,6 +63,11 @@ export function createBuyerOriginalRecoveryClient(configuration) {
   const RESTORE = method(child, 'restoreOriginalPayment'), SUBMIT = method(child, 'submitOriginal');
   const READ = method(child, 'readOriginalRecoveryState'), CHECKPOINT = method(child, 'readOriginalPaymentCheckpoint');
   const VIEW = method(child, 'snapshot'), CLOSE = method(child, 'close');
+  const backend = withBackend ? c.backend : null;
+  const BACKEND_READ = withBackend ? method(backend, 'readExactOriginal') : null;
+  const BACKEND_CLOSE = withBackend ? method(backend, 'close') : null;
+  const ORIGINAL = withBackend ? method(child, 'readOriginal') : null;
+  const KEYS = withBackend ? method(child, 'readOriginalRecoveryKeys') : null;
   const decoded = restoreOriginalPaymentCheckpoint(selection.originalPayment.serializedCheckpoint,
     selection.originalPayment.expectedPins);
   const originalHeader = decoded.originalBytes.paymentPayload;
@@ -55,11 +75,15 @@ export function createBuyerOriginalRecoveryClient(configuration) {
   let active = null, closing = null, held = false, lifecycle = 'OPEN', restored = false, attempts = 0;
   let uncertaintyLatched = false, lastRecovery = null, childStop = null, childLeg = 'NOT_REQUESTED';
   let historicalClose = 'NOT_REQUESTED', closeTerminal = false;
+  let connection = null, lastCheckpoint = null, lastBackendRecovery = null;
+  let backendStop = null, backendLeg = withBackend ? 'NOT_REQUESTED' : 'NOT_PROVIDED';
   const core = createFundingPostOriginalPaymentCheckpointClient({ ...selection.originalPayment,
     readOriginalPaymentCheckpoint: F(pins => {
       if (active === null || closing !== null) fail('read_unavailable');
       active.entered = true;
-      return APPLY(CHECKPOINT, child, [pins]);
+      const value = APPLY(CHECKPOINT, child, [pins]);
+      lastCheckpoint = value;
+      return value;
     }) });
   function hold() { held = true; lifecycle = 'HELD'; }
   function view() {
@@ -84,7 +108,7 @@ export function createBuyerOriginalRecoveryClient(configuration) {
   function finishClose() {
     if (closing === null || closeTerminal || active !== null || childLeg === 'PENDING') return;
     closeTerminal = true;
-    if (held || childLeg !== 'CLOSED' || !clean()) {
+    if (held || childLeg !== 'CLOSED' || withBackend && backendLeg !== 'CLOSED' || !clean()) {
       hold(); historicalClose = 'REJECTED'; closing.reject(error('close_unknown'));
     } else { lifecycle = 'CLOSED'; historicalClose = 'FULFILLED_UNDEFINED'; closing.resolve(undefined); }
   }
@@ -103,7 +127,9 @@ export function createBuyerOriginalRecoveryClient(configuration) {
   }
   function fence(expectedPins) {
     core.captureChallenge({ paymentRequiredHeader: selection.paymentRequiredHeader, expectedPins });
+    const observed = lastCheckpoint; lastCheckpoint = null;
     if (closing !== null || held || !live()) fail('read_unknown');
+    return observed;
   }
   function observeState(k, expectedPins) {
     fence(expectedPins);
@@ -111,6 +137,9 @@ export function createBuyerOriginalRecoveryClient(configuration) {
     const state = APPLY(READ, child, [k]);
     if (closing !== null || held) fail('read_unknown');
     fence(expectedPins);
+    return captureState(k, state);
+  }
+  function captureState(k, state) {
     if (state === null) {
       uncertaintyLatched = true;
       const summary = F({ buyerOriginalRecoveryObservationVersion: 1, recordPresent: false,
@@ -148,6 +177,43 @@ export function createBuyerOriginalRecoveryClient(configuration) {
     lastRecovery = summary;
     return { summary, original };
   }
+  function backendStatus(value) {
+    const status = data(value, 'status');
+    if (!['CACHED_SUCCESS', 'NOT_RECORDED', 'RECONCILIATION_REQUIRED', 'OUTCOME_UNKNOWN', 'NOT_INVOKED',
+      'ORIGINAL_BINDING_MISMATCH', 'REQUEST_ID_CONFLICT', 'CLOSED', 'UNAVAILABLE', 'UNAUTHORIZED',
+      'NOT_FOUND', 'METHOD_NOT_ALLOWED', 'BAD_REQUEST'].includes(status)
+        || data(value, 'executionAuthorized') !== false || data(value, 'paymentAuthorized') !== false
+        || data(value, 'signingAuthorized') !== false || data(value, 'deliveryStatus') !== 'NOT_ESTABLISHED') fail('backend_unknown');
+    return status;
+  }
+  function requestChildStop() {
+    if (childLeg !== 'NOT_REQUESTED') return childStop;
+    childLeg = 'PENDING';
+    try {
+      childStop = APPLY(CLOSE, child, []);
+      observe(childStop, value => {
+        childLeg = value === undefined ? 'CLOSED' : 'UNKNOWN';
+        if (value !== undefined) hold();
+        finishClose();
+      }, () => { childLeg = 'UNKNOWN'; hold(); finishClose(); });
+    } catch { childLeg = 'UNKNOWN'; hold(); finishClose(); }
+    return childStop;
+  }
+  function requestBackendStop() {
+    if (!withBackend) return;
+    if (backendLeg !== 'NOT_REQUESTED') {
+      if (backendLeg !== 'CLOSED') fail('backend_close_unknown');
+      return;
+    }
+    backendLeg = 'PENDING';
+    try {
+      // The real backend reader returns its CLOSED DATA record, not void.
+      // It fences only the reader; the existing backend store is borrowed.
+      backendStop = APPLY(BACKEND_CLOSE, backend, []);
+      if (backendStatus(backendStop) !== 'CLOSED') fail('backend_close_unknown');
+      backendLeg = 'CLOSED';
+    } catch { backendLeg = 'UNKNOWN'; hold(); fail('backend_close_unknown'); }
+  }
   function start(work, count, input) {
     if (count !== 1 || active !== null || closing !== null || held) return rejected('operation_unavailable');
     const out = pending(); out.entered = false; active = out;
@@ -170,20 +236,68 @@ export function createBuyerOriginalRecoveryClient(configuration) {
     if (closing !== null) return closing.promise;
     closing = pending(); lifecycle = held ? 'HELD' : 'CLOSING';
     try { core.close(); } catch { hold(); }
-    childLeg = 'PENDING';
-    try {
-      childStop = APPLY(CLOSE, child, []);
-      observe(childStop, value => {
-        childLeg = value === undefined ? 'CLOSED' : 'UNKNOWN';
-        if (value !== undefined) hold();
-        finishClose();
-      }, () => { childLeg = 'UNKNOWN'; hold(); finishClose(); });
-    } catch { childLeg = 'UNKNOWN'; hold(); finishClose(); }
+    lastCheckpoint = null;
+    if (connection !== null) { try { connection.close(); } catch { hold(); } }
+    // A synchronous backend stop failure cannot suppress the native stop.
+    try { requestBackendStop(); } catch { hold(); }
+    requestChildStop();
     finishClose(); return closing.promise;
   });
+  if (withBackend) {
+    const local = F({
+      readOriginalRecoveryState: F(function readState(k) {
+        if (active === null || closing !== null || held) fail('read_unavailable');
+        active.entered = true;
+        const state = APPLY(READ, child, [k]);
+        if (closing !== null || held) fail('read_unknown');
+        captureState(k, state);
+        return state;
+      }),
+      readOriginalPaymentCheckpoint: F(function readCheckpoint(expectedPins) { return fence(expectedPins); }),
+      readOriginal: ORIGINAL, readOriginalRecoveryKeys: KEYS,
+      snapshot: VIEW, close: F(function stopNative() { return requestChildStop(); }),
+    });
+    const reader = F({ readExactOriginal: F(function readBackend(envelope, expected) {
+      if (active === null || closing !== null || held) fail('read_unavailable');
+      active.entered = true;
+      const value = APPLY(BACKEND_READ, backend, [envelope, expected]);
+      backendStatus(value);
+      return value;
+    }), close: F(function stopBackend() { return requestBackendStop(); }) });
+    connection = createServiceCreditCustodiedBackendRecoveryCore(local, reader,
+      selection.selectedGrantId, 'NATIVE_PAYER_OWNED_BACKEND_STORE_BORROWED', false, true, true);
+  }
   // Validate the source-bound public native profile without acquiring anything.
   if (!live()) fail('configuration_rejected');
   return F({
+    ...(withBackend ? { readOriginalBackendRecoveryState: F(function readOriginalBackendRecoveryState(input) {
+      return start(value => {
+        const c = fields(value, ['key', 'authorizationHeader', 'expectedPins']);
+        const k = key(c.key), expectedPins = pins(c.expectedPins), header = c.authorizationHeader;
+        if (typeof header !== 'string' || !header.startsWith('ServiceCredit ') || header.length <= 14
+            || Buffer.byteLength(header, 'utf8') > 1024 || /[\r\n\0]/.test(header)) fail('proof_rejected');
+        active.entered = true;
+        const result = connection.readOriginalBackendRecoveryState(k, header, expectedPins);
+        if (closing !== null || held || data(result, 'authority') !== 'NONE'
+            || data(result, 'mayDispatchService') !== false || data(result, 'mayStartPayment') !== false
+            || data(result, 'maySignPayment') !== false || data(result, 'deliveryConfirmed') !== false
+            || data(result, 'serviceDelivery') !== 'NOT_ESTABLISHED') fail('backend_unknown');
+        const observed = data(result, 'backend'), status = data(result, 'status');
+        const observedStatus = observed === null ? null : backendStatus(observed);
+        if (!['CLIENT_ORIGINAL_NOT_RECORDED', 'CLIENT_RECONCILIATION_REQUIRED', observedStatus].includes(status)) fail('backend_unknown');
+        const localReconciliation = lastRecovery === null || lastRecovery.reconciliationRequired;
+        // This command observes a combined local/backend assertion only.
+        // Never turn cached success or absence into permission to resend.
+        uncertaintyLatched = true;
+        lastBackendRecovery = F({ buyerOriginalBackendRecoveryObservationVersion: 1,
+          grantId: k.grantId, requestId: k.requestId, status, backendStatus: observedStatus,
+          originalCheckpointPinsMatched: true, localReconciliationRequired: localReconciliation,
+          reconciliationRequired: true, mayStartPayment: false, maySignPayment: false,
+          mayDispatchService: false, deliveryConfirmed: false, serviceDelivery: 'NOT_ESTABLISHED',
+          sameProcessObservationOnly: true, currentAuthority: 'NOT_ESTABLISHED', authority: 'NONE' });
+        const out = pending(); out.resolve(lastBackendRecovery); return out.promise;
+      }, arguments.length, input);
+    }) } : {}),
     restoreOriginalPayment: F(function restoreOriginalPayment(input) {
       return start(value => {
         const request = fields(value, ['paymentRequiredHeader', 'expectedPins']), expectedPins = pins(request.expectedPins);
@@ -233,10 +347,13 @@ export function createBuyerOriginalRecoveryClient(configuration) {
       if (arguments.length !== 0) fail('input_rejected');
       if (lifecycle === 'CLOSED' && !clean()) hold();
       return F({ buyerOriginalRecoveryClientVersion: 1, lifecycle, held,
+        ...(withBackend ? { buyerOriginalBackendRecoveryClientVersion: 1 } : {}),
         phase: restored ? 'ORIGINAL_RESTORED' : 'AWAITING_ORIGINAL_RESTORE',
         publicOperationActive: active !== null, restoreAttempts: attempts, restored,
         uncertaintyLatched, lastRecovery, closeRequested: closing !== null,
         childClose: childLeg, childStopRetained: childStop !== null, historicalClose,
+        backendRecoveryAvailable: withBackend, backendReaderClose: backendLeg,
+        backendStopRetained: backendStop !== null, lastBackendRecovery,
         signerCalls: 0, fundingTransportProvided: false, authority: 'NONE',
         serviceDelivery: 'NOT_ESTABLISHED', nativeResourceCleanup: 'NOT_QUALIFIED' });
     }),

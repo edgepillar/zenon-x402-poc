@@ -1,8 +1,9 @@
 # Explicit original-payment recovery commands
 
-Date: 2026-10-27. All 80 selected builtin component cases passed: the unchanged
-52 lifecycle/funding-command cases and 28 new recovery cases. The native recovery
-host is SOURCE ONLY on development. The ordinary buyer and Phase2C are unchanged.
+Date: 2026-10-27. All 80 local-recovery/lifecycle/funding case bodies passed
+again within the current 104-case backend-recovery component selection.
+The native recovery host is SOURCE ONLY on development. The ordinary buyer
+and Phase2C are unchanged.
 
 This entry connects the existing original-only V6 client to an explicit command
 session. It does not use the SDK105 funding client, manufacture an SDK105 facade,
@@ -107,16 +108,18 @@ fulfilled close. Close is not proof of payment outcome or OS termination.
 
 ## Source-bound verification and remaining gates
 
-The [actual local result](../qualification/buyer-original-recovery-command.actual-local-result.json)
-pins the 40-module builtin closure and package manifest (41 inputs), 80 exact
-case names, actual exit and stream digests. One Node 24.19.0 command completed in
-about 1.45 seconds with 80 passes, no failures, skips or cancellations and no
-stderr. It used memory-only fixtures without new scratch, source/package copies
-or child processes.
+The [current local result](../qualification/buyer-original-backend-recovery-command.actual-local-result.json)
+pins 42 component modules and the package manifest (43 inputs), 104 exact case
+names, actual exit and stream digests. It includes these unchanged 80 case bodies
+and 24 [backend reconciliation controls](BUYER_ORIGINAL_BACKEND_RECOVERY_COMMANDS.md).
+The earlier 80-case result remains historical evidence at its original pins.
+One current Node 24.19.0 command passed all 104 cases in about 1.56 seconds, with
+no failures, skips, cancellations or stderr. It used memory-only fixtures without
+new scratch, source/package copies or child processes.
 
 These tests execute the actual recovery connector, shared command session,
 canonical checkpoint code, custody DATA validation and Node memory streams.
-The 28 new cases cover exact-header restoration despite reordered comparison
+The 28 local-recovery cases cover exact-header restoration despite reordered comparison
 DATA, independent-pin fences, missing/changed originals, getter/proxy/async
 reader refusal, uncertainty and prior-attempt latches, original-only service
 admission, output loss, backpressure, reentrant close and late resource-view drift.
@@ -124,8 +127,8 @@ The existing 52 test bodies are preserved and rerun against the changed shared
 codec/session. Native store/client/official callbacks remain declared. Fixed
 signature-shaped bytes are deliberately invalid DATA.
 
-The native recovery host's 30-file relative source graph was reviewed and its
-new root and changed CLI root passed parser-only checks. The native graph's sole
+The extended native recovery host's 37-file relative source graph was reviewed;
+its changed host and CLI roots passed parser-only checks. The native graph's sole
 external package specifier is @x402/core/client. No modules in that native graph
 were linked or evaluated by the parser checks. No package installation, SDK,
 Noble, x402 package, SQLite, application socket, TLS, key/signature production,
@@ -133,7 +136,7 @@ nonce search or SDK PREPARE ran in the local component selection.
 
 Main receives the qualified pure connector/shared-code changes, fixture/tests/
 runner, result and documentation. The native opener and named CLI export stay
-development-only. The unchanged 108-case hosted profile does not run these 80
+development-only. The unchanged 108-case hosted profile does not run these 104
 local cases. Original historical results remain source-pinned evidence; the
 separate frozen native allowance is unconsumed and has not been retargeted.
 

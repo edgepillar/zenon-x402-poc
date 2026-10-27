@@ -1,6 +1,7 @@
 # SDK105 key lifetime across funding and service
 
-Date: 2026-10-27. All 25 lifecycle controls passed again within the current\n80-case original-recovery component selection.
+Date: 2026-10-27. All 25 lifecycle controls passed again within the current
+104-case backend-recovery component selection.
 
 The new lifecycle connects the existing SDK105 wallet owner to the actual
 funding/service client's public operations. The preparation's original packet
@@ -41,9 +42,13 @@ because of a late completion. These failure paths are source-reviewed only.
 
 ## Actual verification and limits
 
-The [source-bound local result](../qualification/sdk105-funding-service-void.actual-local-result.json)
-pins the 30-file builtin component closure, exact cases, actual exits and stream
-hashes. Tests execute the actual SDK105 owner, unsigned-hash/signed-DATA assembly,
+The [current source-bound local result](../qualification/buyer-original-backend-recovery-command.actual-local-result.json)
+pins 42 component modules and the package manifest (43 inputs), 104 exact cases,
+actual exit and stream hashes. It includes the unchanged 25 lifecycle test bodies,
+27 funding-command controls, 28 local-recovery controls and 24 backend
+reconciliation controls. Earlier void-contract and command results remain
+historical evidence at their original source pins.
+Tests execute the actual SDK105 owner, unsigned-hash/signed-DATA assembly,
 original checkpoint codec, external handoff capture and new lifecycle. Native
 client capabilities are declared callbacks; fixed public bytes and deliberately
 invalid signature bytes are used. Fake clear changes only fixture public DATA.
