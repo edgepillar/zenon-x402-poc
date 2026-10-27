@@ -1,0 +1,389 @@
+{
+  "resultVersion": 1,
+  "date": "2026-10-27",
+  "status": "ACTUAL_BUILTIN_COMPONENT_PASS",
+  "selectedCases": 52,
+  "passCount": 52,
+  "failCount": 0,
+  "oldLifecycleCases": 25,
+  "newCommandCases": 27,
+  "runtime": {
+    "node": "v24.19.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "sha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100"
+  },
+  "command": {
+    "entry": "scripts/run-current-buyer-original-funding-command.mjs",
+    "actualExit": 0,
+    "complete": true,
+    "stdoutBytes": 11904,
+    "stdoutSha256": "aac038f6d4cec3e3018445a52791f8c59f14615bf40d092fcc2eefde1212827b",
+    "stderrBytes": 0,
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "elapsedSeconds": 1.2354952500027139,
+    "permissions": "Selected read-only source paths; no filesystem write or Node child permission. Not an OS or network sandbox."
+  },
+  "sourcePins": [
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "qualification/buyer-original-funding-command.behavior.mjs",
+      "bytes": 21887,
+      "sha256": "a706972993ec33299e0712ea20d3124bf73cb5af96beb70dd1b8384d50ee4e57",
+      "gitBlob": "026af1555fde30a687e9d8cbe1972950209b34d0"
+    },
+    {
+      "path": "qualification/dynamic-plasma-funding-post-input.fixture.mjs",
+      "bytes": 3939,
+      "sha256": "22d291367a3e9b8e8bf56f2a40acacfa2ea40b6050f2aee41da06bba9aa699a2",
+      "gitBlob": "46f914fbce51b6790aa08836567ba12f9e6be6f6"
+    },
+    {
+      "path": "qualification/dynamic-plasma-retained-input.fixture.mjs",
+      "bytes": 1749,
+      "sha256": "38f46d337f2c6a0584e779d26c75a5a5bccc56a42a2c6bbd1e06add4730c10de",
+      "gitBlob": "5bb61e6a3161e4d0d50e97544a86308574e48d24"
+    },
+    {
+      "path": "qualification/sdk105-funding-service-lifecycle.behavior.mjs",
+      "bytes": 14781,
+      "sha256": "8bdd42716fd420814758bd01774937bd211aec9fea42ad773635bf56566ea57e",
+      "gitBlob": "ba49dfa9143ef8635029c08b93e26e521206743f"
+    },
+    {
+      "path": "qualification/sdk105-funding-service-lifecycle.fixture.mjs",
+      "bytes": 3931,
+      "sha256": "2faad83bad5959db240ef3f20591ecd52bb095e270f3d801740c7f23bd803819",
+      "gitBlob": "4d4961cb447237410aaae2a90e38a4f4f5253120"
+    },
+    {
+      "path": "scripts/run-current-buyer-original-funding-command.mjs",
+      "bytes": 1379,
+      "sha256": "d56d64d8e6fe76d5015b292eda76fc0c63008f20f3e177c1009ca0c8633b9554",
+      "gitBlob": "e1431120cf44f5d718ba5233c78ebdfa394e1ca7"
+    },
+    {
+      "path": "src/buyer-command-line-channel.js",
+      "bytes": 11200,
+      "sha256": "aea944d8fd1b28290c6beafe7d13985da1194ed5be5d0e1957490fe8c13e1fab",
+      "gitBlob": "f20c1fe402ddb0b3f9dee065a31a10ee88bab179"
+    },
+    {
+      "path": "src/buyer-original-funding-command-session.js",
+      "bytes": 12477,
+      "sha256": "a4b40997953edfca62ded6fe39e5f6d7b5adc616c3067011be4b042474a2a047",
+      "gitBlob": "932431a1e71c1e89a4d2ac8b1ba6519f92fdce63"
+    },
+    {
+      "path": "src/buyer-original-funding-command.js",
+      "bytes": 9818,
+      "sha256": "861192db77b50e304cf1c3bd86b5bc91d6a068701e0f63c356af3a299fc0ff4c",
+      "gitBlob": "d809c38b7a35fc7fce6184f94c9a16e0838d348c"
+    },
+    {
+      "path": "src/canonical.js",
+      "bytes": 967,
+      "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+      "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4"
+    },
+    {
+      "path": "src/service-credit-bounded-close-completion.js",
+      "bytes": 6020,
+      "sha256": "1d59ec72cf9b8877947ba766316746be1e2ca5b82029c9b656757c2953ff7e5e",
+      "gitBlob": "9ccc197dd1090f14bb4c452389be8aa8180d0322"
+    },
+    {
+      "path": "src/service-credit-bounded-operation-drain.js",
+      "bytes": 5474,
+      "sha256": "4ea81e010451f91bb8f0ca668dd6bd3966763ea23385bdd0d511c200e4b3eecd",
+      "gitBlob": "843f9b0a3adb411471f7e345b97362e9035e094b"
+    },
+    {
+      "path": "src/service-credit-original-request-custody-contract.js",
+      "bytes": 15100,
+      "sha256": "483d20e90d78ba95a8c5d5458dd201910e8d42aecbdc0dc03812e7044a464054",
+      "gitBlob": "94d67559a11f87f283a5cd99d2aaf8074374eb0a"
+    },
+    {
+      "path": "src/service-credit-pilot-original-payment-checkpoint.js",
+      "bytes": 4003,
+      "sha256": "930905f31824a6cadc16dfb84572cd4dc38a81e2fce4569b73b6bef29dec97d1",
+      "gitBlob": "51c6391bc22f561ebff0005ced31e538aa83f4fa"
+    },
+    {
+      "path": "src/x402-funding-post-checkpoint-route.js",
+      "bytes": 1310,
+      "sha256": "157e80e9f14b41c8cacc05423a7acd8616a6f759adac377f04f1fca21869831e",
+      "gitBlob": "777ff48ac9cf255f80cda7e22c68706b7d7084b3"
+    },
+    {
+      "path": "src/x402-official-https-request-binding.js",
+      "bytes": 5085,
+      "sha256": "dabf215408887bd0d2ba346085c5ab2df13f724e8759b7a98b71b09c8dc8d692",
+      "gitBlob": "47059c772407233b8b6f54632ba065893ff92dd3"
+    },
+    {
+      "path": "src/x402-original-payment-checkpoint-client.js",
+      "bytes": 13457,
+      "sha256": "bba2439e40a2decb75b330440919d8d1ea1fea53f6e684f77b57a9bb66129af1",
+      "gitBlob": "bd732c2c739e6dbe1d4ed583b6b55040bf8aecfd"
+    },
+    {
+      "path": "src/x402-wire.js",
+      "bytes": 39886,
+      "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+      "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+    },
+    {
+      "path": "src/zenon/bounded-dynamic-plasma-strategy.js",
+      "bytes": 15729,
+      "sha256": "7b82560bdeb25e573912090a2fe8de7b45912500a7a7c4434fe06dcf94e06d62",
+      "gitBlob": "ee85b7a4da8bf4190ae099e6bc5074059fccebbc"
+    },
+    {
+      "path": "src/zenon/bounded-json-rpc-read-core.js",
+      "bytes": 22116,
+      "sha256": "1d8873868274045825717ee70b9a402d91cd6235fdaf410d93ddb365fc2d7ca3",
+      "gitBlob": "82d49d18a92c1074819e8976d94a2cfef3975466"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-compatibility.js",
+      "bytes": 7732,
+      "sha256": "b3989ce15e5f2e9d07b0ed035fe96bcce9f22cac93f5e497fdca5c37bf7618dd",
+      "gitBlob": "3811b748b3f905e454c8a4af4650bb7f89eb1cf2"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-json-rpc-read-transport.js",
+      "bytes": 10832,
+      "sha256": "fd03b2ad87d16660aa61d3961c163d724d5f89cd6d4bb9c4391d739566d5e5ca",
+      "gitBlob": "0475b7ab42889f67fb030fa7344d73d8bd6957d7"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-observation-normalizer.js",
+      "bytes": 28398,
+      "sha256": "2c3f7d42ded21a5513ff26c23a00a35a53aa334f053d10930f1571a020286897",
+      "gitBlob": "c406db8471aa6c8afd812c222c673c809491cf00"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-original-funding-data.js",
+      "bytes": 16557,
+      "sha256": "8a416a548e827dc71bc6f87e675e265d01c20d6e8147de8617d47b8b8b8b0770",
+      "gitBlob": "8d8e44fba2bd093ec0d0c909530a570b7eb104ce"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-original-funding-service-handoff-request.js",
+      "bytes": 4584,
+      "sha256": "07affc3e40d785406fea54794ee694c03e31ab49fc8857369cdf52e33a331cab",
+      "gitBlob": "0382f9f6235a4fbc6f5935d3db77b29efaf1a345"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-price-policy.js",
+      "bytes": 16224,
+      "sha256": "eba3225c4d26cbb6e0be575ac4fd5073bc8b0c4454eb51e2bea4d91856d0c65e",
+      "gitBlob": "649dd09b60236b43c91d22e34b76f71f4b661361"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-required-fused-policy-adapter.js",
+      "bytes": 12024,
+      "sha256": "e2b693d4df9065d44ba590f4d0c8dffeb8e55187668eedfa396b4026c9905c3e",
+      "gitBlob": "b592aafd4c41461318376ea9acc1373f99317455"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-required-fused-quote.js",
+      "bytes": 5416,
+      "sha256": "f5e10ff2dbfff3b6b63d87f0abadd0bb52b5d6b8fe0ead6a55fc5ea14207b730",
+      "gitBlob": "e820fd31ffde4ef77a2efa6e1fd3ed1775778726"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-user-send-fixed-work.js",
+      "bytes": 3475,
+      "sha256": "4ee83870df0b25c34d35c0f0d0ceb894ca9dab8c047f81b34a48dd816f1fbf38",
+      "gitBlob": "4ce2a790df84c77bc76615e5eebc309ecd2868ac"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-user-send-key-binding.js",
+      "bytes": 4237,
+      "sha256": "37ad7e74b038801297e4bffb0cb8ba92cbd79009ed32c4ae5b134fe2cb154be2",
+      "gitBlob": "c366f0fee4132604b40604547fe22f1bc1dba65d"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-user-send-work-binding.js",
+      "bytes": 1940,
+      "sha256": "79eba29a05427128ae3a12346fd3ee7cbaa526d6f39eb36ed58d388640638266",
+      "gitBlob": "a329d521458a5c5b6dbc87194d91d4165d5e759c"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-user-send-work-input.js",
+      "bytes": 2853,
+      "sha256": "2ff9c089e5903c059746d0a1c38688a2849f94d04d429279811fbbfbb40450a4",
+      "gitBlob": "dad4febf4ef6f09216640245c7e3805e01ad0127"
+    },
+    {
+      "path": "src/zenon/plasma-strategy.js",
+      "bytes": 974,
+      "sha256": "1c597d4e169ba8a5e6d2b7852c4ffa3a8ec9b854332fe354b9b013c36ebae093",
+      "gitBlob": "5cddc2d270aaf043e6e43145e95ffe0be3dde475"
+    },
+    {
+      "path": "src/zenon/prepared-hash-wallet-adapter.js",
+      "bytes": 9266,
+      "sha256": "113c275a38aaec45a347666b28fdc43c70704973b8d1c20956ebacad18db3e25",
+      "gitBlob": "7b9230b51429cce8547bb12cdd4d109bcdef4e34"
+    },
+    {
+      "path": "src/zenon/sdk105-funding-service-lifecycle.js",
+      "bytes": 14952,
+      "sha256": "26802aa4e059fce0b0bb02a87ee0e432aad90fb152206c1d8317f5e19deb1cf9",
+      "gitBlob": "3eac7417567baf08624201cd64d5fac05cd7962b"
+    },
+    {
+      "path": "src/zenon/sdk105-prepared-hash-wallet-owner.js",
+      "bytes": 10629,
+      "sha256": "73f5e3fb4e90f8b93a6063e26cc353530b50b623d3fb3def9b39f00c43445b56",
+      "gitBlob": "01bc44904f6d94980ca6358e2d3a3300e4e29655"
+    },
+    {
+      "path": "src/zenon/transaction-planner.js",
+      "bytes": 22611,
+      "sha256": "079fe8da938e08e33a20ca1076492a829afa6fce3ae7f9b9f68d3bf4bff94233",
+      "gitBlob": "17b49a3d53974c9b3846ec6f352d6e8974bad7d3"
+    }
+  ],
+  "relativeComponentModules": 37,
+  "sourceInputCount": 38,
+  "cases": [
+    "real signed DATA and independent original pins reach handoff only after key clear",
+    "service operations are unavailable before explicit key-closed handoff",
+    "wrong independent pins refuse without consuming key close or handoff",
+    "changed original bytes challenge or invalid grant refuse before cleanup",
+    "unknown funding intake cannot close key as service admission",
+    "an unknown clear prevents service acquisition but cannot suppress client stop",
+    "synchronous client-close failure still requests the independent key stop once",
+    "outer close during signing retains signed DATA and refuses preparation escape",
+    "close while preparation is pending waits for the original child operation",
+    "clear reentry closes the parent before any child service acquisition",
+    "a handed-off input is detached before asynchronous key-close observation",
+    "handoff failure is sticky and cannot trigger another handoff or signing",
+    "a late child handoff after outer close cannot admit service or upgrade HELD",
+    "client closure must return undefined and retain a current clean child view",
+    "post-close view drift is retained without rewriting the historical close receipt",
+    "unsupported signer completion keeps the actual key HELD despite client close",
+    "a second handoff or funding operation cannot reopen the successful service phase",
+    "constructor rejects proxy or accessor child methods without entering them",
+    "closed native configuration captures the same public selection without key callbacks",
+    "active operation reservation rejects reentry without replacing the original",
+    "a coherent foreign hash or signature packet cannot replace this wallet result",
+    "the actual native service void success is accepted without inventing a result",
+    "a manufactured service result record is refused and retained HELD",
+    "undefined remains invalid for a funding commit record",
+    "a late void service completion joins close without escaping or replaying",
+    "explicit commands preserve one original through prepare commit funding handoff and native service void",
+    "prepare followed by EOF never manufactures commit submission handoff or independent pin approval",
+    "missing independent commit pins are refused before the actual client commit entry",
+    "duplicate command ids cannot replay a returned preparation or enter commit",
+    "changed handoff original bytes cannot pass the actual SDK105 retained-original gate",
+    "service command before explicit handoff cannot dispatch through the actual lifecycle",
+    "a manufactured service record never becomes a command delivery receipt",
+    "unknown funding intake remains HELD after its local result is written without replay",
+    "output failure retains exact original result DATA and stops both owners without another signing",
+    "input error after returned preparation closes the key and channel and retains uncertainty",
+    "close during idle command read joins the original read and caches one clean close",
+    "close while preparation is pending joins its actual operation and refuses late result escape",
+    "stream close events alone cannot erase a pending real write callback",
+    "one whole close deadline is sticky after a late write callback completes",
+    "a stream that never emits close cannot become a clean owner receipt",
+    "synchronous input destroy failure cannot suppress output destroy or key close",
+    "invalid UTF8 is refused before any payment operation",
+    "oversized line and truncated EOF cannot enter the actual client",
+    "split UTF8 and multiple buffered lines retain exact bytes with one read at a time",
+    "real writable backpressure prevents admission of the next buffered command",
+    "post-close stream view drift cannot rewrite the returned close receipt",
+    "canonical codec rejects duplicate keys accessors proxies and malformed service inputs without hooks",
+    "closed limits and native capability descriptors refuse configuration hooks before ownership",
+    "command budget permits EOF at its boundary and rejects an additional action before dispatch",
+    "actual AsyncLocalStorage promise symbols preserve the command and close lifecycle",
+    "exclusive stream reservation rejects a second owner without altering the first channel",
+    "partial listener setup failure privately retains ownership and requests both actual stream stops"
+  ],
+  "actual": {
+    "nodeMemoryStreams": true,
+    "asyncLocalStorage": true,
+    "sdk105WalletOwner": true,
+    "sdk105FundingServiceLifecycle": true,
+    "signedOriginalDATAAssembly": true,
+    "checkpointAndIndependentHandoffCode": true,
+    "canonicalCommandCodec": true,
+    "commandSession": true,
+    "boundedWholeClose": true,
+    "realWriteCallbackJoin": true,
+    "writeBackpressure": true,
+    "exclusiveStreamReservation": true,
+    "partialAcquisitionStops": true
+  },
+  "declared": {
+    "nativeClientChildren": true,
+    "keyCallbacks": true,
+    "signatureBytes": "Deliberately invalid fixed DATA; no cryptographic signature."
+  },
+  "notExecuted": [
+    "Zenon SDK/Noble/x402 packages",
+    "SQLite",
+    "application sockets or HTTPS",
+    "new keys or cryptographic signatures",
+    "nonce search or actual SDK PREPARE",
+    "native funding/service application",
+    "default buyer or Phase2C cutover",
+    "live payment or pilot"
+  ],
+  "sdk105NativeCommandHost": "SOURCE_ONLY_DEVELOPMENT",
+  "ordinaryBuyerDefaultChanged": false,
+  "independentPinsNeverApprovedAutomatically": true,
+  "returnedServiceVoid": "Callback completion only; no delivery/settlement receipt.",
+  "writeReceipt": "Local writable callback only; no peer acknowledgement.",
+  "retainedResult": "Exact last returned line is read-only in-memory DATA; no automatic output replay or payment retry.",
+  "closeDeadline": "One cooperative whole-close observation budget; expiry is sticky and does not prove OS resource termination.",
+  "previousAttempts": {
+    "first49": {
+      "actualExit": 1,
+      "passCount": 31,
+      "failCount": 18,
+      "stdoutSha256": "a679e0e00b4231dafc97882334e31498fe71434b900dc65b26d7bdcc6299ca9f",
+      "reason": "Named-property Promise guard incorrectly included Node tracing symbols."
+    },
+    "intermediate50": {
+      "actualExit": 0,
+      "passCount": 50,
+      "failCount": 0,
+      "stdoutSha256": "0276032fb53c8b3682c7c3b45b86b2a913bf3f7bc8ef79724a0ad40db3ea2a65"
+    },
+    "originalFailedAndIntermediatePrivateEvidenceRetained": true
+  },
+  "existingHosted108ProfileChanged": false,
+  "new52CasesHosted": false,
+  "nativeAllowanceRetargetedOrConsumed": false,
+  "sourceCopies": 0,
+  "packageCopies": 0,
+  "managedTasks": 0,
+  "nodeChildren": 0,
+  "authority": "NONE",
+  "grantActivation": "NOT_ESTABLISHED",
+  "serviceDelivery": "NOT_ESTABLISHED",
+  "production": "NOT_QUALIFIED",
+  "nativeSourceReview": {
+    "relativeSourceFiles": 94,
+    "rootParserCommands": 2,
+    "actualParserExits": [
+      0,
+      0
+    ],
+    "modulesLinkedOrEvaluated": false,
+    "nativeApplicationExecuted": false,
+    "defaultBuyerExecuted": false,
+    "scope": "Development-only source inspection and new-root parsing, separate from the 52 executed builtin cases."
+  }
+}
