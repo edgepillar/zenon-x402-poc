@@ -1,0 +1,413 @@
+{
+  "qualification": "FUNDING_OWNED_STREAM_ENTRY",
+  "status": "SOURCE_BOUND_BUILTIN_COMPONENTS_PASS_NATIVE_AND_KEY_CALLBACKS_DECLARED",
+  "date": "2026-10-27",
+  "runtime": {
+    "node": "v24.19.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "binarySha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100"
+  },
+  "actualNodeCommands": 1,
+  "nodeChildren": 0,
+  "actualExecution": {
+    "actualExit": 0,
+    "complete": true,
+    "inputComplete": true,
+    "inputBytes": 0,
+    "reason": null,
+    "elapsedSeconds": 0.7152214999950957,
+    "stdoutBytes": 4253,
+    "stdoutSha256": "92880da911e7785f8843c184a8d7c3e1ecbdf6ce369a531e697463ad774d3910",
+    "stderrBytes": 0,
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stderrBase64": ""
+  },
+  "counts": {
+    "tests": 17,
+    "pass": 17,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "selectedNames": [
+    "exclusive channel opens before one real lifecycle executes explicit original funding and service commands",
+    "preparation plus EOF never supplies pins or starts funding handoff or service automatically",
+    "concurrent same-stream invocation cannot enter a second native or key acquisition while first OPEN is pending",
+    "reentrant same-stream invocation during native entry is refused before its opener",
+    "native open rejection stops both owned streams without touching the unreturned key/client",
+    "native synchronous open throw independently stops the channel without claiming key transfer",
+    "unsupported opening thenable is refused without invoking its getter",
+    "opening Promise constructor accessor is refused without assimilation",
+    "session construction refusal stops the actually returned wallet/client and channel once",
+    "previously prepared returned client is not adopted as a pristine funding session",
+    "channel closure during pending OPEN prevents session transfer and stops the returned client",
+    "failed returned-client close cannot suppress input and output stop",
+    "pending returned-client close is retained while the owned channel completes its stop",
+    "late output destroy completion cannot change the already rejected opening or repeat native close",
+    "synchronously throwing stop still requests the independent channel stop",
+    "returned-client inspection accessor is not invoked and cannot suppress actual owner stops",
+    "inert configuration refusal leaves unacquired streams and native/key callbacks caller-owned"
+  ],
+  "sourcePins": [
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "LF": 40,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "qualification/buyer-funding-owned-stream-session.behavior.mjs",
+      "bytes": 12942,
+      "LF": 186,
+      "sha256": "7bb79ed1d9993e28c79aa90821090046ed8c9641c81783dcba7c761a2c83de77",
+      "gitBlob": "a8aa3ed601aa0abcf90f892b3756eae86a10e2b4"
+    },
+    {
+      "path": "qualification/dynamic-plasma-funding-post-input.fixture.mjs",
+      "bytes": 3939,
+      "LF": 58,
+      "sha256": "22d291367a3e9b8e8bf56f2a40acacfa2ea40b6050f2aee41da06bba9aa699a2",
+      "gitBlob": "46f914fbce51b6790aa08836567ba12f9e6be6f6"
+    },
+    {
+      "path": "qualification/dynamic-plasma-retained-input.fixture.mjs",
+      "bytes": 1749,
+      "LF": 31,
+      "sha256": "38f46d337f2c6a0584e779d26c75a5a5bccc56a42a2c6bbd1e06add4730c10de",
+      "gitBlob": "5bb61e6a3161e4d0d50e97544a86308574e48d24"
+    },
+    {
+      "path": "qualification/sdk105-funding-service-lifecycle.fixture.mjs",
+      "bytes": 3931,
+      "LF": 51,
+      "sha256": "2faad83bad5959db240ef3f20591ecd52bb095e270f3d801740c7f23bd803819",
+      "gitBlob": "4d4961cb447237410aaae2a90e38a4f4f5253120"
+    },
+    {
+      "path": "scripts/run-current-buyer-funding-owned-stream.mjs",
+      "bytes": 1202,
+      "LF": 23,
+      "sha256": "598ee0a5239131451823ff81ea2cf76cc713328faa400e225a4ea6e55c85c647",
+      "gitBlob": "d8ff72576ff77534443f4be67c4bda579c183ee9"
+    },
+    {
+      "path": "src/buyer-command-line-channel.js",
+      "bytes": 11200,
+      "LF": 214,
+      "sha256": "aea944d8fd1b28290c6beafe7d13985da1194ed5be5d0e1957490fe8c13e1fab",
+      "gitBlob": "f20c1fe402ddb0b3f9dee065a31a10ee88bab179"
+    },
+    {
+      "path": "src/buyer-funding-owned-stream-session.js",
+      "bytes": 6310,
+      "LF": 113,
+      "sha256": "b3077d61aceb42005c98061d5fc146ef09ec25c82361894da149889b36399166",
+      "gitBlob": "9176ba696960f5ae0558dafbe781372388581f85"
+    },
+    {
+      "path": "src/buyer-original-command-host.js",
+      "bytes": 8878,
+      "LF": 145,
+      "sha256": "b81bddf6b944aa39521d20ea5c43ce17f15c3a0f39a462de149d399f2ad300b3",
+      "gitBlob": "62a4e1df1d751b37ad24c831dc40dba43297c1fd"
+    },
+    {
+      "path": "src/buyer-original-funding-command-session.js",
+      "bytes": 14884,
+      "LF": 277,
+      "sha256": "19d91c723622e1cb2244c1fa9b3dd59db5fd72120c7163df53076b833ba0c9c5",
+      "gitBlob": "170054dd880ac1efd432f00006815552de4e523b"
+    },
+    {
+      "path": "src/buyer-original-funding-command.js",
+      "bytes": 14077,
+      "LF": 263,
+      "sha256": "064a31640b10da873ecf558b0550024366e50cc9d1a5e91a15cc4e006e05e7e9",
+      "gitBlob": "2e6e234d85a2fc92a2ae9c52a8ea3429f63faad1"
+    },
+    {
+      "path": "src/canonical.js",
+      "bytes": 967,
+      "LF": 26,
+      "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+      "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4"
+    },
+    {
+      "path": "src/service-credit-bounded-close-completion.js",
+      "bytes": 6020,
+      "LF": 115,
+      "sha256": "1d59ec72cf9b8877947ba766316746be1e2ca5b82029c9b656757c2953ff7e5e",
+      "gitBlob": "9ccc197dd1090f14bb4c452389be8aa8180d0322"
+    },
+    {
+      "path": "src/service-credit-bounded-operation-drain.js",
+      "bytes": 5474,
+      "LF": 118,
+      "sha256": "4ea81e010451f91bb8f0ca668dd6bd3966763ea23385bdd0d511c200e4b3eecd",
+      "gitBlob": "843f9b0a3adb411471f7e345b97362e9035e094b"
+    },
+    {
+      "path": "src/service-credit-original-request-custody-contract.js",
+      "bytes": 15100,
+      "LF": 376,
+      "sha256": "483d20e90d78ba95a8c5d5458dd201910e8d42aecbdc0dc03812e7044a464054",
+      "gitBlob": "94d67559a11f87f283a5cd99d2aaf8074374eb0a"
+    },
+    {
+      "path": "src/service-credit-pilot-original-payment-checkpoint.js",
+      "bytes": 4003,
+      "LF": 89,
+      "sha256": "930905f31824a6cadc16dfb84572cd4dc38a81e2fce4569b73b6bef29dec97d1",
+      "gitBlob": "51c6391bc22f561ebff0005ced31e538aa83f4fa"
+    },
+    {
+      "path": "src/x402-funding-post-checkpoint-route.js",
+      "bytes": 1310,
+      "LF": 29,
+      "sha256": "157e80e9f14b41c8cacc05423a7acd8616a6f759adac377f04f1fca21869831e",
+      "gitBlob": "777ff48ac9cf255f80cda7e22c68706b7d7084b3"
+    },
+    {
+      "path": "src/x402-official-https-request-binding.js",
+      "bytes": 5085,
+      "LF": 99,
+      "sha256": "dabf215408887bd0d2ba346085c5ab2df13f724e8759b7a98b71b09c8dc8d692",
+      "gitBlob": "47059c772407233b8b6f54632ba065893ff92dd3"
+    },
+    {
+      "path": "src/x402-original-payment-checkpoint-client.js",
+      "bytes": 13457,
+      "LF": 262,
+      "sha256": "bba2439e40a2decb75b330440919d8d1ea1fea53f6e684f77b57a9bb66129af1",
+      "gitBlob": "bd732c2c739e6dbe1d4ed583b6b55040bf8aecfd"
+    },
+    {
+      "path": "src/x402-wire.js",
+      "bytes": 39886,
+      "LF": 934,
+      "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+      "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+    },
+    {
+      "path": "src/zenon/bounded-dynamic-plasma-strategy.js",
+      "bytes": 15729,
+      "LF": 353,
+      "sha256": "7b82560bdeb25e573912090a2fe8de7b45912500a7a7c4434fe06dcf94e06d62",
+      "gitBlob": "ee85b7a4da8bf4190ae099e6bc5074059fccebbc"
+    },
+    {
+      "path": "src/zenon/bounded-json-rpc-read-core.js",
+      "bytes": 22116,
+      "LF": 586,
+      "sha256": "1d8873868274045825717ee70b9a402d91cd6235fdaf410d93ddb365fc2d7ca3",
+      "gitBlob": "82d49d18a92c1074819e8976d94a2cfef3975466"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-compatibility.js",
+      "bytes": 7732,
+      "LF": 225,
+      "sha256": "b3989ce15e5f2e9d07b0ed035fe96bcce9f22cac93f5e497fdca5c37bf7618dd",
+      "gitBlob": "3811b748b3f905e454c8a4af4650bb7f89eb1cf2"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-json-rpc-read-transport.js",
+      "bytes": 10832,
+      "LF": 283,
+      "sha256": "fd03b2ad87d16660aa61d3961c163d724d5f89cd6d4bb9c4391d739566d5e5ca",
+      "gitBlob": "0475b7ab42889f67fb030fa7344d73d8bd6957d7"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-observation-normalizer.js",
+      "bytes": 28398,
+      "LF": 698,
+      "sha256": "2c3f7d42ded21a5513ff26c23a00a35a53aa334f053d10930f1571a020286897",
+      "gitBlob": "c406db8471aa6c8afd812c222c673c809491cf00"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-original-funding-data.js",
+      "bytes": 16557,
+      "LF": 312,
+      "sha256": "8a416a548e827dc71bc6f87e675e265d01c20d6e8147de8617d47b8b8b8b0770",
+      "gitBlob": "8d8e44fba2bd093ec0d0c909530a570b7eb104ce"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-original-funding-service-handoff-request.js",
+      "bytes": 4584,
+      "LF": 75,
+      "sha256": "07affc3e40d785406fea54794ee694c03e31ab49fc8857369cdf52e33a331cab",
+      "gitBlob": "0382f9f6235a4fbc6f5935d3db77b29efaf1a345"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-price-policy.js",
+      "bytes": 16224,
+      "LF": 444,
+      "sha256": "eba3225c4d26cbb6e0be575ac4fd5073bc8b0c4454eb51e2bea4d91856d0c65e",
+      "gitBlob": "649dd09b60236b43c91d22e34b76f71f4b661361"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-required-fused-policy-adapter.js",
+      "bytes": 12024,
+      "LF": 272,
+      "sha256": "e2b693d4df9065d44ba590f4d0c8dffeb8e55187668eedfa396b4026c9905c3e",
+      "gitBlob": "b592aafd4c41461318376ea9acc1373f99317455"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-required-fused-quote.js",
+      "bytes": 5416,
+      "LF": 133,
+      "sha256": "f5e10ff2dbfff3b6b63d87f0abadd0bb52b5d6b8fe0ead6a55fc5ea14207b730",
+      "gitBlob": "e820fd31ffde4ef77a2efa6e1fd3ed1775778726"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-user-send-fixed-work.js",
+      "bytes": 3475,
+      "LF": 77,
+      "sha256": "4ee83870df0b25c34d35c0f0d0ceb894ca9dab8c047f81b34a48dd816f1fbf38",
+      "gitBlob": "4ce2a790df84c77bc76615e5eebc309ecd2868ac"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-user-send-key-binding.js",
+      "bytes": 4237,
+      "LF": 91,
+      "sha256": "37ad7e74b038801297e4bffb0cb8ba92cbd79009ed32c4ae5b134fe2cb154be2",
+      "gitBlob": "c366f0fee4132604b40604547fe22f1bc1dba65d"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-user-send-work-binding.js",
+      "bytes": 1940,
+      "LF": 42,
+      "sha256": "79eba29a05427128ae3a12346fd3ee7cbaa526d6f39eb36ed58d388640638266",
+      "gitBlob": "a329d521458a5c5b6dbc87194d91d4165d5e759c"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-user-send-work-input.js",
+      "bytes": 2853,
+      "LF": 59,
+      "sha256": "2ff9c089e5903c059746d0a1c38688a2849f94d04d429279811fbbfbb40450a4",
+      "gitBlob": "dad4febf4ef6f09216640245c7e3805e01ad0127"
+    },
+    {
+      "path": "src/zenon/plasma-strategy.js",
+      "bytes": 974,
+      "LF": 32,
+      "sha256": "1c597d4e169ba8a5e6d2b7852c4ffa3a8ec9b854332fe354b9b013c36ebae093",
+      "gitBlob": "5cddc2d270aaf043e6e43145e95ffe0be3dde475"
+    },
+    {
+      "path": "src/zenon/prepared-hash-wallet-adapter.js",
+      "bytes": 9266,
+      "LF": 175,
+      "sha256": "113c275a38aaec45a347666b28fdc43c70704973b8d1c20956ebacad18db3e25",
+      "gitBlob": "7b9230b51429cce8547bb12cdd4d109bcdef4e34"
+    },
+    {
+      "path": "src/zenon/sdk105-funding-service-lifecycle.js",
+      "bytes": 14952,
+      "LF": 221,
+      "sha256": "26802aa4e059fce0b0bb02a87ee0e432aad90fb152206c1d8317f5e19deb1cf9",
+      "gitBlob": "3eac7417567baf08624201cd64d5fac05cd7962b"
+    },
+    {
+      "path": "src/zenon/sdk105-prepared-hash-wallet-owner.js",
+      "bytes": 10629,
+      "LF": 186,
+      "sha256": "73f5e3fb4e90f8b93a6063e26cc353530b50b623d3fb3def9b39f00c43445b56",
+      "gitBlob": "01bc44904f6d94980ca6358e2d3a3300e4e29655"
+    },
+    {
+      "path": "src/zenon/transaction-planner.js",
+      "bytes": 22611,
+      "LF": 464,
+      "sha256": "079fe8da938e08e33a20ca1076492a829afa6fce3ae7f9b9f68d3bf4bff94233",
+      "gitBlob": "17b49a3d53974c9b3846ec6f352d6e8974bad7d3"
+    }
+  ],
+  "behavior": "Reserve one actual command channel before invoking the fixed native opening capability. Refuse concurrent/reentrant same-stream acquisition before another native/key opening. Require a pristine returned SDK105 lifecycle, then transfer the actual client/channel to the real command session. On observed refusal independently stop known returned client/channel owners once under one bounded close observation; preserve original opening/stop receipts and unknown.",
+  "positiveOriginalFlow": "Expected original packet/pins are prepared from fixed invalid DATA before opening, not learned from returned preparation output. Explicit prepare/commit/funding/handoff/service commands exercise the actual pure wallet/lifecycle/session/host. Service completion is only the existing void callback receipt, not delivery.",
+  "scope": {
+    "actualNodeMemoryStreams": true,
+    "actualAsyncLocalStorage": true,
+    "actualChannelSessionAndHost": true,
+    "actualPureSdk105WalletAndLifecycleOwners": true,
+    "nativeClientChildren": "DECLARED_CALLBACKS",
+    "keyCallbacks": "DECLARED_ONLY; clear changes fixture public bytes",
+    "invalidFixedSignatureDATA": true,
+    "SDKPackageExecuted": false,
+    "Noble": false,
+    "x402Package": false,
+    "SQLite": false,
+    "applicationNetwork": false,
+    "cryptographicKeysOrSignatures": false,
+    "nonceSearch": false,
+    "realPrepareOrPayment": false,
+    "filesystemScratch": false,
+    "managedTasks": 0,
+    "sourceOrPackageCopies": 0,
+    "osOrNetworkSandboxClaim": false
+  },
+  "reusedEvidence": [
+    {
+      "path": "qualification/buyer-original-recovery-pipe-startup.actual-local-result.json",
+      "sha256": "361ea98e54dff4d7c40c1ac2f1b9c034566a8af86ea0be6e2ff879bee1cc1328",
+      "cases": 62,
+      "exactUnchangedInputRows": 45,
+      "rerun": false
+    },
+    {
+      "path": "qualification/buyer-owned-pipe-streams.actual-local-result.json",
+      "sha256": "25160b45e3ef24c144187479b060ccbda40852843e6d4782cf8e404f25334caf",
+      "componentCases": 124,
+      "pipeCases": 4,
+      "exactUnchangedInputRows": 48,
+      "rerun": false
+    }
+  ],
+  "protectedManifestReference": {
+    "sha256": "5d3f5dd306cac137f267d8bc8273f195d38facec3a02f28de3874c2d389e3f8f",
+    "unchangedRowsVerified": 631,
+    "copiedAgain": false
+  },
+  "nativeSourceOnly": {
+    "changedModule": "src/zenon/sdk105-native-funding-command-session.js",
+    "literalFilesReviewed": 118,
+    "externalSpecifiers": [
+      "@noble/ed25519",
+      "@noble/hashes/sha2",
+      "@x402/core/client",
+      "znn-typescript-sdk"
+    ],
+    "actualChangedModuleParserChecks": 1,
+    "parserFacts": {
+      "actualExit": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 0,
+      "reason": null,
+      "elapsedSeconds": 0.2877406250045169,
+      "stdoutBytes": 0,
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrBase64": ""
+    },
+    "SDKLoadingDeferredAfterChannelOwnership": "SOURCE_REVIEW_ONLY",
+    "actualNativeModulesLinkedOrEvaluated": false,
+    "nativeKeyCustodyOrCleanupQualified": false
+  },
+  "hostedCI": {
+    "sameApprovedSelectedControls": 108,
+    "workflowChanged": false,
+    "these17CasesHosted": false
+  },
+  "limits": "The existing native opening/key-custody contract remains. A native opening can remain pending; this component neither cancels construction nor clears an unreturned key. A known close receipt is not private-memory erasure or physical-release proof.",
+  "frozenNativeAllowanceConsumed": false,
+  "defaultBuyerOrPhase2CCutover": false,
+  "authority": "NONE",
+  "serviceDelivery": "NOT_ESTABLISHED",
+  "nativePhysicalCleanup": "NOT_QUALIFIED",
+  "economicPilot": "NO_GO",
+  "production": "NO_GO"
+}
