@@ -1,0 +1,131 @@
+# Original-only recovery over explicit process pipes
+
+The actual bootstrap, original-only connector, command session and host passed
+13 selected local OS-pipe controls on Node 24.19.0 / macOS arm64. The hardwired
+native binding, standalone CLI and named buyer entry are on development with
+source/parser qualification only. Their SDK/SQLite/HTTPS path has not run.
+
+## One operator root, one channel, one original payer
+
+The standalone source entry is src/buyer-original-recovery-pipe-cli.js. A parent
+explicitly transfers fresh input-read and output-write FIFO descriptors, distinct
+from stdin/stdout/stderr, and separately supplies --allowed-root. The bootstrap
+cannot broaden that operator root. Descriptor ownership follows the existing
+[provided-pipe contract](BUYER_OWNED_PIPE_STREAMS.md); the parent must not retain
+another wrapper or close/reuse a transferred descriptor.
+
+The development-only invocation has the closed argument shape:
+
+    node src/buyer-original-recovery-pipe-cli.js --allowed-root <absolute-operator-root> --input-fd <read-fd> --output-fd <write-fd>
+
+The named programmatic entry is runBuyerOriginalRecoveryPipeCommands with
+{ allowedRoot, inputFd, outputFd }. It selects the hardwired native opener;
+there is no argv/JSON module path, store/SDK factory, environment secret loading
+or default buyer switch. The pure coordinator accepts a trusted native-opening
+capability only at its internal binding boundary; controls declare this child.
+
+The launcher owns the actual command channel before reading its first line or
+opening a native owner. That first line is canonical UTF-8 JSON followed by LF,
+with exactly these fields:
+
+| Field | Explicit content |
+| --- | --- |
+| recoveryPipeBootstrapVersion | 1 |
+| selection | Original checkpoint bytes, independent pins, selectedGrantId, paymentRequiredHeader |
+| payerOptions | Existing databasePath, allowedRoot, fundingResourceUrl, custodyPolicy, selectedGrantId, deadlineMs |
+| official | Explicit assetInfo and contextLimit |
+| transportOptions | HTTPS origin, caPem, request/concurrency/deadline/close limits |
+
+Original bytes, pins, grant and challenge come from outside the database. The
+existing DATA codecs validate their exact binding. Payer root/resource/grant,
+service policy and HTTPS origin must agree. Database paths must be lexically
+inside the independently supplied root; the actual native owner still enforces
+physical directory/file identity, ownership, link and existing-store checks.
+Capture alone is not filesystem authentication or permission to adopt a root.
+
+CA text receives bounded shape checks, not certificate authentication. Asset
+metadata must match the original payload asset; it remains operator-supplied
+metadata. Only a subsequent separately qualified native TLS operation could
+establish peer authentication. Neither parsing nor matching DATA authorizes a
+payment, grant, signer, new funding sender or an economics decision.
+
+Only after bootstrap validation does the binding load the existing native
+official/V6 original-only client. It supplies the fixed existing challenge
+validator, converts the captured CA text to a temporary buffer, and clears that
+temporary after the native owner has copied its own certificate DATA. This is
+not key erasure. Opening the existing V6 payer can advance owner_epoch; it is
+real SQLite work, not read-only inspection, initialization or migration.
+
+The same already-owned channel is transferred to one actual original-recovery
+connector/session. Its existing canonical commands follow the bootstrap:
+restoreOriginal, readRecoveryState, submitService, inspect and close. Each
+critical operation still needs its fresh explicit independent inputs. The
+launcher does not feed a returned candidate back as trust or automatically
+restore, submit, fund, sign, replace or replay. Funding commands are rejected.
+Backend reconciliation remains available through its separate existing entry;
+this new standalone bootstrap does not open or borrow another backend store.
+
+## Failure and close ownership
+
+Before a session exists, bootstrap refusal or acquisition failure attempts the
+known native/client stop and channel stop independently, once, under one 250 ms
+cooperative close observation. A rejected stop cannot suppress the other leg.
+Fresh owner views are checked after stop receipts and again after the final
+await. Unknown or failed frames remain private, including the original opening
+and stop receipts. Late clean views never rewrite a returned unknown result.
+
+Once the actual session exists, its original close Promise and whole-close
+budget own shutdown. The launcher does not install a competing cleanup owner.
+If a channel constructor did not return a facade, its existing partial-owner
+quarantine remains authoritative; the launcher does not raw-close uncertain FDs.
+An opener which returned no facade may retain a hidden HELD root. Closing known
+pipes therefore never asserts nativeResourceRelease or retries that acquisition.
+
+Invalid bootstrap before native entry can report BOOTSTRAP_REFUSED / 1 after
+known pipe close. Native-open or cleanup uncertainty reports CLOSE_UNKNOWN / 4.
+An actual session returns the existing host classification. Successful command
+results go only to the independent result pipe. The native CLI writes one bounded
+status label to fd 2 and sets process.exitCode; it never force-exits or appends a
+second result to an already-closed command output.
+
+Bootstrap input may wait for its operator. Native module loading/opening has no
+new hard cancellation or elapsed-time guarantee. The cooperative cleanup budget
+does not prove OS termination, native drain, durable outcome, delivery or future
+resource state. The owner must retain uncertainty across interruption.
+
+## Actual source-bound evidence
+
+The [local result](../qualification/buyer-original-recovery-pipe.actual-local-result.json)
+records 13 exact cases, real process exits and separate stdout/stderr/command
+stream digests. All passed in about 2.11 seconds. The Python controller supplied
+the retained fixed vector before each Node process started; the child did not
+learn originals or pins from a database. The vector contains deliberately
+invalid certificate/signature DATA and no wallet key or usable payment signer.
+
+Controls cover clean inspection, exact original-header restoration, noncanonical
+bootstrap, grant mismatch, database outside root, attempted root change, native
+open rejection, client setup failure, failed client stop, final close-view drift,
+output peer loss, funding-command rejection and an unsupported thenable without
+invoking its getter. Actual descriptor closure and preserved standard descriptors
+are checked under real AsyncLocalStorage. Native OPEN/close callbacks are declared;
+no SDK, SQL, IP connection, key, signature, nonce search or service dispatch runs.
+
+The prior four pipe controls and 124 component cases were reused only after all
+48 original inputs matched exactly. They were not rerun. New evidence references
+the SHA-pinned 614-row protected manifest instead of copying its table into every
+report. Each new case is journaled before final result derivation. No source or
+package copy, managed task, filesystem scratch or Node child was created.
+
+The 115-file literal native graph was reviewed; only the three changed/new native
+roots received parser checks, without linking/evaluating their modules. The final
+pure close-view change was parsed and executed by the current controls, so those
+unchanged root parser commands were reused. The 108-case hosted profile stays
+unchanged and does not execute these 13 controls. Prior 11/12-case results remain
+historical at their own source pins.
+
+Main receives the qualified pure bootstrap/host, vector, controls, controller,
+result and documentation. Native CLI/binding/named-entry wiring stays on
+development. Current native composition, standalone runtime qualification,
+interruption/lost-ACK/HELD-store recovery, default cutover, delivery, economic
+pilot and production remain incomplete. The frozen native allowance keeps its
+original revision and remains unconsumed.

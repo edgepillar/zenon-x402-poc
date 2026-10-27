@@ -138,6 +138,16 @@ async function runOriginalCommands(open, configuration) {
   }
 }
 
+/** Explicit supplied-FIFO original-only launcher; source-only native binding.
+ * First command line carries external original/pins/configuration. No defaults,
+ * environment secret loading, arbitrary factory or funding/signing selection. */
+export async function runBuyerOriginalRecoveryPipeCommands(configuration) {
+  if (arguments.length !== 1) throw new TypeError('buyer_recovery_pipe_configuration_required');
+  const { runNativeOriginalRecoveryPipeHost } =
+    await import('./zenon/native-original-recovery-pipe-host.js');
+  return runNativeOriginalRecoveryPipeHost(configuration);
+}
+
 async function launchBuyerCli() {
   if (typeof process.argv[1] !== 'string') return;
   const { pathToFileURL } = await import('node:url');

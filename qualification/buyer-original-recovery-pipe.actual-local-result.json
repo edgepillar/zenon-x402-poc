@@ -1,0 +1,1036 @@
+{
+  "profileId": "ORIGINAL_RECOVERY_PIPE_BOOTSTRAP_OPERATOR_ROOT_V1",
+  "qualification": "ACTUAL_LOCAL_BUILTIN_AND_FIFO_COMPONENTS_PASS",
+  "node": "24.19.0",
+  "platform": "darwin",
+  "arch": "arm64",
+  "selectedCases": 13,
+  "passCount": 13,
+  "failCount": 0,
+  "cases": [
+    "CLEAN_INSPECT",
+    "RESTORE_ORIGINAL",
+    "NONCANONICAL_BOOTSTRAP",
+    "MISMATCHED_GRANT",
+    "OUTSIDE_ROOT",
+    "BOOTSTRAP_ROOT_CHANGED",
+    "NATIVE_OPEN_REJECTS",
+    "CLIENT_SETUP_REFUSED",
+    "CLIENT_CLOSE_REJECTS",
+    "FINAL_CLOSE_VIEW_DRIFT",
+    "OUTPUT_PEER_CLOSED",
+    "FUNDING_COMMAND_REFUSED",
+    "NATIVE_THENABLE_REFUSED"
+  ],
+  "rows": [
+    {
+      "scenario": "CLEAN_INSPECT",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 5924,
+      "inputSha256": "97d0014cf59d7f64ee95ffa850ee65c2844ab469e1ad06024a663a24138285ac",
+      "stopReason": null,
+      "elapsedSeconds": 0.40073241700883955,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "CLEAN_INSPECT",
+        "passed": true,
+        "hostStatus": "CLOSED",
+        "hostExitCode": 0,
+        "nativeOpenCalls": 1,
+        "nativeCloseCalls": 1,
+        "restores": 0,
+        "serviceCalls": 0,
+        "stateReads": 0,
+        "callerThenHooks": 0,
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "actualAsyncLocalStorage": true,
+        "declaredNativeCallbacks": true,
+        "rawHeaderOrCheckpointInHostStatus": false,
+        "nodeChildren": 0,
+        "ipConnections": 0,
+        "SQL": false,
+        "SDK": false,
+        "keyGeneration": false,
+        "cryptographicSignatures": false,
+        "authority": "NONE",
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streamDigests": {
+        "stdout": {
+          "bytes": 526,
+          "sha256": "ba22ab985cf9c6a1ceef3810480221141238fbac59ae23fe3b2cbf36c60c6722"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 1002,
+          "sha256": "db5986ba520e94dc2550f7a93d6f546659668505b878826ba6de94b91cf09ca8"
+        }
+      }
+    },
+    {
+      "scenario": "RESTORE_ORIGINAL",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 7259,
+      "inputSha256": "2beac563e3299a0b417ae5842ea2c0eb664c807e3f9c4f6afc3921b64ac508ee",
+      "stopReason": null,
+      "elapsedSeconds": 0.07797324999410193,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "RESTORE_ORIGINAL",
+        "passed": true,
+        "hostStatus": "CLOSED",
+        "hostExitCode": 0,
+        "nativeOpenCalls": 1,
+        "nativeCloseCalls": 1,
+        "restores": 1,
+        "serviceCalls": 0,
+        "stateReads": 0,
+        "callerThenHooks": 0,
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "actualAsyncLocalStorage": true,
+        "declaredNativeCallbacks": true,
+        "rawHeaderOrCheckpointInHostStatus": false,
+        "nodeChildren": 0,
+        "ipConnections": 0,
+        "SQL": false,
+        "SDK": false,
+        "keyGeneration": false,
+        "cryptographicSignatures": false,
+        "authority": "NONE",
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streamDigests": {
+        "stdout": {
+          "bytes": 529,
+          "sha256": "d0f2346f768c9ef55c9666ef17886f5cd06a85490ee7129213b40eebcb74462d"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 2429,
+          "sha256": "e01d315603c6a801ad71d705d8a2b639390a2b15c893db461249132414c28440"
+        }
+      }
+    },
+    {
+      "scenario": "NONCANONICAL_BOOTSTRAP",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 5804,
+      "inputSha256": "c82b1a241de2d20d300eb12082cf6bc22986efa71eeed8afa02e92309b8f66e6",
+      "stopReason": null,
+      "elapsedSeconds": 0.07458758399297949,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "NONCANONICAL_BOOTSTRAP",
+        "passed": true,
+        "hostStatus": "BOOTSTRAP_REFUSED",
+        "hostExitCode": 1,
+        "nativeOpenCalls": 0,
+        "nativeCloseCalls": 0,
+        "restores": 0,
+        "serviceCalls": 0,
+        "stateReads": 0,
+        "callerThenHooks": 0,
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "actualAsyncLocalStorage": true,
+        "declaredNativeCallbacks": true,
+        "rawHeaderOrCheckpointInHostStatus": false,
+        "nodeChildren": 0,
+        "ipConnections": 0,
+        "SQL": false,
+        "SDK": false,
+        "keyGeneration": false,
+        "cryptographicSignatures": false,
+        "authority": "NONE",
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streamDigests": {
+        "stdout": {
+          "bytes": 546,
+          "sha256": "8465fa46666a3b0033682d47d77fd27211a18441dd47cf5239887db7dae313f0"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "scenario": "MISMATCHED_GRANT",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 5803,
+      "inputSha256": "dbd6c31d99981a16b52da45998cb7b520bb5ff08764c8ae2b4f26672d2993380",
+      "stopReason": null,
+      "elapsedSeconds": 0.07500583400542382,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "MISMATCHED_GRANT",
+        "passed": true,
+        "hostStatus": "BOOTSTRAP_REFUSED",
+        "hostExitCode": 1,
+        "nativeOpenCalls": 0,
+        "nativeCloseCalls": 0,
+        "restores": 0,
+        "serviceCalls": 0,
+        "stateReads": 0,
+        "callerThenHooks": 0,
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "actualAsyncLocalStorage": true,
+        "declaredNativeCallbacks": true,
+        "rawHeaderOrCheckpointInHostStatus": false,
+        "nodeChildren": 0,
+        "ipConnections": 0,
+        "SQL": false,
+        "SDK": false,
+        "keyGeneration": false,
+        "cryptographicSignatures": false,
+        "authority": "NONE",
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streamDigests": {
+        "stdout": {
+          "bytes": 540,
+          "sha256": "7dab7624af5e9cdcac48d4705f638c84113518c7663c525d2f302b6d15fb1460"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "scenario": "OUTSIDE_ROOT",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 5793,
+      "inputSha256": "002f12035e53eeb2c3888c8ff882355863145bfb2c3033820f7ddb151dd59dab",
+      "stopReason": null,
+      "elapsedSeconds": 0.07664966699667275,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "OUTSIDE_ROOT",
+        "passed": true,
+        "hostStatus": "BOOTSTRAP_REFUSED",
+        "hostExitCode": 1,
+        "nativeOpenCalls": 0,
+        "nativeCloseCalls": 0,
+        "restores": 0,
+        "serviceCalls": 0,
+        "stateReads": 0,
+        "callerThenHooks": 0,
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "actualAsyncLocalStorage": true,
+        "declaredNativeCallbacks": true,
+        "rawHeaderOrCheckpointInHostStatus": false,
+        "nodeChildren": 0,
+        "ipConnections": 0,
+        "SQL": false,
+        "SDK": false,
+        "keyGeneration": false,
+        "cryptographicSignatures": false,
+        "authority": "NONE",
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streamDigests": {
+        "stdout": {
+          "bytes": 536,
+          "sha256": "a28adb1488b00e36cda93e23a8eaddd9c10a6dcb1260db59cfd345e4f74cb15c"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "scenario": "BOOTSTRAP_ROOT_CHANGED",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 5782,
+      "inputSha256": "b1e6db6d91b4389ccda6cde84bf8f3c35526f371b0f2e174149423154780dfb9",
+      "stopReason": null,
+      "elapsedSeconds": 0.07195908400171902,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "BOOTSTRAP_ROOT_CHANGED",
+        "passed": true,
+        "hostStatus": "BOOTSTRAP_REFUSED",
+        "hostExitCode": 1,
+        "nativeOpenCalls": 0,
+        "nativeCloseCalls": 0,
+        "restores": 0,
+        "serviceCalls": 0,
+        "stateReads": 0,
+        "callerThenHooks": 0,
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "actualAsyncLocalStorage": true,
+        "declaredNativeCallbacks": true,
+        "rawHeaderOrCheckpointInHostStatus": false,
+        "nodeChildren": 0,
+        "ipConnections": 0,
+        "SQL": false,
+        "SDK": false,
+        "keyGeneration": false,
+        "cryptographicSignatures": false,
+        "authority": "NONE",
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streamDigests": {
+        "stdout": {
+          "bytes": 546,
+          "sha256": "b194bffcdd5f7d581031381d384b737371daf8df1db56ce0e19fd9b6ea112221"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "scenario": "NATIVE_OPEN_REJECTS",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 5804,
+      "inputSha256": "d60e1ea78938f61ca093e527ef5aeff8f7c0acda1a8dd42a14f1cf8d52858e83",
+      "stopReason": null,
+      "elapsedSeconds": 0.07567750000453088,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "NATIVE_OPEN_REJECTS",
+        "passed": true,
+        "hostStatus": "CLOSE_UNKNOWN",
+        "hostExitCode": 4,
+        "nativeOpenCalls": 1,
+        "nativeCloseCalls": 0,
+        "restores": 0,
+        "serviceCalls": 0,
+        "stateReads": 0,
+        "callerThenHooks": 0,
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "actualAsyncLocalStorage": true,
+        "declaredNativeCallbacks": true,
+        "rawHeaderOrCheckpointInHostStatus": false,
+        "nodeChildren": 0,
+        "ipConnections": 0,
+        "SQL": false,
+        "SDK": false,
+        "keyGeneration": false,
+        "cryptographicSignatures": false,
+        "authority": "NONE",
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streamDigests": {
+        "stdout": {
+          "bytes": 539,
+          "sha256": "06647f9b45f523771a143813cc17124a8757d8fe041a22fa2239e10a818b395c"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "scenario": "CLIENT_SETUP_REFUSED",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 5804,
+      "inputSha256": "d60e1ea78938f61ca093e527ef5aeff8f7c0acda1a8dd42a14f1cf8d52858e83",
+      "stopReason": null,
+      "elapsedSeconds": 0.07501479100028519,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "CLIENT_SETUP_REFUSED",
+        "passed": true,
+        "hostStatus": "CLOSE_UNKNOWN",
+        "hostExitCode": 4,
+        "nativeOpenCalls": 1,
+        "nativeCloseCalls": 1,
+        "restores": 0,
+        "serviceCalls": 0,
+        "stateReads": 0,
+        "callerThenHooks": 0,
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "actualAsyncLocalStorage": true,
+        "declaredNativeCallbacks": true,
+        "rawHeaderOrCheckpointInHostStatus": false,
+        "nodeChildren": 0,
+        "ipConnections": 0,
+        "SQL": false,
+        "SDK": false,
+        "keyGeneration": false,
+        "cryptographicSignatures": false,
+        "authority": "NONE",
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streamDigests": {
+        "stdout": {
+          "bytes": 540,
+          "sha256": "93172ae27860fda5685d06f4faac480948f1fc0a3b76c2bfbe25831fbe481f62"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "scenario": "CLIENT_CLOSE_REJECTS",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 5804,
+      "inputSha256": "d60e1ea78938f61ca093e527ef5aeff8f7c0acda1a8dd42a14f1cf8d52858e83",
+      "stopReason": null,
+      "elapsedSeconds": 0.32962287501140963,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "CLIENT_CLOSE_REJECTS",
+        "passed": true,
+        "hostStatus": "CLOSE_UNKNOWN",
+        "hostExitCode": 4,
+        "nativeOpenCalls": 1,
+        "nativeCloseCalls": 1,
+        "restores": 0,
+        "serviceCalls": 0,
+        "stateReads": 0,
+        "callerThenHooks": 0,
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "actualAsyncLocalStorage": true,
+        "declaredNativeCallbacks": true,
+        "rawHeaderOrCheckpointInHostStatus": false,
+        "nodeChildren": 0,
+        "ipConnections": 0,
+        "SQL": false,
+        "SDK": false,
+        "keyGeneration": false,
+        "cryptographicSignatures": false,
+        "authority": "NONE",
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streamDigests": {
+        "stdout": {
+          "bytes": 540,
+          "sha256": "ac3f2f8f460ad2ee0a112f0296b8f2f17a1e2ba90a1f2baf5ade535a120f6080"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "scenario": "FINAL_CLOSE_VIEW_DRIFT",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 5804,
+      "inputSha256": "d60e1ea78938f61ca093e527ef5aeff8f7c0acda1a8dd42a14f1cf8d52858e83",
+      "stopReason": null,
+      "elapsedSeconds": 0.07365574999130331,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "FINAL_CLOSE_VIEW_DRIFT",
+        "passed": true,
+        "hostStatus": "CLOSE_UNKNOWN",
+        "hostExitCode": 4,
+        "nativeOpenCalls": 1,
+        "nativeCloseCalls": 1,
+        "restores": 0,
+        "serviceCalls": 0,
+        "stateReads": 0,
+        "callerThenHooks": 0,
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "actualAsyncLocalStorage": true,
+        "declaredNativeCallbacks": true,
+        "rawHeaderOrCheckpointInHostStatus": false,
+        "nodeChildren": 0,
+        "ipConnections": 0,
+        "SQL": false,
+        "SDK": false,
+        "keyGeneration": false,
+        "cryptographicSignatures": false,
+        "authority": "NONE",
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streamDigests": {
+        "stdout": {
+          "bytes": 542,
+          "sha256": "86714df97003fc4243180f5275e3e0a83a943681cc81031ae9500ae0fd648fdc"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "scenario": "OUTPUT_PEER_CLOSED",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 7259,
+      "inputSha256": "2beac563e3299a0b417ae5842ea2c0eb664c807e3f9c4f6afc3921b64ac508ee",
+      "stopReason": null,
+      "elapsedSeconds": 0.3300618750072317,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "OUTPUT_PEER_CLOSED",
+        "passed": true,
+        "hostStatus": "CLOSE_UNKNOWN",
+        "hostExitCode": 4,
+        "nativeOpenCalls": 1,
+        "nativeCloseCalls": 1,
+        "restores": 1,
+        "serviceCalls": 0,
+        "stateReads": 0,
+        "callerThenHooks": 0,
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "actualAsyncLocalStorage": true,
+        "declaredNativeCallbacks": true,
+        "rawHeaderOrCheckpointInHostStatus": false,
+        "nodeChildren": 0,
+        "ipConnections": 0,
+        "SQL": false,
+        "SDK": false,
+        "keyGeneration": false,
+        "cryptographicSignatures": false,
+        "authority": "NONE",
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streamDigests": {
+        "stdout": {
+          "bytes": 538,
+          "sha256": "5614c220a4ce94463b61b27d666c82f7070afac7a2b2fcfe983dce828300ee44"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "scenario": "FUNDING_COMMAND_REFUSED",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 5868,
+      "inputSha256": "99ac531df9d6a6286cff0a624600e49afe5b74aea7a2fc92314990ff8616e098",
+      "stopReason": null,
+      "elapsedSeconds": 0.1816529170027934,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "FUNDING_COMMAND_REFUSED",
+        "passed": true,
+        "hostStatus": "INPUT_REFUSED",
+        "hostExitCode": 1,
+        "nativeOpenCalls": 1,
+        "nativeCloseCalls": 1,
+        "restores": 0,
+        "serviceCalls": 0,
+        "stateReads": 0,
+        "callerThenHooks": 0,
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "actualAsyncLocalStorage": true,
+        "declaredNativeCallbacks": true,
+        "rawHeaderOrCheckpointInHostStatus": false,
+        "nodeChildren": 0,
+        "ipConnections": 0,
+        "SQL": false,
+        "SDK": false,
+        "keyGeneration": false,
+        "cryptographicSignatures": false,
+        "authority": "NONE",
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streamDigests": {
+        "stdout": {
+          "bytes": 543,
+          "sha256": "8893243e015deddf982f187c8a527deeb99f89aac9f28425a09b5313b5956b40"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "scenario": "NATIVE_THENABLE_REFUSED",
+      "exitCode": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 5804,
+      "inputSha256": "d60e1ea78938f61ca093e527ef5aeff8f7c0acda1a8dd42a14f1cf8d52858e83",
+      "stopReason": null,
+      "elapsedSeconds": 0.09617416700348258,
+      "inputsStable": true,
+      "diagnostic": {
+        "scenario": "NATIVE_THENABLE_REFUSED",
+        "passed": true,
+        "hostStatus": "CLOSE_UNKNOWN",
+        "hostExitCode": 4,
+        "nativeOpenCalls": 1,
+        "nativeCloseCalls": 0,
+        "restores": 0,
+        "serviceCalls": 0,
+        "stateReads": 0,
+        "callerThenHooks": 0,
+        "ownedDescriptorsClosed": true,
+        "standardDescriptorsPreserved": true,
+        "actualAsyncLocalStorage": true,
+        "declaredNativeCallbacks": true,
+        "rawHeaderOrCheckpointInHostStatus": false,
+        "nodeChildren": 0,
+        "ipConnections": 0,
+        "SQL": false,
+        "SDK": false,
+        "keyGeneration": false,
+        "cryptographicSignatures": false,
+        "authority": "NONE",
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      "observationFailure": null,
+      "passed": true,
+      "streamDigests": {
+        "stdout": {
+          "bytes": 543,
+          "sha256": "f620a9b7d0809ab4ae4c63e6fffdbd492dd6682f6d8ebf217df318a1fddc9438"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "commandOutput": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    }
+  ],
+  "sourcePins": [
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "qualification/buyer-original-recovery-pipe.control.mjs",
+      "bytes": 6378,
+      "sha256": "3e38ad97c89e459fb7674c3bb58388a1b9e3c479134e52fa3d7039ce922f65ee",
+      "gitBlob": "5b95b5816bf693d9399f2f7f697299392d432abf"
+    },
+    {
+      "path": "qualification/buyer-original-recovery-pipe.fixture.json",
+      "bytes": 16195,
+      "sha256": "aae343d0b33b7f4fd99b5bf7e1db5013a4ffb4d3ea08499f34ac756fcfb59240",
+      "gitBlob": "6136b78c0ce0b06c524f94002f639e53b0de0857"
+    },
+    {
+      "path": "qualification/buyer-original-recovery-pipe.fixture.mjs",
+      "bytes": 2306,
+      "sha256": "3e280c54865bc65e6577ac370a1028b4be3eadd81f2a1d4a8e4ea8eee5409c90",
+      "gitBlob": "42223ef950fdb958e6b06b59475919017d748fc0"
+    },
+    {
+      "path": "qualification/buyer-original-recovery.fixture.mjs",
+      "bytes": 8444,
+      "sha256": "9d911626b543d3d0b0ff73ae9654f99294d41f0c706ba0760090b7c311b8922c",
+      "gitBlob": "9892bf7c07f3a870eb80c8f4bdd385648e3d9d81"
+    },
+    {
+      "path": "qualification/dynamic-plasma-funding-post-input.fixture.mjs",
+      "bytes": 3939,
+      "sha256": "22d291367a3e9b8e8bf56f2a40acacfa2ea40b6050f2aee41da06bba9aa699a2",
+      "gitBlob": "46f914fbce51b6790aa08836567ba12f9e6be6f6"
+    },
+    {
+      "path": "qualification/dynamic-plasma-retained-input.fixture.mjs",
+      "bytes": 1749,
+      "sha256": "38f46d337f2c6a0584e779d26c75a5a5bccc56a42a2c6bbd1e06add4730c10de",
+      "gitBlob": "5bb61e6a3161e4d0d50e97544a86308574e48d24"
+    },
+    {
+      "path": "scripts/run-current-buyer-original-recovery-pipe.py",
+      "bytes": 12523,
+      "sha256": "ef78798664be549a75a1430ae6edb4571895905ab9465c160cae2719a2d68b82",
+      "gitBlob": "2096b21127b259d8334149136da5c32e20c86de6"
+    },
+    {
+      "path": "src/buyer-command-line-channel.js",
+      "bytes": 11200,
+      "sha256": "aea944d8fd1b28290c6beafe7d13985da1194ed5be5d0e1957490fe8c13e1fab",
+      "gitBlob": "f20c1fe402ddb0b3f9dee065a31a10ee88bab179"
+    },
+    {
+      "path": "src/buyer-original-command-host.js",
+      "bytes": 8878,
+      "sha256": "b81bddf6b944aa39521d20ea5c43ce17f15c3a0f39a462de149d399f2ad300b3",
+      "gitBlob": "62a4e1df1d751b37ad24c831dc40dba43297c1fd"
+    },
+    {
+      "path": "src/buyer-original-funding-command-session.js",
+      "bytes": 14884,
+      "sha256": "19d91c723622e1cb2244c1fa9b3dd59db5fd72120c7163df53076b833ba0c9c5",
+      "gitBlob": "170054dd880ac1efd432f00006815552de4e523b"
+    },
+    {
+      "path": "src/buyer-original-funding-command.js",
+      "bytes": 14077,
+      "sha256": "064a31640b10da873ecf558b0550024366e50cc9d1a5e91a15cc4e006e05e7e9",
+      "gitBlob": "2e6e234d85a2fc92a2ae9c52a8ea3429f63faad1"
+    },
+    {
+      "path": "src/buyer-original-recovery-client.js",
+      "bytes": 23301,
+      "sha256": "0657a0052270fa3f61b8d54a01309374622968ceb168d0e57cf464294ad6d8e4",
+      "gitBlob": "28e780694c3cb7157eca4ee5a0cfa69ae4f2a4e4"
+    },
+    {
+      "path": "src/buyer-original-recovery-pipe-bootstrap.js",
+      "bytes": 6171,
+      "sha256": "2ca839917de5270f1d36012e864cc5de223d14c29448576dabf614cd1636a007",
+      "gitBlob": "1e4c415d0700bb42a325bda717fe544b3814f88a"
+    },
+    {
+      "path": "src/buyer-original-recovery-pipe-host.js",
+      "bytes": 7950,
+      "sha256": "4042640c12ef285d1406566067f7c03a22290bd8029d2788746b4ee2e94c5c99",
+      "gitBlob": "bae7065c9c77c1b764ac22734122ce984497d000"
+    },
+    {
+      "path": "src/buyer-owned-pipe-streams.js",
+      "bytes": 4516,
+      "sha256": "8a32be8a2dd63f4c8681aafb39ac335595380102c19958697a003cbf1cc9e65e",
+      "gitBlob": "5ad5a6c55ef9f057c9259e96df54beb647598250"
+    },
+    {
+      "path": "src/canonical.js",
+      "bytes": 967,
+      "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+      "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4"
+    },
+    {
+      "path": "src/service-credit-bounded-close-completion.js",
+      "bytes": 6020,
+      "sha256": "1d59ec72cf9b8877947ba766316746be1e2ca5b82029c9b656757c2953ff7e5e",
+      "gitBlob": "9ccc197dd1090f14bb4c452389be8aa8180d0322"
+    },
+    {
+      "path": "src/service-credit-bounded-operation-drain.js",
+      "bytes": 5474,
+      "sha256": "4ea81e010451f91bb8f0ca668dd6bd3966763ea23385bdd0d511c200e4b3eecd",
+      "gitBlob": "843f9b0a3adb411471f7e345b97362e9035e094b"
+    },
+    {
+      "path": "src/service-credit-custodied-backend-recovery-core.js",
+      "bytes": 9518,
+      "sha256": "54afa41816c0b971d49b80281bd0391563efa31644077cfa6204714eca74659a",
+      "gitBlob": "533a759d6b8735d57b5d15bce241cf43048ecddf"
+    },
+    {
+      "path": "src/service-credit-original-request-custody-contract.js",
+      "bytes": 15100,
+      "sha256": "483d20e90d78ba95a8c5d5458dd201910e8d42aecbdc0dc03812e7044a464054",
+      "gitBlob": "94d67559a11f87f283a5cd99d2aaf8074374eb0a"
+    },
+    {
+      "path": "src/service-credit-pilot-original-payment-checkpoint.js",
+      "bytes": 4003,
+      "sha256": "930905f31824a6cadc16dfb84572cd4dc38a81e2fce4569b73b6bef29dec97d1",
+      "gitBlob": "51c6391bc22f561ebff0005ced31e538aa83f4fa"
+    },
+    {
+      "path": "src/x402-funding-post-checkpoint-route.js",
+      "bytes": 1310,
+      "sha256": "157e80e9f14b41c8cacc05423a7acd8616a6f759adac377f04f1fca21869831e",
+      "gitBlob": "777ff48ac9cf255f80cda7e22c68706b7d7084b3"
+    },
+    {
+      "path": "src/x402-official-https-request-binding.js",
+      "bytes": 5085,
+      "sha256": "dabf215408887bd0d2ba346085c5ab2df13f724e8759b7a98b71b09c8dc8d692",
+      "gitBlob": "47059c772407233b8b6f54632ba065893ff92dd3"
+    },
+    {
+      "path": "src/x402-original-payment-checkpoint-client.js",
+      "bytes": 13457,
+      "sha256": "bba2439e40a2decb75b330440919d8d1ea1fea53f6e684f77b57a9bb66129af1",
+      "gitBlob": "bd732c2c739e6dbe1d4ed583b6b55040bf8aecfd"
+    },
+    {
+      "path": "src/x402-wire.js",
+      "bytes": 39886,
+      "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+      "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+    },
+    {
+      "path": "src/zenon/bounded-dynamic-plasma-strategy.js",
+      "bytes": 15729,
+      "sha256": "7b82560bdeb25e573912090a2fe8de7b45912500a7a7c4434fe06dcf94e06d62",
+      "gitBlob": "ee85b7a4da8bf4190ae099e6bc5074059fccebbc"
+    },
+    {
+      "path": "src/zenon/bounded-json-rpc-read-core.js",
+      "bytes": 22116,
+      "sha256": "1d8873868274045825717ee70b9a402d91cd6235fdaf410d93ddb365fc2d7ca3",
+      "gitBlob": "82d49d18a92c1074819e8976d94a2cfef3975466"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-compatibility.js",
+      "bytes": 7732,
+      "sha256": "b3989ce15e5f2e9d07b0ed035fe96bcce9f22cac93f5e497fdca5c37bf7618dd",
+      "gitBlob": "3811b748b3f905e454c8a4af4650bb7f89eb1cf2"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-json-rpc-read-transport.js",
+      "bytes": 10832,
+      "sha256": "fd03b2ad87d16660aa61d3961c163d724d5f89cd6d4bb9c4391d739566d5e5ca",
+      "gitBlob": "0475b7ab42889f67fb030fa7344d73d8bd6957d7"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-observation-normalizer.js",
+      "bytes": 28398,
+      "sha256": "2c3f7d42ded21a5513ff26c23a00a35a53aa334f053d10930f1571a020286897",
+      "gitBlob": "c406db8471aa6c8afd812c222c673c809491cf00"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-original-funding-data.js",
+      "bytes": 16557,
+      "sha256": "8a416a548e827dc71bc6f87e675e265d01c20d6e8147de8617d47b8b8b8b0770",
+      "gitBlob": "8d8e44fba2bd093ec0d0c909530a570b7eb104ce"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-original-funding-service-handoff-request.js",
+      "bytes": 4584,
+      "sha256": "07affc3e40d785406fea54794ee694c03e31ab49fc8857369cdf52e33a331cab",
+      "gitBlob": "0382f9f6235a4fbc6f5935d3db77b29efaf1a345"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-price-policy.js",
+      "bytes": 16224,
+      "sha256": "eba3225c4d26cbb6e0be575ac4fd5073bc8b0c4454eb51e2bea4d91856d0c65e",
+      "gitBlob": "649dd09b60236b43c91d22e34b76f71f4b661361"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-required-fused-policy-adapter.js",
+      "bytes": 12024,
+      "sha256": "e2b693d4df9065d44ba590f4d0c8dffeb8e55187668eedfa396b4026c9905c3e",
+      "gitBlob": "b592aafd4c41461318376ea9acc1373f99317455"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-required-fused-quote.js",
+      "bytes": 5416,
+      "sha256": "f5e10ff2dbfff3b6b63d87f0abadd0bb52b5d6b8fe0ead6a55fc5ea14207b730",
+      "gitBlob": "e820fd31ffde4ef77a2efa6e1fd3ed1775778726"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-user-send-fixed-work.js",
+      "bytes": 3475,
+      "sha256": "4ee83870df0b25c34d35c0f0d0ceb894ca9dab8c047f81b34a48dd816f1fbf38",
+      "gitBlob": "4ce2a790df84c77bc76615e5eebc309ecd2868ac"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-user-send-key-binding.js",
+      "bytes": 4237,
+      "sha256": "37ad7e74b038801297e4bffb0cb8ba92cbd79009ed32c4ae5b134fe2cb154be2",
+      "gitBlob": "c366f0fee4132604b40604547fe22f1bc1dba65d"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-user-send-work-binding.js",
+      "bytes": 1940,
+      "sha256": "79eba29a05427128ae3a12346fd3ee7cbaa526d6f39eb36ed58d388640638266",
+      "gitBlob": "a329d521458a5c5b6dbc87194d91d4165d5e759c"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-user-send-work-input.js",
+      "bytes": 2853,
+      "sha256": "2ff9c089e5903c059746d0a1c38688a2849f94d04d429279811fbbfbb40450a4",
+      "gitBlob": "dad4febf4ef6f09216640245c7e3805e01ad0127"
+    },
+    {
+      "path": "src/zenon/plasma-strategy.js",
+      "bytes": 974,
+      "sha256": "1c597d4e169ba8a5e6d2b7852c4ffa3a8ec9b854332fe354b9b013c36ebae093",
+      "gitBlob": "5cddc2d270aaf043e6e43145e95ffe0be3dde475"
+    },
+    {
+      "path": "src/zenon/transaction-planner.js",
+      "bytes": 22611,
+      "sha256": "079fe8da938e08e33a20ca1076492a829afa6fce3ae7f9b9f68d3bf4bff94233",
+      "gitBlob": "17b49a3d53974c9b3846ec6f352d6e8974bad7d3"
+    }
+  ],
+  "controlInputPins": 41,
+  "uniqueControlAndVectorInputPins": 42,
+  "elapsedSeconds": 2.1129837080079596,
+  "fixedPublicVector": {
+    "path": "qualification/buyer-original-recovery-pipe.fixture.json",
+    "bytes": 16195,
+    "sha256": "aae343d0b33b7f4fd99b5bf7e1db5013a4ffb4d3ea08499f34ac756fcfb59240",
+    "generatorInputPins": 32,
+    "actualGeneratorExit": 0,
+    "actualGeneratorComplete": true,
+    "sameVectorRegeneratedWithoutRewrite": true,
+    "invalidCertificateAndSignatureDATA": true
+  },
+  "reusedUnchangedQualification": {
+    "path": "qualification/buyer-owned-pipe-streams.actual-local-result.json",
+    "sha256": "25160b45e3ef24c144187479b060ccbda40852843e6d4782cf8e404f25334caf",
+    "inputPins": 48,
+    "componentCases": 124,
+    "pipeCases": 4,
+    "all48CurrentInputPinsRechecked": true,
+    "currentReruns": 0,
+    "keptOriginalSourceBoundResult": true
+  },
+  "nativeSourceOnly": {
+    "relativeFiles": 115,
+    "literalPackageSpecifiers": [
+      "@noble/ed25519",
+      "@noble/hashes/sha2",
+      "@x402/core/client",
+      "znn-typescript-sdk"
+    ],
+    "newRootParserCommands": 3,
+    "allRootParsersPassed": true,
+    "linkedOrEvaluatedModules": false,
+    "finalChangedPureModuleParsedByControls": true,
+    "standaloneCliAndNativeBindingOnDevelopmentOnly": true,
+    "fullNativeQualification": false
+  },
+  "bootstrapRootProvidedOutsidePipe": true,
+  "bootstrapValidatedBeforeNativeOpen": true,
+  "sameChannelTransferredToActualSession": true,
+  "actualOriginalOnlyConnector": true,
+  "actualSessionAndCommandHost": true,
+  "actualAsyncLocalStorage": true,
+  "actualProvidedAnonymousOsPipes": true,
+  "nativeOpenAndClose": "DECLARED_COMPONENT_CALLBACKS",
+  "freshFinalCloseViewRequired": true,
+  "lateUnknownNeverHeals": true,
+  "noAutomaticFundingSigningOrReplay": true,
+  "serviceCallsInControls": 0,
+  "applicationIpConnections": 0,
+  "SDK": false,
+  "SQLite": false,
+  "keys": false,
+  "cryptographicSignatures": false,
+  "nonceSearch": false,
+  "nodeChildren": 0,
+  "sourceCopies": 0,
+  "packageCopies": 0,
+  "filesystemScratch": false,
+  "managedTasks": 0,
+  "protectedSourceManifestRowsReferencedNotCopied": 614,
+  "caseRowsJournaledBeforeFinalDerivation": true,
+  "old11And12CaseResultsPreservedAsHistorical": true,
+  "unchangedHostedProfile": {
+    "selectedCases": 108,
+    "changed": false,
+    "new13ControlsHosted": false
+  },
+  "authority": "NONE",
+  "serviceDelivery": "NOT_ESTABLISHED",
+  "grantActivation": "NOT_ESTABLISHED",
+  "defaultBuyerChanged": false,
+  "standaloneNativeApplicationQualified": false,
+  "hardNativeStartupDeadline": false,
+  "osOrNetworkSandbox": false,
+  "frozenNativeAllowanceConsumed": false,
+  "economicPilot": "NO_GO",
+  "production": "NOT_QUALIFIED"
+}
