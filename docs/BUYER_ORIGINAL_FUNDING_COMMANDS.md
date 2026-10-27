@@ -1,6 +1,7 @@
 # Explicit original funding buyer commands
 
-Date: 2026-10-27. All 52 funding/lifecycle cases passed again within the\ncurrent 80-case original-recovery component selection.
+Date: 2026-10-27. All 52 funding/lifecycle cases passed again within the
+current 104-case backend-recovery component selection.
 The native SDK105 command host is SOURCE ONLY and available on development.
 The ordinary buyer/default and Phase2C routes remain unchanged.
 
@@ -113,10 +114,14 @@ only when channel construction begins; unacquired streams remain caller-owned.
 
 ## Verification and remaining gates
 
-The [actual local result](../qualification/buyer-original-funding-command.actual-local-result.json)
-binds the 37-module builtin closure and package manifest (38 inputs), exact cases,
-exit and stream digests. All 25 existing lifecycle test bodies were preserved and
-rerun through a shared fixture; its declared commit phase now matches the actual
+The [current local result](../qualification/buyer-original-backend-recovery-command.actual-local-result.json)
+binds 42 component modules and the package manifest (43 inputs), 104 exact cases,
+exit and stream digests. It includes these unchanged 52 case bodies, 28
+[local recovery controls](BUYER_ORIGINAL_RECOVERY_COMMANDS.md) and 24
+[backend reconciliation controls](BUYER_ORIGINAL_BACKEND_RECOVERY_COMMANDS.md).
+The earlier 52-case result remains historical evidence at its original pins.
+All 25 existing lifecycle test bodies were preserved and rerun through a shared
+fixture; its declared commit phase now matches the actual
 LOCAL_STORE_READBACK_MATCHED contract. The other 27 cases exercise actual Node
 memory streams and AsyncLocalStorage, explicit flow, original DATA retention,
 independent input requirements, malformed protocol, callback/drain ordering,
@@ -141,7 +146,7 @@ passed parser-only checks; the native host's 94-file relative graph was inspecte
 without linking or evaluating its SDK/package imports. Main receives the independently
 qualified codec/session/channel, fixture/tests/runner and evidence/documentation.
 The existing hosted 108-case profile is unchanged and does not run these 52
-local cases. The separate frozen native allowance remains unconsumed and is not
+local cases or the current 104-case selection. The separate frozen native allowance remains unconsumed and is not
 retargeted to this graph. Durable recovery, actual SDK/store/HTTPS/key cleanup,
 default buyer cutover, grant activation, service delivery and economic pilot
 acceptance remain unqualified.

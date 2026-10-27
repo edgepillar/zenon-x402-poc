@@ -1,8 +1,11 @@
 import { types as utilTypes } from 'node:util';
 import { openNativeOfficialV6FundingPostOriginalPaymentClient } from '../x402-native-v6-funding-post-client.js';
-import { captureBuyerOriginalRecoverySelection, createBuyerOriginalRecoveryClient } from '../buyer-original-recovery-client.js';
+import { captureBuyerOriginalRecoverySelection, createBuyerOriginalRecoveryClient,
+  createBuyerOriginalBackendRecoveryClient } from '../buyer-original-recovery-client.js';
+import { createServiceCreditBackendOriginalOutcomeReader } from '../service-credit-backend-original-outcome-reader.js';
 import { captureBuyerCommandLineChannelConfiguration, createBuyerCommandLineChannel } from '../buyer-command-line-channel.js';
-import { createBuyerOriginalRecoveryCommandSession } from '../buyer-original-funding-command-session.js';
+import { createBuyerOriginalRecoveryCommandSession,
+  createBuyerOriginalBackendRecoveryCommandSession } from '../buyer-original-funding-command-session.js';
 
 const OPEN = openNativeOfficialV6FundingPostOriginalPaymentClient;
 const F = Object.freeze, DESC = Object.getOwnPropertyDescriptor, OWN = Object.hasOwn;
@@ -16,7 +19,20 @@ let failedAcquisition = null;
  * stored state. Application I/O still requires an explicit service command. */
 export async function openNativeOriginalRecoveryCommandSession(configuration) {
   if (arguments.length !== 1 || failedAcquisition !== null) fail();
-  const c = fields(configuration, ['configuration', 'selection', 'input', 'output', 'limits']);
+  return openSession(configuration, false);
+}
+
+/** Borrow an actual existing backend store, reuse the same original-only native
+ * payer, and own one selected-grant reader. This is a local two-store query,
+ * not an HTTP status endpoint or an atomic transaction across both stores. */
+export async function openNativeOriginalBackendRecoveryCommandSession(configuration) {
+  if (arguments.length !== 1 || failedAcquisition !== null) fail();
+  return openSession(configuration, true);
+}
+
+async function openSession(configuration, withBackend) {
+  const c = fields(configuration, ['configuration', 'selection', 'input', 'output', 'limits',
+    ...(withBackend ? ['backendStore'] : [])]);
   const selected = captureBuyerOriginalRecoverySelection(c.selection);
   const raw = fields(c.configuration, ['payerOptions', 'originalPayment', 'official', 'transportOptions']);
   const payer = fields(raw.payerOptions, ['databasePath', 'allowedRoot', 'fundingResourceUrl',
@@ -30,19 +46,28 @@ export async function openNativeOriginalRecoveryCommandSession(configuration) {
       || payer.fundingResourceUrl !== selected.originalPayment.resourceUrl) fail();
   const nativeConfiguration = F({ ...raw, payerOptions: F(payer), originalPayment: selected.originalPayment });
   const streams = captureBuyerCommandLineChannelConfiguration({ input: c.input, output: c.output, limits: c.limits });
-  let native = null, client = null, channel = null;
+  let native = null, client = null, channel = null, backend = null;
   try {
+    if (withBackend) backend = createServiceCreditBackendOriginalOutcomeReader({
+      store: c.backendStore, admittedGrantId: selected.selectedGrantId });
     native = await OPEN(nativeConfiguration);
-    client = createBuyerOriginalRecoveryClient({ client: native, selection: selected });
+    client = withBackend ? createBuyerOriginalBackendRecoveryClient({ client: native, selection: selected, backend })
+      : createBuyerOriginalRecoveryClient({ client: native, selection: selected });
     channel = createBuyerCommandLineChannel(streams);
-    return createBuyerOriginalRecoveryCommandSession({ client, channel, limits: streams.limits });
+    const session = withBackend ? createBuyerOriginalBackendRecoveryCommandSession : createBuyerOriginalRecoveryCommandSession;
+    return session({ client, channel, limits: streams.limits });
   } catch {
-    if (native !== null) {
-      const held = { native, client, channel, clientStop: null, channelStop: null };
+    if (native !== null || backend !== null) {
+      const held = { native, client, channel, backend, clientStop: null, channelStop: null, backendStop: null };
       failedAcquisition = held;
       // Preserve actual owners and original stop promises independently. A
       // failed channel constructor retains its own partially acquired streams.
-      try { held.clientStop = (client ?? native).close(); consume(held.clientStop); } catch {}
+      if (client !== null || native !== null) {
+        try { held.clientStop = (client ?? native).close(); consume(held.clientStop); } catch {}
+      }
+      // A constructed connector owns this reader and closes it itself. Before
+      // transfer, fence only the reader; never close the borrowed backend store.
+      if (client === null && backend !== null) { try { held.backendStop = backend.close(); } catch {} }
       if (channel !== null) {
         try { held.channelStop = channel.close(); consume(held.channelStop); } catch {}
       }

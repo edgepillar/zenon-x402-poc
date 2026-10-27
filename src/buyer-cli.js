@@ -98,6 +98,15 @@ export async function openBuyerOriginalRecoveryCommandSession(configuration) {
   return openNativeOriginalRecoveryCommandSession(configuration);
 }
 
+/** Same existing-original owner plus an explicit borrowed local backend store.
+ * Native two-store/official/HTTPS composition remains separately qualified. */
+export async function openBuyerOriginalBackendRecoveryCommandSession(configuration) {
+  if (arguments.length !== 1) throw new TypeError('buyer_backend_recovery_configuration_required');
+  const { openNativeOriginalBackendRecoveryCommandSession } =
+    await import('./zenon/native-original-recovery-command-session.js');
+  return openNativeOriginalBackendRecoveryCommandSession(configuration);
+}
+
 async function launchBuyerCli() {
   if (typeof process.argv[1] !== 'string') return;
   const { pathToFileURL } = await import('node:url');

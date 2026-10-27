@@ -8,7 +8,8 @@ import { assembleZenonDynamicPlasmaOriginalFundingDataV2 as ASSEMBLE } from '../
 import { createFundingPostOriginalPaymentCheckpointClient as CORE } from '../src/x402-original-payment-checkpoint-client.js';
 import { restoreOriginalPaymentCheckpoint as RESTORE } from '../src/service-credit-pilot-original-payment-checkpoint.js';
 import { captureOriginalServiceRequestCustody as CUSTODY, captureOriginalServiceDispatchIntent as INTENT } from '../src/service-credit-original-request-custody-contract.js';
-import { captureBuyerOriginalRecoverySelection as SELECT, createBuyerOriginalRecoveryClient as CLIENT } from '../src/buyer-original-recovery-client.js';
+import { captureBuyerOriginalRecoverySelection as SELECT, createBuyerOriginalRecoveryClient as CLIENT,
+  createBuyerOriginalBackendRecoveryClient as BACKEND_CLIENT } from '../src/buyer-original-recovery-client.js';
 
 export const F = Object.freeze, copy = value => structuredClone(value);
 export function freeze(value) {
@@ -33,7 +34,8 @@ export function recoveryFixture(mode = {}) {
     { fundingResourceUrl: base.resourceUrl, paymentHash: packet.expectedPins.binding.paymentHash, network: payload.accepted.network });
   const f = { base, packet, selection, key, original, checkpoint, restores: 0, checkpointReads: 0,
     stateReads: 0, services: 0, closes: 0, phase: 'OPEN', unknown: false, active: false,
-    comparisonHeader: null, restoreCoreReads: 0, serviceInput: null };
+    comparisonHeader: null, restoreCoreReads: 0, serviceInput: null, backendReads: 0, backendCloses: 0,
+    borrowedBackendStoreCloses: 0 };
   f.state = freeze({ original, funding: { revision: 1, status: 'BOUND', ambiguityLatched: false,
     fundingResourceUrl: base.resourceUrl, paymentHash: original.paymentHash, network: original.network },
     uncertainty: { custody: false, submission: false, undrained: false, declaredFundingAmbiguitySeen: false },
@@ -43,6 +45,8 @@ export function recoveryFixture(mode = {}) {
     challengeDigest: 'sha256:' + 'ab'.repeat(32), paymentDigest: 'sha256:' + 'cd'.repeat(32),
     custodyPolicy: { policyVersion: 1, maxRequests: 8, serviceResourceUrl } });
   const native = F({
+    readOriginal: F(function readOriginal() { return f.state?.original ?? null; }),
+    readOriginalRecoveryKeys: F(function readKeys() { return F([key]); }),
     restoreOriginalPayment: F(async function restore(input) {
       f.restores++;
       const core = CORE({ ...selection.originalPayment, readOriginalPaymentCheckpoint: F(pins => {
@@ -85,9 +89,26 @@ export function recoveryFixture(mode = {}) {
       f.phase = 'CLOSED'; return Promise.resolve(undefined);
     }),
   });
-  f.native = native; f.client = CLIENT({ client: native, selection });
+  f.backendOutcome = (status, changes = {}) => freeze({ status, revision: 1, originalRequest: request,
+    execution: null, cachedResult: status === 'CACHED_SUCCESS'
+      ? { statusCode: 200, contentType: 'application/json', resultCode: 'declared-cached-result' } : null,
+    executionAuthorized: false, paymentAuthorized: false, signingAuthorized: false,
+    deliveryStatus: 'NOT_ESTABLISHED', ...changes });
+  f.backendReply = f.backendOutcome('CACHED_SUCCESS');
+  f.backend = F({ readExactOriginal: F(function readBackend(envelope, expected) {
+    f.backendReads++; f.backendEnvelope = envelope; f.backendExpected = expected;
+    assert.deepEqual(envelope, { url: '/service-credit/v1/execute', method: 'POST',
+      rawHeaders: ['Authorization', 'ServiceCredit declared-proof-no-cryptography'] });
+    assert.deepEqual(expected, request);
+    return f.onBackend ? f.onBackend() : f.backendReply;
+  }), close: F(function closeBackendReader() {
+    f.backendCloses++; return f.onBackendClose ? f.onBackendClose() : f.backendOutcome('CLOSED');
+  }) });
+  f.native = native; f.client = mode.backendRecovery ? BACKEND_CLIENT({ client: native, selection, backend: f.backend })
+    : CLIENT({ client: native, selection });
   f.restoreInput = () => ({ paymentRequiredHeader: selection.paymentRequiredHeader, expectedPins: copy(packet.expectedPins) });
   f.readInput = () => ({ key: copy(key), expectedPins: copy(packet.expectedPins) });
+  f.backendInput = () => ({ ...f.readInput(), authorizationHeader: 'ServiceCredit declared-proof-no-cryptography' });
   f.service = () => ({ ...key, originalRequestJson: original.originalRequestJson, originalBodyBase64: '',
     serviceResourceUrl, authorizationHeader: 'ServiceCredit declared-proof-no-cryptography', expectedPins: copy(packet.expectedPins) });
   return f;
