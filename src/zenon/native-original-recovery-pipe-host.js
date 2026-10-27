@@ -2,9 +2,50 @@ import { Buffer } from 'node:buffer';
 import { types as utilTypes } from 'node:util';
 import { validatePaymentRequiredForOfferSelection } from '../x402-wire.js';
 import { runBuyerOriginalRecoveryPipeHost } from '../buyer-original-recovery-pipe-host.js';
+import { createBuyerOwnedBackendRecoveryResource } from '../buyer-owned-backend-recovery-resource.js';
 
 const F = Object.freeze, DESC = Object.getOwnPropertyDescriptor, OWN = Object.hasOwn;
+const BACKEND_HELD = new Set();
 const VALIDATE = F(function validateChallenge(value) { validatePaymentRequiredForOfferSelection(value); });
+const NO_COST = F(function recoveryCannotDeriveCost() { fail(); });
+const OPEN_BACKEND = F(async function openOwnedExistingBackend(bootstrap) {
+  if (bootstrap.recoveryPipeBootstrapVersion !== 2 || BACKEND_HELD.size >= 16) fail();
+  const { ServiceCreditSqliteStore } = await import('../service-credit-sqlite-store.js');
+  const { createServiceCreditBackendOriginalOutcomeReader } = await import('../service-credit-backend-original-outcome-reader.js');
+  const CLOSE = ServiceCreditSqliteStore.prototype.close;
+  const frame = { store: null, reader: null, stopRequested: false, stopReceipt: null };
+  try {
+    frame.store = ServiceCreditSqliteStore.openExisting({
+      databasePath: bootstrap.backendOptions.databasePath, allowedRoot: bootstrap.payerOptions.allowedRoot,
+      deriveCost: NO_COST, ...bootstrap.backendOptions.limits,
+    });
+    frame.reader = createServiceCreditBackendOriginalOutcomeReader({
+      store: frame.store, admittedGrantId: bootstrap.selection.selectedGrantId,
+    });
+    return createBuyerOwnedBackendRecoveryResource({ reader: frame.reader, closeStore: F(function closeExistingStore() {
+      if (frame.stopRequested) fail();
+      frame.stopRequested = true;
+      try {
+        frame.stopReceipt = Reflect.apply(CLOSE, frame.store, []);
+        if (frame.stopReceipt !== undefined) fail();
+        frame.store = null; frame.reader = null; return undefined;
+      } catch { BACKEND_HELD.add(frame); fail(); }
+    }) });
+  } catch {
+    BACKEND_HELD.add(frame);
+    // Before transfer this binding owns the known backend alone. Fence its
+    // synchronous reader first; a failure cannot authorize store-close retry.
+    let fenced = frame.reader === null;
+    if (frame.reader !== null) {
+      try { fenced = frame.reader.close().status === 'CLOSED'; } catch { fenced = false; }
+    }
+    if (fenced && frame.store !== null && !frame.stopRequested) {
+      frame.stopRequested = true;
+      try { frame.stopReceipt = Reflect.apply(CLOSE, frame.store, []); } catch {}
+    }
+    fail();
+  }
+});
 const OPEN = F(async function openOriginalOnly(bootstrap) {
   // Reached only after canonical external bootstrap capture, with one already
   // owned channel. No arbitrary module path, SDK/store factory or signer.
@@ -34,6 +75,6 @@ export async function runNativeOriginalRecoveryPipeHost(configuration) {
     if (!d || !OWN(d, 'value') || !d.enumerable) fail();
     Object.defineProperty(selected, name, { value: d.value, enumerable: true });
   }
-  return runBuyerOriginalRecoveryPipeHost({ ...selected, openNativeClient: OPEN });
+  return runBuyerOriginalRecoveryPipeHost({ ...selected, openNativeClient: OPEN, openBackend: OPEN_BACKEND });
 }
 function fail() { throw new TypeError('buyer_native_original_recovery_pipe_configuration_required'); }
