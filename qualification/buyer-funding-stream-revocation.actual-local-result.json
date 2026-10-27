@@ -1,0 +1,587 @@
+{
+  "kind": "buyer-funding-stream-revocation-actual-local-result",
+  "version": 1,
+  "status": "PASS",
+  "nodeVersion": "v24.19.0",
+  "newRevocationCases": 10,
+  "existingFundingCasesRerunAtChangedSource": 31,
+  "totalPassed": 41,
+  "elapsedSeconds": 1.716874124991591,
+  "currentSourceRows": [
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "qualification/buyer-funding-owned-stream-deadline.behavior.mjs",
+      "bytes": 9002,
+      "sha256": "88213b73d13e11981d466310f6fbc1788094b2d3cfc58ea218006a4c45144dac",
+      "gitBlob": "7cc4892def75e4fb89b6761b56e96139e4816ffb"
+    },
+    {
+      "path": "qualification/buyer-funding-owned-stream-session.behavior.mjs",
+      "bytes": 12942,
+      "sha256": "7bb79ed1d9993e28c79aa90821090046ed8c9641c81783dcba7c761a2c83de77",
+      "gitBlob": "a8aa3ed601aa0abcf90f892b3756eae86a10e2b4"
+    },
+    {
+      "path": "qualification/buyer-funding-stream-revocation.control.mjs",
+      "bytes": 5296,
+      "sha256": "772b9539cd88d0ff8697fd2fe1194f63df149499cfc897cef0406a6832d00494",
+      "gitBlob": "61be2910e07fbd00740b03097793f4960771b043"
+    },
+    {
+      "path": "qualification/dynamic-plasma-funding-post-input.fixture.mjs",
+      "bytes": 3939,
+      "sha256": "22d291367a3e9b8e8bf56f2a40acacfa2ea40b6050f2aee41da06bba9aa699a2",
+      "gitBlob": "46f914fbce51b6790aa08836567ba12f9e6be6f6"
+    },
+    {
+      "path": "qualification/dynamic-plasma-retained-input.fixture.mjs",
+      "bytes": 1749,
+      "sha256": "38f46d337f2c6a0584e779d26c75a5a5bccc56a42a2c6bbd1e06add4730c10de",
+      "gitBlob": "5bb61e6a3161e4d0d50e97544a86308574e48d24"
+    },
+    {
+      "path": "qualification/sdk105-funding-service-lifecycle.fixture.mjs",
+      "bytes": 3931,
+      "sha256": "2faad83bad5959db240ef3f20591ecd52bb095e270f3d801740c7f23bd803819",
+      "gitBlob": "4d4961cb447237410aaae2a90e38a4f4f5253120"
+    },
+    {
+      "path": "scripts/run-current-buyer-funding-owned-stream.mjs",
+      "bytes": 1477,
+      "sha256": "542befa882f800904130e292aca898b4542ecd3fa1c33d5e95b1d7241f49e163",
+      "gitBlob": "9b26fcf21f6b8ffaf3c8986b722743aeb2441bcb"
+    },
+    {
+      "path": "scripts/run-current-buyer-funding-stream-revocation.py",
+      "bytes": 5364,
+      "sha256": "cb48b11497ba728e4e9b206649a33bce6b8f19554641010ca39961f8631f61e2",
+      "gitBlob": "397c08ce888e5f2f1340316803935443ef8152d3"
+    },
+    {
+      "path": "src/buyer-command-line-channel.js",
+      "bytes": 11200,
+      "sha256": "aea944d8fd1b28290c6beafe7d13985da1194ed5be5d0e1957490fe8c13e1fab",
+      "gitBlob": "f20c1fe402ddb0b3f9dee065a31a10ee88bab179"
+    },
+    {
+      "path": "src/buyer-funding-owned-stream-session.js",
+      "bytes": 11847,
+      "sha256": "3228e6fc0abcaf9714dca72009b99610808a9cc80674662396cb16a4f0b26ad2",
+      "gitBlob": "3edd1b418be13ff2896db23b4d9a82646cb20595"
+    },
+    {
+      "path": "src/buyer-original-command-host.js",
+      "bytes": 8878,
+      "sha256": "b81bddf6b944aa39521d20ea5c43ce17f15c3a0f39a462de149d399f2ad300b3",
+      "gitBlob": "62a4e1df1d751b37ad24c831dc40dba43297c1fd"
+    },
+    {
+      "path": "src/buyer-original-funding-command-session.js",
+      "bytes": 14884,
+      "sha256": "19d91c723622e1cb2244c1fa9b3dd59db5fd72120c7163df53076b833ba0c9c5",
+      "gitBlob": "170054dd880ac1efd432f00006815552de4e523b"
+    },
+    {
+      "path": "src/buyer-original-funding-command.js",
+      "bytes": 14077,
+      "sha256": "064a31640b10da873ecf558b0550024366e50cc9d1a5e91a15cc4e006e05e7e9",
+      "gitBlob": "2e6e234d85a2fc92a2ae9c52a8ea3429f63faad1"
+    },
+    {
+      "path": "src/canonical.js",
+      "bytes": 967,
+      "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+      "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4"
+    },
+    {
+      "path": "src/service-credit-bounded-close-completion.js",
+      "bytes": 6020,
+      "sha256": "1d59ec72cf9b8877947ba766316746be1e2ca5b82029c9b656757c2953ff7e5e",
+      "gitBlob": "9ccc197dd1090f14bb4c452389be8aa8180d0322"
+    },
+    {
+      "path": "src/service-credit-bounded-operation-drain.js",
+      "bytes": 5474,
+      "sha256": "4ea81e010451f91bb8f0ca668dd6bd3966763ea23385bdd0d511c200e4b3eecd",
+      "gitBlob": "843f9b0a3adb411471f7e345b97362e9035e094b"
+    },
+    {
+      "path": "src/service-credit-original-request-custody-contract.js",
+      "bytes": 15100,
+      "sha256": "483d20e90d78ba95a8c5d5458dd201910e8d42aecbdc0dc03812e7044a464054",
+      "gitBlob": "94d67559a11f87f283a5cd99d2aaf8074374eb0a"
+    },
+    {
+      "path": "src/service-credit-pilot-original-payment-checkpoint.js",
+      "bytes": 4003,
+      "sha256": "930905f31824a6cadc16dfb84572cd4dc38a81e2fce4569b73b6bef29dec97d1",
+      "gitBlob": "51c6391bc22f561ebff0005ced31e538aa83f4fa"
+    },
+    {
+      "path": "src/x402-funding-post-checkpoint-route.js",
+      "bytes": 1310,
+      "sha256": "157e80e9f14b41c8cacc05423a7acd8616a6f759adac377f04f1fca21869831e",
+      "gitBlob": "777ff48ac9cf255f80cda7e22c68706b7d7084b3"
+    },
+    {
+      "path": "src/x402-official-https-request-binding.js",
+      "bytes": 5085,
+      "sha256": "dabf215408887bd0d2ba346085c5ab2df13f724e8759b7a98b71b09c8dc8d692",
+      "gitBlob": "47059c772407233b8b6f54632ba065893ff92dd3"
+    },
+    {
+      "path": "src/x402-original-payment-checkpoint-client.js",
+      "bytes": 13457,
+      "sha256": "bba2439e40a2decb75b330440919d8d1ea1fea53f6e684f77b57a9bb66129af1",
+      "gitBlob": "bd732c2c739e6dbe1d4ed583b6b55040bf8aecfd"
+    },
+    {
+      "path": "src/x402-wire.js",
+      "bytes": 39886,
+      "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+      "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+    },
+    {
+      "path": "src/zenon/bounded-dynamic-plasma-strategy.js",
+      "bytes": 15729,
+      "sha256": "7b82560bdeb25e573912090a2fe8de7b45912500a7a7c4434fe06dcf94e06d62",
+      "gitBlob": "ee85b7a4da8bf4190ae099e6bc5074059fccebbc"
+    },
+    {
+      "path": "src/zenon/bounded-json-rpc-read-core.js",
+      "bytes": 22116,
+      "sha256": "1d8873868274045825717ee70b9a402d91cd6235fdaf410d93ddb365fc2d7ca3",
+      "gitBlob": "82d49d18a92c1074819e8976d94a2cfef3975466"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-compatibility.js",
+      "bytes": 7732,
+      "sha256": "b3989ce15e5f2e9d07b0ed035fe96bcce9f22cac93f5e497fdca5c37bf7618dd",
+      "gitBlob": "3811b748b3f905e454c8a4af4650bb7f89eb1cf2"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-json-rpc-read-transport.js",
+      "bytes": 10832,
+      "sha256": "fd03b2ad87d16660aa61d3961c163d724d5f89cd6d4bb9c4391d739566d5e5ca",
+      "gitBlob": "0475b7ab42889f67fb030fa7344d73d8bd6957d7"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-observation-normalizer.js",
+      "bytes": 28398,
+      "sha256": "2c3f7d42ded21a5513ff26c23a00a35a53aa334f053d10930f1571a020286897",
+      "gitBlob": "c406db8471aa6c8afd812c222c673c809491cf00"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-original-funding-data.js",
+      "bytes": 16557,
+      "sha256": "8a416a548e827dc71bc6f87e675e265d01c20d6e8147de8617d47b8b8b8b0770",
+      "gitBlob": "8d8e44fba2bd093ec0d0c909530a570b7eb104ce"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-original-funding-service-handoff-request.js",
+      "bytes": 4584,
+      "sha256": "07affc3e40d785406fea54794ee694c03e31ab49fc8857369cdf52e33a331cab",
+      "gitBlob": "0382f9f6235a4fbc6f5935d3db77b29efaf1a345"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-price-policy.js",
+      "bytes": 16224,
+      "sha256": "eba3225c4d26cbb6e0be575ac4fd5073bc8b0c4454eb51e2bea4d91856d0c65e",
+      "gitBlob": "649dd09b60236b43c91d22e34b76f71f4b661361"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-required-fused-policy-adapter.js",
+      "bytes": 12024,
+      "sha256": "e2b693d4df9065d44ba590f4d0c8dffeb8e55187668eedfa396b4026c9905c3e",
+      "gitBlob": "b592aafd4c41461318376ea9acc1373f99317455"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-required-fused-quote.js",
+      "bytes": 5416,
+      "sha256": "f5e10ff2dbfff3b6b63d87f0abadd0bb52b5d6b8fe0ead6a55fc5ea14207b730",
+      "gitBlob": "e820fd31ffde4ef77a2efa6e1fd3ed1775778726"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-user-send-fixed-work.js",
+      "bytes": 3475,
+      "sha256": "4ee83870df0b25c34d35c0f0d0ceb894ca9dab8c047f81b34a48dd816f1fbf38",
+      "gitBlob": "4ce2a790df84c77bc76615e5eebc309ecd2868ac"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-user-send-key-binding.js",
+      "bytes": 4237,
+      "sha256": "37ad7e74b038801297e4bffb0cb8ba92cbd79009ed32c4ae5b134fe2cb154be2",
+      "gitBlob": "c366f0fee4132604b40604547fe22f1bc1dba65d"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-user-send-work-binding.js",
+      "bytes": 1940,
+      "sha256": "79eba29a05427128ae3a12346fd3ee7cbaa526d6f39eb36ed58d388640638266",
+      "gitBlob": "a329d521458a5c5b6dbc87194d91d4165d5e759c"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-user-send-work-input.js",
+      "bytes": 2853,
+      "sha256": "2ff9c089e5903c059746d0a1c38688a2849f94d04d429279811fbbfbb40450a4",
+      "gitBlob": "dad4febf4ef6f09216640245c7e3805e01ad0127"
+    },
+    {
+      "path": "src/zenon/plasma-strategy.js",
+      "bytes": 974,
+      "sha256": "1c597d4e169ba8a5e6d2b7852c4ffa3a8ec9b854332fe354b9b013c36ebae093",
+      "gitBlob": "5cddc2d270aaf043e6e43145e95ffe0be3dde475"
+    },
+    {
+      "path": "src/zenon/prepared-hash-wallet-adapter.js",
+      "bytes": 9266,
+      "sha256": "113c275a38aaec45a347666b28fdc43c70704973b8d1c20956ebacad18db3e25",
+      "gitBlob": "7b9230b51429cce8547bb12cdd4d109bcdef4e34"
+    },
+    {
+      "path": "src/zenon/sdk105-funding-service-lifecycle.js",
+      "bytes": 14952,
+      "sha256": "26802aa4e059fce0b0bb02a87ee0e432aad90fb152206c1d8317f5e19deb1cf9",
+      "gitBlob": "3eac7417567baf08624201cd64d5fac05cd7962b"
+    },
+    {
+      "path": "src/zenon/sdk105-prepared-hash-wallet-owner.js",
+      "bytes": 10629,
+      "sha256": "73f5e3fb4e90f8b93a6063e26cc353530b50b623d3fb3def9b39f00c43445b56",
+      "gitBlob": "01bc44904f6d94980ca6358e2d3a3300e4e29655"
+    },
+    {
+      "path": "src/zenon/transaction-planner.js",
+      "bytes": 22611,
+      "sha256": "079fe8da938e08e33a20ca1076492a829afa6fce3ae7f9b9f68d3bf4bff94233",
+      "gitBlob": "17b49a3d53974c9b3846ec6f352d6e8974bad7d3"
+    }
+  ],
+  "cases": [
+    {
+      "scenario": "INPUT_DESTROY_BEFORE_GUARD",
+      "passed": true,
+      "errorCode": "buyer_funding_owned_stream_open_refused",
+      "transferred": false,
+      "openCalls": 1,
+      "acquisitions": 0,
+      "expectedAcquisitions": 0,
+      "payerCloses": 0,
+      "declaredKeyClears": 0,
+      "outputStops": 1,
+      "writes": 0,
+      "originalCloseReceiptRetained": false,
+      "activeTimeoutsBefore": 0,
+      "activeTimeoutsAfter": 0,
+      "actualCommands": 0,
+      "nativeAndKeyCallbacks": "DECLARED",
+      "sdk": 0,
+      "SQLite": 0,
+      "sockets": 0,
+      "keysGenerated": 0,
+      "cryptographicSignatures": 0,
+      "nonce": 0,
+      "physicalRelease": "NOT_QUALIFIED"
+    },
+    {
+      "scenario": "OUTPUT_DESTROY_BEFORE_GUARD",
+      "passed": true,
+      "errorCode": "buyer_funding_owned_stream_open_refused",
+      "transferred": false,
+      "openCalls": 1,
+      "acquisitions": 0,
+      "expectedAcquisitions": 0,
+      "payerCloses": 0,
+      "declaredKeyClears": 0,
+      "outputStops": 1,
+      "writes": 0,
+      "originalCloseReceiptRetained": false,
+      "activeTimeoutsBefore": 0,
+      "activeTimeoutsAfter": 0,
+      "actualCommands": 0,
+      "nativeAndKeyCallbacks": "DECLARED",
+      "sdk": 0,
+      "SQLite": 0,
+      "sockets": 0,
+      "keysGenerated": 0,
+      "cryptographicSignatures": 0,
+      "nonce": 0,
+      "physicalRelease": "NOT_QUALIFIED"
+    },
+    {
+      "scenario": "OUTPUT_END_BEFORE_GUARD",
+      "passed": true,
+      "errorCode": "buyer_funding_owned_stream_open_refused",
+      "transferred": false,
+      "openCalls": 1,
+      "acquisitions": 0,
+      "expectedAcquisitions": 0,
+      "payerCloses": 0,
+      "declaredKeyClears": 0,
+      "outputStops": 1,
+      "writes": 0,
+      "originalCloseReceiptRetained": false,
+      "activeTimeoutsBefore": 0,
+      "activeTimeoutsAfter": 0,
+      "actualCommands": 0,
+      "nativeAndKeyCallbacks": "DECLARED",
+      "sdk": 0,
+      "SQLite": 0,
+      "sockets": 0,
+      "keysGenerated": 0,
+      "cryptographicSignatures": 0,
+      "nonce": 0,
+      "physicalRelease": "NOT_QUALIFIED"
+    },
+    {
+      "scenario": "INPUT_DESTROY_BEFORE_RETURN",
+      "passed": true,
+      "errorCode": "buyer_funding_owned_stream_open_refused",
+      "transferred": false,
+      "openCalls": 1,
+      "acquisitions": 1,
+      "expectedAcquisitions": 1,
+      "payerCloses": 1,
+      "declaredKeyClears": 1,
+      "outputStops": 1,
+      "writes": 0,
+      "originalCloseReceiptRetained": false,
+      "activeTimeoutsBefore": 0,
+      "activeTimeoutsAfter": 0,
+      "actualCommands": 0,
+      "nativeAndKeyCallbacks": "DECLARED",
+      "sdk": 0,
+      "SQLite": 0,
+      "sockets": 0,
+      "keysGenerated": 0,
+      "cryptographicSignatures": 0,
+      "nonce": 0,
+      "physicalRelease": "NOT_QUALIFIED"
+    },
+    {
+      "scenario": "OUTPUT_DESTROY_BEFORE_RETURN",
+      "passed": true,
+      "errorCode": "buyer_funding_owned_stream_open_refused",
+      "transferred": false,
+      "openCalls": 1,
+      "acquisitions": 1,
+      "expectedAcquisitions": 1,
+      "payerCloses": 1,
+      "declaredKeyClears": 1,
+      "outputStops": 1,
+      "writes": 0,
+      "originalCloseReceiptRetained": false,
+      "activeTimeoutsBefore": 0,
+      "activeTimeoutsAfter": 0,
+      "actualCommands": 0,
+      "nativeAndKeyCallbacks": "DECLARED",
+      "sdk": 0,
+      "SQLite": 0,
+      "sockets": 0,
+      "keysGenerated": 0,
+      "cryptographicSignatures": 0,
+      "nonce": 0,
+      "physicalRelease": "NOT_QUALIFIED"
+    },
+    {
+      "scenario": "INPUT_DESTROY_DURING_INSPECT",
+      "passed": true,
+      "errorCode": "buyer_funding_owned_stream_open_refused",
+      "transferred": false,
+      "openCalls": 1,
+      "acquisitions": 1,
+      "expectedAcquisitions": 1,
+      "payerCloses": 1,
+      "declaredKeyClears": 1,
+      "outputStops": 1,
+      "writes": 0,
+      "originalCloseReceiptRetained": false,
+      "activeTimeoutsBefore": 0,
+      "activeTimeoutsAfter": 0,
+      "actualCommands": 0,
+      "nativeAndKeyCallbacks": "DECLARED",
+      "sdk": 0,
+      "SQLite": 0,
+      "sockets": 0,
+      "keysGenerated": 0,
+      "cryptographicSignatures": 0,
+      "nonce": 0,
+      "physicalRelease": "NOT_QUALIFIED"
+    },
+    {
+      "scenario": "OUTPUT_END_DURING_INSPECT",
+      "passed": true,
+      "errorCode": "buyer_funding_owned_stream_open_refused",
+      "transferred": false,
+      "openCalls": 1,
+      "acquisitions": 1,
+      "expectedAcquisitions": 1,
+      "payerCloses": 1,
+      "declaredKeyClears": 1,
+      "outputStops": 1,
+      "writes": 0,
+      "originalCloseReceiptRetained": false,
+      "activeTimeoutsBefore": 0,
+      "activeTimeoutsAfter": 0,
+      "actualCommands": 0,
+      "nativeAndKeyCallbacks": "DECLARED",
+      "sdk": 0,
+      "SQLite": 0,
+      "sockets": 0,
+      "keysGenerated": 0,
+      "cryptographicSignatures": 0,
+      "nonce": 0,
+      "physicalRelease": "NOT_QUALIFIED"
+    },
+    {
+      "scenario": "CHANNEL_SETUP_OVERRUN",
+      "passed": true,
+      "errorCode": "buyer_funding_owned_stream_open_refused",
+      "transferred": false,
+      "openCalls": 0,
+      "acquisitions": 0,
+      "expectedAcquisitions": 0,
+      "payerCloses": 0,
+      "declaredKeyClears": 0,
+      "outputStops": 1,
+      "writes": 0,
+      "originalCloseReceiptRetained": false,
+      "activeTimeoutsBefore": 0,
+      "activeTimeoutsAfter": 0,
+      "actualCommands": 0,
+      "nativeAndKeyCallbacks": "DECLARED",
+      "sdk": 0,
+      "SQLite": 0,
+      "sockets": 0,
+      "keysGenerated": 0,
+      "cryptographicSignatures": 0,
+      "nonce": 0,
+      "physicalRelease": "NOT_QUALIFIED"
+    },
+    {
+      "scenario": "EVENT_DELIVERED_GUARD_REFUSES",
+      "passed": true,
+      "errorCode": "buyer_funding_owned_stream_open_refused",
+      "transferred": false,
+      "openCalls": 1,
+      "acquisitions": 0,
+      "expectedAcquisitions": 0,
+      "payerCloses": 0,
+      "declaredKeyClears": 0,
+      "outputStops": 1,
+      "writes": 0,
+      "originalCloseReceiptRetained": false,
+      "activeTimeoutsBefore": 0,
+      "activeTimeoutsAfter": 0,
+      "actualCommands": 0,
+      "nativeAndKeyCallbacks": "DECLARED",
+      "sdk": 0,
+      "SQLite": 0,
+      "sockets": 0,
+      "keysGenerated": 0,
+      "cryptographicSignatures": 0,
+      "nonce": 0,
+      "physicalRelease": "NOT_QUALIFIED"
+    },
+    {
+      "scenario": "SUCCESS",
+      "passed": true,
+      "errorCode": null,
+      "transferred": true,
+      "openCalls": 1,
+      "acquisitions": 1,
+      "expectedAcquisitions": 1,
+      "payerCloses": 1,
+      "declaredKeyClears": 1,
+      "outputStops": 1,
+      "writes": 1,
+      "originalCloseReceiptRetained": true,
+      "activeTimeoutsBefore": 0,
+      "activeTimeoutsAfter": 0,
+      "actualCommands": 2,
+      "nativeAndKeyCallbacks": "DECLARED",
+      "sdk": 0,
+      "SQLite": 0,
+      "sockets": 0,
+      "keysGenerated": 0,
+      "cryptographicSignatures": 0,
+      "nonce": 0,
+      "physicalRelease": "NOT_QUALIFIED"
+    }
+  ],
+  "baselineRegressions": [
+    {
+      "scenario": "INPUT_DESTROY_BEFORE_GUARD",
+      "passed": false,
+      "errorCode": null,
+      "transferred": true,
+      "openCalls": 1,
+      "acquisitions": 1,
+      "expectedAcquisitions": 0,
+      "payerCloses": 1,
+      "declaredKeyClears": 1,
+      "outputStops": 1,
+      "writes": 0,
+      "originalCloseReceiptRetained": true,
+      "activeTimeoutsBefore": 0,
+      "activeTimeoutsAfter": 0,
+      "actualCommands": 0,
+      "nativeAndKeyCallbacks": "DECLARED",
+      "sdk": 0,
+      "SQLite": 0,
+      "sockets": 0,
+      "keysGenerated": 0,
+      "cryptographicSignatures": 0,
+      "nonce": 0,
+      "physicalRelease": "NOT_QUALIFIED"
+    },
+    {
+      "scenario": "CHANNEL_SETUP_OVERRUN",
+      "passed": false,
+      "errorCode": null,
+      "transferred": true,
+      "openCalls": 1,
+      "acquisitions": 1,
+      "expectedAcquisitions": 0,
+      "payerCloses": 1,
+      "declaredKeyClears": 1,
+      "outputStops": 1,
+      "writes": 0,
+      "originalCloseReceiptRetained": true,
+      "activeTimeoutsBefore": 0,
+      "activeTimeoutsAfter": 0,
+      "actualCommands": 0,
+      "nativeAndKeyCallbacks": "DECLARED",
+      "sdk": 0,
+      "SQLite": 0,
+      "sockets": 0,
+      "keysGenerated": 0,
+      "cryptographicSignatures": 0,
+      "nonce": 0,
+      "physicalRelease": "NOT_QUALIFIED"
+    }
+  ],
+  "identicalRegressionControlSourceBeforeAfter": true,
+  "nativeAndKeyCallbacks": "DECLARED",
+  "existing31CasesUseFixedInvalidSignatureDATA": true,
+  "SDKOrX402OrNobleEvaluated": 0,
+  "SQLite": 0,
+  "sockets": 0,
+  "generatedKeys": 0,
+  "cryptographicSignatures": 0,
+  "nonceSearch": 0,
+  "filesystemScratch": 0,
+  "NodeChildProcesses": 0,
+  "oldV1NativeSourcesPreserved": true,
+  "nativePermissionTransferred": false,
+  "physicalNativeRelease": "NOT_QUALIFIED",
+  "serviceDelivery": "NOT_ESTABLISHED",
+  "economicPilot": "NOT_QUALIFIED",
+  "production": "NOT_QUALIFIED",
+  "existingHosted108ProfileChanged": false,
+  "new41CasesHosted": false
+}
