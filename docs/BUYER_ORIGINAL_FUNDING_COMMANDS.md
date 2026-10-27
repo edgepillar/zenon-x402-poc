@@ -114,7 +114,7 @@ only when channel construction begins; unacquired streams remain caller-owned.
 
 ## Verification and remaining gates
 
-The [current local result](../qualification/buyer-original-command-host.actual-local-result.json)
+The [current local result](../qualification/buyer-owned-pipe-streams.actual-local-result.json)
 binds 44 component modules and the package manifest (45 inputs), 124 exact cases,
 exit and stream digests. It includes these unchanged 52 case bodies, 28
 [local recovery controls](BUYER_ORIGINAL_RECOVERY_COMMANDS.md) and 24
@@ -161,3 +161,7 @@ source-only on development. Only the changed CLI root was parsed in the current
 host step; unchanged native root parser results were reused at identical bytes.
 The earlier 104/80/52-case records remain historical evidence at their original
 source pins; they have not been relabeled as results for this current graph.
+
+The current result keeps the 124-case componentRegression separate from four
+real provided-pipe controls. All 124 cases were rerun after the shared session
+write-uncertainty fix; earlier command-host results retain their original pins.

@@ -93,13 +93,25 @@ The legacy buyer and all earlier named open entries remain byte-for-byte
 unchanged. These new run entries are source-only native wiring; they have not
 been exercised with actual SDK, stores, proof admission or transport.
 
+The [explicit provided-pipe transport](BUYER_OWNED_PIPE_STREAMS.md) supplies
+independently owned POSIX FIFO streams for this existing session/channel host.
+It keeps command output separate from process diagnostics and preserves the
+same original close receipts and uncertainty rules. The supplied descriptors
+are explicit transfers; process stdin/stdout are not implicitly adopted. This
+transport foundation does not qualify a standalone native recovery launcher.
+
 ## Actual verification
 
-The [actual local result](../qualification/buyer-original-command-host.actual-local-result.json)
+The componentRegression section of the
+[current local result](../qualification/buyer-owned-pipe-streams.actual-local-result.json)
 pins 44 component modules and the package manifest (45 inputs), 124 exact case
 names, actual exit and stream digests. One Node 24.19.0 command passed all cases
-in about 1.76 seconds, with no failures, skips, cancellations or stderr.
+in about 1.40 seconds, with no failures, skips, cancellations or stderr.
 No new scratch, managed task, source/package copy or Node child was created.
+Four separate real provided-pipe controls also passed, including lost output
+during inspect. That case now latches output uncertainty even before a business
+operation; it preserves CLOSE_UNKNOWN / 4 and the original rejected close.
+The earlier 124-case result remains historical at its original session source.
 
 Tests execute the actual host and three actual command-session modes using Node
 memory streams. Existing SDK105 key/lifecycle and original/backend recovery code
