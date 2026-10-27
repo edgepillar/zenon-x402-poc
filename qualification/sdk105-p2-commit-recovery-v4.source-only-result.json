@@ -1,0 +1,53 @@
+{
+  "status": "SOURCE_ONLY_ADMITTED_NOT_NATIVE_EXECUTED",
+  "admission": {
+    "event": "SDK105_P2_COMMIT_RECOVERY_SOURCE_ADMITTED",
+    "applicationFiles": 151,
+    "packageFilesDeclared": 404,
+    "packageFilesRead": 0,
+    "reviewedLiteralEdges": 696,
+    "startupMatches": true,
+    "selectedMode": "commit-kill-recover",
+    "allowedModes": [
+      "commit-kill-recover"
+    ],
+    "roles": {
+      "parent": "qualification/sdk105-p2-commit-recovery.parent.mjs",
+      "funding-child": "qualification/sdk105-p2-funding-child.case.mjs",
+      "recovery-child": "qualification/sdk105-p2-recovery-child.case.mjs"
+    },
+    "preloadFixedPinsMatched": true,
+    "sourceTransforms": false,
+    "nativeAuthority": "NONE",
+    "nativeCasesExecuted": 0
+  },
+  "manifestSha256": "14b602d4fa7fea9e6c4f060050c8371c8f1008e85bb24cf4767aede921312388",
+  "controllerSha256": "0dd1687e8a334388ec482e5ce406bcb9573a91472c61a0a2447afa8993ad69bc",
+  "actualSourceOnlyReceiptSha256": "0dcbce47f5eeafd884ace1ea7ae23d248c56a7f86a68ec314203c0d6b3fb7fe3",
+  "parseOnly": {
+    "currentParentAndPreloadCases": 2,
+    "unchangedFundingRecoveryIpcIoCasesReused": 4,
+    "evaluation": false,
+    "allActualExitsZero": true,
+    "originalParseReceiptSha256": "dee0165a5cfcccaaebbaf7f361a1be4447b41d77c60cb115a0e3399c9b21d2ed",
+    "currentParseReceiptSha256": "0dcbce47f5eeafd884ace1ea7ae23d248c56a7f86a68ec314203c0d6b3fb7fe3"
+  },
+  "initialSourceOnlyDefaultModeIssuePreserved": true,
+  "initialObservationSha256": "dee0165a5cfcccaaebbaf7f361a1be4447b41d77c60cb115a0e3399c9b21d2ed",
+  "nativeAuthority": "NONE",
+  "nativeExecutions": 0,
+  "applicationChildren": 0,
+  "actualSignals": 0,
+  "actualIPC": 0,
+  "installedPackageFilesRead": 0,
+  "SQLite": 0,
+  "SDK": 0,
+  "signatures": 0,
+  "nonceSearches": 0,
+  "storageManagerImports": 0,
+  "storageTasksOpened": 0,
+  "scratchFiles": 0,
+  "sourceOrDependencyDirectoryCopies": 0,
+  "nativeOsNetworkSandbox": false,
+  "productionQualified": false
+}
