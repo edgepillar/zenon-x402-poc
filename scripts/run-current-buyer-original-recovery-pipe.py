@@ -41,12 +41,21 @@ BACKEND_INSPECT_CASES = frozenset(('BACKEND_INSPECT', 'BACKEND_STORE_CLOSE_THROW
     'BACKEND_READER_CLOSE_THROWS', 'BACKEND_READER_CLOSE_NONCLOSED', 'BACKEND_PAYER_CLOSE_REJECTS',
     'BACKEND_PAYER_CLOSE_LATE', 'BACKEND_POST_STORE_VIEW_DRIFT', 'BACKEND_STORE_EARLY_CLOSE',
     'BACKEND_STORE_CLOSE_PENDING_RECEIPT', 'BACKEND_DOUBLE_CLOSE_GUARD', 'BACKEND_PROMISE_ACCESSOR_REFUSED'))
+STARTUP_SCENARIOS = ('LOCAL_OPEN_PENDING', 'LOCAL_OPEN_LATE', 'LOCAL_LATE_CLOSE_REJECTS', 'LOCAL_LATE_CLOSE_PENDING',
+    'LOCAL_LATE_CLOSE_THENABLE', 'LOCAL_LATE_OWNER_SHAPE', 'LOCAL_SYNC_OPEN_EXPIRES', 'BACKEND_OPEN_PENDING',
+    'BACKEND_OPEN_LATE', 'BACKEND_LATE_STORE_CLOSE_REJECTS', 'BACKEND_SYNC_OPEN_EXPIRES',
+    'BACKEND_PREFIX_PAYER_PENDING', 'BACKEND_PREFIX_PAYER_LATE', 'BACKEND_SHARED_BUDGET',
+    'CLIENT_SETUP_BUDGET_EXPIRES', 'STARTUP_TIMER_CANCELLED')
 
 
 def profile_data(profile):
-    require(profile in ('LOCAL', 'BACKEND'), 'CLOSED_PROFILE')
+    require(profile in ('LOCAL', 'BACKEND', 'STARTUP'), 'CLOSED_PROFILE')
     if profile == 'LOCAL':
         return ENTRY, VECTOR, SCENARIOS, ENV
+    if profile == 'STARTUP':
+        return ('qualification/buyer-original-recovery-pipe-startup.control.mjs',
+                'qualification/buyer-original-backend-recovery-pipe.fixture.json', STARTUP_SCENARIOS,
+                {**ENV, 'X402_ORIGINAL_RECOVERY_PIPE_CONTROL': 'explicit-whole-acquisition-declared-native-only'})
     return ('qualification/buyer-original-backend-recovery-pipe.control.mjs',
             'qualification/buyer-original-backend-recovery-pipe.fixture.json', BACKEND_SCENARIOS,
             {**ENV, 'X402_ORIGINAL_RECOVERY_PIPE_CONTROL': 'explicit-backend-store-owner-declared-native-only'})
@@ -99,6 +108,13 @@ def case_input(repo, scenario, profile='LOCAL'):
     value = json.loads((Path(repo) / vector).read_bytes())
     require(value['certificateAndSignatureDATAAreInvalid'] is True and value['authority'] == 'NONE', 'FIXED_INVALID_DATA_ONLY')
     bootstrap = copy.deepcopy(value['bootstrap'])
+    if profile == 'STARTUP':
+        budget = 80 if scenario in ('BACKEND_SHARED_BUDGET', 'STARTUP_TIMER_CANCELLED') else 30
+        bootstrap['payerOptions']['deadlineMs'] = budget
+        bootstrap['transportOptions'].update(requestDeadlineMs=budget, handshakeDeadlineMs=budget, closeGraceMs=budget)
+        if not (scenario.startswith('BACKEND_') or scenario == 'STARTUP_TIMER_CANCELLED'):
+            bootstrap['recoveryPipeBootstrapVersion'] = 1
+            del bootstrap['backendOptions']
     if scenario == 'MISMATCHED_GRANT':
         bootstrap['payerOptions']['selectedGrantId'] = 'grant.foreign.1'
     if scenario == 'OUTSIDE_ROOT':
@@ -127,6 +143,8 @@ def case_input(repo, scenario, profile='LOCAL'):
         foreign = json.loads(value['reconcileLine'])
         foreign['input']['key']['grantId'] = 'grant.foreign.1'
         tails['BACKEND_FOREIGN_GRANT'] = json.dumps(foreign, sort_keys=True, separators=(',', ':')) + '\n'
+    if profile == 'STARTUP':
+        tails = {scenario: value['inspectLine'] + value['closeLine']}
     payload = (line + '\n' + tails.get(scenario, '')).encode('utf-8')
     require(len(payload) < 65536, 'INPUT_PAYLOAD_CAP')
     return payload, value['expectedOriginalHeader']
@@ -227,7 +245,7 @@ def run_case(node, repo, selection, scenario):
                 require(diagnostic['scenario'] == scenario and diagnostic['passed'] is True, 'EXACT_SCENARIO')
                 require(diagnostic['ownedDescriptorsClosed'] is True and diagnostic['standardDescriptorsPreserved'] is True
                         and diagnostic['serviceCalls'] == 0 and diagnostic['ipConnections'] == 0, 'EXACT_CONTROL_SCOPE')
-                backend_result = scenario in BACKEND_INSPECT_CASES or scenario in (
+                backend_result = scenario in BACKEND_INSPECT_CASES or scenario == 'STARTUP_TIMER_CANCELLED' or scenario in (
                     'BACKEND_RECONCILE_CACHED', 'BACKEND_RECONCILE_ABSENT', 'BACKEND_LOCAL_ABSENT', 'BACKEND_PRIOR_INTENT', 'BACKEND_QUEUED_SERVICE_NO_REPLAY')
                 if scenario in ('CLEAN_INSPECT', 'RESTORE_ORIGINAL') or backend_result:
                     require(streams['commandOutput'].endswith(b'\n') and streams['commandOutput'].count(b'\n') == 1, 'EXACT_ONE_RESULT')
@@ -235,7 +253,7 @@ def run_case(node, repo, selection, scenario):
                     require(reply['outcome'] == 'CALLBACK_RETURNED' and reply['result']['authority'] == 'NONE', 'EXPLICIT_RESULT')
                     if scenario == 'RESTORE_ORIGINAL':
                         require(reply['result']['paymentSignatureHeader'] == expected_header, 'EXACT_ORIGINAL_HEADER')
-                    elif scenario in BACKEND_INSPECT_CASES or scenario == 'CLEAN_INSPECT':
+                    elif scenario in BACKEND_INSPECT_CASES or scenario in ('CLEAN_INSPECT', 'STARTUP_TIMER_CANCELLED'):
                         require(reply['operation'] == 'inspect', 'EXACT_INSPECTION')
                     else:
                         observed = reply['result']
@@ -275,7 +293,7 @@ def run_case(node, repo, selection, scenario):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--node', required=True, type=Path)
-    parser.add_argument('--profile', choices=('LOCAL', 'BACKEND'), default='LOCAL')
+    parser.add_argument('--profile', choices=('LOCAL', 'BACKEND', 'STARTUP'), default='LOCAL')
     args = parser.parse_args()
     require(args.node.is_absolute() and args.node == args.node.resolve(), 'EXPLICIT_PHYSICAL_NODE_EXECUTABLE')
     repo = Path(__file__).resolve().parent.parent

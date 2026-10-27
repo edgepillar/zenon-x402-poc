@@ -1,4 +1,6 @@
 import { types as utilTypes } from 'node:util';
+import { hrtime } from 'node:process';
+import { setTimeout, clearTimeout } from 'node:timers';
 import { createBuyerOwnedPipeStreams } from './buyer-owned-pipe-streams.js';
 import { createBuyerCommandLineChannel } from './buyer-command-line-channel.js';
 import { decodeBuyerOriginalRecoveryPipeBootstrap, captureBuyerOriginalRecoveryPipeRoot } from './buyer-original-recovery-pipe-bootstrap.js';
@@ -11,6 +13,7 @@ import { createServiceCreditBoundedCloseCompletion } from './service-credit-boun
 const F = Object.freeze, APPLY = Reflect.apply, DESC = Object.getOwnPropertyDescriptor, OWN = Object.hasOwn;
 const PROXY = utilTypes.isProxy, NativePromise = Promise, PROMISE = NativePromise.prototype, THEN = PROMISE.then;
 const FAILED = new Set(), LIMITS = F({ closeWaitMs: 250 });
+const CLOCK = hrtime.bigint, START_TIMER = setTimeout, STOP_TIMER = clearTimeout;
 
 /** The native binding alone supplies openNativeClient, a trusted operational
  * capability, never JSON/argv or an arbitrary module name. This coordinator owns
@@ -30,7 +33,7 @@ export async function runBuyerOriginalRecoveryPipeHost(configuration) {
     openReceipt: null, nativeStop: null, channelStop: null, sessionStop: null, stage: 'PIPES', nativeEntered: false,
     backendMode: false, backendEntered: false, backendOpenReceipt: null, backendRaw: null, backend: null,
     readerStopRequested: false, readerStop: null, readerClosed: false,
-    storeStopRequested: false, storeStop: null, storeClose: 'NOT_REQUESTED' };
+    storeStopRequested: false, storeStop: null, storeClose: 'NOT_REQUESTED', acquisition: null };
   try {
     frame.streams = createBuyerOwnedPipeStreams({ inputFd: c.inputFd, outputFd: c.outputFd });
     // If construction throws after transfer, the channel retains partial owners.
@@ -42,20 +45,23 @@ export async function runBuyerOriginalRecoveryPipeHost(configuration) {
     const bootstrap = decodeBuyerOriginalRecoveryPipeBootstrap(line, expectedRoot);
     if (!channelOpen(frame.channel)) fail();
     frame.backendMode = bootstrap.recoveryPipeBootstrapVersion === 2;
+    if (frame.backendMode && !hasBackend) fail();
+    startAcquisition(frame, bootstrap.payerOptions.deadlineMs);
     if (frame.backendMode) {
-      if (!hasBackend) fail();
-      frame.stage = 'BACKEND_OPEN'; frame.backendEntered = true;
-      frame.backendOpenReceipt = APPLY(c.openBackend, undefined, [bootstrap]);
-      frame.backendRaw = await native(frame.backendOpenReceipt);
+      frame.stage = 'BACKEND_OPEN';
+      const opening = openWithinAcquisition(frame, 'BACKEND', c.openBackend, bootstrap);
+      frame.backendOpenReceipt = opening.receipt;
+      await native(opening.promise); frame.backendRaw = opening.owner;
       if (!Object.isFrozen(frame.backendRaw)) fail();
       frame.backend = F(fields(frame.backendRaw, ['reader', 'closeStore']));
       method(frame.backend, 'closeStore'); method(frame.backend.reader, 'close');
       method(frame.backend.reader, 'readExactOriginal');
       if (!channelOpen(frame.channel)) fail();
     }
-    frame.stage = 'NATIVE_OPEN'; frame.nativeEntered = true;
-    frame.openReceipt = APPLY(c.openNativeClient, undefined, [bootstrap]);
-    frame.native = await native(frame.openReceipt);
+    frame.stage = 'NATIVE_OPEN';
+    const opening = openWithinAcquisition(frame, 'PAYER', c.openNativeClient, bootstrap);
+    frame.openReceipt = opening.receipt;
+    await native(opening.promise); frame.native = opening.owner;
     if (!channelOpen(frame.channel)) fail();
     frame.stage = 'CLIENT';
     frame.client = frame.backendMode ? createBuyerOriginalBackendRecoveryClient({
@@ -64,13 +70,16 @@ export async function runBuyerOriginalRecoveryPipeHost(configuration) {
     frame.stage = 'SESSION';
     const createSession = frame.backendMode ? createBuyerOriginalBackendRecoveryCommandSession : createBuyerOriginalRecoveryCommandSession;
     frame.session = createSession({ client: frame.client, channel: frame.channel, limits: LIMITS });
+    finishAcquisition(frame);
     frame.stage = 'RUN';
     const sessionResult = await runBuyerOriginalCommandHost(frame.session);
-    const result = frame.backendMode ? backendResult(frame, sessionResult) : sessionResult;
+    const stopped = frame.backendMode ? backendResult(frame, sessionResult) : sessionResult;
+    const result = F({ ...stopped, ...acquisitionObservation(frame) });
     if (result.exitCode !== 0) FAILED.add(frame);
     return result;
   } catch {
     FAILED.add(frame);
+    refuseAcquisition(frame, 'OWNER_SETUP_REFUSED');
     let clean = false;
     if (frame.session !== null) {
       // The real session owns its original whole-close budget and both owners.
@@ -86,9 +95,96 @@ export async function runBuyerOriginalRecoveryPipeHost(configuration) {
       returnedSession: frame.session !== null, knownOwnersClosedObserved: clean,
       nativeOpenEntered: frame.nativeEntered, nativeResourceRelease: 'NOT_ESTABLISHED',
       ...(frame.backendMode ? backendObservation(frame) : {}),
+      ...acquisitionObservation(frame),
       historicalObservation: true, authority: 'NONE', serviceDelivery: 'NOT_ESTABLISHED',
       grantActivation: 'NOT_ESTABLISHED', automaticRetry: false });
   }
+}
+
+function clock() { return APPLY(CLOCK, hrtime, []); }
+function startAcquisition(frame, budgetMs) {
+  const a = { budgetMs, deadline: clock() + BigInt(budgetMs) * 1000000n, outcome: 'PENDING',
+    refusal: null, timer: null, current: null, legs: [] };
+  frame.acquisition = a;
+  try { a.timer = START_TIMER(() => refuseAcquisition(frame, 'DEADLINE_UNKNOWN'), budgetMs); }
+  catch { refuseAcquisition(frame, 'TIMER_UNKNOWN'); fail(); }
+}
+function refuseAcquisition(frame, reason) {
+  const a = frame.acquisition;
+  if (a === null || a.outcome !== 'PENDING') return;
+  a.outcome = 'UNKNOWN'; a.refusal = reason;
+  if (a.timer !== null) { STOP_TIMER(a.timer); a.timer = null; }
+  if (a.current !== null) a.current.reject(failure());
+  FAILED.add(frame);
+}
+function requireAcquisition(frame) {
+  const a = frame.acquisition;
+  if (a === null || a.outcome !== 'PENDING') fail();
+  try {
+    if (clock() >= a.deadline) { refuseAcquisition(frame, 'DEADLINE_UNKNOWN'); fail(); }
+  } catch { refuseAcquisition(frame, 'CLOCK_UNKNOWN'); fail(); }
+}
+function finishAcquisition(frame) {
+  requireAcquisition(frame);
+  const a = frame.acquisition;
+  if (a.timer !== null) { STOP_TIMER(a.timer); a.timer = null; }
+  a.outcome = 'TRANSFERRED';
+}
+function acquisitionObservation(frame) {
+  const a = frame.acquisition;
+  return { acquisitionBudgetMs: a?.budgetMs ?? null, acquisitionOutcome: a?.outcome ?? 'NOT_STARTED',
+    acquisitionRefusal: a?.refusal ?? null, acquisitionObservationOnly: true,
+    nativeCancellationOrTermination: 'NOT_ESTABLISHED' };
+}
+function openWithinAcquisition(frame, kind, opener, bootstrap) {
+  requireAcquisition(frame);
+  const a = frame.acquisition;
+  let resolve, reject;
+  const promise = new NativePromise((yes, no) => { resolve = yes; reject = no; });
+  Object.defineProperty(promise, 'constructor', { value: NativePromise });
+  observe(promise, () => {}, () => {});
+  const leg = { kind, promise, resolve, reject, receipt: null, owner: null, accepted: false,
+    lateStopRequested: false, lateStop: null, lateStopObservation: 'NOT_REQUESTED', lateBackend: null };
+  a.current = leg; a.legs.push(leg);
+  if (kind === 'BACKEND') frame.backendEntered = true; else frame.nativeEntered = true;
+  try {
+    leg.receipt = APPLY(opener, undefined, [bootstrap]);
+    observe(leg.receipt, owner => {
+      leg.owner = owner;
+      try {
+        requireAcquisition(frame); leg.accepted = true;
+        // Resolve only a void signal: never assimilate the returned owner again.
+        leg.resolve(undefined);
+      } catch { stopLateAcquisitionOwner(leg); }
+    }, () => refuseAcquisition(frame, 'OPEN_REJECTED_UNKNOWN'));
+    // A synchronous native entry may block the event loop past the timer. Do
+    // not transfer its owner just because a Promise microtask beats that timer.
+    requireAcquisition(frame);
+  } catch { refuseAcquisition(frame, 'OPEN_RECEIPT_UNKNOWN'); }
+  return leg;
+}
+function stopLateAcquisitionOwner(leg) {
+  if (leg.accepted || leg.lateStopRequested) return;
+  leg.lateStopRequested = true; leg.lateStopObservation = 'UNKNOWN';
+  if (leg.kind === 'BACKEND') {
+    try {
+      if (!Object.isFrozen(leg.owner)) fail();
+      const backend = F(fields(leg.owner, ['reader', 'closeStore']));
+      method(backend, 'closeStore'); method(backend.reader, 'close'); method(backend.reader, 'readExactOriginal');
+      leg.lateBackend = { backend, client: null, readerStopRequested: false, readerStop: null,
+        readerClosed: false, storeStopRequested: false, storeStop: null, storeClose: 'NOT_REQUESTED' };
+      if (closeOwnedBackendStore(leg.lateBackend)) leg.lateStopObservation = 'VOID_RECEIPT_OBSERVED';
+    } catch {}
+  } else {
+    try {
+      leg.lateStop = APPLY(method(leg.owner, 'close'), leg.owner, []);
+      observe(leg.lateStop, value => {
+        if (value === undefined) leg.lateStopObservation = 'VOID_RECEIPT_OBSERVED';
+      }, () => {});
+    } catch {}
+  }
+  // This retained late owner never enters a client/session, writes a result,
+  // reopens a payer, retries close or changes the original UNKNOWN observation.
 }
 
 function backendObservation(frame) {
@@ -233,7 +329,10 @@ function observe(value, yes, no) {
   const bridge = APPLY(THEN, native(value), [yes, no]); APPLY(THEN, bridge, [() => {}, () => {}]);
 }
 function fail() {
+  throw failure();
+}
+function failure() {
   const code = 'buyer_original_recovery_pipe_host_refused', e = new TypeError(code);
   Object.defineProperty(e, 'code', { value: code, enumerable: true });
-  Object.defineProperty(e, 'stack', { value: 'TypeError: ' + code }); throw F(e);
+  Object.defineProperty(e, 'stack', { value: 'TypeError: ' + code }); return F(e);
 }

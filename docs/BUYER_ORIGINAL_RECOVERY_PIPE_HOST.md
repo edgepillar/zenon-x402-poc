@@ -1,8 +1,8 @@
 # Original-only recovery over explicit process pipes
 
 The current bootstrap, owned backend resource, original-only connector, command
-session and host passed 46 local OS-pipe controls on Node 24.19.0 / macOS arm64:
-33 backend controls and 13 rerun local-recovery controls. The hardwired native
+session and host passed 62 local OS-pipe controls on Node 24.19.0 / macOS arm64:
+16 startup, 33 backend and 13 local-recovery controls. The hardwired native
 binding, standalone CLI and named buyer entry are on development with
 source/parser qualification only. Their SDK/SQLite/HTTPS path has not run.
 
@@ -114,6 +114,28 @@ NOT_QUALIFIED; even a void callback return is not a real SQLite execution test.
 
 ## Failure and close ownership
 
+After canonical bootstrap capture, the explicit payerOptions.deadlineMs also
+sets one cooperative acquisition-observation budget. It starts before either
+native entry and spans backend opening, payer opening and client/session setup.
+It is not reset for the second store. Monotonic elapsed checks run before entry,
+when each opening value arrives and before session transfer, so a synchronous
+entry which blocks the event loop cannot beat expiry with a Promise microtask.
+
+An opening which remains pending produces UNKNOWN without another acquisition.
+Its original Promise and any returned late owner remain retained. A late payer
+is stopped once through its own captured close capability. A late backend's
+reader is fenced before its owned store stop. A known untransferred backend can
+be stopped even while the separate payer opening has not returned. A late value
+never enters a client/session, writes command output, replays a queued command
+or clears the previously returned uncertainty. Failed/non-void/unsupported late
+stop receipts stay unknown; there is no automatic second stop or payer reopen.
+
+The acquisition timer is cleared on transfer or refusal. It is separate from
+the existing close budget below and never becomes a second session-close owner.
+Returned acquisitionBudgetMs/acquisitionOutcome/acquisitionRefusal fields are
+historical observations only. A closed callback receipt still does not prove
+physical native release, cancellation, grant authority or service delivery.
+
 Before a session exists, bootstrap refusal or acquisition failure attempts the
 known native/client stop and channel stop independently, once, under one 250 ms
 cooperative close observation. A rejected stop cannot suppress the other leg.
@@ -135,16 +157,19 @@ results go only to the independent result pipe. The native CLI writes one bounde
 status label to fd 2 and sets process.exitCode; it never force-exits or appends a
 second result to an already-closed command output.
 
-Bootstrap input may wait for its operator. Native module loading/opening has no
-new hard cancellation or elapsed-time guarantee. The cooperative cleanup budget
-does not prove OS termination, native drain, durable outcome, delivery or future
-resource state. The owner must retain uncertainty across interruption.
+Bootstrap input may wait for its operator. The acquisition budget begins only
+after valid bootstrap DATA. Timers cannot preempt synchronous code or terminate
+a hidden native handle: a blocked event loop is refused once JavaScript resumes.
+An unreturned native owner may keep the real process alive despite the host's
+UNKNOWN result. Neither acquisition nor cleanup observation proves an OS time
+limit, native drain, durable outcome, delivery or future resource state. The
+operator must retain uncertainty across interruption.
 
 ## Actual source-bound evidence
 
-The [current local result](../qualification/buyer-original-backend-recovery-pipe.actual-local-result.json)
-records 46 exact cases, real process exits and separate stdout/stderr/command
-stream digests. All passed in about 6.80 seconds. The Python controller supplied
+The [current local result](../qualification/buyer-original-recovery-pipe-startup.actual-local-result.json)
+records 62 exact cases, real process exits and separate stdout/stderr/command
+stream digests. All passed in about 9.00 seconds. The Python controller supplied
 the retained fixed vector before each Node process started; the child did not
 learn originals or pins from a database. The vector contains deliberately
 invalid certificate/signature DATA and no wallet key or usable payment signer.
@@ -170,16 +195,25 @@ for the reader's CLOSED DATA or actual SQLite cleanup.
 
 The prior four pipe controls and 124 component cases were reused only after all
 48 original inputs matched exactly. They were not rerun. New evidence references
-the SHA-pinned 621-row unchanged protected manifest instead of copying its table into every
+the SHA-pinned 628-row unchanged protected manifest instead of copying its table into every
 report. Each new case is journaled before final result derivation. No source or
 package copy, managed task, filesystem scratch or Node child was created.
 
-The 117-file literal native graph was reviewed. The changed native binding had
-one fresh parser check without linking/evaluating modules; the two unchanged
-CLI-root parser observations were reused at exact root/package pins. All changed
-pure runtime modules were parsed and executed by the current controls. The
-108-case hosted profile stays unchanged and does not execute these 46 controls.
-The [prior 13-case result](../qualification/buyer-original-recovery-pipe.actual-local-result.json)
+The 16 startup cases add pending and late local/backend acquisition, failed or
+pending late payer close, a late unsupported stop thenable and inert owner-shape
+refusal, late backend store-close failure, known-prefix shutdown, shared
+backend+payer deadline, synchronous entry/setup delay and actual active-timer
+cancellation. The delay controls use an 80 ms Atomics.wait on a fresh four-byte
+memory buffer; no worker is created. Original opening receipts, one-call close
+counts, no replay, unchanged returned UNKNOWN and actual FD closure are checked.
+
+The 117-file literal native graph was reviewed. Its three unchanged root/parser
+observations were reused at exact root/package pins. The changed pure host was
+parsed and executed by the current controls, including actual monotonic time
+and timers, without evaluating the native bindings. The 108-case hosted profile
+stays unchanged and does not execute these 62 controls.
+The [prior 46-case backend result](../qualification/buyer-original-backend-recovery-pipe.actual-local-result.json),
+the [prior 13-case result](../qualification/buyer-original-recovery-pipe.actual-local-result.json)
 and earlier 11/12-case records remain historical at their own source pins. The
 unpublished initial 45-case source snapshot is preserved separately; the final
 46-case run includes the strict Promise-constructor guard.
