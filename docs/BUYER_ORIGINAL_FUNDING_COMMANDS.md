@@ -1,7 +1,8 @@
 # Explicit original funding buyer commands
 
-Date: 2026-10-27. All 52 funding/lifecycle cases passed again within the
-current 124-case command-host component selection.
+Date: 2026-10-27. The owned-stream entry passed 17 fresh builtin controls. Prior
+62 pipe controls and 124 component/four pipe controls were reused only after
+their exact 45 and 48 source/control inputs respectively remained unchanged.
 The native SDK105 command host is SOURCE ONLY and available on development.
 The ordinary buyer/default and Phase2C routes remain unchanged.
 
@@ -105,16 +106,57 @@ re-signs, re-submits, reconstructs a payment or proves durable recovery.
 A write/read failure can preserve an original result while leaving its external
 receipt unknown. The actual client retains its original funding state.
 
-The native opener validates the closed existing-key and stream selection before
-acquisition. If a client was returned but a later facade/channel step fails,
-actual owners and stop receipts are retained privately and both applicable stops
-are attempted. Before the underlying client returns, its original quarantine
-rules and caller key-cleanup duty remain in force. Stream acquisition starts
-only when channel construction begins; unacquired streams remain caller-owned.
+The native opener first validates the closed existing-key configuration without
+entering a key method. It then uses the actual owned-stream entry to reserve the
+channel synchronously, before SDK module loading or native client opening. This
+closes the earlier race between inert stream validation and channel construction
+after an awaited OPEN: a concurrent/reentrant invocation cannot start a second
+native/key acquisition against the same streams. Inert validation still leaves
+unacquired streams caller-owned; a partial constructor retains its own quarantine.
+
+The fixed native binding supplies one internal opening capability, never a
+factory selected by argv, command DATA or the public native configuration. After
+OPEN returns, the entry requires a pristine SDK105 lifecycle, a currently open
+owned channel and no active/prepared/funded/handoff state before constructing the
+actual command session. The existing named export and configuration shape stay
+unchanged. The ordinary/default buyer is not selected by this entry.
+
+On opening rejection or later setup refusal, the entry retains the original
+opening and known stop receipts, starts one cooperative cleanup observation,
+requests returned-client and channel stops independently, and rechecks current
+views after the final await. A throwing, pending or rejected client stop cannot
+suppress the channel stop. Late clean callbacks never rewrite the rejection or
+request another close. A constructor which returned no channel owns any partial
+quarantine; this entry never raw-destroys uncertain streams to compete with it.
+
+Before the real native client returns, its original construction quarantine and
+caller existing-key cleanup contract remain in force. This entry never clears
+an unreturned key or treats a still-pending opening as key-release evidence.
+Native opening itself can remain pending: this change does not add early key
+cancellation or alter its custody contract. Cleanup observation establishes
+neither actual key erasure nor physical native resource release.
 
 ## Verification and remaining gates
 
-The [current local result](../qualification/buyer-owned-pipe-streams.actual-local-result.json)
+The [current owned-entry result](../qualification/buyer-funding-owned-stream-session.actual-local-result.json)
+records 17 selected cases, one shared-process Node 24.19.0 command, actual exit,
+separate stdout/stderr digests and source pins. All passed in about 0.72 seconds.
+It exercises actual Node memory streams, exclusive channel construction,
+SDK105 pure wallet/lifecycle owners, command session and host with declared
+native/key callbacks and fixed invalid signature DATA. The positive sequence
+constructs its expected original packet/pins BEFORE opening or reading any
+preparation result, then explicitly prepares, commits, submits funding, hands
+off and invokes one original service callback. It does not authenticate real
+external pins or perform cryptographic signing, SQL, TLS, network or payment.
+
+The cases also cover preparation-only EOF, concurrent/reentrant same-stream
+acquisition, rejected/throwing OPEN, inert thenable/Promise-constructor refusal,
+bad session setup, stale prepared client, channel loss during OPEN, rejected or
+pending client close, late output close, a throwing stop, inspection accessor
+refusal and inert configuration refusal. Original opening and failed cleanup
+evidence remains retained; no native test or installation is hidden in this run.
+
+The [earlier component result](../qualification/buyer-owned-pipe-streams.actual-local-result.json)
 binds 44 component modules and the package manifest (45 inputs), 124 exact cases,
 exit and stream digests. It includes these unchanged 52 case bodies, 28
 [local recovery controls](BUYER_ORIGINAL_RECOVERY_COMMANDS.md) and 24
@@ -140,13 +182,15 @@ public bytes and deliberately invalid signature DATA. Fake clear only changes
 fixture public bytes. No SDK/Noble/x402 package, actual key/signature, SQLite,
 application socket, HTTPS, positive-work search or SDK PREPARE is evaluated.
 
-The native host and buyer named entry are development-only source. They are
-not part of the main builtin component closure. Their two new/changed roots
-passed parser-only checks; the native host's 94-file relative graph was inspected
-without linking or evaluating its SDK/package imports. Main receives the independently
-qualified codec/session/channel, fixture/tests/runner and evidence/documentation.
-The existing hosted 108-case profile is unchanged and does not run these 52
-local cases or the current 124-case selection. The separate frozen native allowance remains unconsumed and is not
+The native binding and buyer named entry remain development-only source. The
+changed native funding module has a fresh parser-only check; the literal native
+graph is now 118 files. Existing unchanged root-parser observations are reused,
+without linking/evaluating SDK/native package modules. Main receives the pure
+owned-stream entry, control/runner/result and this documentation. The hosted
+108-case profile is unchanged and does not run these 17 entry controls. The
+earlier 52/124/62-case results remain at their own source pins; their unchanged
+selected inputs were verified rather than their native scope being expanded.
+The separate frozen native allowance remains unconsumed and is not
 retargeted to this graph. Durable recovery, actual SDK/store/HTTPS/key cleanup,
 default buyer cutover, grant activation, service delivery and economic pilot
 acceptance remain unqualified.
