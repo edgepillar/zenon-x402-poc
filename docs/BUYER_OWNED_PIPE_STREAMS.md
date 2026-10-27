@@ -110,3 +110,10 @@ All 124 component cases were rerun because the shared session changed; the old
 108-case hosted profile retains its original scope. These pipe controls do not
 extend either selection to native store,
 funding, service delivery, default cutover, crash recovery or production.
+
+The [original-only pipe bootstrap host](BUYER_ORIGINAL_RECOVERY_PIPE_HOST.md)
+now owns this channel before native acquisition and transfers the same channel
+to the actual recovery session. Its external original/pins/grant bootstrap must
+match a separately supplied operator root. Thirteen new real-pipe controls pass;
+native standalone CLI/binding wiring remains source-only on development. The
+four controls recorded here keep their original pins and were not rerun.
