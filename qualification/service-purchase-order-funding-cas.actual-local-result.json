@@ -1,0 +1,321 @@
+{
+  "qualification": "PURCHASE_ORDER_FUNDING_FENCED_CAS_DATA",
+  "status": "PASS",
+  "observedAtUTC": "2026-10-28T13:08:46.924942+00:00",
+  "nodeVersion": "24.19.0",
+  "platform": "darwin-arm64",
+  "nodeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25",
+  "sourcePins": [
+    {
+      "path": "docs/PURCHASE_ORDER_FUNDING_CAS.md",
+      "bytes": 4890,
+      "sha256": "0c94d46b9ef914b258e441e876d772361c59f413058ffd061cb1e311a3ff5748",
+      "gitBlob": "93f5d0357bd1c695d492943a15657313f749c984"
+    },
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "qualification/service-purchase-order-funding-cas.behavior.mjs",
+      "bytes": 18306,
+      "sha256": "d1bfa804057a272b95b64d592aaa45c5e868b17a78bc8e494b9501f7e2417109",
+      "gitBlob": "915af6532907fc7fd1e8ad0339d2a8f042d2da8a"
+    },
+    {
+      "path": "qualification/service-purchase-order-funding-sqlite.native.mjs",
+      "bytes": 13396,
+      "sha256": "4ce4d422f488b4190a4b4f39b3cb3cc73b72f0f68f3398606cd0e0c3feb97b1c",
+      "gitBlob": "fb71332f9532a3de082181c7fcbaa54be8272c52"
+    },
+    {
+      "path": "qualification/service-purchase-order-funding-sqlite.preload.mjs",
+      "bytes": 3131,
+      "sha256": "27d17959f153200ec386a3ea1d7b4e0d8026f3045e232e51eb645ad140609c97",
+      "gitBlob": "0bf064b4620380858b429770f0d00f236760baf6"
+    },
+    {
+      "path": "qualification/service-purchase-order-funding.fixture.mjs",
+      "bytes": 6108,
+      "sha256": "b10e29b35b40453cfa154ea2366579149f668cdae4a33c10abdb5ea430d59f7b",
+      "gitBlob": "ae3038ae6c07da3b10f5668f9027dc5a27c2e10e"
+    },
+    {
+      "path": "src/canonical.js",
+      "bytes": 967,
+      "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+      "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4"
+    },
+    {
+      "path": "src/service-credit-activation.js",
+      "bytes": 24719,
+      "sha256": "9e1a2ce00b2950b290ebd0797d3a770f51ad252288c630ada5ebcd6cef54233a",
+      "gitBlob": "155be6ee91599e10043c0293de23d669e663b512"
+    },
+    {
+      "path": "src/service-credit-model.js",
+      "bytes": 55461,
+      "sha256": "7ff7e3d88ab8c3b38a0073541533fbdb7a0d9f2be42f337ac35f6a3b05615c3a",
+      "gitBlob": "e6ac17254874584d1a01f70e7abc6f771bd35d73"
+    },
+    {
+      "path": "src/service-credit-original-request-custody-contract.js",
+      "bytes": 15100,
+      "sha256": "483d20e90d78ba95a8c5d5458dd201910e8d42aecbdc0dc03812e7044a464054",
+      "gitBlob": "94d67559a11f87f283a5cd99d2aaf8074374eb0a"
+    },
+    {
+      "path": "src/service-credit-pilot-original-payment-checkpoint.js",
+      "bytes": 4003,
+      "sha256": "930905f31824a6cadc16dfb84572cd4dc38a81e2fce4569b73b6bef29dec97d1",
+      "gitBlob": "51c6391bc22f561ebff0005ced31e538aa83f4fa"
+    },
+    {
+      "path": "src/service-credit-purchased-original-recovery.js",
+      "bytes": 10704,
+      "sha256": "06ecfb702a2d9e78fab9544765fafbea0da74c12b2a54f95bcd16309cb13aa1d",
+      "gitBlob": "44346a21f4c6d63b72d3b29294d826d9ac5a604c"
+    },
+    {
+      "path": "src/service-credit-zenon-funding-evidence.js",
+      "bytes": 52430,
+      "sha256": "adde739cf8f927ce411bd10b45020febcd41cd76073eebdcd3560bf1635df754",
+      "gitBlob": "03f57859481f65f302d1f2c45e847b47730a37b2"
+    },
+    {
+      "path": "src/service-purchase-fulfillment.js",
+      "bytes": 19520,
+      "sha256": "076ce6db7f853639cef0781655858503724a94ab1fb650804a82d98e92f24fcb",
+      "gitBlob": "1802cf29f87bf42a87e91adac52d7ac2bd13685c"
+    },
+    {
+      "path": "src/service-purchase-order-funding-cas-contract.js",
+      "bytes": 13764,
+      "sha256": "2511fe65a8a2cf4432a0871c2fca46c5553d84cc41a9286350b6f0260d095e79",
+      "gitBlob": "53bb536472d9522a84e1dd7193aedec8e7780191"
+    },
+    {
+      "path": "src/service-purchase-order-funding-sqlite-store.js",
+      "bytes": 9651,
+      "sha256": "32f1fd160806c0cd9cde30904ac21e6282edd902004c2ddb260b6662daebca1d",
+      "gitBlob": "a3a127084a3ded706680420c34f9188088657a25"
+    },
+    {
+      "path": "src/service-purchase-order-funding.js",
+      "bytes": 14449,
+      "sha256": "4e8e04e679d32395d9f1696b16d0c2c853d8e3a93e4aef0e1bb53bb87e91765a",
+      "gitBlob": "f953df048a147ebd4a0c5631a078747d5bc3689a"
+    },
+    {
+      "path": "src/service-purchase-storage-contract.js",
+      "bytes": 5158,
+      "sha256": "213f34a964acea11693f07f51fe99cc1eca1460ac5c98b2dd96cc0100a0159e6",
+      "gitBlob": "38d2cdbba760dcd7cdcbfb9fb66f83cbabc0e8ce"
+    },
+    {
+      "path": "src/service-purchase-terms.js",
+      "bytes": 3270,
+      "sha256": "9d3308103b5d573ef6f93f909b15e744f9e752911e602f3c32e882f18ebd6141",
+      "gitBlob": "1dd81d8b5a54fe7cd1bd68eab540c993981b22c0"
+    },
+    {
+      "path": "src/x402-wire.js",
+      "bytes": 39886,
+      "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+      "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+    }
+  ],
+  "runtimeInputs": [
+    "package.json",
+    "qualification/service-purchase-order-funding-cas.behavior.mjs",
+    "qualification/service-purchase-order-funding.fixture.mjs",
+    "src/canonical.js",
+    "src/service-credit-activation.js",
+    "src/service-credit-model.js",
+    "src/service-credit-original-request-custody-contract.js",
+    "src/service-credit-pilot-original-payment-checkpoint.js",
+    "src/service-credit-purchased-original-recovery.js",
+    "src/service-credit-zenon-funding-evidence.js",
+    "src/service-purchase-fulfillment.js",
+    "src/service-purchase-order-funding-cas-contract.js",
+    "src/service-purchase-order-funding.js",
+    "src/service-purchase-storage-contract.js",
+    "src/service-purchase-terms.js",
+    "src/x402-wire.js"
+  ],
+  "passed": 26,
+  "failed": 0,
+  "cases": [
+    {
+      "id": "explicit-claim-binds-payment-scope-with-no-receipt-or-authority",
+      "status": "PASS"
+    },
+    {
+      "id": "actual-grant-free-owner-retains-and-verifies-through-versioned-port",
+      "status": "PASS"
+    },
+    {
+      "id": "verified-receipt-handoff-preserves-original-liability-without-verification",
+      "status": "PASS"
+    },
+    {
+      "id": "late-old-worker-cannot-write-after-explicit-handoff",
+      "status": "PASS"
+    },
+    {
+      "id": "reused-worker-name-retires-old-token-even-with-identical-receipt",
+      "status": "PASS"
+    },
+    {
+      "id": "lost-verified-ack-recovers-same-receipt-on-new-epoch",
+      "status": "PASS"
+    },
+    {
+      "id": "malformed-ack-after-commit-does-not-advance-cached-envelope",
+      "status": "PASS"
+    },
+    {
+      "id": "lost-claim-ack-does-not-auto-read-or-auto-retry",
+      "status": "PASS"
+    },
+    {
+      "id": "duplicate-payment-scope-cannot-be-claimed-for-a-second-order",
+      "status": "PASS"
+    },
+    {
+      "id": "logical-release-retains-verified-liability-without-physical-release-claim",
+      "status": "PASS"
+    },
+    {
+      "id": "lost-release-ack-fences-the-old-writer-without-deleting-its-proof",
+      "status": "PASS"
+    },
+    {
+      "id": "pending-proof-resume-is-explicit-and-candidate-stays-identical",
+      "status": "PASS"
+    },
+    {
+      "id": "rejected-proof-can-be-refreshed-only-with-a-monotonic-attempt",
+      "status": "PASS"
+    },
+    {
+      "id": "verified-receipt-cannot-be-downgraded-or-erased",
+      "status": "PASS"
+    },
+    {
+      "id": "initial-receipt-must-be-retained-before-any-verification-result",
+      "status": "PASS"
+    },
+    {
+      "id": "attempt-reset-and-pending-candidate-replacement-are-refused",
+      "status": "PASS"
+    },
+    {
+      "id": "attempt-budget-is-immutable-in-the-durable-binding",
+      "status": "PASS"
+    },
+    {
+      "id": "handoff-cannot-rewrite-a-valid-receipt-or-move-payment-scope",
+      "status": "PASS"
+    },
+    {
+      "id": "revision-owner-and-epoch-rollback-or-overflow-are-refused",
+      "status": "PASS"
+    },
+    {
+      "id": "wrong-checksum-or-self-consistent-invalid-authority-is-corruption",
+      "status": "PASS"
+    },
+    {
+      "id": "receipt-port-accepts-only-token-bound-order-and-payment",
+      "status": "PASS"
+    },
+    {
+      "id": "port-cannot-commit-before-load-and-load-cannot-be-repeated",
+      "status": "PASS"
+    },
+    {
+      "id": "lost-or-malformed-envelope-read-holds-before-verification",
+      "status": "PASS"
+    },
+    {
+      "id": "reentrant-port-close-after-native-like-commit-preserves-unknown",
+      "status": "PASS"
+    },
+    {
+      "id": "independent-checkpoint-pins-still-required-after-envelope-recovery",
+      "status": "PASS"
+    },
+    {
+      "id": "identical-receipt-cas-checks-current-envelope-without-increment",
+      "status": "PASS"
+    }
+  ],
+  "actualNodeCommands": 4,
+  "actualDataNodeCommands": 1,
+  "actualSyntaxOnlyCommands": 3,
+  "commands": [
+    {
+      "label": "data",
+      "actualExit": 0,
+      "outputComplete": true,
+      "stdoutSha256": "6b7be7916f70aadc79c7504371f65215002105f9a1e47476d1e664f036e2f959",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "syntax-0",
+      "actualExit": 0,
+      "outputComplete": true,
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "syntax-1",
+      "actualExit": 0,
+      "outputComplete": true,
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "syntax-2",
+      "actualExit": 0,
+      "outputComplete": true,
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "rawQualificationSha256": "7c3c5095bf9486523baa87ad21c5adf440eb43cabadc2cca9e7f6941af1fd3b6",
+  "sourceTransforms": false,
+  "independentAPFSClones": true,
+  "CASVerifiedReuse": 13,
+  "CASNewInputs": 6,
+  "task": "CLOSED/SUCCESS",
+  "actualOwnerAndEnvelopeCode": true,
+  "selectedAuthenticator": "SYNTHETIC",
+  "backend": "SYNTHETIC_ATOMIC_UNIQUE_PAYMENT_CAS",
+  "syntaxOnlyNativeCandidates": [
+    "src/service-purchase-order-funding-sqlite-store.js",
+    "qualification/service-purchase-order-funding-sqlite.native.mjs",
+    "qualification/service-purchase-order-funding-sqlite.preload.mjs"
+  ],
+  "nativeExecutions": 0,
+  "SDK": 0,
+  "SQLite": 0,
+  "keys": 0,
+  "signatures": 0,
+  "sockets": 0,
+  "nonceSearches": 0,
+  "grants": 0,
+  "serviceExecutions": 0,
+  "payouts": 0,
+  "freshProcessRecovery": false,
+  "authenticFundingProof": "NOT_PERFORMED",
+  "fullApplicationRecovery": "OPEN",
+  "physicalResourceRelease": "NOT_QUALIFIED",
+  "realPayment": false,
+  "production": "NOT_ACCEPTED",
+  "existing108ControlCIIsSeparate": true,
+  "newLocalCasesAddedToCI": false
+}
