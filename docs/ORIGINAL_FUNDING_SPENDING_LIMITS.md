@@ -18,7 +18,7 @@ The actual existing preparation codec captures the input. Reservation identity
 includes that complete detached original input and its actual accepted amount,
 recipient, network and asset. A cheaper caller-supplied parallel amount is never
 used. One acknowledged reservation precedes one call into the existing lifecycle's
-preparation. A duplicate ID, stale CAS, lost acknowledgement, malformed backend
+preparation. A duplicate ID, the same original under a different ID, stale CAS, lost acknowledgement, malformed backend
 return or reentrant close cannot return a new preparation authorization.
 
 RESERVED and UNKNOWN exposure stays charged. Every unresolved original carries

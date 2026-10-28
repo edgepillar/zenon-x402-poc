@@ -1,11 +1,11 @@
 {
   "qualification": "G1_ORIGINAL_FUNDING_SPENDING_DATA",
   "status": "PASS",
-  "recordedAtUTC": "2026-10-28T19:00:39.082469+00:00",
+  "recordedAtUTC": "2026-10-28T19:08:49.894261+00:00",
   "nodeVersion": "24.19.0",
   "platform": "darwin-arm64",
   "nodeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25",
-  "passed": 25,
+  "passed": 27,
   "failed": 0,
   "cases": [
     {
@@ -38,6 +38,10 @@
     },
     {
       "id": "same-id-with-changed-original-is-never-a-new-reservation",
+      "status": "PASS"
+    },
+    {
+      "id": "a-new-payment-label-cannot-reserve-the-same-retained-original",
       "status": "PASS"
     },
     {
@@ -97,6 +101,10 @@
       "status": "PASS"
     },
     {
+      "id": "a-new-label-cannot-reenter-actual-preparation-for-the-same-input",
+      "status": "PASS"
+    },
+    {
       "id": "child-preparation-rejection-retains-unknown-exposure",
       "status": "PASS"
     },
@@ -112,9 +120,9 @@
   "sourcePins": [
     {
       "path": "docs/ORIGINAL_FUNDING_SPENDING_LIMITS.md",
-      "bytes": 3047,
-      "sha256": "b4b44b4352dbb9f162552e8abbe396c806d676dfcabbcf4d7dfc233444809234",
-      "gitBlob": "f8d1170e9dd4ed8bebeead308aeebcc5d07859e3"
+      "bytes": 3087,
+      "sha256": "a7ffa05479a6c1755452a14dec846d881ccb5e54cc87ac8a7e3f67b522da924c",
+      "gitBlob": "fb5cd16cd0df9812ac3400f23a27aaf8ec18308b"
     },
     {
       "path": "package.json",
@@ -136,9 +144,9 @@
     },
     {
       "path": "qualification/original-funding-spending.behavior.mjs",
-      "bytes": 14456,
-      "sha256": "ae4aa98f0046b2db5c0e5dd5817222888427fa140e085c66aed278a2efd81bd3",
-      "gitBlob": "17c04a0c16420055efa9ff82d1cc3d274c62c74e"
+      "bytes": 15462,
+      "sha256": "49a31a33843f2fc7255a8c4062c1480cf3456467946d5154c60a790eadff79a6",
+      "gitBlob": "64932b516d59391ff1486d1189d5ce161b61fb48"
     },
     {
       "path": "src/canonical.js",
@@ -148,9 +156,9 @@
     },
     {
       "path": "src/original-funding-spending-reservations.js",
-      "bytes": 10249,
-      "sha256": "944b0b2583667e84a71da031745a44ec22ce2549d88b07d9a4c86c8e54b5f78b",
-      "gitBlob": "cd5096ce6b57f8a8fdf592cc93e5aa77b7eba2dd"
+      "bytes": 10388,
+      "sha256": "ff3ab2b410d51479cc652545d1e0e1ed6cc9bba2243465d39fcbe5a54ca05544",
+      "gitBlob": "de1f79dc6fe69bd4f010277d6e101a9c1448a10d"
     },
     {
       "path": "src/service-credit-original-request-custody-contract.js",
@@ -303,7 +311,7 @@
       "gitBlob": "17b49a3d53974c9b3846ec6f352d6e8974bad7d3"
     }
   ],
-  "rawQualificationSha256": "fb28860406278aac802ffd6b49c05174fc67015fb19e663eb0179816b1f58dd8",
+  "rawQualificationSha256": "811db6879ba690958e1a08a8d88ca7ef9395923605a769cb098cd4b040fa3ed9",
   "actualDataCommands": 1,
   "task": "CLOSED/SUCCESS",
   "CASVerifiedReuse": 29,
@@ -326,5 +334,11 @@
   "new25TestsIncludedIn108CI": false,
   "productAcceptance": "NOT_ESTABLISHED",
   "nativeDurability": "NOT_ESTABLISHED",
-  "sourceTransforms": false
+  "sourceTransforms": false,
+  "previousPublishedReport": {
+    "commit": "8fb625ed0fc478c5581da26ae964356724dfe32d",
+    "path": "qualification/original-funding-spending.actual-local-result.json",
+    "sha256": "436983f618eadf3780b0f68c0b2c6ee4f3e93b3f7edc26665e6cfefc7e14fd56"
+  },
+  "exactOriginalAliasRejection": true
 }

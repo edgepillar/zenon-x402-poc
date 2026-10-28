@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { createOriginalFundingSpendingReservations as create, captureOriginalFundingSpendingPolicy as capture } from '../src/original-funding-spending-reservations.js';
 import { createSpendingBoundedSdk105FundingServiceLifecycle as join } from '../src/zenon/sdk105-funding-service-lifecycle.js';
 import { retainedOriginalInputFixture } from './dynamic-plasma-retained-input.fixture.mjs';
@@ -8,7 +9,7 @@ const F = Object.freeze, checks = [], H = 'sha256:' + 'a'.repeat(64);
 function check(id, run) { checks.push({ id, run }); }
 function policy(edit = {}) { return { version: 1, policyId: 'budget.synthetic.1', accountId: 'payer.synthetic.1', network: 'zenon:testnet',
   asset: 'zts1znnxxxxxxxxxxxxx9z4ulx', recipients: ['recipient.synthetic'], maxPayment: '10', maxTotal: '30', maxDaily: '15', maxRecords: 16, ...edit }; }
-function original(id = 'payment.1', value = '5', edit = {}) { return { paymentId: id, originalDigest: H, network: 'zenon:testnet',
+function original(id = 'payment.1', value = '5', edit = {}) { return { paymentId: id, originalDigest: id === 'payment.1' ? H : 'sha256:' + createHash('sha256').update(id).digest('hex'), network: 'zenon:testnet',
   asset: 'zts1znnxxxxxxxxxxxxx9z4ulx', recipient: 'recipient.synthetic', amount: value, ...edit }; }
 function memory(initial = null) {
   let raw = initial;
@@ -25,7 +26,7 @@ function memory(initial = null) {
   return db;
 }
 function gate() { let resolve; const promise = new Promise(r => { resolve = r; }); return { promise, resolve }; }
-function application({ db = memory(), mode = 'bound', accountId = null } = {}) {
+function application({ db = memory(), mode = 'bound', accountId = null, paymentId = 'payment.1' } = {}) {
   const f = retainedOriginalInputFixture(), packet = assemble(f.input, f.candidate, f.resourceUrl);
   const accepted = f.input.challenge.paymentRequired.accepts[0];
   let walletClosed = false, clientClosed = false, prepares = 0, submits = 0, closes = 0, today = 10;
@@ -48,7 +49,7 @@ function application({ db = memory(), mode = 'bound', accountId = null } = {}) {
   const selected = policy({ recipients: [accepted.payTo], accountId: accountId ?? f.input.plannerContext.readInput.payerAddress });
   db.accountId = selected.accountId;
   h.root = join({ client, walletOwner: wallet, fundingResourceUrl: f.resourceUrl,
-    spending: { policy: selected, backend: db.backend, paymentId: 'payment.1', readDay: () => today } });
+    spending: { policy: selected, backend: db.backend, paymentId, readDay: () => today } });
   return h;
 }
 check('missing-policy-and-empty-allowlists-fail-before-backend-entry', () => {
@@ -66,17 +67,17 @@ check('per-payment-and-recipient-network-asset-limits-precede-writes', () => {
 });
 check('total-cap-includes-spent-and-outstanding-originals', () => {
   const s = create(policy({ maxDaily: '30' }), memory().backend);
-  s.reserve(original('a', '10'), 10); s.observe('a', H, 'SPENT', 10);
-  s.reserve(original('b', '10'), 11); s.observe('b', H, 'UNKNOWN', 11); s.reserve(original('c', '10'), 12);
+  s.reserve(original('a', '10'), 10); s.observe('a', original('a').originalDigest, 'SPENT', 10);
+  s.reserve(original('b', '10'), 11); s.observe('b', original('b').originalDigest, 'UNKNOWN', 11); s.reserve(original('c', '10'), 12);
   assert.throws(() => s.reserve(original('d', '1'), 13), /TOTAL_LIMIT/); assert.equal(s.inspect(13).totalExposure, '30');
 });
 check('daily-cap-carries-unknown-and-reserved-exposure-across-days', () => {
-  const s = create(policy(), memory().backend); s.reserve(original('a', '10'), 10); s.observe('a', H, 'UNKNOWN', 10);
+  const s = create(policy(), memory().backend); s.reserve(original('a', '10'), 10); s.observe('a', original('a').originalDigest, 'UNKNOWN', 10);
   assert.throws(() => s.reserve(original('b', '6'), 11), /DAILY_LIMIT/); s.reserve(original('b', '5'), 11);
   assert.equal(s.inspect(12).dailyExposure, '15'); assert.throws(() => s.reserve(original('c', '1'), 12), /DAILY_LIMIT/);
 });
 check('late-bound-observation-charges-its-day-without-freeing-total-budget', () => {
-  const s = create(policy(), memory().backend); s.reserve(original('a', '10'), 10); s.observe('a', H, 'SPENT', 12);
+  const s = create(policy(), memory().backend); s.reserve(original('a', '10'), 10); s.observe('a', original('a').originalDigest, 'SPENT', 12);
   assert.equal(s.inspect(12).dailyExposure, '10'); assert.equal(s.inspect(13).dailyExposure, '0'); assert.equal(s.inspect(13).totalExposure, '10');
 });
 check('reopen-retains-counters-and-cannot-authorize-the-original-again', () => {
@@ -87,6 +88,10 @@ check('reopen-retains-counters-and-cannot-authorize-the-original-again', () => {
 check('same-id-with-changed-original-is-never-a-new-reservation', () => {
   const db = memory(), s = create(policy(), db.backend); s.reserve(original(), 10); const before = db.read();
   assert.throws(() => s.reserve(original('payment.1', '6'), 10)); assert.equal(db.read(), before);
+});
+check('a-new-payment-label-cannot-reserve-the-same-retained-original', () => {
+  const db = memory(), s = create(policy(), db.backend); s.reserve(original(), 10); const before = db.read();
+  assert.throws(() => s.reserve(original('alias', '5', { originalDigest: H }), 10), /ORIGINAL_ALREADY_RESERVED/); assert.equal(db.read(), before);
 });
 check('two-live-workers-cannot-both-reserve-a-stale-account-snapshot', () => {
   const db = memory(), a = create(policy(), db.backend), b = create(policy(), db.backend);
@@ -150,6 +155,11 @@ check('lost-reservation-ack-blocks-the-actual-lifecycle-before-preparation', asy
 check('existing-reservation-blocks-a-second-actual-preparation-after-reopen', async () => {
   const h = application(); await h.root.prepareOriginalFunding(h.f.input); await h.root.close();
   const b = application({ db: h.db }); await assert.rejects(b.root.prepareOriginalFunding(b.f.input)); assert.equal(b.counts().prepares, 0); await b.root.close();
+});
+check('a-new-label-cannot-reenter-actual-preparation-for-the-same-input', async () => {
+  const h = application(); await h.root.prepareOriginalFunding(h.f.input); await h.root.close();
+  const alias = application({ db: h.db, paymentId: 'alias' }); await assert.rejects(alias.root.prepareOriginalFunding(alias.f.input), /ORIGINAL_ALREADY_RESERVED/);
+  assert.equal(alias.counts().prepares, 0); await alias.root.close();
 });
 check('child-preparation-rejection-retains-unknown-exposure', async () => {
   const h = application({ mode: 'prepareReject' }); await assert.rejects(h.root.prepareOriginalFunding(h.f.input));

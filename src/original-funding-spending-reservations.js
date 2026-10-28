@@ -68,11 +68,11 @@ function decode(raw, policy) {
       || !Number.isSafeInteger(s.revision) || s.revision < 1 || s.revision === Number.MAX_SAFE_INTEGER) fail('CORRUPT');
   day(s.lastDay);
   if (!Array.isArray(s.reservations) || s.reservations.length < 1 || s.reservations.length > policy.maxRecords) fail('CORRUPT');
-  const ids = new Set();
+  const ids = new Set(), originals = new Set();
   for (const item of s.reservations) {
     const r = fields(item, ROW); reservation(Object.fromEntries(ROW.slice(0, 6).map(k => [k, r[k]])), policy, day(r.reservedDay));
-    if (r.reservedDay > s.lastDay || ids.has(r.paymentId) || !['RESERVED', 'UNKNOWN', 'SPENT'].includes(r.status)) fail('CORRUPT');
-    ids.add(r.paymentId);
+    if (r.reservedDay > s.lastDay || ids.has(r.paymentId) || originals.has(r.originalDigest) || !['RESERVED', 'UNKNOWN', 'SPENT'].includes(r.status)) fail('CORRUPT');
+    ids.add(r.paymentId); originals.add(r.originalDigest);
     if (r.status === 'SPENT' ? day(r.spentDay) < r.reservedDay || r.spentDay > s.lastDay : r.spentDay !== null) fail('CORRUPT');
   }
   const exposure = totals(s.reservations, s.lastDay);
@@ -119,7 +119,7 @@ export function createOriginalFundingSpendingReservations(policyInput, backend) 
       let selected;
       change(s => {
         const d = selectedDay(nowDay); selected = reservation(input, policy, d);
-        if (s.reservations.some(r => r.paymentId === selected.paymentId)) fail('ORIGINAL_ALREADY_RESERVED');
+        if (s.reservations.some(r => r.paymentId === selected.paymentId || r.originalDigest === selected.originalDigest)) fail('ORIGINAL_ALREADY_RESERVED');
         if (s.reservations.length >= policy.maxRecords) fail('RECORD_LIMIT');
         const rows = [...s.reservations, selected], exposure = totals(rows, d);
         if (exposure.total > amount(policy.maxTotal)) fail('TOTAL_LIMIT');
