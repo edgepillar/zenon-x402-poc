@@ -1,0 +1,213 @@
+{
+  "kind": "SDK105_ISSUED_COMMAND_APPLICATION_NODE24_V6",
+  "version": 1,
+  "baseSelection": {
+    "path": "qualification/sdk105-issued-command-application-v5.inputs.json",
+    "sha256": "087df3b143f1802f75e7bbaaf295371bc32ef82eba2f75f8ee7a644a5b3ceb24"
+  },
+  "removedApplicationRows": [
+    "app/qualification/sdk105-issued-command-application-v5.case.mjs",
+    "app/qualification/sdk105-issued-command-application-v5.preload.mjs",
+    "app/qualification/committed-response-loss-gate.mjs",
+    "app/qualification/native-committed-response-loss.fixture.mjs"
+  ],
+  "addedApplicationRows": [
+    {
+      "path": "app/qualification/sdk105-issued-command-application-v6.case.mjs",
+      "bytes": 40058,
+      "LF": 574,
+      "sha256": "cd78c3be5b0df2a0e92efb2a49501caf5bda1b9aa390abbb47f9315990a64003",
+      "gitBlob": "343e6b920ce8289303cc37c8ace631b31d6a32e3"
+    },
+    {
+      "path": "app/qualification/sdk105-issued-command-application-v6.preload.mjs",
+      "bytes": 14206,
+      "LF": 266,
+      "sha256": "dcaafa5cd8f64607356b0614287b37a99df67c32b8913107383529148f3ed279",
+      "gitBlob": "6a53aff4c777a6e69ed21e417d4805d52face797"
+    },
+    {
+      "path": "app/qualification/funding-bound-response-loss-gate.mjs",
+      "bytes": 4796,
+      "LF": 96,
+      "sha256": "5fdb03510126fb7b13f291eb07d89589c8a8447c3ff767c31c4943eb9a551b65",
+      "gitBlob": "ab1dca4e068cef73d3e9014626f96d291a82d656"
+    },
+    {
+      "path": "app/qualification/native-funding-bound-response-loss.fixture.mjs",
+      "bytes": 5398,
+      "LF": 87,
+      "sha256": "27aa72b2389263e1f1864fd289d8d0ec5a2ae786e2a15675472857bac43a23eb",
+      "gitBlob": "96fff72bce27f047b196ba8a31e0f9a3937d7371"
+    }
+  ],
+  "resolvedApplicationFiles": 135,
+  "packageFiles": 404,
+  "resolvedSourceRowsSha256": "9cbc474bb92549d93825b62e751fcdc0236f02a2d110070fe862668919df1b94",
+  "resolvedSourceBytes": 4558124,
+  "packageRowsSha256": "6de2ebf27c64de96e4823d3c504347593490061b0c6510db378311258730a31f",
+  "entry": "app/qualification/sdk105-issued-command-application-v6.case.mjs",
+  "preload": "app/qualification/sdk105-issued-command-application-v6.preload.mjs",
+  "bareBindings": [
+    {
+      "parent": "app/src/zenon-payment.js",
+      "specifier": "znn-typescript-sdk",
+      "target": "packages/znn-typescript-sdk/dist/index.js"
+    },
+    {
+      "parent": "app/src/zenon-payment.js",
+      "specifier": "@noble/ed25519",
+      "target": "packages/@noble/ed25519/index.js"
+    },
+    {
+      "parent": "app/src/zenon-payment.js",
+      "specifier": "@noble/hashes/sha2",
+      "target": "packages/@noble/hashes/esm/sha2.js"
+    },
+    {
+      "parent": "app/src/x402-official-selected-payment-client.js",
+      "specifier": "@x402/core/client",
+      "target": "packages/@x402/core/dist/esm/client/index.mjs"
+    },
+    {
+      "parent": "app/src/x402-official-selected-settlement-server.js",
+      "specifier": "@x402/core/server",
+      "target": "packages/@x402/core/dist/esm/server/index.mjs"
+    },
+    {
+      "parent": "packages/@x402/core/dist/esm/chunk-N4QXZG2Z.mjs",
+      "specifier": "zod",
+      "target": "packages/zod/index.js"
+    },
+    {
+      "parent": "app/qualification/sdk105-issued-command-application-v6.case.mjs",
+      "specifier": "znn-typescript-sdk",
+      "target": "packages/znn-typescript-sdk/dist/index.js"
+    },
+    {
+      "parent": "app/qualification/sdk105-issued-command-application-v6.case.mjs",
+      "specifier": "@noble/ed25519",
+      "target": "packages/@noble/ed25519/index.js"
+    },
+    {
+      "parent": "app/qualification/sdk105-issued-command-application-v6.case.mjs",
+      "specifier": "@noble/hashes/sha2",
+      "target": "packages/@noble/hashes/esm/sha2.js"
+    }
+  ],
+  "allowedBuiltins": [
+    "node:assert/strict",
+    "node:async_hooks",
+    "node:buffer",
+    "node:crypto",
+    "node:events",
+    "node:fs",
+    "node:fs/promises",
+    "node:http",
+    "node:https",
+    "node:module",
+    "node:net",
+    "node:path",
+    "node:perf_hooks",
+    "node:process",
+    "node:sqlite",
+    "node:stream",
+    "node:test",
+    "node:timers",
+    "node:tls",
+    "node:url",
+    "node:util",
+    "node:vm",
+    "node:zlib"
+  ],
+  "packageVersions": {
+    "packages/@x402/core/package.json": "2.23.0",
+    "packages/zod/package.json": "3.25.76",
+    "packages/znn-typescript-sdk/package.json": "1.0.5",
+    "packages/@noble/ed25519/package.json": "2.3.0",
+    "packages/@noble/hashes/package.json": "1.8.0"
+  },
+  "effectsCeiling": {
+    "selectedCases": 1,
+    "maximumRuns": 1,
+    "opensslCommands": 1,
+    "nodeCommands": 1,
+    "nodeChildren": 0,
+    "newSqlitePaths": 4,
+    "independentPinFiles": 1,
+    "syntheticEd25519Keys": 2,
+    "transactionSignatures": 1,
+    "capabilitySignatures": 0,
+    "providerSignatures": 0,
+    "testTlsMaterialSeparate": true,
+    "maxRpcConnections": 174,
+    "maxApplicationConnections": 8,
+    "maxTotalConnections": 182,
+    "expectedTotalConnections": 92,
+    "maxCandidatesPerSearch": 4096,
+    "maxReferenceCandidates": 32768,
+    "producerCandidateReservation": 4096,
+    "fixedVerificationReservation": 16384,
+    "maxAggregateCandidates": 65536,
+    "taskQuotaBytes": 4194304,
+    "maximumSourceReadBytes": 6291456,
+    "existingSourcesRecopied": false,
+    "externalNetwork": false,
+    "install": false,
+    "realWallet": false,
+    "realPayment": false,
+    "sdkPrepareBlock": false,
+    "nativeOsNetworkSandbox": false,
+    "ownedStreamCommands": 4,
+    "ownedStreamResults": 4,
+    "maximumCommandInputBytes": 262144,
+    "maximumCommandOutputBytes": 262144,
+    "commandResultWaitMs": 7000,
+    "maximumFundingBoundResponseLossStops": 1,
+    "additionalIntakeBoundReads": 1,
+    "additionalServiceLedgerReads": 2,
+    "serviceExecutions": 0,
+    "grantActivations": 0,
+    "pendingReconciliations": 0,
+    "borrowedStoreForcedCloses": 0
+  },
+  "taskPolicy": {
+    "quotaBytes": 4194304,
+    "minimumFreeBytes": 10737418240,
+    "existingApprovedRootOnly": true,
+    "rootPolicyOverride": false,
+    "maximumRuns": 1
+  },
+  "startupExpected": {
+    "PATH": "/usr/bin:/bin",
+    "LANG": "C",
+    "NODE_DISABLE_COMPILE_CACHE": "1",
+    "WS_NO_BUFFER_UTIL": "1",
+    "WS_NO_UTF_8_VALIDATE": "1",
+    "X402_SDK105_ISSUED_COMMAND_SELECTION": "sdk105-issued-command-application-v6",
+    "X402_SDK105_ISSUED_COMMAND_RUN_SCOPE": "one-sdk105-issued-command-application-v6",
+    "X402_SDK105_ISSUED_COMMAND_MODE": "funding-response-loss",
+    "X402_ISSUED_CLOSE_NATIVE_SELECTION": "current-native-issued-close-source-v4"
+  },
+  "controlInputs": [
+    {
+      "path": "qualification/run-sdk105-issued-command-application-v6.local.py",
+      "bytes": 17437,
+      "LF": 280,
+      "sha256": "9e37274d345b63852a2aec6ac9d1163b2e9db97c39dd4060db869b0ba3b4859c",
+      "gitBlob": "3cea1b21cbd17bb47322523dd300bbd2eb0255db"
+    },
+    {
+      "path": "qualification/node_file_url_profile.py",
+      "bytes": 5301,
+      "LF": 86,
+      "sha256": "9f4ca5bc477d9c706870a65d816c7d98dfc27d55befd7780ef934ef8d89ad4a2",
+      "gitBlob": "0e9243dc88c9a95304fa46f1151d87302f904128"
+    }
+  ],
+  "nativeAuthority": "NONE",
+  "nativeCasesExecuted": 0,
+  "allowedModes": [
+    "funding-response-loss"
+  ]
+}
