@@ -1,5 +1,6 @@
 // SOURCE ONLY; this complete native binding has not been executed.
 import { types } from 'node:util';
+import { claimSdk105ApiCreditExistingKeyLease, bindSdk105ApiCreditExistingKeyLeaseOwner } from './sdk105-api-credit-existing-key-lease.js';
 import { consumeSdk105ApiCreditSelection } from './sdk105-api-credit-selection.js';
 import { consumeSdk105ApiCreditProductSelection, bindSdk105ApiCreditProductLifecycle } from './sdk105-api-credit-product-profile.js';
 import { captureSdk105FundingServiceConfiguration } from './sdk105-funding-service-lifecycle.js';
@@ -45,7 +46,11 @@ async function openApplication(selection, requireCurrentOpening, productProfile)
     requireCurrentOpening();
     const { openZenonDynamicPlasmaNativeFundingServiceClient } = await import('./dynamic-plasma-native-funding-service-client.js');
     // No new key capability is entered after an expired module-loading budget.
-    requireCurrentOpening(); wallet = createSdk105PreparedHashWalletOwner(c.walletOptions);
+    requireCurrentOpening();
+    claimSdk105ApiCreditExistingKeyLease(c.walletOptions.keyPair);
+    wallet = createSdk105PreparedHashWalletOwner(c.walletOptions);
+    bindSdk105ApiCreditExistingKeyLeaseOwner(c.walletOptions.keyPair, wallet);
+    requireCurrentOpening();
     client = await openZenonDynamicPlasmaNativeFundingServiceClient({ storeOptions: c.storeOptions,
       fundingOptions: { ...c.fundingOptions, wallet }, serviceOptions: c.serviceOptions });
     // Ownership of the returned native client/key is now known. A refusal

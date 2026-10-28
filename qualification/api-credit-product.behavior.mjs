@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 // Actual pure product gate plus declared memory/application ports only.
 import assert from 'node:assert/strict';
 import { Buffer } from 'node:buffer';
@@ -152,6 +153,8 @@ check('late-preparation-after-product-close-cannot-start-a-second-offer-or-relea
   await assert.rejects(operation); await assert.rejects(stop); await assert.rejects(h.root.prepareOriginalFunding(h.f.input));
   assert.equal(h.counts.prepares, 1); assert.equal(h.file.closeCalls, 0); assert.equal(h.root.inspect().held, true); s.release(); await r.h.root.close();
 });
+export const apiCreditProductDataCases = F(checks.map(c => F(c)));
+if (typeof process.argv[1] === 'string' && fileURLToPath(import.meta.url) === process.argv[1]) {
 const cases = [];
 for (const { id, run } of checks) { try { await run(); cases.push({ id, status: 'PASS' }); } catch (e) { cases.push({ id, status: 'FAIL', error: String(e?.message ?? e) }); } }
 const failed = cases.filter(c => c.status !== 'PASS').length;
@@ -159,3 +162,4 @@ console.log(JSON.stringify({ qualification: 'G0_G1_FIXED_API_CREDIT_PRODUCT_DATA
   priorAdmissionCases: apiCreditAdmissionDataCases.length, nativeExecutions: 0, SDK: 0, SQLite: 0, keys: 0, signatures: 0, sockets: 0,
   nonceSearches: 0, nodeChildren: 0, actualPrepare: 0, payouts: 0, nativeProductAcceptance: 'NOT_ESTABLISHED' }));
 if (failed) process.exitCode = 1;
+}
