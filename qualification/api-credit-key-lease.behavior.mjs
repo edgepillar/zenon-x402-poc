@@ -1,6 +1,8 @@
 // Declared method ports only: no SDK KeyPair, private key or cryptographic sign.
 import assert from 'node:assert/strict';
 import { Buffer } from 'node:buffer';
+import { fileURLToPath } from 'node:url';
+import process from 'node:process';
 import { apiCreditProductDataCases } from './api-credit-product.behavior.mjs';
 import { createSdk105ApiCreditExistingKeyLease as create, claimSdk105ApiCreditExistingKeyLease as claim,
   bindSdk105ApiCreditExistingKeyLeaseOwner as bind } from '../src/zenon/sdk105-api-credit-existing-key-lease.js';
@@ -176,6 +178,8 @@ check('unknown-key-leases-have-a-finite-retained-owner-limit', async () => {
   for (; held < 16; held++) { const r = fixture({ clearThrow: true }); await assert.rejects(r.lease.close()); }
   assert.throws(() => fixture());
 });
+export const apiCreditKeyLeaseDataCases = F(checks.map(c => F(c)));
+if (typeof process.argv[1] === 'string' && fileURLToPath(import.meta.url) === process.argv[1]) {
 const cases = [];
 for (const { id, run } of checks) { try { await run(); cases.push({ id, status: 'PASS' }); } catch (e) { cases.push({ id, status: 'FAIL', error: String(e?.message ?? e) }); } }
 const failed = cases.filter(c => c.status !== 'PASS').length;
@@ -183,3 +187,5 @@ console.log(JSON.stringify({ qualification: 'G0_G2_EXISTING_KEY_LEASE_DATA', pas
   declaredKeyMethodPortsOnly: true, nativeExecutions: 0, SDK: 0, SQLite: 0, keys: 0, signatures: 0, sockets: 0, nonceSearches: 0,
   nodeChildren: 0, actualPrepare: 0, payouts: 0, nativeKeyLeaseAcceptance: 'NOT_ESTABLISHED', nativeProductAcceptance: 'NOT_ESTABLISHED' }));
 if (failed) process.exitCode = 1;
+
+}

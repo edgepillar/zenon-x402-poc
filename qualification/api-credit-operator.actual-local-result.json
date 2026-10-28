@@ -1,0 +1,657 @@
+{
+  "qualification": "G0_G1_OPERATOR_BOOTSTRAP_DATA_AND_NATIVE_PARSE",
+  "status": "PASS",
+  "recordedAtUTC": "2026-10-28T23:35:01.575592+00:00",
+  "nodeVersion": "24.19.0",
+  "platform": "darwin-arm64",
+  "nodeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25",
+  "passed": 140,
+  "failed": 0,
+  "priorKeyLeaseCases": 113,
+  "newCases": 27,
+  "cases": [
+    {
+      "id": "legacy-default-16-and-maximum-64-are-preserved",
+      "status": "PASS"
+    },
+    {
+      "id": "explicit-api-profile-has-128-commands-with-the-same-byte-and-close-limits",
+      "status": "PASS"
+    },
+    {
+      "id": "api-limit-capture-does-not-enter-accessors-or-proxies",
+      "status": "PASS"
+    },
+    {
+      "id": "funding-and-both-recovery-factories-refuse-api-limits-before-child-capture",
+      "status": "PASS"
+    },
+    {
+      "id": "legacy-channel-refuses-api-limits-without-reserving-the-streams",
+      "status": "PASS"
+    },
+    {
+      "id": "invalid-api-opening-budget-refuses-before-the-client-opener",
+      "status": "PASS"
+    },
+    {
+      "id": "api-opening-reserves-the-same-streams-before-the-fixed-client-opener",
+      "status": "PASS"
+    },
+    {
+      "id": "one-funding-one-grant-and-100-distinct-requests-plus-exact-replay-cross-the-64-command-boundary",
+      "status": "PASS"
+    },
+    {
+      "id": "model-state-rehydration-preserves-100-debits-and-refuses-another-execution-for-the-exact-request",
+      "status": "PASS"
+    },
+    {
+      "id": "unknown-funding-stops-before-handoff-and-retains-the-spending-reservation",
+      "status": "PASS"
+    },
+    {
+      "id": "foreign-grant-refuses-without-service-debit-or-execution",
+      "status": "PASS"
+    },
+    {
+      "id": "changed-body-under-the-same-request-id-cannot-produce-a-second-debit",
+      "status": "PASS"
+    },
+    {
+      "id": "maximum-128-commands-including-close-remains-bounded-at-the-session-and-host",
+      "status": "PASS"
+    },
+    {
+      "id": "command-129-is-refused-before-admission-and-retains-the-last-returned-result",
+      "status": "PASS"
+    },
+    {
+      "id": "legacy-owned-opening-still-uses-the-original-mode-and-16-command-default",
+      "status": "PASS"
+    },
+    {
+      "id": "duplicate-command-id-does-not-reenter-preparation",
+      "status": "PASS"
+    },
+    {
+      "id": "output-loss-retains-the-original-without-committing-or-submitting-funding",
+      "status": "PASS"
+    },
+    {
+      "id": "file-profile-keeps-create-and-existing-ownership-selections-round-trippable",
+      "status": "PASS"
+    },
+    {
+      "id": "file-capacity-includes-10-GiB-floor-all-declared-reserves-and-main-plus-journal-allocation",
+      "status": "PASS"
+    },
+    {
+      "id": "file-profile-rejects-relative-roots-alternate-devices-and-unbounded-file-caps",
+      "status": "PASS"
+    },
+    {
+      "id": "selection-captures-existing-key-identity-policy-and-trust-without-calling-the-key-or-clock",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-mutation-after-selection-cannot-replace-the-captured-recipient-asset-or-transport",
+      "status": "PASS"
+    },
+    {
+      "id": "selection-release-clears-only-owned-trust-copies-and-cannot-refund-consumption",
+      "status": "PASS"
+    },
+    {
+      "id": "selection-rejects-account-asset-and-overlapping-store-roots-before-any-key-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "selection-rejects-nested-accessors-and-unselected-function-capabilities-without-invoking-them",
+      "status": "PASS"
+    },
+    {
+      "id": "unconsumed-released-or-forged-selection-cannot-enter-the-fixed-native-binding",
+      "status": "PASS"
+    },
+    {
+      "id": "application-close-revokes-the-budget-before-physical-close-and-caches-the-same-stop",
+      "status": "PASS"
+    },
+    {
+      "id": "a-pending-wallet-stop-prevents-physical-close-without-marking-a-normal-close-as-held",
+      "status": "PASS"
+    },
+    {
+      "id": "active-preparation-close-retains-unknown-budget-and-never-forces-the-physical-file-closed",
+      "status": "PASS"
+    },
+    {
+      "id": "physical-close-exception-is-held-and-is-not-retried",
+      "status": "PASS"
+    },
+    {
+      "id": "a-nonvoid-physical-close-or-still-open-database-cannot-become-clean-close",
+      "status": "PASS"
+    },
+    {
+      "id": "logical-revoke-refusal-still-stops-the-existing-client-and-holds-physical-close",
+      "status": "PASS"
+    },
+    {
+      "id": "fresh-view-loss-after-close-latches-held-and-never-reopens-or-retries",
+      "status": "PASS"
+    },
+    {
+      "id": "unknown-funding-retains-its-original-budget-and-open-file-under-application-close",
+      "status": "PASS"
+    },
+    {
+      "id": "one-grant-100-request-and-exact-replay-command-flow-joins-the-spending-file-close-owner",
+      "status": "PASS"
+    },
+    {
+      "id": "stale-file-owner-is-refused-before-preparation-or-reserving-another-original",
+      "status": "PASS"
+    },
+    {
+      "id": "owner-epoch-is-rechecked-before-service-even-after-the-budget-is-spent",
+      "status": "PASS"
+    },
+    {
+      "id": "a-nonvoid-current-owner-check-cannot-authorize-an-operation",
+      "status": "PASS"
+    },
+    {
+      "id": "the-complete-operational-capture-is-inert-and-retains-the-exact-policy-and-one-post-budget",
+      "status": "PASS"
+    },
+    {
+      "id": "missing-or-changed-custody-policy-is-refused-before-selection-can-escape",
+      "status": "PASS"
+    },
+    {
+      "id": "relative-traversing-and-nondirect-checkpoint-paths-refuse-before-any-key-call",
+      "status": "PASS"
+    },
+    {
+      "id": "funding-cannot-select-a-second-post-or-another-resource",
+      "status": "PASS"
+    },
+    {
+      "id": "service-origin-count-concurrency-and-aggregate-deadline-are-bound-before-opening",
+      "status": "PASS"
+    },
+    {
+      "id": "noninteger-negative-zero-and-overlong-budgets-cannot-reach-native-opening",
+      "status": "PASS"
+    },
+    {
+      "id": "official-asset-context-and-challenge-capabilities-are-validated-without-calling-them",
+      "status": "PASS"
+    },
+    {
+      "id": "material-cursor-public-bytes-and-attempt-limits-are-validated-without-a-work-search",
+      "status": "PASS"
+    },
+    {
+      "id": "funding-and-service-ca-bytes-must-match-before-selection-is-registered",
+      "status": "PASS"
+    },
+    {
+      "id": "shared-and-extended-ca-buffers-are-refused-without-clearing-borrowed-input",
+      "status": "PASS"
+    },
+    {
+      "id": "duplicate-read-peers-cannot-be-admitted-as-two-independent-endpoint-owners",
+      "status": "PASS"
+    },
+    {
+      "id": "read-owner-budgets-use-the-same-native-timing-grammar",
+      "status": "PASS"
+    },
+    {
+      "id": "public-read-selection-rejects-localhost-private-and-documentation-addresses",
+      "status": "PASS"
+    },
+    {
+      "id": "the-public-route-predicate-preserves-canonical-host-path-and-ipv4-rejection",
+      "status": "PASS"
+    },
+    {
+      "id": "local-qualification-is-a-separate-explicit-grammar-and-never-a-public-fallback",
+      "status": "PASS"
+    },
+    {
+      "id": "read-route-and-key-proxies-are-refused-without-entering-proxy-traps",
+      "status": "PASS"
+    },
+    {
+      "id": "accessor-key-methods-and-missing-sdk-methods-are-refused-without-key-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "a-proxy-day-capability-is-rejected-before-isFrozen-can-enter-its-traps",
+      "status": "PASS"
+    },
+    {
+      "id": "matching-mutation-of-both-owned-ca-buffers-cannot-change-admitted-trust",
+      "status": "PASS"
+    },
+    {
+      "id": "one-sided-ca-mutation-is-rechecked-before-a-consumed-selection-can-open-the-file",
+      "status": "PASS"
+    },
+    {
+      "id": "key-method-shape-is-rechecked-at-consumption-without-constructing-an-owner",
+      "status": "PASS"
+    },
+    {
+      "id": "trailing-newlines-cannot-pass-path-or-symbol-full-byte-admission",
+      "status": "PASS"
+    },
+    {
+      "id": "fixed-product-capture-binds-one-origin-network-asset-recipient-and-offer-without-key-or-clock-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "product-version-and-closed-input-shape-are-required",
+      "status": "PASS"
+    },
+    {
+      "id": "a-product-caller-cannot-supply-its-own-challenge-validator-or-loader",
+      "status": "PASS"
+    },
+    {
+      "id": "the-fixed-offer-must-match-the-spending-network-and-asset",
+      "status": "PASS"
+    },
+    {
+      "id": "the-first-product-has-exactly-one-spending-recipient",
+      "status": "PASS"
+    },
+    {
+      "id": "offer-amount-cannot-exceed-the-existing-payment-budget",
+      "status": "PASS"
+    },
+    {
+      "id": "a-foreign-funding-resource-cannot-select-the-fixed-product",
+      "status": "PASS"
+    },
+    {
+      "id": "multiple-offers-are-not-an-implicit-product-selection",
+      "status": "PASS"
+    },
+    {
+      "id": "the-selected-product-budgets-support-100-distinct-requests-and-an-exact-replay",
+      "status": "PASS"
+    },
+    {
+      "id": "malformed-oversized-and-noncanonical-wire-headers-refuse-before-acquisition",
+      "status": "PASS"
+    },
+    {
+      "id": "the-fixed-challenge-validator-accepts-only-the-captured-semantic-challenge",
+      "status": "PASS"
+    },
+    {
+      "id": "the-fixed-validator-refuses-accessors-and-proxies-without-entering-them",
+      "status": "PASS"
+    },
+    {
+      "id": "product-selection-consumption-is-one-use-and-lookalikes-have-no-brand",
+      "status": "PASS"
+    },
+    {
+      "id": "released-product-selection-cannot-be-consumed-and-clears-only-owned-ca-copies",
+      "status": "PASS"
+    },
+    {
+      "id": "the-existing-native-selection-still-rechecks-ca-and-key-shape-at-its-acquisition-boundary",
+      "status": "PASS"
+    },
+    {
+      "id": "a-forged-product-profile-cannot-bind-an-application",
+      "status": "PASS"
+    },
+    {
+      "id": "a-coherent-cheaper-offer-is-rejected-before-the-real-spending-gate-and-child-preparation",
+      "status": "PASS"
+    },
+    {
+      "id": "coherent-resource-metadata-drift-cannot-change-the-captured-offer",
+      "status": "PASS"
+    },
+    {
+      "id": "one-fixed-product-funding-grant-100-model-debits-and-exact-replay-use-the-actual-application-gate",
+      "status": "PASS"
+    },
+    {
+      "id": "fixed-product-pending-funding-keeps-unknown-budget-and-does-not-handoff-or-execute",
+      "status": "PASS"
+    },
+    {
+      "id": "changed-handoff-challenge-is-rejected-before-wallet-close-or-child-handoff",
+      "status": "PASS"
+    },
+    {
+      "id": "a-product-handoff-accessor-is-not-entered",
+      "status": "PASS"
+    },
+    {
+      "id": "the-product-wrapper-preserves-the-original-close-promise-and-ordered-file-release",
+      "status": "PASS"
+    },
+    {
+      "id": "late-preparation-after-product-close-cannot-start-a-second-offer-or-release-an-unknown-file",
+      "status": "PASS"
+    },
+    {
+      "id": "key-lease-construction-is-descriptor-only-and-the-handle-is-frozen",
+      "status": "PASS"
+    },
+    {
+      "id": "unclaimed-close-clears-once-and-returns-one-cached-receipt",
+      "status": "PASS"
+    },
+    {
+      "id": "revocation-precedes-unclaimed-clear-callbacks-and-blocks-a-late-native-claim",
+      "status": "PASS"
+    },
+    {
+      "id": "key-methods-cannot-enter-before-both-native-claim-and-wallet-binding",
+      "status": "PASS"
+    },
+    {
+      "id": "bound-key-methods-preserve-receiver-input-and-returned-data",
+      "status": "PASS"
+    },
+    {
+      "id": "a-raw-key-cannot-be-leased-again-even-after-its-first-close",
+      "status": "PASS"
+    },
+    {
+      "id": "copied-key-methods-do-not-forge-the-native-claim-brand",
+      "status": "PASS"
+    },
+    {
+      "id": "bare-legacy-keys-do-not-enter-the-lease-protocol-or-wallet-view",
+      "status": "PASS"
+    },
+    {
+      "id": "raw-key-accessors-and-prototype-proxies-are-rejected-without-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "sdk-prototype-method-lookup-retains-the-original-receiver",
+      "status": "PASS"
+    },
+    {
+      "id": "a-second-native-claim-and-a-second-wallet-binding-are-refused",
+      "status": "PASS"
+    },
+    {
+      "id": "claimed-close-delegates-to-the-original-wallet-stop-before-clearing",
+      "status": "PASS"
+    },
+    {
+      "id": "a-key-cleared-by-the-original-wallet-is-not-cleared-again-by-launcher-close",
+      "status": "PASS"
+    },
+    {
+      "id": "reentrant-launcher-close-joins-the-original-active-wallet-operation",
+      "status": "PASS"
+    },
+    {
+      "id": "claimed-without-returned-wallet-remains-held-and-never-direct-clears",
+      "status": "PASS"
+    },
+    {
+      "id": "a-late-wallet-is-stopped-once-without-upgrading-the-first-held-close",
+      "status": "PASS"
+    },
+    {
+      "id": "an-owner-close-exception-is-held-without-retrying-or-direct-clear",
+      "status": "PASS"
+    },
+    {
+      "id": "an-owner-thenable-is-not-assimilated",
+      "status": "PASS"
+    },
+    {
+      "id": "an-owner-close-promise-constructor-accessor-is-not-entered",
+      "status": "PASS"
+    },
+    {
+      "id": "a-clean-looking-owner-view-cannot-substitute-for-the-actual-clear-receipt",
+      "status": "PASS"
+    },
+    {
+      "id": "a-malformed-current-owner-view-preserves-unknown-after-one-returned-clear",
+      "status": "PASS"
+    },
+    {
+      "id": "raw-clear-throw-never-gets-another-clear-attempt",
+      "status": "PASS"
+    },
+    {
+      "id": "a-nonvoid-clear-return-is-not-a-clear-completion",
+      "status": "PASS"
+    },
+    {
+      "id": "an-unsupported-clear-promise-is-observed-only-to-suppress-its-native-rejection",
+      "status": "PASS"
+    },
+    {
+      "id": "a-clear-thenable-getter-is-never-entered",
+      "status": "PASS"
+    },
+    {
+      "id": "lease-inspection-exposes-no-key-material-and-closed-handles-cannot-reenter",
+      "status": "PASS"
+    },
+    {
+      "id": "a-previously-held-key-close-rejects-before-a-pending-wallet-stop-can-settle",
+      "status": "PASS"
+    },
+    {
+      "id": "held-during-wallet-stop-rejects-even-if-that-wallet-claims-a-clean-return",
+      "status": "PASS"
+    },
+    {
+      "id": "unknown-key-leases-have-a-finite-retained-owner-limit",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-argv-is-explicit-bounded-distinct-and-has-no-secret-default",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-argv-refuses-proxies-accessors-and-extra-properties-without-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-clock-uses-utc-day-numbers-required-by-the-durable-budget",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-bootstrap-is-canonical-keyless-data-without-an-sdk-or-key-placeholder",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-bootstrap-rejects-noncanonical-json-duplicate-properties-and-version-drift",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-bootstrap-rejects-secret-loader-clock-validator-and-module-fields",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-bootstrap-rejects-overlapping-roots-and-foreign-network-before-key-read",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-bootstrap-must-carry-a-bounded-public-ca-before-credential-acquisition",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-bootstrap-attaches-existing-key-once-and-detaches-owned-trust-copies",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-bootstrap-binding-rejects-replacement-prepared-data-and-released-selection",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-data-launch-orders-profile-credential-key-session-and-explicit-host",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-stage-guards-cannot-be-replayed-after-that-stage-or-session-admission",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-short-or-long-credential-is-wiped-without-entering-key-or-session",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-malformed-profile-bytes-never-start-credential-or-key-acquisition",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-profile-rejection-returns-only-sanitized-status-data",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-shared-credential-view-is-refused-before-the-key-port",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-native-factory-refusal-is-unknown-with-no-host-or-retry",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-foreign-thenable-is-not-assimilated-or-executed",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-expired-profile-is-wiped-when-it-arrives-and-never-opens-key-input",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-deadline-observed-after-synchronous-key-work-stops-the-known-late-owner",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-late-key-owner-is-stopped-once-without-opening-a-session-or-upgrading-unknown",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-session-entry-transfers-trust-release-to-that-opener-until-late-settlement",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-nonvoid-session-close-cannot-report-a-clean-cli-exit",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-input-stop-failure-remains-unknown-after-other-known-stops",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-host-ambiguity-does-not-authorize-another-host-session-or-key",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-closed-text-without-the-real-host-owner-observations-is-insufficient",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-close-expiry-does-not-repeat-stop-or-upgrade-after-late-completion",
+      "status": "PASS"
+    }
+  ],
+  "actualDataNodeCommands": 1,
+  "actualSyntaxNodeCommands": 7,
+  "nativeSourceParserPaths": [
+    "src/api-credit-cli.js",
+    "src/zenon/native-api-credit-operator-launcher.js",
+    "src/zenon/native-api-credit-operator-key.js",
+    "src/zenon/native-api-credit-operator-pipes.js",
+    "src/zenon/sdk105-native-api-credit-command-session.js",
+    "src/zenon/sdk105-native-api-credit-application.js",
+    "src/buyer-cli.js"
+  ],
+  "sourceProfile": {
+    "path": "qualification/profiles/api-credit-application-source-v5.json",
+    "bytes": 51564,
+    "sha256": "43a021b842202376f3b2440dab77d28dee5a7693615d3b0620df79ab017f2820"
+  },
+  "rawQualificationSha256": "79004194c206b92c8812c3b66ae6c5333b5f957c220a4e06ae67ac6c0438e182",
+  "sourceTransforms": false,
+  "task": "CLOSED/SUCCESS",
+  "sourceOrdering": {
+    "lane": "STATIC_SOURCE_ORDER_ONLY",
+    "argumentCaptureBeforeNativeImport": true,
+    "keylessProductAdmissionBeforeCredentialRead": true,
+    "profileBeforeFixedKeyConstructor": true,
+    "identityCheckBeforeExistingKeyLease": true,
+    "stageGuardAfterSdkImport": true,
+    "operatorGuardComposedAtNativeApplication": true,
+    "selectionReleaseOwnedByPendingOpener": true,
+    "operationalOwnersNeverPromiseResolved": true,
+    "nativeExecution": false
+  },
+  "declaredKeyMethodAndClockPortsOnly": true,
+  "retainedFailureInventory": [
+    {
+      "sha256": "5c7295b19e83ceae420ef8f7a16871b174a9e7e3a7247d4d98d17a1992bcabd4",
+      "status": "UNKNOWN",
+      "task": "CLOSED/FAILURE",
+      "passed": 123,
+      "failed": 16,
+      "actualDataNodeCommands": 1,
+      "actualSyntaxNodeCommands": 0,
+      "nativeExecutions": 0,
+      "classifications": [
+        "SOURCE_BOOTSTRAP_ARRAY_FREEZE_DEFECT",
+        "HARNESS_MAX_SAFE_TIMESTAMP_EXPECTATION"
+      ],
+      "correction": "Freeze parsed arrays in place; admit the valid maximum safe timestamp day. Add full host-owner observation checks before a clean CLI result.",
+      "originalEvidencePreserved": true
+    }
+  ],
+  "nativeExecutions": 0,
+  "SDK": 0,
+  "SQLite": 0,
+  "keys": 0,
+  "signatures": 0,
+  "sockets": 0,
+  "nonceSearches": 0,
+  "nodeChildren": 0,
+  "actualPrepare": 0,
+  "payouts": 0,
+  "nativeProductAcceptance": "NOT_ESTABLISHED",
+  "nativeHundredCallAcceptance": "NOT_ESTABLISHED",
+  "nativeDurability": "NOT_ESTABLISHED",
+  "supportedProductLaunchCommand": "NOT_ESTABLISHED",
+  "operatorCommandSource": "IMPLEMENTED_NATIVE_UNQUALIFIED",
+  "operatorKeyBootstrap": "SOURCE_IMPLEMENTED_NATIVE_UNQUALIFIED",
+  "providerAuthentication": "NOT_ESTABLISHED",
+  "current108CISeparate": true,
+  "new140DataCasesIncludedIn108CI": false,
+  "resources": {
+    "taskQuotaBytes": 4194304,
+    "plannedExecutionPeakBytes": 2376756,
+    "sourceInputs": 129,
+    "dataRuntimeInputs": 56,
+    "nativeSourceInputs": 116,
+    "parserInputs": 7,
+    "materializedInputs": 63,
+    "sourceOnlyAliasesAvoided": 66,
+    "CASVerifiedReuse": 126,
+    "CASNewImports": 3,
+    "sourceTextArchives": 0,
+    "sourceOnlyObjectsRetention": "CURRENT_IMPORT_OR_PRIOR_OWNED_SNAPSHOT"
+  }
+}

@@ -3,6 +3,8 @@ import { types } from 'node:util';
 import { canonicalJson } from '../canonical.js';
 import { decodeB64Json, encodeB64Json, validateActiveUpfrontRequirement, validatePaymentRequiredForOfferSelection } from '../x402-wire.js';
 import { captureSdk105ApiCreditSelection } from './sdk105-api-credit-selection.js';
+import { captureNativeFundingServiceOperationalConfiguration } from './native-funding-service-configuration.js';
+import { captureOriginalFundingSpendingFileProfile } from '../original-funding-spending-file-profile.js';
 import { captureZenonDynamicPlasmaFundingPostPreparationInput } from './dynamic-plasma-funding-post-preparation-input.js';
 
 const F = Object.freeze, DESC = Object.getOwnPropertyDescriptor, OWN = Object.hasOwn;
@@ -38,45 +40,75 @@ function snapshot(value, depth = 0, budget = { nodes: 256, bytes: 4096 }) {
   }
   return F(out);
 }
-/** One declared provider origin, funding offer, network, asset and recipient.
- * The only operational inputs remain an exclusive EXISTING key and day reader.
- * No caller-supplied challenge callback, module, key loader or default exists.
- * Schema/equality checks neither authenticate that provider nor authorize work. */
-export function captureSdk105ApiCreditProductSelection(configuration) {
-  if (arguments.length !== 1) fail();
-  const c = fields(configuration, ['productProfileVersion', 'paymentRequiredHeader', 'configuration', 'spendingFile', 'spending']);
-  if (c.productProfileVersion !== 1) fail();
-  const header = c.paymentRequiredHeader;
+function fixedChallengePolicy(header) {
   const decoded = decodeB64Json(header, { maxEncodedBytes: 5464, maxDecodedBytes: 4096 });
   const challenge = snapshot(decoded); validatePaymentRequiredForOfferSelection(challenge);
   if (challenge.accepts.length !== 1 || encodeB64Json(decoded, { maxEncodedBytes: 5464 }) !== header) fail();
   const requirement = challenge.accepts[0]; validateActiveUpfrontRequirement(requirement);
   const challengeText = canonicalJson(challenge);
-  const fixedChallenge = F(function validateFixedProductChallenge(value) {
+  const validateChallenge = F(function validateFixedProductChallenge(value) {
     if (arguments.length !== 1) fail();
     const detached = snapshot(value); validatePaymentRequiredForOfferSelection(detached);
     if (canonicalJson(detached) !== challengeText) fail();
   });
-  const base = fields(c.configuration, ['storeOptions', 'fundingOptions', 'serviceOptions']);
+  return F({ challenge, requirement, challengeText, validateChallenge });
+}
+/** Complete keyless operational admission for the fixed operator bootstrap.
+ * No placeholder key/day capability is used and no key method is entered.
+ * These detached DATA and public CA bytes do not create a native selection. */
+export function captureSdk105ApiCreditProductOperatorData(configuration) {
+  if (arguments.length !== 1) fail();
+  const c = fields(configuration, ['productProfileVersion', 'paymentRequiredHeader', 'configuration', 'spendingFile', 'spending']);
+  if (c.productProfileVersion !== 1) fail();
+  const fixed = fixedChallengePolicy(c.paymentRequiredHeader), base = fields(c.configuration, ['storeOptions', 'fundingOptions', 'serviceOptions']);
+  const f = fields(base.fundingOptions, ['readSessionOptions', 'materialOptions', 'materialWaitMs', 'expectedAddress', 'deadlineMs', 'fundingTransportOptions']);
+  const { expectedAddress, ...fundingOptions } = f;
   const service = fields(base.serviceOptions, ['assetInfo', 'contextLimit', 'transportOptions', 'deadlineMs']);
+  const admitted = captureNativeFundingServiceOperationalConfiguration({ storeOptions: base.storeOptions, fundingOptions,
+    serviceOptions: { official: { validateChallenge: fixed.validateChallenge, assetInfo: service.assetInfo, contextLimit: service.contextLimit },
+      transportOptions: service.transportOptions, deadlineMs: service.deadlineMs } });
+  const file = captureOriginalFundingSpendingFileProfile(c.spendingFile), policy = file.storageProfile.policy;
+  const spending = fields(c.spending, ['paymentId']);
+  if (typeof spending.paymentId !== 'string' || /^[A-Za-z0-9][A-Za-z0-9:._-]{0,127}$/.exec(spending.paymentId)?.[0] !== spending.paymentId
+      || expectedAddress !== policy.accountId || admitted.serviceOptions.official.assetInfo.asset !== policy.asset) fail();
+  const store = admitted.storeOptions, root = store.allowedRoot, requirement = fixed.requirement;
+  if (file.allowedRoot === root || file.allowedRoot.startsWith(root + '/') || root.startsWith(file.allowedRoot + '/')
+      || file.storageProfile.databasePath === store.databasePath || fixed.challenge.resource.url !== store.resourceUrl
+      || policy.network !== requirement.network || policy.asset !== requirement.asset || policy.recipients.length !== 1
+      || policy.recipients[0] !== requirement.payTo || BigInt(requirement.amount) > BigInt(policy.maxPayment)
+      || store.custodyPolicy.maxRequests < 100 || admitted.serviceOptions.transportOptions.maxRequestStarts < 101) fail();
+  const profile = F({ productProfileVersion: 1, fundingResourceUrl: store.resourceUrl,
+    serviceResourceUrl: store.custodyPolicy.serviceResourceUrl, network: requirement.network, asset: requirement.asset,
+    recipient: requirement.payTo, amount: requirement.amount, providerAuthentication: 'NOT_ESTABLISHED', nativeAcceptance: 'NOT_ESTABLISHED' });
+  PROFILES.set(profile, F({ header: c.paymentRequiredHeader, challengeText: fixed.challengeText }));
+  return F({ configuration: admitted, walletIdentity: F({ expectedAddress, expectedPublicKey: admitted.fundingOptions.materialOptions.publicKey }),
+    spendingFile: file, spending: F(spending), profile });
+}
+/** One fixed product selection with an exclusive EXISTING key and day reader.
+ * The same keyless admission is used before operator credential acquisition. */
+export function captureSdk105ApiCreditProductSelection(configuration) {
+  if (arguments.length !== 1) fail();
+  const c = fields(configuration, ['productProfileVersion', 'paymentRequiredHeader', 'configuration', 'spendingFile', 'spending']);
+  const base = fields(c.configuration, ['storeOptions', 'fundingOptions', 'serviceOptions']);
+  const f = fields(base.fundingOptions, ['readSessionOptions', 'materialOptions', 'materialWaitMs', 'keyPair', 'expectedAddress', 'deadlineMs', 'fundingTransportOptions']);
+  const { keyPair, ...fundingOptions } = f, spending = fields(c.spending, ['paymentId', 'readDay']);
+  const admitted = captureSdk105ApiCreditProductOperatorData({ ...c, configuration: { ...base, fundingOptions }, spending: { paymentId: spending.paymentId } });
   let selected = null;
   try {
-    selected = captureSdk105ApiCreditSelection({ configuration: { ...base, serviceOptions: {
-      official: { validateChallenge: fixedChallenge, assetInfo: service.assetInfo, contextLimit: service.contextLimit },
-      transportOptions: service.transportOptions, deadlineMs: service.deadlineMs } }, spendingFile: c.spendingFile, spending: c.spending });
-    const policy = selected.spending.policy, store = selected.configuration.storeOptions;
-    if (challenge.resource.url !== store.resourceUrl || policy.network !== requirement.network || policy.asset !== requirement.asset
-        || policy.recipients.length !== 1 || policy.recipients[0] !== requirement.payTo || BigInt(requirement.amount) > BigInt(policy.maxPayment)
-        || store.custodyPolicy.maxRequests < 100 || selected.configuration.serviceOptions.transportOptions.maxRequestStarts < 101) fail();
-    const profile = F({ productProfileVersion: 1, fundingResourceUrl: store.resourceUrl,
-      serviceResourceUrl: store.custodyPolicy.serviceResourceUrl, network: requirement.network, asset: requirement.asset,
-      recipient: requirement.payTo, amount: requirement.amount, providerAuthentication: 'NOT_ESTABLISHED', nativeAcceptance: 'NOT_ESTABLISHED' });
-    PROFILES.set(profile, F({ header, challengeText }));
-    const state = { selected, profile, consumed: false, released: false };
+    selected = captureSdk105ApiCreditSelection({ configuration: { ...admitted.configuration,
+      fundingOptions: { ...admitted.configuration.fundingOptions, keyPair, expectedAddress: admitted.walletIdentity.expectedAddress } },
+      spendingFile: { storageProfile: admitted.spendingFile.storageProfile, allowedRoot: admitted.spendingFile.allowedRoot, filePolicy: admitted.spendingFile.filePolicy }, spending });
+    const state = { selected, profile: admitted.profile, consumed: false, released: false };
     const release = F(function release() { if (arguments.length !== 0) fail(); if (!state.released) { state.released = true; selected.release(); } });
-    const out = F({ configuration: selected.configuration, spendingFile: selected.spendingFile, spending: selected.spending, profile, release });
+    const out = F({ configuration: selected.configuration, spendingFile: selected.spendingFile, spending: selected.spending, profile: admitted.profile, release });
     SELECTED.set(out, state); return out;
   } catch { if (selected !== null) selected.release(); fail(); }
+}
+/** Internal native launcher preflight; this lookup never consumes or refunds
+ * the one-use selection which the actual application must later consume. */
+export function assertSdk105ApiCreditProductSelection(selection) {
+  if (arguments.length !== 1 || selection === null || typeof selection !== 'object' || types.isProxy(selection)) fail();
+  const state = SELECTED.get(selection); if (!state || state.consumed || state.released) fail(); return selection;
 }
 export function consumeSdk105ApiCreditProductSelection(selection) {
   if (arguments.length !== 1 || selection === null || typeof selection !== 'object' || types.isProxy(selection)) fail();
