@@ -1,0 +1,257 @@
+{
+  "qualification": "PURCHASED_ORIGINAL_RECOVERY_DATA_COMPONENT_ONLY",
+  "status": "PASS",
+  "result": {
+    "qualification": "PURCHASED_ORIGINAL_RECOVERY_DATA_COMPONENT_ONLY",
+    "cases": [
+      {
+        "id": "EXACT-ORIGINAL-ROUNDTRIP-AND-FROZEN-VIEW",
+        "status": "PASS"
+      },
+      {
+        "id": "FUNDING-AND-SERVICE-IDS-REMAIN-DISTINCT",
+        "status": "PASS"
+      },
+      {
+        "id": "QUANTITY-DOES-NOT-MULTIPLY-TOTAL-QUOTED-PRICE",
+        "status": "PASS"
+      },
+      {
+        "id": "EXACT-AMOUNT-ASSET-UNIT-NETWORK-AND-HOLDER-REQUIRED",
+        "status": "PASS"
+      },
+      {
+        "id": "ORIGINAL-FUNDING-RESOURCE-AND-SELECTED-OFFER-REQUIRED",
+        "status": "PASS"
+      },
+      {
+        "id": "ORIGINAL-INTENT-DIGEST-REQUIRED",
+        "status": "PASS"
+      },
+      {
+        "id": "ACTIVE-SINGLE-OFFER-PROFILE-REQUIRED",
+        "status": "PASS"
+      },
+      {
+        "id": "CHECKPOINT-WIRE-JSON-ALIASES-ARE-REJECTED",
+        "status": "PASS"
+      },
+      {
+        "id": "TRANSACTION-HASH-MUST-MATCH-CHECKPOINT",
+        "status": "PASS"
+      },
+      {
+        "id": "SERVICE-CUSTODY-MUST-MATCH-PAYMENT-HASH",
+        "status": "PASS"
+      },
+      {
+        "id": "INDEPENDENT-PAYMENT-PINS-CANNOT-BE-REPLACED-BY-RECORD",
+        "status": "PASS"
+      },
+      {
+        "id": "PURCHASE-CANONICAL-SHAPE-AND-VERSION-REQUIRED",
+        "status": "PASS"
+      },
+      {
+        "id": "INDEPENDENT-PURCHASE-DIGEST-PROTECTS-TERMS-AND-QUANTITY",
+        "status": "PASS"
+      },
+      {
+        "id": "BOUNDED-STRING-INPUTS-DO-NOT-INVOKE-USER-HOOKS",
+        "status": "PASS"
+      },
+      {
+        "id": "REAL-CORE-READ-SHAPE-USES-PINNED-KEY-AND-CHECKPOINT",
+        "status": "PASS"
+      },
+      {
+        "id": "CACHED-SUCCESS-NEVER-BECOMES-DELIVERY-OR-AUTHORITY",
+        "status": "PASS"
+      },
+      {
+        "id": "UNKNOWN-AND-MISSING-RECORDS-REMAIN-UNRESOLVED",
+        "status": "PASS"
+      },
+      {
+        "id": "CHANGED-LOCAL-CUSTODY-IS-REJECTED",
+        "status": "PASS"
+      },
+      {
+        "id": "ALL-EIGHT-BACKEND-ORIGINAL-FIELDS-MUST-MATCH",
+        "status": "PASS"
+      },
+      {
+        "id": "FOREIGN-EXECUTION-AND-INCOMPLETE-CACHE-ARE-REJECTED",
+        "status": "PASS"
+      },
+      {
+        "id": "CALLER-DELIVERY-AND-AUTHORITY-CLAIMS-ARE-REJECTED",
+        "status": "PASS"
+      },
+      {
+        "id": "REENTRANT-CLOSE-DISCARDS-IN-FLIGHT-OBSERVATION",
+        "status": "PASS"
+      },
+      {
+        "id": "READ-FAILURE-IS-PRIVATE-AND-DISABLES-RETRY",
+        "status": "PASS"
+      },
+      {
+        "id": "CLOSE-FENCES-WRAPPER-WITHOUT-CLOSING-BORROWED-CORE",
+        "status": "PASS"
+      },
+      {
+        "id": "INVALID-AUTHORIZATION-DOES-NOT-ENTER-CORE",
+        "status": "PASS"
+      },
+      {
+        "id": "CORE-METHOD-ACCESSORS-ARE-NOT-INVOKED",
+        "status": "PASS"
+      },
+      {
+        "id": "BUSY-FENCE-PREVENTS-REENTRANT-CORE-READ",
+        "status": "PASS"
+      },
+      {
+        "id": "PURCHASE-MISMATCH-IS-REJECTED-BEFORE-CORE-READ",
+        "status": "PASS"
+      },
+      {
+        "id": "DETACHED-RESULT-DOES-NOT-EXPOSE-RAW-CUSTODY-OR-CALLBACKS",
+        "status": "PASS"
+      }
+    ],
+    "passed": 29,
+    "failed": 0,
+    "nativeExecutions": 0,
+    "SDK": 0,
+    "SQLite": 0,
+    "keys": 0,
+    "signatures": 0,
+    "sockets": 0,
+    "nonceSearches": 0,
+    "actualBackendCoreOrLedger": "NOT_EXECUTED",
+    "durablePurchasePersistence": "NOT_ESTABLISHED",
+    "paymentVerification": "NOT_PERFORMED",
+    "deliveryOrCompensation": "NOT_ESTABLISHED"
+  },
+  "sourcePins": [
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "LF": 40,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "src/service-purchase-terms.js",
+      "bytes": 3270,
+      "LF": 77,
+      "sha256": "9d3308103b5d573ef6f93f909b15e744f9e752911e602f3c32e882f18ebd6141",
+      "gitBlob": "1dd81d8b5a54fe7cd1bd68eab540c993981b22c0"
+    },
+    {
+      "path": "src/service-credit-original-request-custody-contract.js",
+      "bytes": 15100,
+      "LF": 376,
+      "sha256": "483d20e90d78ba95a8c5d5458dd201910e8d42aecbdc0dc03812e7044a464054",
+      "gitBlob": "94d67559a11f87f283a5cd99d2aaf8074374eb0a"
+    },
+    {
+      "path": "src/service-credit-pilot-original-payment-checkpoint.js",
+      "bytes": 4003,
+      "LF": 89,
+      "sha256": "930905f31824a6cadc16dfb84572cd4dc38a81e2fce4569b73b6bef29dec97d1",
+      "gitBlob": "51c6391bc22f561ebff0005ced31e538aa83f4fa"
+    },
+    {
+      "path": "src/x402-wire.js",
+      "bytes": 39886,
+      "LF": 934,
+      "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+      "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+    },
+    {
+      "path": "src/canonical.js",
+      "bytes": 967,
+      "LF": 26,
+      "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+      "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4"
+    },
+    {
+      "path": "src/service-credit-purchased-original-recovery.js",
+      "bytes": 10704,
+      "LF": 210,
+      "sha256": "06ecfb702a2d9e78fab9544765fafbea0da74c12b2a54f95bcd16309cb13aa1d",
+      "gitBlob": "44346a21f4c6d63b72d3b29294d826d9ac5a604c"
+    },
+    {
+      "path": "qualification/service-credit-purchased-original-recovery.behavior.mjs",
+      "bytes": 16197,
+      "LF": 258,
+      "sha256": "133ec9757eaf9c2f563445fc7630dc9a357b5b9e4eca6392ac0aa60af71362cc",
+      "gitBlob": "9992f789b49abd81b1eb9d26b475b121c2776dbb"
+    },
+    {
+      "path": "docs/PURCHASED_ORIGINAL_RECOVERY.md",
+      "bytes": 3572,
+      "LF": 60,
+      "sha256": "130b88727bccd7d4f6679f4e2747b8b346164068041f5ec0a19393e30f787fff",
+      "gitBlob": "44dc5ab48d94518f8743f5c86530ad93978b1ad3"
+    }
+  ],
+  "runtime": {
+    "nodeVersion": "24.19.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "sha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25"
+  },
+  "hostSourceSha256": "d337e195b736e22f9001fa6b711429b7f850aac4754eccc070e1a70ac0c62b23",
+  "privateEvidenceSha256": "9b8158d4ca87bb74b7a062ceb45b5d2d729b4355b0d612b192e146c47371799a",
+  "command": {
+    "actualExit": 0,
+    "outputComplete": true,
+    "stdout": {
+      "sha256": "9c09328b7b5a46dfd4f568d9003f37e60d574a80331f90589219d9159ca1f94c",
+      "bytes": 2412
+    },
+    "stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    }
+  },
+  "ownedTask": {
+    "state": "CLOSED",
+    "outcome": "SUCCESS",
+    "quotaBytes": 4194304
+  },
+  "priorFailedDataAttempts": [
+    {
+      "evidenceSha256": "a0261f2eb604d205b171a64ab4324e7c1e4bf378781df3e56fde5fcd678729d8",
+      "status": "FAILURE",
+      "actualExit": 1,
+      "stderr": {
+        "sha256": "aabd8ed36e3907a1f4dcb3ee0bc0608358e5670f7c4b07aa8b66d90b1340e051",
+        "bytes": 416
+      },
+      "convertedToSuccess": false
+    },
+    {
+      "evidenceSha256": "cabf086dbb2108a9e302d1e420c7f3fec553f7ff56e5f31b4517e7e6d60ab1ae",
+      "status": "FAILURE",
+      "actualExit": 1,
+      "stderr": {
+        "sha256": "63f839464f89ea4ab8a1fb33c19b4c8b7ed80acee3a28159d16064d05d8f121f",
+        "bytes": 2952
+      },
+      "convertedToSuccess": false
+    }
+  ],
+  "priorNativeCasesRerun": false,
+  "actualV6RecoveryCoreExecuted": false,
+  "nativeApplicationQualification": "NOT_ESTABLISHED",
+  "hostedCIQualificationOfNewComponent": "NOT_ESTABLISHED",
+  "paymentVerification": "NOT_PERFORMED",
+  "deliveryOrCompensation": "NOT_ESTABLISHED",
+  "productionQualified": false
+}
