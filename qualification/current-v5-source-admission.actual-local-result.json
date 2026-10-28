@@ -1,0 +1,139 @@
+{
+  "kind": "CURRENT_V5_SOURCE_AND_PINNED_RUNTIME_LOCAL_ADMISSION",
+  "version": 1,
+  "date": "2026-10-28",
+  "status": "PASS_READ_ONLY_PREPARATION_ONLY",
+  "selector": {
+    "path": "qualification/sdk105_current_v5_source_selection.py",
+    "bytes": 4862,
+    "sha256": "518ad08c514c56a63d9f9a328fbda9dcd2465c02d4cfc19c56ace31c0fc05cec"
+  },
+  "readOnlyPreparations": [
+    {
+      "lane": "p1",
+      "mode": "pending",
+      "status": "READ_ONLY_PREFLIGHT_PASS",
+      "binding": {
+        "lane": "p1",
+        "mode": "pending",
+        "controller": "qualification/run-sdk105-issued-command-application-v5.local.py",
+        "controllerSha256": "d2abb4960ce8e84fc2bf0dd88b44c82f143655614820fcc0f625f097af40dac4",
+        "manifest": "qualification/sdk105-issued-command-application-v5.inputs.json",
+        "manifestSha256": "087df3b143f1802f75e7bbaaf295371bc32ef82eba2f75f8ee7a644a5b3ceb24",
+        "kind": "SDK105_ISSUED_COMMAND_APPLICATION_NODE24_V5",
+        "applicationFiles": 135,
+        "packageFilesDeclared": 404,
+        "packageFilesRead": 0,
+        "literalEdges": 603,
+        "sourceRowsSha256": "e82b5dcc52a706d2a1339a85439505f93b83914e4f008a6fc2cf7c5e4136f51e",
+        "nativeAuthority": "NONE",
+        "nativeExecutions": 0
+      },
+      "profiles": {
+        "single": {
+          "sha256": "5618328599064ea863d67eb841720e9558fdc700a3043e81bf0c30de2175f5a3",
+          "bytes": 224194
+        }
+      },
+      "installedPackageBytesVerifiedWithoutEvaluation": 404,
+      "verifiedSourceInputs": 539,
+      "profileInputCaptures": 541,
+      "nativeAuthority": "NONE",
+      "nativeExecutions": 0,
+      "toolsHashedNotExecutedByPreflight": true,
+      "originalControllerMainInvoked": false,
+      "completeAllocationAdmissionPassed": true,
+      "minimumFreeBytes": 10737418240,
+      "additionalMarginBytes": 1073741824,
+      "existingRootPolicyUnchanged": true
+    },
+    {
+      "lane": "p2",
+      "mode": "commit-kill-recover",
+      "status": "READ_ONLY_PREFLIGHT_PASS",
+      "binding": {
+        "lane": "p2",
+        "mode": "commit-kill-recover",
+        "controller": "qualification/run-sdk105-p2-commit-recovery-v5.local.py",
+        "controllerSha256": "ded75856be2ce6c34848d4cd1b81b7374e3e27c2d9f72b07cf9ac0881e8dcb34",
+        "manifest": "qualification/sdk105-p2-commit-recovery-v5.inputs.json",
+        "manifestSha256": "a3cd6e869a2ad627ac7f8c46951f9665d6066a3ea65b81bd8e547613730bc9b1",
+        "kind": "SDK105_P2_COMMIT_KILL_RECOVERY_NODE24_V5",
+        "applicationFiles": 151,
+        "packageFilesDeclared": 404,
+        "packageFilesRead": 0,
+        "literalEdges": 667,
+        "sourceRowsSha256": "10df7d35ce3ea3eafc631f28c429d99c037d9a1551d09faa2d6d831a10b62d12",
+        "nativeAuthority": "NONE",
+        "nativeExecutions": 0
+      },
+      "profiles": {
+        "parent": {
+          "sha256": "0fd351b2c48182519e06ba15a5aa6ae409015023934dc8dc367c396d6ec6cdec",
+          "bytes": 231106
+        },
+        "funding-child": {
+          "sha256": "4b2da4b44fa232efc544b85b2b45a8ab203538ada99c57b28d4597977cbba7c9",
+          "bytes": 231109
+        },
+        "recovery-child": {
+          "sha256": "72d9b89173f1dfab4cb453c63622368c47abaa73044cfc810d385275f8602889",
+          "bytes": 231111
+        }
+      },
+      "installedPackageBytesVerifiedWithoutEvaluation": 404,
+      "verifiedSourceInputs": 555,
+      "profileInputCaptures": 557,
+      "nativeAuthority": "NONE",
+      "nativeExecutions": 0,
+      "toolsHashedNotExecutedByPreflight": true,
+      "originalControllerMainInvoked": false,
+      "completeAllocationAdmissionPassed": true,
+      "minimumFreeBytes": 10737418240,
+      "additionalMarginBytes": 1073741824,
+      "existingRootPolicyUnchanged": true
+    }
+  ],
+  "priorDefaultRuntimePreparation": {
+    "status": "REFUSED",
+    "reason": "BINARY_IDENTITY",
+    "expectedHistoricalVersion": "24.19.0",
+    "actualUpdatedBundledVersion": "24.22.1",
+    "nativeCommandsStarted": 0,
+    "preserved": true
+  },
+  "newExplicitRuntime": {
+    "versionObserved": "24.19.0",
+    "bytes": 121304480,
+    "sha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25",
+    "actualVersionOnlyCommandExit": 0,
+    "historicalBinaryWasDifferent": true,
+    "historicalNativeResultsTransferred": false,
+    "followDefaultRuntimePath": false,
+    "downloaded": false,
+    "copied": false
+  },
+  "effects": {
+    "nativeApplicationTrials": 0,
+    "tasksOpened": 0,
+    "SDKPackageEvaluation": 0,
+    "SQLite": 0,
+    "sockets": 0,
+    "keys": 0,
+    "signatures": 0,
+    "nonceSearches": 0,
+    "applicationChildren": 0,
+    "applicationSignals": 0,
+    "applicationIPC": 0,
+    "sourceOrPackageDirectoriesCopied": 0,
+    "historicalMetadataWrites": 0
+  },
+  "limits": [
+    "These are source, profile and read-only capacity/tool preparations, not native application tests.",
+    "The separate version-only Node commands do not execute an application or SDK.",
+    "The read-only preparations did not execute either native application. See the separate later V5 pending result; P2 V5 remains NOT_EXECUTED.",
+    "No historical one-shot allowance or runtime result is transferred.",
+    "No physical drain, OS/network sandbox, main runtime adoption, pilot or production qualification is claimed."
+  ],
+  "laterSeparateNativeResult": "qualification/sdk105-issued-command-application-v5.pending.actual-local-result.json"
+}
