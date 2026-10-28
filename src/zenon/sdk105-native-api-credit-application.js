@@ -1,6 +1,7 @@
 // SOURCE ONLY; this complete native binding has not been executed.
 import { types } from 'node:util';
 import { consumeSdk105ApiCreditSelection } from './sdk105-api-credit-selection.js';
+import { consumeSdk105ApiCreditProductSelection, bindSdk105ApiCreditProductLifecycle } from './sdk105-api-credit-product-profile.js';
 import { captureSdk105FundingServiceConfiguration } from './sdk105-funding-service-lifecycle.js';
 import { createSdk105PreparedHashWalletOwner } from './sdk105-prepared-hash-wallet-owner.js';
 import { openOriginalFundingSpendingFileOwner } from '../original-funding-spending-file-owner.js';
@@ -19,7 +20,20 @@ function consume(promise, yes = () => {}, no = () => {}) {
  * and joined application. No supplied opener/store/client/SDK factory. The
  * caller retains cleanup of a key until the actual native client returns. */
 export async function openSdk105NativeApiCreditApplication(selection, requireCurrentOpening) {
+  if (arguments.length !== 2) fail();
+  return openApplication(selection, requireCurrentOpening, null);
+}
+
+/** Fixed single-offer product binding. Its public DATA cannot select a module
+ * or challenge callback. The existing application owns acquisition/cleanup. */
+export async function openSdk105NativeApiCreditProductApplication(selection, requireCurrentOpening) {
   if (arguments.length !== 2 || failedApplication !== null || typeof requireCurrentOpening !== 'function'
+      || types.isProxy(requireCurrentOpening) || !Object.isFrozen(requireCurrentOpening)) fail();
+  const product = consumeSdk105ApiCreditProductSelection(selection);
+  return openApplication(product.selection, requireCurrentOpening, product.profile);
+}
+async function openApplication(selection, requireCurrentOpening, productProfile) {
+  if (failedApplication !== null || typeof requireCurrentOpening !== 'function'
       || types.isProxy(requireCurrentOpening) || !Object.isFrozen(requireCurrentOpening)) fail();
   const selected = consumeSdk105ApiCreditSelection(selection);
   let c, file = null, wallet = null, client = null, application = null;
@@ -39,7 +53,8 @@ export async function openSdk105NativeApiCreditApplication(selection, requireCur
     requireCurrentOpening();
     application = createSdk105ApiCreditApplicationLifecycle({ client, walletOwner: wallet, fileOwner: file,
       fundingResourceUrl: c.storeOptions.resourceUrl, spending: selected.spending });
-    requireCurrentOpening(); return application;
+    const result = productProfile === null ? application : bindSdk105ApiCreditProductLifecycle(application, productProfile);
+    requireCurrentOpening(); return result;
   } catch {
     const retained = { file, wallet, client, application, clientStop: null, walletStop: null, applicationStop: null,
       clientClosed: false, walletClosed: false, fileCloseEntered: false, fileCloseReturned: false };

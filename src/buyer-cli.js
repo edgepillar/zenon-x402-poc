@@ -103,6 +103,19 @@ export async function runBuyerApiCreditCommands(configuration) {
   return runOriginalCommands(openBuyerApiCreditCommandSession, configuration);
 }
 
+/** Explicit fixed-offer product entry. The caller supplies an exclusive existing
+ * key and frozen day reader; no secret/module loader or argv default is added. */
+export async function openBuyerApiCreditProductCommandSession(configuration) {
+  if (arguments.length !== 1) throw new TypeError('buyer_api_credit_product_configuration_required');
+  const { openSdk105NativeApiCreditProductCommandSession } =
+    await import('./zenon/sdk105-native-api-credit-command-session.js');
+  return openSdk105NativeApiCreditProductCommandSession(configuration);
+}
+export async function runBuyerApiCreditProductCommands(configuration) {
+  if (arguments.length !== 1) throw new TypeError('buyer_api_credit_product_configuration_required');
+  return runOriginalCommands(openBuyerApiCreditProductCommandSession, configuration);
+}
+
 /** Explicit existing-original recovery; no funding, key or default CLI switch.
  * Native SDK/SQLite/HTTPS qualification remains source-bound and separate. */
 export async function openBuyerOriginalRecoveryCommandSession(configuration) {

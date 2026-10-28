@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 // Actual pure admission/selection predicates; no native modules or key calls.
 import assert from 'node:assert/strict';
 import { Buffer } from 'node:buffer';
@@ -111,6 +112,8 @@ check('trailing-newlines-cannot-pass-path-or-symbol-full-byte-admission', async 
   await rejected(r => { r.input.configuration.storeOptions.databasePath += '\n'; });
   await rejected(r => { r.input.configuration.serviceOptions.official.assetInfo.symbol += '\n'; });
 });
+export const apiCreditAdmissionDataCases = F(checks.map(c => F(c)));
+if (typeof process.argv[1] === 'string' && fileURLToPath(import.meta.url) === process.argv[1]) {
 const cases = [];
 for (const { id, run } of checks) { try { await run(); cases.push({ id, status: 'PASS' }); } catch (e) { cases.push({ id, status: 'FAIL', error: String(e?.message ?? e) }); } }
 const failed = cases.filter(c => c.status !== 'PASS').length;
@@ -118,3 +121,4 @@ console.log(JSON.stringify({ qualification: 'G0_G1_API_CREDIT_INERT_ADMISSION_DA
   priorApplicationCases: apiCreditApplicationDataCases.length, nativeExecutions: 0, SDK: 0, SQLite: 0, keys: 0, signatures: 0, sockets: 0,
   nonceSearches: 0, nodeChildren: 0, actualPrepare: 0, payouts: 0, nativeAdmissionExecution: 'NOT_ESTABLISHED', nativeProductAcceptance: 'NOT_ESTABLISHED' }));
 if (failed) process.exitCode = 1;
+}
