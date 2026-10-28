@@ -1,0 +1,341 @@
+{
+  "kind": "SDK105_P2_COMMIT_KILL_RECOVERY_NODE24_V5",
+  "version": 1,
+  "baseSelection": {
+    "path": "qualification/sdk105-issued-command-application-v5.inputs.json",
+    "sha256": "087df3b143f1802f75e7bbaaf295371bc32ef82eba2f75f8ee7a644a5b3ceb24"
+  },
+  "removedApplicationRows": [
+    "app/qualification/sdk105-issued-command-application-v5.case.mjs",
+    "app/qualification/sdk105-issued-command-application-v5.preload.mjs"
+  ],
+  "addedApplicationRows": [
+    {
+      "path": "app/qualification/sdk105-p2-child-capture.mjs",
+      "bytes": 4200,
+      "LF": 84,
+      "sha256": "de51efa8439ff94d89713d74f70ee0225b198f434289ed53dc382e2c9c978250",
+      "gitBlob": "88922b61ee7f1cc370f36d6d838cf20ea8c6dc07"
+    },
+    {
+      "path": "app/qualification/sdk105-p2-commit-boundary-v5.fixture.mjs",
+      "bytes": 3436,
+      "LF": 51,
+      "sha256": "903efc41d0c8e145498974518ed4a48ed35cc085cf1a22a76fb8b207cf11f831",
+      "gitBlob": "8f8589cadec6f6a661b58721b89d257abd71b2ec"
+    },
+    {
+      "path": "app/qualification/sdk105-p2-commit-recovery-v5.io.mjs",
+      "bytes": 3155,
+      "LF": 52,
+      "sha256": "7dcf8f40b339fb2c51049d2ff2e9927be007200e53e4276c188ccdc94048aad3",
+      "gitBlob": "98f5fd5785c61ee7613d2e644257ad7b28ad728f"
+    },
+    {
+      "path": "app/qualification/sdk105-p2-commit-recovery-v5.parent.mjs",
+      "bytes": 13529,
+      "LF": 172,
+      "sha256": "34a713c83872dc37380f3d45e6557cb9979bf8fc9d5a3824cf44a2d5c39a7fc7",
+      "gitBlob": "3a5ba6514cde9940caccf7db97222d5cd7405b19"
+    },
+    {
+      "path": "app/qualification/sdk105-p2-commit-recovery-v5.preload.mjs",
+      "bytes": 16809,
+      "LF": 331,
+      "sha256": "ec0e52ea3b4e17625790eea170388d00fb84be23539c46afb4bb273747be9db4",
+      "gitBlob": "837d8af906014636c78d5dea3616332d46f1c0e2"
+    },
+    {
+      "path": "app/qualification/sdk105-p2-funding-child-v5.case.mjs",
+      "bytes": 45649,
+      "LF": 641,
+      "sha256": "ccf67b83f271f2678dec34afc6ddfad893000e3e4887a44747c97388354934ef",
+      "gitBlob": "db185aa4013d367649534bf5fb61a4204a064bf0"
+    },
+    {
+      "path": "app/qualification/sdk105-p2-recovery-boundary-data.mjs",
+      "bytes": 2411,
+      "LF": 42,
+      "sha256": "4ad69ca87b6e552a686def21aebe947f7852a8534f96f0a5819f146aa8622f58",
+      "gitBlob": "7f418952b9c73ea5b2b44dcf0a513d8f1f6135c7"
+    },
+    {
+      "path": "app/qualification/sdk105-p2-recovery-child-v5.case.mjs",
+      "bytes": 6385,
+      "LF": 79,
+      "sha256": "cf2408ed69c632846b35862778d523fa874775a9cac896f16228d25bf2a73af3",
+      "gitBlob": "8d52cea50ce763ec47f19f88615ac840e41594ab"
+    },
+    {
+      "path": "app/src/service-credit-backend-original-outcome-reader.js",
+      "bytes": 7738,
+      "LF": 182,
+      "sha256": "dadd9cbfbdcc2ff4bb24252fed85a135d2ce17397e713b1917a109eb6b28938d",
+      "gitBlob": "7f083a5f3a8716f8aae2c618945473671da2f6b7"
+    },
+    {
+      "path": "app/src/service-credit-custodied-backend-recovery-client.js",
+      "bytes": 25033,
+      "LF": 492,
+      "sha256": "c588141db56295a4770f0b1392a7c5b541b9b01bd8140fd036c8d883f98128a7",
+      "gitBlob": "926db25bd01768cc459b5f16b6fd3abec837ceb3"
+    },
+    {
+      "path": "app/src/service-credit-custodied-backend-recovery-core.js",
+      "bytes": 9518,
+      "LF": 215,
+      "sha256": "54afa41816c0b971d49b80281bd0391563efa31644077cfa6204714eca74659a",
+      "gitBlob": "533a759d6b8735d57b5d15bce241cf43048ecddf"
+    },
+    {
+      "path": "app/src/service-credit-custodied-recovery-collection-core.js",
+      "bytes": 13794,
+      "LF": 306,
+      "sha256": "51d06da70ecccd0cf8b38d650367d1ae903ea86010a5ebeadb682af98e4b890b",
+      "gitBlob": "5275832eebbf87e0cd37f3c2e3b82147ab625a72"
+    },
+    {
+      "path": "app/src/service-credit-custodied-recovery-observation-collection-core.js",
+      "bytes": 8579,
+      "LF": 213,
+      "sha256": "36b7cece2d436cbfcac5f4299dd6bd30e5eede6ebb2ebe769ae7bf3a6f1a72b4",
+      "gitBlob": "4dc8765be0aa4b0e927fface960e366a3a6ccd1e"
+    },
+    {
+      "path": "app/src/service-credit-custodied-sequential-runner-core.js",
+      "bytes": 15983,
+      "LF": 492,
+      "sha256": "044477cb1300453f10bacf070037db175d08deec1d488549b34a5cb92e6328bd",
+      "gitBlob": "e91acb307f4f0f5fb5292a805f7ca1d02b21b68d"
+    },
+    {
+      "path": "app/src/service-credit-custodied-sqlite-recovery-reader.js",
+      "bytes": 7754,
+      "LF": 180,
+      "sha256": "e3ac726602edd3d06137212a566772b5f66fde5d4b4b71c14b2b28d76b1f28fe",
+      "gitBlob": "7c148b647b3a5a4f0c105e7cd60546fa1720c2b7"
+    },
+    {
+      "path": "app/src/service-credit-custodied-sqlite-sequential-runner.js",
+      "bytes": 24572,
+      "LF": 560,
+      "sha256": "3448e5ee1c8408d47aa6ecdce9c7e133ee6515ba9ca929476ab5f433fb8f847d",
+      "gitBlob": "75811ab4779e416c3618f363eaa70fa385cfaa72"
+    },
+    {
+      "path": "app/src/service-credit-pilot-client-plan.js",
+      "bytes": 7483,
+      "LF": 181,
+      "sha256": "73ee3d739de85150039e733234cd0761c228d68de040d1e126902e808a259ac6",
+      "gitBlob": "14334c82b5b7c80fb8f7f6a392a1a0f3c3adcbf1"
+    },
+    {
+      "path": "app/src/service-credit-pilot-status-view.js",
+      "bytes": 3202,
+      "LF": 60,
+      "sha256": "cf3822d8b9ec4eb4772452ed1888b96d398fd87c1ead44cd155a5acc1a6b66ed",
+      "gitBlob": "0890db504e44b704d0434dc309e711743570e652"
+    }
+  ],
+  "resolvedApplicationFiles": 151,
+  "packageFiles": 404,
+  "resolvedSourceRowsSha256": "10df7d35ce3ea3eafc631f28c429d99c037d9a1551d09faa2d6d831a10b62d12",
+  "resolvedSourceBytes": 4722979,
+  "packageRowsSha256": "6de2ebf27c64de96e4823d3c504347593490061b0c6510db378311258730a31f",
+  "entry": "app/qualification/sdk105-p2-commit-recovery-v5.parent.mjs",
+  "preload": "app/qualification/sdk105-p2-commit-recovery-v5.preload.mjs",
+  "bareBindings": [
+    {
+      "parent": "app/src/zenon-payment.js",
+      "specifier": "znn-typescript-sdk",
+      "target": "packages/znn-typescript-sdk/dist/index.js"
+    },
+    {
+      "parent": "app/src/zenon-payment.js",
+      "specifier": "@noble/ed25519",
+      "target": "packages/@noble/ed25519/index.js"
+    },
+    {
+      "parent": "app/src/zenon-payment.js",
+      "specifier": "@noble/hashes/sha2",
+      "target": "packages/@noble/hashes/esm/sha2.js"
+    },
+    {
+      "parent": "app/src/x402-official-selected-payment-client.js",
+      "specifier": "@x402/core/client",
+      "target": "packages/@x402/core/dist/esm/client/index.mjs"
+    },
+    {
+      "parent": "app/src/x402-official-selected-settlement-server.js",
+      "specifier": "@x402/core/server",
+      "target": "packages/@x402/core/dist/esm/server/index.mjs"
+    },
+    {
+      "parent": "packages/@x402/core/dist/esm/chunk-N4QXZG2Z.mjs",
+      "specifier": "zod",
+      "target": "packages/zod/index.js"
+    },
+    {
+      "parent": "app/qualification/sdk105-p2-funding-child-v5.case.mjs",
+      "specifier": "znn-typescript-sdk",
+      "target": "packages/znn-typescript-sdk/dist/index.js"
+    },
+    {
+      "parent": "app/qualification/sdk105-p2-funding-child-v5.case.mjs",
+      "specifier": "@noble/ed25519",
+      "target": "packages/@noble/ed25519/index.js"
+    },
+    {
+      "parent": "app/qualification/sdk105-p2-funding-child-v5.case.mjs",
+      "specifier": "@noble/hashes/sha2",
+      "target": "packages/@noble/hashes/esm/sha2.js"
+    }
+  ],
+  "allowedBuiltins": [
+    "node:assert/strict",
+    "node:async_hooks",
+    "node:buffer",
+    "node:child_process",
+    "node:crypto",
+    "node:events",
+    "node:fs",
+    "node:fs/promises",
+    "node:http",
+    "node:https",
+    "node:module",
+    "node:net",
+    "node:path",
+    "node:perf_hooks",
+    "node:process",
+    "node:sqlite",
+    "node:stream",
+    "node:test",
+    "node:timers",
+    "node:tls",
+    "node:url",
+    "node:util",
+    "node:vm",
+    "node:zlib"
+  ],
+  "packageVersions": {
+    "packages/@x402/core/package.json": "2.23.0",
+    "packages/zod/package.json": "3.25.76",
+    "packages/znn-typescript-sdk/package.json": "1.0.5",
+    "packages/@noble/ed25519/package.json": "2.3.0",
+    "packages/@noble/hashes/package.json": "1.8.0"
+  },
+  "effectsCeiling": {
+    "selectedCases": 1,
+    "maximumRuns": 1,
+    "opensslCommands": 1,
+    "nodeCommands": 1,
+    "nodeChildren": 2,
+    "newSqlitePaths": 5,
+    "independentPinFiles": 2,
+    "syntheticEd25519Keys": 4,
+    "transactionSignatures": 1,
+    "capabilitySignatures": 3,
+    "providerSignatures": 2,
+    "testTlsMaterialSeparate": true,
+    "maxRpcConnections": 174,
+    "maxApplicationConnections": 8,
+    "maxTotalConnections": 182,
+    "expectedTotalConnections": 93,
+    "maxCandidatesPerSearch": 4096,
+    "maxReferenceCandidates": 32768,
+    "producerCandidateReservation": 4096,
+    "fixedVerificationReservation": 16384,
+    "maxAggregateCandidates": 65536,
+    "taskQuotaBytes": 4194304,
+    "maximumSourceReadBytes": 6291456,
+    "existingSourcesRecopied": false,
+    "externalNetwork": false,
+    "install": false,
+    "realWallet": false,
+    "realPayment": false,
+    "sdkPrepareBlock": false,
+    "nativeOsNetworkSandbox": false,
+    "ownedStreamCommands": 8,
+    "ownedStreamResults": 7,
+    "maximumCommandInputBytes": 262144,
+    "maximumCommandOutputBytes": 262144,
+    "commandResultWaitMs": 7000,
+    "maximumCommittedResponseLossStops": 1,
+    "additionalCompoundCommitReads": 1,
+    "maximumDeferredCommitProbes": 1,
+    "plannedChildSigkills": 1,
+    "maximumFailureChildSigkills": 2,
+    "maximumFailureChildSelfExits": 1,
+    "childParkTimeoutMs": 5000,
+    "existingPayerRecoveryOpens": 1,
+    "existingBackendRecoveryOpens": 1,
+    "roleProfiles": 3,
+    "childProfileTables": 1,
+    "maximumChildCaptureBytes": 65536,
+    "maximumParentCaptureBytes": 524288,
+    "maximumParentCommandSeconds": 90,
+    "recoveryServiceDispatches": 0,
+    "recoveryFundingPosts": 0,
+    "recoverySignatures": 0,
+    "maximumPrivateChildTranscriptBytes": 458752,
+    "privateChildCaptureVersion": 1,
+    "rawChildBytesRetained": true,
+    "maximumParentStderrCaptureBytes": 1048576
+  },
+  "taskPolicy": {
+    "quotaBytes": 4194304,
+    "minimumFreeBytes": 10737418240,
+    "existingApprovedRootOnly": true,
+    "rootPolicyOverride": false,
+    "maximumRuns": 1
+  },
+  "startupExpected": {
+    "PATH": "/usr/bin:/bin",
+    "LANG": "C",
+    "NODE_DISABLE_COMPILE_CACHE": "1",
+    "WS_NO_BUFFER_UTIL": "1",
+    "WS_NO_UTF_8_VALIDATE": "1",
+    "X402_SDK105_ISSUED_COMMAND_SELECTION": "sdk105-p2-commit-recovery-v5",
+    "X402_SDK105_ISSUED_COMMAND_RUN_SCOPE": "one-sdk105-p2-commit-recovery-v5",
+    "X402_SDK105_ISSUED_COMMAND_MODE": "commit-kill-recover",
+    "X402_ISSUED_CLOSE_NATIVE_SELECTION": "current-native-issued-close-source-v4",
+    "X402_P2_COMMIT_RECOVERY_ROLE": "parent"
+  },
+  "controlInputs": [
+    {
+      "path": "qualification/run-sdk105-p2-commit-recovery-v5.local.py",
+      "bytes": 16265,
+      "LF": 231,
+      "sha256": "ded75856be2ce6c34848d4cd1b81b7374e3e27c2d9f72b07cf9ac0881e8dcb34",
+      "gitBlob": "f86911a6e1dd2438949e690fc746690fc72ebd1a"
+    },
+    {
+      "path": "qualification/sdk105_p2_child_capture_data.py",
+      "bytes": 4400,
+      "LF": 76,
+      "sha256": "b1e3650411d5197e5fe8b83c19ba7e3933197fd19777ac5ddadc1089a99983f3",
+      "gitBlob": "f50a30e03a87bef8315fb7a719ea268914cee129"
+    },
+    {
+      "path": "qualification/node_file_url_profile.py",
+      "bytes": 5301,
+      "LF": 86,
+      "sha256": "9f4ca5bc477d9c706870a65d816c7d98dfc27d55befd7780ef934ef8d89ad4a2",
+      "gitBlob": "0e9243dc88c9a95304fa46f1151d87302f904128"
+    },
+    {
+      "path": "qualification/sdk105_p2_role_profile_bundle.py",
+      "bytes": 1621,
+      "LF": 32,
+      "sha256": "a6adca828ef2caf5053e165aaadc4a32ffff07850862b005444b3f10ec9c281c",
+      "gitBlob": "aaad1abb8b4cc769eeae0a9179e80d2339ef1091"
+    }
+  ],
+  "nativeAuthority": "NONE",
+  "nativeCasesExecuted": 0,
+  "roles": {
+    "parent": "qualification/sdk105-p2-commit-recovery-v5.parent.mjs",
+    "funding-child": "qualification/sdk105-p2-funding-child-v5.case.mjs",
+    "recovery-child": "qualification/sdk105-p2-recovery-child-v5.case.mjs"
+  }
+}

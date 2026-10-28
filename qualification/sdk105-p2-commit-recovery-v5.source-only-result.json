@@ -1,0 +1,54 @@
+{
+  "kind": "SDK105_P2_V5_SOURCE_ONLY_ADMISSION",
+  "version": 1,
+  "date": "2026-10-28",
+  "status": "PASS_SOURCE_ONLY",
+  "controller": {
+    "path": "qualification/run-sdk105-p2-commit-recovery-v5.local.py",
+    "bytes": 16265,
+    "sha256": "ded75856be2ce6c34848d4cd1b81b7374e3e27c2d9f72b07cf9ac0881e8dcb34"
+  },
+  "manifest": {
+    "path": "qualification/sdk105-p2-commit-recovery-v5.inputs.json",
+    "bytes": 12005,
+    "sha256": "a3cd6e869a2ad627ac7f8c46951f9665d6066a3ea65b81bd8e547613730bc9b1"
+  },
+  "baseSelection": {
+    "path": "qualification/sdk105-issued-command-application-v5.inputs.json",
+    "bytes": 10514,
+    "sha256": "087df3b143f1802f75e7bbaaf295371bc32ef82eba2f75f8ee7a644a5b3ceb24"
+  },
+  "applicationFiles": 151,
+  "packageFilesDeclared": 404,
+  "installedPackageFilesRead": 0,
+  "reviewedLiteralImportEdges": 667,
+  "reviewedBareImports": 9,
+  "removedUnreachableP1Entries": [
+    "app/qualification/sdk105-issued-command-application-v5.case.mjs",
+    "app/qualification/sdk105-issued-command-application-v5.preload.mjs"
+  ],
+  "oldP2SourceBytes": 4779569,
+  "newP2SourceBytes": 4722979,
+  "sourceInventoryByteReduction": 56590,
+  "installedPackageRowsUnchanged": true,
+  "effectCeilingsUnchanged": true,
+  "boundaryKillCloseAndNoDispatchRecoveryAssertionsRetained": true,
+  "sourceOnlyCLIHasNoNativeExecutionFlag": true,
+  "canonicalProfileBundleSource": {
+    "path": "qualification/sdk105_p2_role_profile_bundle.py",
+    "bytes": 1621,
+    "sha256": "a6adca828ef2caf5053e165aaadc4a32ffff07850862b005444b3f10ec9c281c"
+  },
+  "separateActualDataResult": "qualification/sdk105-p2-role-profile-bundle.actual-local-result.json",
+  "nativeAuthority": "NONE",
+  "nativeExecutions": 0,
+  "SDK": 0,
+  "SQLite": 0,
+  "sockets": 0,
+  "signals": 0,
+  "IPC": 0,
+  "signatures": 0,
+  "nonceSearches": 0,
+  "mainRuntimeAdopted": false,
+  "productionQualified": false
+}
