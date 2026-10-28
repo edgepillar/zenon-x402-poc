@@ -1,0 +1,131 @@
+{
+  "qualification": "FUNDING_LOSS_V6_SOURCE_DECODER_AND_SYNTAX_ONLY",
+  "status": "PASS",
+  "manifest": {
+    "path": "qualification/sdk105-issued-command-application-v6.inputs.json",
+    "sha256": "77b17c96dccf571fbab6d41eda78e3fff1f2756e7e226404ac0f094330a57789"
+  },
+  "controller": {
+    "path": "qualification/run-sdk105-issued-command-application-v6.local.py",
+    "sha256": "9e37274d345b63852a2aec6ac9d1163b2e9db97c39dd4060db869b0ba3b4859c"
+  },
+  "sourceRowsSha256": "9cbc474bb92549d93825b62e751fcdc0236f02a2d110070fe862668919df1b94",
+  "readOnlyCanonicalProfileSha256": "8a3ce61c00a6d73412b3d680ceb5c24f9df7dcd6bdc6e8f65478ff02109a8abc",
+  "applicationFiles": 135,
+  "packageFilesDeclared": 404,
+  "packageFilesReadBySourceControl": 0,
+  "literalEdges": 607,
+  "allApplicationRuntimeRowsUnchanged": true,
+  "replacedQualificationRows": 4,
+  "sourceBytesBefore": 4563353,
+  "sourceBytesAfter": 4558124,
+  "sourceBytesSaved": 5229,
+  "decoderControls": [
+    {
+      "id": "SOURCE-ONLY-ONE-MODE-UNCHANGED-RUNTIME",
+      "status": "PASS"
+    },
+    {
+      "id": "DECLARED-TRANSCRIPT-DECODES-WITHOUT-CLAIMING-NATIVE",
+      "status": "PASS"
+    },
+    {
+      "id": "RECEIPT-REFUSAL-actual_exit-1",
+      "status": "PASS"
+    },
+    {
+      "id": "RECEIPT-REFUSAL-actual_exit-None",
+      "status": "PASS"
+    },
+    {
+      "id": "RECEIPT-REFUSAL-output_complete-False",
+      "status": "PASS"
+    },
+    {
+      "id": "RECEIPT-REFUSAL-state-UNKNOWN",
+      "status": "PASS"
+    },
+    {
+      "id": "TRANSCRIPT-REFUSAL-counts.executions",
+      "status": "PASS"
+    },
+    {
+      "id": "TRANSCRIPT-REFUSAL-counts.observedSignedTransactions",
+      "status": "PASS"
+    },
+    {
+      "id": "TRANSCRIPT-REFUSAL-fundingProof.grants",
+      "status": "PASS"
+    },
+    {
+      "id": "TRANSCRIPT-REFUSAL-fundingProof.originalPacketUnchanged",
+      "status": "PASS"
+    },
+    {
+      "id": "TRANSCRIPT-REFUSAL-closeProof.fundingOutcomeUnknown",
+      "status": "PASS"
+    },
+    {
+      "id": "TRANSCRIPT-REFUSAL-closeProof.sessionLifecycle",
+      "status": "PASS"
+    },
+    {
+      "id": "TRANSCRIPT-REFUSAL-responseLoss.boundMatched",
+      "status": "PASS"
+    },
+    {
+      "id": "TRANSCRIPT-REFUSAL-responseLoss.stopAttempts",
+      "status": "PASS"
+    },
+    {
+      "id": "TRANSCRIPT-REFUSAL-responseLoss.nativeDeliveryLoss",
+      "status": "PASS"
+    },
+    {
+      "id": "OTHER-MODE-CANNOT-INHERIT-ALLOWANCE",
+      "status": "PASS"
+    },
+    {
+      "id": "OTHER-SOURCE-GRAPH-IS-REFUSED",
+      "status": "PASS"
+    },
+    {
+      "id": "DUPLICATE-COMPLETION-FOOTER-IS-REFUSED",
+      "status": "PASS"
+    }
+  ],
+  "decoderPassed": 18,
+  "decoderFailed": 0,
+  "syntheticDecoderInputsOnly": true,
+  "actualPythonSourceCommands": 1,
+  "syntaxChecks": [
+    {
+      "path": "qualification/sdk105-issued-command-application-v6.case.mjs",
+      "exitCode": 0,
+      "stdoutBytes": 0,
+      "stderrBytes": 0
+    },
+    {
+      "path": "qualification/sdk105-issued-command-application-v6.preload.mjs",
+      "exitCode": 0,
+      "stdoutBytes": 0,
+      "stderrBytes": 0
+    },
+    {
+      "path": "qualification/native-funding-bound-response-loss.fixture.mjs",
+      "exitCode": 0,
+      "stdoutBytes": 0,
+      "stderrBytes": 0
+    }
+  ],
+  "actualSyntaxNodeCommands": 3,
+  "evidenceSha256": "c605586751b36f305d9bcc56ebf0ddccd9816f9b3055d148c34c21ee046d884d",
+  "taskState": "CLOSED",
+  "taskOutcome": "SUCCESS",
+  "applicationNativeTrials": 0,
+  "nativeCaseAtCapture": "NOT_EXECUTED",
+  "existingV5NativeCasesRerun": false,
+  "productionQualified": false,
+  "candidateSourceBranch": "x402/p1-router-late-pending-close-integration-v2",
+  "mainApplicationRuntimeAdopted": false
+}

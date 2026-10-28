@@ -1,0 +1,110 @@
+{
+  "qualification": "FUNDING_BOUND_RESPONSE_LOSS_GATE_DATA_ONLY",
+  "status": "PASS",
+  "sourcePins": [
+    {
+      "path": "qualification/funding-bound-response-loss-gate.mjs",
+      "bytes": 4796,
+      "sha256": "5fdb03510126fb7b13f291eb07d89589c8a8447c3ff767c31c4943eb9a551b65"
+    },
+    {
+      "path": "qualification/funding-bound-response-loss-gate.control.mjs",
+      "bytes": 6214,
+      "sha256": "cd68fd3554577a821c87d695bad6f0f2883a48c6f78ad8d618988eedefca20f4"
+    }
+  ],
+  "cases": [
+    {
+      "id": "BOUND-BEFORE-ONE-STOP",
+      "status": "PASS"
+    },
+    {
+      "id": "DUPLICATE-CALLBACK-CANNOT-READ-OR-STOP-AGAIN",
+      "status": "PASS"
+    },
+    {
+      "id": "CALLBACK-BEFORE-FORWARD-IS-STICKY-UNKNOWN",
+      "status": "PASS"
+    },
+    {
+      "id": "EXACT-BINDING-selectionKey",
+      "status": "PASS"
+    },
+    {
+      "id": "EXACT-BINDING-resourceUrl",
+      "status": "PASS"
+    },
+    {
+      "id": "EXACT-BINDING-fundingCommitment",
+      "status": "PASS"
+    },
+    {
+      "id": "EXACT-BINDING-transactionHash",
+      "status": "PASS"
+    },
+    {
+      "id": "EXACT-BINDING-payloadDigest",
+      "status": "PASS"
+    },
+    {
+      "id": "EXACT-BINDING-intentDigest",
+      "status": "PASS"
+    },
+    {
+      "id": "EXACT-BINDING-paymentRequiredHeader",
+      "status": "PASS"
+    },
+    {
+      "id": "ISSUED-OR-MISSING-ROW-IS-NOT-COMMIT",
+      "status": "PASS"
+    },
+    {
+      "id": "READ-EXCEPTION-IS-STICKY",
+      "status": "PASS"
+    },
+    {
+      "id": "READ-REENTRANCY-CANNOT-REPAIR-REFUSAL",
+      "status": "PASS"
+    },
+    {
+      "id": "ACTUATOR-THROW-OR-NONVOID-IS-UNKNOWN",
+      "status": "PASS"
+    },
+    {
+      "id": "ACTUATOR-REENTRANCY-CANNOT-CLEAR-UNKNOWN",
+      "status": "PASS"
+    },
+    {
+      "id": "UNFROZEN-ACCESSOR-AND-PROXY-ROWS-ARE-NOT-INVOKED",
+      "status": "PASS"
+    },
+    {
+      "id": "EXACT-LOOPBACK-RESOURCE-AND-VALID-PORT-REQUIRED",
+      "status": "PASS"
+    },
+    {
+      "id": "UNKNOWN-SCHEMA-OR-MUTABLE-CALLBACK-IS-REFUSED",
+      "status": "PASS"
+    },
+    {
+      "id": "DECLARED-CONTROL-DOES-NOT-CLAIM-AUTHORITY-OR-NATIVE-LOSS",
+      "status": "PASS"
+    }
+  ],
+  "passed": 19,
+  "failed": 0,
+  "evidenceSha256": "a354a813c2feebd4ed9d8b135887f97ed729cc8c4ae1a397e417c87bd4715120",
+  "NodeExitCode": 0,
+  "actualNodeCommands": 1,
+  "taskState": "CLOSED",
+  "taskOutcome": "SUCCESS",
+  "nativeFixtureImported": false,
+  "applicationNativeTrials": 0,
+  "SDK": 0,
+  "SQLite": 0,
+  "keys": 0,
+  "signatures": 0,
+  "sockets": 0,
+  "nonceSearches": 0,
+  "actualFundingResponseLoss": "NOT_ESTABLISHED"
+}
