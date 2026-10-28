@@ -12,6 +12,7 @@ import { createBoundedJsonRpcReadAdmission } from './bounded-json-rpc-read-admis
 import { createNativeReadRetiredErrorLatch } from './native-read-retired-error-latch.js';
 import { nativeReadGenerationHandlesClosed } from './native-read-generation-handles-closed.js';
 import { captureNativeReadLoopbackQualificationRoute } from './native-read-loopback-qualification-configuration.js';
+import { captureNativePublicHttpsReadRoute } from './native-public-https-read-route.js';
 // Internal, default-off, pre-pinned, method-neutral HTTPS exchange owner.
 // Closed static wrappers retain their public route/configuration grammars and
 // method adapters; this module alone owns native HTTPS/socket lifecycle. It
@@ -254,78 +255,6 @@ function milliseconds(value) {
   if (!isSafeInteger(value) || same(value, -0) || value < 1 || value > 60000) invalid();
   return value;
 }
-function hostname(value) {
-  if (typeof value !== 'string' || value.length < 1 || value.length > 253) invalid();
-  let start = 0;
-  let labels = 0;
-  let numeric = true;
-  for (let index = 0; index <= value.length; index += 1) {
-    const character = index === value.length ? 46 : codeAt(value, index);
-    if (character === 46) {
-      const length = index - start;
-      if (length < 1 || length > 63 || codeAt(value, start) === 45 || codeAt(value, index - 1) === 45) invalid();
-      labels += 1;
-      start = index + 1;
-    } else {
-      if (!((character >= 97 && character <= 122) || (character >= 48 && character <= 57) || character === 45)) invalid();
-      if (character < 48 || character > 57) numeric = false;
-    }
-  }
-  if (labels < 2 || numeric) invalid();
-  const suffixes = ['localhost', 'local', 'internal', 'home.arpa', 'invalid', 'test', 'example', 'example.com', 'example.net', 'example.org', 'onion', 'alt', 'arpa'];
-  for (let index = 0; index < suffixes.length; index += 1) {
-    const suffix = suffixes[index];
-    if (value === suffix || slice(value, -suffix.length - 1) === `.${suffix}`) invalid();
-  }
-  return value;
-}
-function path(value) {
-  if (typeof value !== 'string' || value.length < 1 || value.length > 2048 || codeAt(value, 0) !== 47) invalid();
-  let segment = 1;
-  const punctuation = "-._~!$&'()*+,;=:@";
-  for (let index = 1; index <= value.length; index += 1) {
-    const character = index === value.length ? 47 : codeAt(value, index);
-    if (character === 47) {
-      if (index === segment && index !== value.length) invalid();
-      const part = slice(value, segment, index);
-      if (part === '.' || part === '..') invalid();
-      segment = index + 1;
-    } else {
-      let allowed = (character >= 48 && character <= 57) || (character >= 65 && character <= 90) || (character >= 97 && character <= 122);
-      for (let item = 0; !allowed && item < punctuation.length; item += 1) allowed = character === codeAt(punctuation, item);
-      if (!allowed) invalid();
-    }
-  }
-  return value;
-}
-function ipv4(value) {
-  if (typeof value !== 'string') invalid();
-  const octets = [];
-  let start = 0;
-  let numeric = 0;
-  for (let index = 0; index <= value.length; index += 1) {
-    const character = index === value.length ? 46 : codeAt(value, index);
-    if (character === 46) {
-      const length = index - start;
-      if (length < 1 || length > 3 || (length > 1 && codeAt(value, start) === 48) || numeric > 255) invalid();
-      append(octets, numeric); numeric = 0; start = index + 1;
-    } else {
-      if (character < 48 || character > 57) invalid();
-      numeric = numeric * 10 + character - 48;
-    }
-  }
-  if (octets.length !== 4) invalid();
-  const a = octets[0];
-  const b = octets[1];
-  const c = octets[2];
-  if (a === 0 || a === 10 || a === 127 || a >= 224
-      || (a === 100 && b >= 64 && b <= 127) || (a === 169 && b === 254)
-      || (a === 172 && b >= 16 && b <= 31)
-      || (a === 192 && ((b === 0 && (c === 0 || c === 2)) || (b === 88 && c === 99) || b === 168))
-      || (a === 198 && ((b >= 18 && b <= 19) || (b === 51 && c === 100)))
-      || (a === 203 && b === 0 && c === 113)) invalid();
-  return value;
-}
 function nativeObject(value, expectedPrototype) {
   if (value === null || typeof value !== 'object' || isProxy(value) || prototype(value) !== expectedPrototype) invalid();
   return value;
@@ -443,7 +372,7 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
       const local = LOCAL_ROUTE(input, localOptions, profileName);
       localCa = local.ca; localPort = local.port;
       route = freeze(record({ hostname: local.hostname, path: local.path, ipv4Address: local.ipv4Address }));
-    } else route = freeze(record({ hostname: hostname(input.hostname), path: path(input.path), ipv4Address: ipv4(input.ipv4Address) }));
+    } else route = freeze(record(captureNativePublicHttpsReadRoute(input)));
     timeoutMs = milliseconds(configuration.timeoutMs);
     closeGraceMs = milliseconds(configuration.closeGraceMs);
     // This is the single canonical snapshot of the security-relevant HTTPS

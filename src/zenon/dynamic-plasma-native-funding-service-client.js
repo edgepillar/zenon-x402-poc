@@ -12,11 +12,10 @@ import { createBoundedNonceDynamicPlasmaMaterialExchange } from './dynamic-plasm
 import { createZenonDynamicPlasmaOriginalFundingSubmissionV4 } from './dynamic-plasma-original-funding-submission.js';
 import { captureZenonDynamicPlasmaFundingPostPreparationInput } from './dynamic-plasma-funding-post-preparation-input.js';
 import { captureOriginalFundingServiceHandoffRequest } from './dynamic-plasma-original-funding-service-handoff-request.js';
-import { captureFundingPostCheckpointRoute } from '../x402-funding-post-checkpoint-route.js';
-import { snapshotOriginalServiceRequestCustodyPolicy } from '../service-credit-original-request-custody-contract.js';
 import { openNativeOfficialV6FundingPostOriginalPaymentClientWithFundingHandoffGuard } from '../x402-native-v6-funding-post-client.js';
 import { observeServiceCreditOperationDrain } from '../service-credit-bounded-operation-drain.js';
 import { createServiceCreditBoundedCloseCompletion } from '../service-credit-bounded-close-completion.js';
+import { captureNativeFundingServiceOperationalConfiguration } from './native-funding-service-configuration.js';
 
 const OPEN_STORE = openZenonFundingPayerRecoveryOriginalPaymentSqliteStoreV6;
 const FUNDING = createFundingPostNativeHttpsTransport, READS = createRetainedDynamicPlasmaHttpsReadSessionV2;
@@ -27,7 +26,6 @@ const SUBMISSION = createZenonDynamicPlasmaOriginalFundingSubmissionV4;
 const ORIGINAL_INPUT = captureZenonDynamicPlasmaFundingPostPreparationInput;
 const HANDOFF = captureOriginalFundingServiceHandoffRequest;
 const SERVICE = openNativeOfficialV6FundingPostOriginalPaymentClientWithFundingHandoffGuard;
-const ROUTE = captureFundingPostCheckpointRoute, POLICY = snapshotOriginalServiceRequestCustodyPolicy;
 const DRAIN = observeServiceCreditOperationDrain, STAT = lstatSync, F = Object.freeze;
 const CLOSE_COMPLETION = createServiceCreditBoundedCloseCompletion;
 const DESC = Object.getOwnPropertyDescriptor, PROTO = Object.getPrototypeOf, KEYS = Reflect.ownKeys;
@@ -136,43 +134,15 @@ async function openClient(configuration, localReadOptions, localQualification) {
   });
   try {
     const c = exact(configuration, ['storeOptions','fundingOptions','serviceOptions']);
-    storeOptions = F(exact(c.storeOptions, ['databasePath','allowedRoot','resourceUrl','custodyPolicy']));
-    fundingOptions = exact(c.fundingOptions, ['readSessionOptions','materialOptions','materialWaitMs','wallet','deadlineMs','fundingTransportOptions']);
-    serviceOptions = F(exact(c.serviceOptions, ['official','transportOptions','deadlineMs']));
-    ROUTE(storeOptions.resourceUrl);
-    policy = POLICY(storeOptions.custodyPolicy, storeOptions.resourceUrl);
-    storeOptions = F({ ...storeOptions, custodyPolicy: policy });
-    materialOptions = exact(fundingOptions.materialOptions, ['publicKey','startNonce','limits']);
-    materialOptions = F({ ...materialOptions, limits: F(exact(materialOptions.limits, ['maxAttempts','maxDifficulty'])) });
-    fundingTransportOptions = F(exact(fundingOptions.fundingTransportOptions,
-      ['resourceUrl','ca','maxRequestStarts','requestDeadlineMs','handshakeDeadlineMs','closeGraceMs']));
-    let serviceTransport = exact(serviceOptions.transportOptions,
-      ['origin','ca','maxRequestStarts','maxConcurrentRequests','requestDeadlineMs','handshakeDeadlineMs','closeGraceMs']);
-    const configuredOfficial = exact(serviceOptions.official, ['validateChallenge','assetInfo','contextLimit']);
-    const assetInfo = F(exact(configuredOfficial.assetInfo, ['asset','decimals','symbol']));
-    if (typeof configuredOfficial.validateChallenge !== 'function' || IS_PROXY(configuredOfficial.validateChallenge)
-        || PROTO(configuredOfficial.validateChallenge) !== Function.prototype
-        || typeof assetInfo.asset !== 'string' || assetInfo.asset.length < 1 || assetInfo.asset.length > 256
-        || typeof assetInfo.symbol !== 'string' || !/^[\x21-\x7e]{1,32}$/.test(assetInfo.symbol))
-      fail('configuration_or_owner_unavailable');
-    integer(assetInfo.decimals, 0, 18); integer(configuredOfficial.contextLimit, 1, 64);
-    const official = F({ ...configuredOfficial, assetInfo });
-    integer(fundingOptions.materialWaitMs, 1, 60000); integer(fundingOptions.deadlineMs, 1, 60000);
-    integer(serviceOptions.deadlineMs, 1, 60000);
-    integer(fundingTransportOptions.requestDeadlineMs, 1, 60000);
-    integer(fundingTransportOptions.handshakeDeadlineMs, 1, fundingTransportOptions.requestDeadlineMs);
-    integer(fundingTransportOptions.closeGraceMs, 1, Math.min(fundingOptions.deadlineMs, 1000));
-    integer(serviceTransport.maxRequestStarts, 1, 256);
-    integer(serviceTransport.requestDeadlineMs, 1, 30000);
-    integer(serviceTransport.handshakeDeadlineMs, 1, serviceTransport.requestDeadlineMs);
-    integer(serviceTransport.closeGraceMs, 1, Math.min(serviceOptions.deadlineMs, 1000));
-    if (typeof serviceTransport.origin !== 'string'
-        || fundingTransportOptions.resourceUrl !== storeOptions.resourceUrl || fundingTransportOptions.maxRequestStarts !== 1
-        || fundingTransportOptions.requestDeadlineMs > fundingOptions.deadlineMs
-        || storeOptions.resourceUrl !== serviceTransport.origin + '/funding'
-        || policy.serviceResourceUrl !== serviceTransport.origin + '/service-credit/v1/execute'
-        || serviceTransport.maxConcurrentRequests !== 1 || serviceTransport.maxRequestStarts > policy.maxRequests
-        || serviceTransport.requestDeadlineMs > serviceOptions.deadlineMs) fail('configuration_or_owner_unavailable');
+    const incomingFunding = exact(c.fundingOptions, ['readSessionOptions','materialOptions','materialWaitMs','wallet','deadlineMs','fundingTransportOptions']);
+    const { wallet, ...operationalFunding } = incomingFunding;
+    const selected = captureNativeFundingServiceOperationalConfiguration({ storeOptions: c.storeOptions,
+      fundingOptions: operationalFunding, serviceOptions: c.serviceOptions }, localQualification ? 'LOCAL_QUALIFICATION' : 'PUBLIC');
+    storeOptions = selected.storeOptions; policy = storeOptions.custodyPolicy;
+    fundingOptions = { ...selected.fundingOptions, wallet };
+    serviceOptions = selected.serviceOptions; materialOptions = fundingOptions.materialOptions;
+    fundingTransportOptions = fundingOptions.fundingTransportOptions;
+    let serviceTransport = serviceOptions.transportOptions;
     // Inert reservation before native/store construction, not a timer or permit.
     closeCompletion = CLOSE_COMPLETION(Math.min(fundingOptions.deadlineMs, serviceOptions.deadlineMs, 1000));
     // Detach operator trust DATA before the funding lifetime starts. A caller
@@ -189,7 +159,7 @@ async function openClient(configuration, localReadOptions, localQualification) {
     if (localQualification) localReadSelection = LOCAL_SELECTION(localReadOptions, privateCa);
     serviceTransport = F({ ...serviceTransport, ca: privateCa });
     fundingTransportOptions = F({ ...fundingTransportOptions, ca: privateCa });
-    serviceOptions = F({ ...serviceOptions, official, transportOptions: serviceTransport });
+    serviceOptions = F({ ...serviceOptions, transportOptions: serviceTransport });
     applicationSlot = slot; // No await before claiming this module's application owner.
     const material = MATERIAL(materialOptions); // Inert; no search/signing.
     post = FUNDING(fundingTransportOptions); slot.post = post;

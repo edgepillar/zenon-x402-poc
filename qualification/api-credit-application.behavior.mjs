@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 // DATA ports only. The SQLite/file/native binding modules are not imported.
 import assert from 'node:assert/strict';
 import { Buffer } from 'node:buffer';
@@ -14,17 +15,19 @@ function fileProfile(policy, edit = {}) { return { storageProfile: { version: 1,
   filePolicy: { expectedDevice: '123', reservedBytes: '8192', maxDatabaseBytes: 1048576 }, ...edit }; }
 function capturedConfiguration() {
   const h = f.fixture(), ca = Buffer.from('PUBLIC-SYNTHETIC-CA-BYTES');
+  const applicationOrigin = new URL(h.f.resourceUrl).origin;
   const r = { h, ca, keyCalls: 0, clockCalls: 0 };
-  const key = F({ getPublicKey() { r.keyCalls++; throw Error('must not enter'); }, getAddress() { r.keyCalls++; throw Error('must not enter'); } });
-  const endpoint = () => F({ route: F({ hostname: 'rpc.example.test', path: '/rpc', ipv4Address: '192.0.2.1' }), timeoutMs: 200, closeGraceMs: 100 });
+  const key = F({ getPublicKey() { r.keyCalls++; throw Error('must not enter'); }, getAddress() { r.keyCalls++; throw Error('must not enter'); },
+    sign() { r.keyCalls++; throw Error('must not enter'); }, clear() { r.keyCalls++; throw Error('must not enter'); } });
+  const endpoint = (second = false) => F({ route: F({ hostname: second ? 'rpc-two.zenon.network' : 'rpc-one.zenon.network', path: '/rpc', ipv4Address: second ? '1.1.1.1' : '8.8.8.8' }), timeoutMs: 200, closeGraceMs: 100 });
   r.input = { configuration: { storeOptions: { databasePath: '/synthetic/funding/checkpoint.sqlite', allowedRoot: '/synthetic/funding',
-    resourceUrl: h.f.resourceUrl, custodyPolicy: { serviceResourceUrl: 'https://service.example.test/service-credit/v1/execute', maxRequests: 128 } },
-  fundingOptions: { readSessionOptions: F({ endpoints: F([endpoint(), endpoint()]), accountEndpoint: endpoint() }),
+    resourceUrl: h.f.resourceUrl, custodyPolicy: { policyVersion: 1, serviceResourceUrl: applicationOrigin + '/service-credit/v1/execute', maxRequests: 128 } },
+  fundingOptions: { readSessionOptions: F({ endpoints: F([endpoint(), endpoint(true)]), accountEndpoint: endpoint() }),
     materialOptions: { publicKey: h.f.candidate.accountBlock.publicKey, startNonce: '0000000000000000', limits: { maxAttempts: 4096, maxDifficulty: 16 } },
     materialWaitMs: 250, keyPair: key, expectedAddress: h.policy.accountId, deadlineMs: 500,
     fundingTransportOptions: { resourceUrl: h.f.resourceUrl, ca, maxRequestStarts: 1, requestDeadlineMs: 250, handshakeDeadlineMs: 100, closeGraceMs: 100 } },
   serviceOptions: { official: { validateChallenge: F(function declaredChallenge() {}), assetInfo: { asset: h.policy.asset, decimals: 8, symbol: 'ZNN' }, contextLimit: 16 },
-    transportOptions: { origin: 'https://service.example.test', ca, maxRequestStarts: 128, maxConcurrentRequests: 1, requestDeadlineMs: 250, handshakeDeadlineMs: 100, closeGraceMs: 100 }, deadlineMs: 500 } },
+    transportOptions: { origin: applicationOrigin, ca, maxRequestStarts: 128, maxConcurrentRequests: 1, requestDeadlineMs: 250, handshakeDeadlineMs: 100, closeGraceMs: 100 }, deadlineMs: 500 } },
   spendingFile: fileProfile(h.policy), spending: { paymentId: 'payment.api.synthetic', readDay: F(() => { r.clockCalls++; return 10; }) } };
   return r;
 }
@@ -178,6 +181,9 @@ check('a-nonvoid-current-owner-check-cannot-authorize-an-operation', async () =>
   const h = appFixture({ mode: 'nonvoidCurrent' }); await assert.rejects(h.root.prepareOriginalFunding(h.f.input));
   assert.equal(h.counts.prepares, 0); assert.equal(h.raw(), null); await assert.rejects(h.root.close()); assert.equal(h.file.closeCalls, 0);
 });
+export const apiCreditApplicationDataCases = F(checks.map(c => F(c)));
+export const apiCreditApplicationDataFixtures = F({ capturedConfiguration, appFixture });
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
 const cases = [];
 for (const { id, run } of checks) { try { await run(); cases.push({ id, status: 'PASS' }); } catch (e) { cases.push({ id, status: 'FAIL', error: String(e?.message ?? e) }); } }
 const failed = cases.filter(c => c.status !== 'PASS').length;
@@ -186,3 +192,4 @@ console.log(JSON.stringify({ qualification: 'G1_API_CREDIT_APPLICATION_DATA', pa
   nonceSearches: 0, nodeChildren: 0, actualPrepare: 0, payouts: 0, nativeFileOwnerExecution: 'NOT_ESTABLISHED',
   nativeProductAcceptance: 'NOT_ESTABLISHED', nativeHundredCallAcceptance: 'NOT_ESTABLISHED', nativeDurability: 'NOT_ESTABLISHED' }));
 if (failed) process.exitCode = 1;
+}

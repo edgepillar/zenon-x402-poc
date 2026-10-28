@@ -1,8 +1,10 @@
 import { Buffer } from 'node:buffer';
+import { createHash } from 'node:crypto';
 import { types } from 'node:util';
 import { captureSdk105FundingServiceConfiguration } from './sdk105-funding-service-lifecycle.js';
 import { captureSdk105OriginalFundingSpendingConfiguration } from './sdk105-spending-bounded-client.js';
 import { captureOriginalFundingSpendingFileProfile } from '../original-funding-spending-file-profile.js';
+import { captureNativeFundingServiceOperationalConfiguration } from './native-funding-service-configuration.js';
 
 const F = Object.freeze, DESC = Object.getOwnPropertyDescriptor, OWN = Object.hasOwn;
 const ARRAY_BUFFER = DESC(Object.getPrototypeOf(Uint8Array.prototype), 'buffer').get;
@@ -17,18 +19,19 @@ function fields(value, names) {
 }
 /** Detach operator trust/configuration before deferred native loading. Only the
  * already existing key and explicit challenge/day capabilities remain opaque;
- * no key method, clock, SQL, network or cryptographic operation is invoked. */
+ * only CA byte hashing runs; no key method, clock, SQL, network or signing operation is invoked. */
 export function captureSdk105ApiCreditSelection(configuration) {
   if (arguments.length !== 1) fail();
   const c = fields(configuration, ['configuration', 'spendingFile', 'spending']);
   const selected = captureSdk105FundingServiceConfiguration(c.configuration);
+  existingKeyShape(selected.walletOptions.keyPair);
   const file = captureOriginalFundingSpendingFileProfile(c.spendingFile), spending = fields(c.spending, ['paymentId', 'readDay']);
   const policy = file.storageProfile.policy;
   captureSdk105OriginalFundingSpendingConfiguration({ ...spending, policy, backend: null });
   const official = fields(selected.serviceOptions.official, ['validateChallenge', 'assetInfo', 'contextLimit']);
   const assetInfo = fields(official.assetInfo, ['asset', 'decimals', 'symbol']);
   if (policy.accountId !== selected.walletOptions.expectedAddress || policy.asset !== assetInfo.asset
-      || typeof spending.readDay !== 'function' || !Object.isFrozen(spending.readDay) || types.isProxy(spending.readDay)
+      || typeof spending.readDay !== 'function' || types.isProxy(spending.readDay) || !Object.isFrozen(spending.readDay)
       || typeof official.validateChallenge !== 'function' || types.isProxy(official.validateChallenge)) fail();
   const fundingRoot = selected.storeOptions.allowedRoot;
   if (typeof fundingRoot !== 'string' || file.allowedRoot === fundingRoot || file.allowedRoot.startsWith(fundingRoot + '/')
@@ -59,13 +62,15 @@ export function captureSdk105ApiCreditSelection(configuration) {
     }
     active.delete(value); return F(out);
   }
-  const state = { released: false, consumed: false };
+  const state = { released: false, consumed: false, caDigests: null };
   function release() { if (arguments.length !== 0) fail(); if (state.released) return; state.released = true; for (const b of copies) Reflect.apply(FILL, b, [0]); }
   try {
     const store = snapshot(selected.storeOptions, 'storeOptions'), funding = snapshot(selected.fundingOptions, 'fundingOptions');
     const service = snapshot(selected.serviceOptions, 'serviceOptions');
-    const result = F({ configuration: F({ storeOptions: store, fundingOptions: F({ ...funding, keyPair: selected.walletOptions.keyPair,
-      expectedAddress: selected.walletOptions.expectedAddress }), serviceOptions: service }), spendingFile: file,
+    const admitted = captureNativeFundingServiceOperationalConfiguration({ storeOptions: store, fundingOptions: funding, serviceOptions: service });
+    state.caDigests = caDigests(admitted);
+    const result = F({ configuration: F({ storeOptions: admitted.storeOptions, fundingOptions: F({ ...admitted.fundingOptions, keyPair: selected.walletOptions.keyPair,
+      expectedAddress: selected.walletOptions.expectedAddress }), serviceOptions: admitted.serviceOptions }), spendingFile: file,
       spending: F({ policy, ...spending }), release: F(release) });
     SELECTED.set(result, state); return result;
   } catch { release(); fail(); }
@@ -74,5 +79,26 @@ export function captureSdk105ApiCreditSelection(configuration) {
 export function consumeSdk105ApiCreditSelection(selection) {
   if (arguments.length !== 1 || selection === null || typeof selection !== 'object' || types.isProxy(selection)) fail();
   const state = SELECTED.get(selection); if (!state || state.consumed || state.released) fail(); state.consumed = true;
-  return selection;
+  try {
+    const c = captureSdk105FundingServiceConfiguration(selection.configuration);
+    existingKeyShape(c.walletOptions.keyPair);
+    const admitted = captureNativeFundingServiceOperationalConfiguration({ storeOptions: c.storeOptions, fundingOptions: c.fundingOptions, serviceOptions: c.serviceOptions });
+    const current = caDigests(admitted);
+    if (current[0] !== state.caDigests[0] || current[1] !== state.caDigests[1]) fail();
+    return selection;
+  } catch { selection.release(); fail(); }
+}
+function caDigests(c) { return F([c.fundingOptions.fundingTransportOptions.ca, c.serviceOptions.transportOptions.ca]
+  .map(value => createHash('sha256').update(value).digest('hex'))); }
+function existingKeyShape(receiver) {
+  if (receiver === null || typeof receiver !== 'object' || types.isProxy(receiver)) fail();
+  for (const name of ['getAddress', 'getPublicKey', 'sign', 'clear']) {
+    let at = receiver, found = false;
+    for (let i = 0; i < 8 && at !== null && at !== Object.prototype; i++) {
+      if (types.isProxy(at)) fail(); const d = DESC(at, name);
+      if (d !== undefined) { if (!OWN(d, 'value') || typeof d.value !== 'function' || types.isProxy(d.value)) fail(); found = true; break; }
+      at = Object.getPrototypeOf(at);
+    }
+    if (!found) fail();
+  }
 }
