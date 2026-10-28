@@ -134,16 +134,24 @@ try {
       assert.equal(aDB.prepare('SELECT 1 AS value').get().value, 1);
     });
     closeDB(aDB);
-    const bDB = db(names[1], false), b = holdWrapper(create(bDB, storeId, limits));
-    const badClaim = claim(storeId, f.terms.orderId, captured.paymentScope, null, 'worker.bad-fixture', b);
-    const bad = makeOwner(badClaim.ownerTokenJson, b, () => { assert.fail('no verifier for corruption fixture'); }); bad.owner.recover(); await bad.owner.close(); bad.port.close();
-    await check('NATIVE-SAME-CONNECTION-CORRUPTION-QUARANTINES-STORE', async () => {
+    const bDB = db(names[1], false);
+    await check('NATIVE-SCHEMA-PREFIX-AND-ROW-CORRUPTION-ARE-REFUSED', async () => {
+      // This is newly created synthetic fixture data, not an existing store.
+      bDB.exec('CREATE TABLE sqliteXunexpected(value TEXT) STRICT');
+      assert.throws(() => create(bDB, storeId, limits), /OPEN_REFUSED/);
+      assert.equal(bDB.prepare("SELECT name FROM main.sqlite_schema WHERE name='sqliteXunexpected'").get().name, 'sqliteXunexpected');
+      bDB.exec('DROP TABLE sqliteXunexpected');
+      const b = holdWrapper(create(bDB, storeId, limits));
+      const badClaim = claim(storeId, f.terms.orderId, captured.paymentScope, null, 'worker.bad-fixture', b);
+      const bad = makeOwner(badClaim.ownerTokenJson, b, () => { assert.fail('no verifier for corruption fixture'); });
+      bad.owner.recover(); await bad.owner.close(); bad.port.close();
       bDB.prepare('UPDATE order_funding_cas_slots_v1 SET envelope_json=? WHERE order_id=?').run('{}', f.terms.orderId);
       assert.throws(() => b.readEnvelope(f.terms.orderId, captured.paymentScope), /STORE_UNAVAILABLE/); assert.equal(b.snapshot().held, true);
       assert.throws(() => b.readEnvelope(f.terms.orderId, captured.paymentScope), /HELD/);
       assert.equal(bDB.prepare('SELECT envelope_json FROM order_funding_cas_slots_v1').get().envelope_json, '{}');
+      b.close();
     });
-    b.close(); closeDB(bDB);
+    closeDB(bDB);
   } else {
     const aDB = db(names[0], true), a = holdWrapper(reopen(aDB, independent.storeId, independent.limits));
     const before = a.readEnvelope(f.terms.orderId, captured.paymentScope);

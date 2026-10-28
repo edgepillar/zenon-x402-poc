@@ -48,7 +48,7 @@ function create(database, storeId, inputLimits, creating) {
     check(get('PRAGMA ignore_check_constraints').ignore_check_constraints === 0);
     check(get('PRAGMA foreign_keys').foreign_keys === 1);
     const dbs = all('PRAGMA database_list'); check(dbs.every(d => d.name === 'main' || d.name === 'temp'));
-    if (dbs.some(d => d.name === 'temp')) check(all("SELECT name FROM temp.sqlite_schema WHERE name NOT LIKE 'sqlite_%'").length === 0);
+    if (dbs.some(d => d.name === 'temp')) check(all("SELECT name FROM temp.sqlite_schema WHERE name NOT GLOB 'sqlite_*'").length === 0);
   }
   function versions() {
     const v = [get('PRAGMA main.data_version').data_version, get('PRAGMA main.schema_version').schema_version,
@@ -63,7 +63,7 @@ function create(database, storeId, inputLimits, creating) {
     return value.envelope_json;
   }
   function validateAll() {
-    settings(); const tables = all("SELECT name,type,sql FROM main.sqlite_schema WHERE name NOT LIKE 'sqlite_%'");
+    settings(); const tables = all("SELECT name,type,sql FROM main.sqlite_schema WHERE name NOT GLOB 'sqlite_*'");
     check(tables.length === 2 && tables.every(t => t.type === 'table' && SCHEMA.get(t.name) === t.sql));
     const meta = all('SELECT * FROM main.order_funding_cas_meta_v1');
     check(meta.length === 1 && meta[0].singleton === 1 && meta[0].version === 1 && meta[0].store_id === storeId && meta[0].max_records === maxRecords);
@@ -97,7 +97,7 @@ function create(database, storeId, inputLimits, creating) {
     settings();
     transaction(() => {
       if (creating) {
-        check(all("SELECT name FROM main.sqlite_schema WHERE name NOT LIKE 'sqlite_%'").length === 0);
+        check(all("SELECT name FROM main.sqlite_schema WHERE name NOT GLOB 'sqlite_*'").length === 0);
         for (const sql of SCHEMA.values()) exec(sql);
         run('INSERT INTO main.order_funding_cas_meta_v1 VALUES(1,1,?,?)', storeId, maxRecords);
       }

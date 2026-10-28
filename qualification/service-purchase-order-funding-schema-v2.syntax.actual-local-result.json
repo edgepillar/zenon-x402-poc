@@ -1,0 +1,54 @@
+{
+  "qualification": "PURCHASE_ORDER_FUNDING_SCHEMA_PREFIX_V2_SYNTAX",
+  "status": "PASS",
+  "recordedAtUTC": "2026-10-28T13:41:49.768271+00:00",
+  "sourcePins": [
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "qualification/service-purchase-order-funding-sqlite.native.mjs",
+      "bytes": 13827,
+      "sha256": "79068b2444b17ba25a93ab37c9a858fd0310ecf2eab521fd1948c779373b2865",
+      "gitBlob": "7116ff360df9aae607ab2343e5a1bca29c7009c0"
+    },
+    {
+      "path": "src/service-purchase-order-funding-sqlite-store.js",
+      "bytes": 9651,
+      "sha256": "4d4bd87329e286fb909969d38dd92f73677b239abbbeccf04b590f55eb4ba0e9",
+      "gitBlob": "7f49199c6e1ee64b0ec09d4ee2bf0462395bd142"
+    }
+  ],
+  "syntaxOnlyNodeCommands": 2,
+  "actualExits": [
+    0,
+    0
+  ],
+  "nativeSQLiteExecutions": 0,
+  "correction": "Use a literal reserved schema prefix. The earlier LIKE pattern treated the underscore as a wildcard.",
+  "primaryReference": "https://www.sqlite.org/lang_expr.html#the_like_glob_regexp_match_and_extract_operators",
+  "plannedNativeRegression": "NATIVE-SCHEMA-PREFIX-AND-ROW-CORRUPTION-ARE-REFUSED",
+  "plannedEffectsChanged": false,
+  "plannedSqliteFilesPerRun": 2,
+  "plannedPinFilesPerRun": 1,
+  "plannedNodeCommandsPerRun": 2,
+  "plannedDatabaseConnectionsPerRun": 4,
+  "previousNativeInputsPreserved": true,
+  "fullAdmissionForReservedParserBatch": 1,
+  "reservedQuotaBytes": 4194304,
+  "sourceTransforms": false,
+  "independentAPFSClones": true,
+  "rawQualificationSha256": "fd0c5a20e8df65213736703433eff0185a9039109f32a4540c9d9a433cc31404",
+  "actualSQLiteOrNativeBehavior": "NOT_EXECUTED",
+  "authenticFunding": "NOT_PERFORMED",
+  "SDK": 0,
+  "keys": 0,
+  "signatures": 0,
+  "sockets": 0,
+  "nonceSearches": 0,
+  "mainOrCIChanged": false,
+  "production": "NOT_ACCEPTED"
+}
