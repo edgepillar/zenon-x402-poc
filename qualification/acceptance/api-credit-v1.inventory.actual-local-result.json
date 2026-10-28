@@ -1,0 +1,287 @@
+{
+  "qualification": "G0_API_CREDIT_SELECTED_RETAINED_EVIDENCE_INVENTORY_DATA",
+  "status": "PASS",
+  "recordedAtUTC": "2026-10-28T18:21:08.559686+00:00",
+  "nodeVersion": "24.19.0",
+  "platform": "darwin-arm64",
+  "nodeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25",
+  "passed": 8,
+  "failed": 0,
+  "cases": [
+    {
+      "id": "passing-component-evidence-does-not-establish-a-product-or-accepted-gate",
+      "status": "PASS"
+    },
+    {
+      "id": "product-contract-failures-remain-visible-without-changing-their-original-status",
+      "status": "PASS"
+    },
+    {
+      "id": "native-program-pass-with-rejected-qualification-is-not-promoted-to-pass",
+      "status": "PASS"
+    },
+    {
+      "id": "altered-artifact-bytes-or-size-refuse-the-entire-inventory",
+      "status": "PASS"
+    },
+    {
+      "id": "a-self-consistent-new-hash-does-not-hide-an-unexpected-report-status",
+      "status": "PASS"
+    },
+    {
+      "id": "traversal-unknown-status-and-unreviewed-classification-are-refused",
+      "status": "PASS"
+    },
+    {
+      "id": "unproven-product-and-gate-completion-is-rejected-before-reading-any-evidence",
+      "status": "PASS"
+    },
+    {
+      "id": "manifest-accessors-and-proxies-are-rejected-without-getter-entry",
+      "status": "PASS"
+    }
+  ],
+  "actualDataNodeCommands": 2,
+  "task": "CLOSED/SUCCESS",
+  "rawQualificationSha256": "0d8858fba580a41dc696f27e42f47edc694f7478da784fc41e63162855f1f425",
+  "sourcePins": [
+    {
+      "path": "STATUS.md",
+      "bytes": 2422,
+      "sha256": "4582e257cb484ab51ed77e4cc7640b36c5973d6edafd077b4809771871f6161e",
+      "gitBlob": "f5eacb81adfc2393276405a7c3bb54d7c961eeec"
+    },
+    {
+      "path": "docs/ROADMAP.md",
+      "bytes": 8815,
+      "sha256": "f2f4733960c29da6e56e2c967b3b98f28f70c2947f59c48013b2985f444a8c25",
+      "gitBlob": "161a718f092e9e28854f61718e1f50ec0321896d"
+    },
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "qualification/acceptance/acceptance-evidence.behavior.mjs",
+      "bytes": 4982,
+      "sha256": "d2593358ca4307d58e7e4ca03d49dd8cfcb15e681c7431f6f31452e799a912c9",
+      "gitBlob": "4406f6349e05a03883a1f8deeb722eb81ae6c023"
+    },
+    {
+      "path": "qualification/acceptance/api-credit-v1.evidence.json",
+      "bytes": 6868,
+      "sha256": "0e90ed787fab65098c11544ecfe1529b9d75271ef55cac9b130cf569b7141b27",
+      "gitBlob": "f145dff7ecb4eded261b39d40727e65c0592a495"
+    },
+    {
+      "path": "qualification/sdk105-issued-command-application-v3.clean.actual-local-failure.json",
+      "bytes": 2841,
+      "sha256": "59d2accddafa1e5152e4749232ae06a7199bb4540dff1941bc1952d37117fc9e",
+      "gitBlob": "dded5af563e7eeb0f58064119e21bbcca3425271"
+    },
+    {
+      "path": "qualification/sdk105-issued-command-application-v4.clean.actual-local-result.json",
+      "bytes": 5674,
+      "sha256": "56c31114c52e10558029d22133123e2a41f9741dc907c726e304a5e07908931f",
+      "gitBlob": "d452e4110540702a41a2a2fab0bc2e9f902afb07"
+    },
+    {
+      "path": "qualification/sdk105-issued-command-application-v4.pending.actual-local-result.json",
+      "bytes": 4654,
+      "sha256": "ecc0672e06555c4f86d53916529ddde3eb8c466c61da459464dfc44cbe9388d9",
+      "gitBlob": "ab36526ed75e3f8993c419578b6208da2853eca6"
+    },
+    {
+      "path": "qualification/sdk105-issued-command-application-v5.pending.actual-local-result.json",
+      "bytes": 5868,
+      "sha256": "8778665f377c6e6fe6b1596c596db00de235f09e711368ac5f8adfe7bbf43fcf",
+      "gitBlob": "542cd7239c2984f7bf2f379de2b0991c156b1ed0"
+    },
+    {
+      "path": "qualification/sdk105-issued-command-application-v5.service-response-loss.actual-local-result.json",
+      "bytes": 6065,
+      "sha256": "8ea915523b4437a674f5cf81b1f3a4e512eaa6107ee42f30d51ea6cf71f5f3f3",
+      "gitBlob": "97877cfbaec4e4965ff1286b30403f3ecd3e8ea2"
+    },
+    {
+      "path": "qualification/sdk105-issued-command-application-v6.funding-response-loss.actual-local-result.json",
+      "bytes": 2942,
+      "sha256": "c52741ee6c284b2279817918a72840a834a55c446ab56f27bd7c897c23c30eb5",
+      "gitBlob": "d79964a5544257a03d992955b22d4759c1e64c22"
+    },
+    {
+      "path": "qualification/sdk105-issued-command-application-v7.funding-response-loss.actual-local-result.json",
+      "bytes": 6576,
+      "sha256": "7e469542a4a654ec0fa9a984e3f84b9cbbd4da049386bd523f831bdaa2d88f3e",
+      "gitBlob": "282045ec905dfc16a7b64d6a522ad664919fceff"
+    },
+    {
+      "path": "qualification/service-purchase-order-application.actual-local-result.json",
+      "bytes": 12035,
+      "sha256": "15f4036123443e9751a818bc6f3d4033957f59c0c83aaeaffb2491ff99b802df",
+      "gitBlob": "5e578e063866eb216d3bf145c3261de442b3c785"
+    },
+    {
+      "path": "qualification/service-purchase-order-fulfillment-cas.actual-local-result.json",
+      "bytes": 10104,
+      "sha256": "594bfbeb71f9ef5675b9d3f724a605ee0eb9fd0513a538974031c99e2da29eb0",
+      "gitBlob": "124a2bb1e7e55968f5ea92dce3467288bdbb587b"
+    },
+    {
+      "path": "qualification/service-purchase-order-fulfillment.actual-local-result.json",
+      "bytes": 9998,
+      "sha256": "53ca673fb20dfc705e6bd66403777d6ccd21833585e5cdaf6fa982b273352915",
+      "gitBlob": "0811d410e8f3b3786b4257d8b896454a987eb938"
+    },
+    {
+      "path": "scripts/report-acceptance-evidence.mjs",
+      "bytes": 6305,
+      "sha256": "bd99f569ae3f0ad72789c156a1463f123cdc60c59c39a2e6e77248b50ca02310",
+      "gitBlob": "dd4ee530fa75af68075caae1650ac6abf3d6f942"
+    }
+  ],
+  "inventory": {
+    "kind": "API_CREDIT_V1_RETAINED_EVIDENCE_INVENTORY",
+    "sourceBaseline": "db91359ce77a354ec463daf6adf4b4b7b999c3d6",
+    "artifactIntegrity": "VERIFIED",
+    "retainedPasses": 6,
+    "retainedFailures": 4,
+    "records": [
+      {
+        "id": "v3-clean",
+        "path": "qualification/sdk105-issued-command-application-v3.clean.actual-local-failure.json",
+        "sha256": "59d2accddafa1e5152e4749232ae06a7199bb4540dff1941bc1952d37117fc9e",
+        "status": "FAILURE",
+        "classification": "PRODUCT_INTEGRATION_CONTRACT",
+        "establishesFullProductAcceptance": false
+      },
+      {
+        "id": "v4-clean",
+        "path": "qualification/sdk105-issued-command-application-v4.clean.actual-local-result.json",
+        "sha256": "56c31114c52e10558029d22133123e2a41f9741dc907c726e304a5e07908931f",
+        "status": "PASS",
+        "classification": "RETAINED_PASS",
+        "establishesFullProductAcceptance": false
+      },
+      {
+        "id": "v4-pending",
+        "path": "qualification/sdk105-issued-command-application-v4.pending.actual-local-result.json",
+        "sha256": "ecc0672e06555c4f86d53916529ddde3eb8c466c61da459464dfc44cbe9388d9",
+        "status": "FAILURE",
+        "classification": "HARNESS_EXPECTATION",
+        "establishesFullProductAcceptance": false
+      },
+      {
+        "id": "v5-pending",
+        "path": "qualification/sdk105-issued-command-application-v5.pending.actual-local-result.json",
+        "sha256": "8778665f377c6e6fe6b1596c596db00de235f09e711368ac5f8adfe7bbf43fcf",
+        "status": "PASS",
+        "classification": "RETAINED_PASS",
+        "establishesFullProductAcceptance": false
+      },
+      {
+        "id": "v5-service-loss",
+        "path": "qualification/sdk105-issued-command-application-v5.service-response-loss.actual-local-result.json",
+        "sha256": "8ea915523b4437a674f5cf81b1f3a4e512eaa6107ee42f30d51ea6cf71f5f3f3",
+        "status": "PASS",
+        "classification": "RETAINED_PASS",
+        "establishesFullProductAcceptance": false
+      },
+      {
+        "id": "v6-funding-loss",
+        "path": "qualification/sdk105-issued-command-application-v6.funding-response-loss.actual-local-result.json",
+        "sha256": "c52741ee6c284b2279817918a72840a834a55c446ab56f27bd7c897c23c30eb5",
+        "status": "FAILURE",
+        "classification": "HARNESS_REPORTING",
+        "establishesFullProductAcceptance": false
+      },
+      {
+        "id": "v7-funding-loss",
+        "path": "qualification/sdk105-issued-command-application-v7.funding-response-loss.actual-local-result.json",
+        "sha256": "7e469542a4a654ec0fa9a984e3f84b9cbbd4da049386bd523f831bdaa2d88f3e",
+        "status": "NATIVE_PROGRAM_PASS_QUALIFICATION_REJECTED",
+        "classification": "HARNESS_REPORTING",
+        "establishesFullProductAcceptance": false
+      },
+      {
+        "id": "order-liability-data",
+        "path": "qualification/service-purchase-order-fulfillment.actual-local-result.json",
+        "sha256": "53ca673fb20dfc705e6bd66403777d6ccd21833585e5cdaf6fa982b273352915",
+        "status": "PASS",
+        "classification": "COMPONENT_DATA_PASS",
+        "establishesFullProductAcceptance": false
+      },
+      {
+        "id": "order-fencing-data",
+        "path": "qualification/service-purchase-order-fulfillment-cas.actual-local-result.json",
+        "sha256": "594bfbeb71f9ef5675b9d3f724a605ee0eb9fd0513a538974031c99e2da29eb0",
+        "status": "PASS",
+        "classification": "COMPONENT_DATA_PASS",
+        "establishesFullProductAcceptance": false
+      },
+      {
+        "id": "paired-http-data",
+        "path": "qualification/service-purchase-order-application.actual-local-result.json",
+        "sha256": "15f4036123443e9751a818bc6f3d4033957f59c0c83aaeaffb2491ff99b802df",
+        "status": "PASS",
+        "classification": "COMPONENT_DATA_PASS",
+        "establishesFullProductAcceptance": false
+      }
+    ],
+    "gates": [
+      {
+        "id": "G0",
+        "status": "OPEN"
+      },
+      {
+        "id": "G1",
+        "status": "OPEN"
+      },
+      {
+        "id": "G2",
+        "status": "OPEN"
+      },
+      {
+        "id": "G3a",
+        "status": "OPEN"
+      },
+      {
+        "id": "G3b",
+        "status": "PROFILE_DEPENDENT_OPEN"
+      },
+      {
+        "id": "G4",
+        "status": "OPEN"
+      },
+      {
+        "id": "G5",
+        "status": "OPEN"
+      }
+    ],
+    "productAcceptance": "NOT_ESTABLISHED",
+    "historicalProgramsExecuted": 0,
+    "nativeExecutions": 0,
+    "filesWritten": 0,
+    "authority": "NONE"
+  },
+  "inventoryScope": "TEN_EXPLICITLY_SELECTED_RECORDS_NOT_ALL_HISTORICAL_RUNS",
+  "historicalProgramsExecuted": 0,
+  "nativeExecutions": 0,
+  "SDK": 0,
+  "SQLite": 0,
+  "keys": 0,
+  "signatures": 0,
+  "sockets": 0,
+  "nonceSearches": 0,
+  "filesWrittenByInventory": 0,
+  "productAcceptance": "NOT_ESTABLISHED",
+  "nativeSourceDraftsSelected": false,
+  "current108CISeparate": true,
+  "newEightTestsIncludedIn108CI": false,
+  "workflowChanged": false,
+  "sourceTransforms": false,
+  "sourceTextArchiveCopies": 0,
+  "independentAPFSClones": true
+}

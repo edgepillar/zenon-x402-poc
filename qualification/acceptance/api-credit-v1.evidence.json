@@ -1,0 +1,181 @@
+{
+  "version": 1,
+  "profile": "API_CREDIT_V1_G0_INVENTORY",
+  "sourceBaseline": "db91359ce77a354ec463daf6adf4b4b7b999c3d6",
+  "currentRegression": {
+    "controls": 108,
+    "head": "db91359ce77a354ec463daf6adf4b4b7b999c3d6",
+    "url": "https://github.com/edgepillar/zenon-x402-poc/actions/runs/40740949739",
+    "result": "PASS",
+    "scope": "SELECTED_DATA_COMPONENT_NOT_NATIVE"
+  },
+  "product": {
+    "kind": "API_CREDIT",
+    "providers": 1,
+    "products": 1,
+    "fixedOffer": true,
+    "oneFundingOneGrant": true,
+    "distinctRequestAcceptanceCount": 100,
+    "capacityClaim": false,
+    "acceptedEntryCommand": null,
+    "supportedProfileEstablished": false,
+    "candidateNativeManifest": {
+      "path": "qualification/sdk105-issued-command-application-v5.inputs.json",
+      "sha256": "087df3b143f1802f75e7bbaaf295371bc32ef82eba2f75f8ee7a644a5b3ceb24",
+      "applicationFiles": 135,
+      "packageFiles": 404,
+      "ordinaryInstalledNamespaceQualified": false
+    },
+    "runtime": {
+      "nodeVersion": "24.19.0",
+      "sdkVersion": "1.0.5",
+      "x402CoreVersion": "2.23.0",
+      "linuxProductRunAccepted": false
+    }
+  },
+  "gates": [
+    {
+      "id": "G0",
+      "status": "OPEN"
+    },
+    {
+      "id": "G1",
+      "status": "OPEN"
+    },
+    {
+      "id": "G2",
+      "status": "OPEN"
+    },
+    {
+      "id": "G3a",
+      "status": "OPEN"
+    },
+    {
+      "id": "G3b",
+      "status": "PROFILE_DEPENDENT_OPEN"
+    },
+    {
+      "id": "G4",
+      "status": "OPEN"
+    },
+    {
+      "id": "G5",
+      "status": "OPEN"
+    }
+  ],
+  "nextAcceptanceIds": [
+    "G0-PROFILE",
+    "G0-PR-CHECKS",
+    "G1-ONE-GRANT-100-REQUESTS",
+    "G1-SPENDING-RESERVATIONS",
+    "RL-FUNDING-ACK",
+    "RL-REOPEN",
+    "RL-LATE-CLOSE",
+    "SIGNER-RESPONSE-LOSS",
+    "OWNER-FENCING",
+    "NATIVE-RELEASE"
+  ],
+  "nativeExecutionPolicy": "DO_NOT_EXECUTE_NATIVE_CONTINUE_SOURCE",
+  "evidence": [
+    {
+      "id": "v3-clean",
+      "path": "qualification/sdk105-issued-command-application-v3.clean.actual-local-failure.json",
+      "bytes": 2841,
+      "sha256": "59d2accddafa1e5152e4749232ae06a7199bb4540dff1941bc1952d37117fc9e",
+      "expectedStatus": "FAILURE",
+      "classification": "PRODUCT_INTEGRATION_CONTRACT",
+      "note": "The retained Vary wire mismatch is product-relevant. Compare the selected current graph; a later result is not a rewrite of this failure.",
+      "establishesFullProductAcceptance": false
+    },
+    {
+      "id": "v4-clean",
+      "path": "qualification/sdk105-issued-command-application-v4.clean.actual-local-result.json",
+      "bytes": 5674,
+      "sha256": "56c31114c52e10558029d22133123e2a41f9741dc907c726e304a5e07908931f",
+      "expectedStatus": "PASS",
+      "classification": "RETAINED_PASS",
+      "note": "Reuse only its exact clean source/runtime selection.",
+      "establishesFullProductAcceptance": false
+    },
+    {
+      "id": "v4-pending",
+      "path": "qualification/sdk105-issued-command-application-v4.pending.actual-local-result.json",
+      "bytes": 4654,
+      "sha256": "ecc0672e06555c4f86d53916529ddde3eb8c466c61da459464dfc44cbe9388d9",
+      "expectedStatus": "FAILURE",
+      "classification": "HARNESS_EXPECTATION",
+      "note": "The second bounded observation expected PENDING instead of EXHAUSTED. V5 has separate passing evidence; keep this failure.",
+      "establishesFullProductAcceptance": false
+    },
+    {
+      "id": "v5-pending",
+      "path": "qualification/sdk105-issued-command-application-v5.pending.actual-local-result.json",
+      "bytes": 5868,
+      "sha256": "8778665f377c6e6fe6b1596c596db00de235f09e711368ac5f8adfe7bbf43fcf",
+      "expectedStatus": "PASS",
+      "classification": "RETAINED_PASS",
+      "note": "Exact bounded-pending native case only; not a complete product acceptance.",
+      "establishesFullProductAcceptance": false
+    },
+    {
+      "id": "v5-service-loss",
+      "path": "qualification/sdk105-issued-command-application-v5.service-response-loss.actual-local-result.json",
+      "bytes": 6065,
+      "sha256": "8ea915523b4437a674f5cf81b1f3a4e512eaa6107ee42f30d51ea6cf71f5f3f3",
+      "expectedStatus": "PASS",
+      "classification": "RETAINED_PASS",
+      "note": "Selected service commit/backend replay passed. Original-client fresh-process and physical release remain open.",
+      "establishesFullProductAcceptance": false
+    },
+    {
+      "id": "v6-funding-loss",
+      "path": "qualification/sdk105-issued-command-application-v6.funding-response-loss.actual-local-result.json",
+      "bytes": 2942,
+      "sha256": "c52741ee6c284b2279817918a72840a834a55c446ab56f27bd7c897c23c30eb5",
+      "expectedStatus": "FAILURE",
+      "classification": "HARNESS_REPORTING",
+      "note": "The expected command count included close; native qualification failed before remaining close assertions.",
+      "establishesFullProductAcceptance": false
+    },
+    {
+      "id": "v7-funding-loss",
+      "path": "qualification/sdk105-issued-command-application-v7.funding-response-loss.actual-local-result.json",
+      "bytes": 6576,
+      "sha256": "7e469542a4a654ec0fa9a984e3f84b9cbbd4da049386bd523f831bdaa2d88f3e",
+      "expectedStatus": "NATIVE_PROGRAM_PASS_QUALIFICATION_REJECTED",
+      "classification": "HARNESS_REPORTING",
+      "note": "Native program exit zero did not repair rejected qualification and the frozen three-versus-four summary count defect.",
+      "establishesFullProductAcceptance": false
+    },
+    {
+      "id": "order-liability-data",
+      "path": "qualification/service-purchase-order-fulfillment.actual-local-result.json",
+      "bytes": 9998,
+      "sha256": "53ca673fb20dfc705e6bd66403777d6ccd21833585e5cdaf6fa982b273352915",
+      "expectedStatus": "PASS",
+      "classification": "COMPONENT_DATA_PASS",
+      "note": "35 pure owner/custody cases; no native durability or economic action.",
+      "establishesFullProductAcceptance": false
+    },
+    {
+      "id": "order-fencing-data",
+      "path": "qualification/service-purchase-order-fulfillment-cas.actual-local-result.json",
+      "bytes": 10104,
+      "sha256": "594bfbeb71f9ef5675b9d3f724a605ee0eb9fd0513a538974031c99e2da29eb0",
+      "expectedStatus": "PASS",
+      "classification": "COMPONENT_DATA_PASS",
+      "note": "33 actual owner/state-port cases with synthetic atomic I/O and proof authentication.",
+      "establishesFullProductAcceptance": false
+    },
+    {
+      "id": "paired-http-data",
+      "path": "qualification/service-purchase-order-application.actual-local-result.json",
+      "bytes": 12035,
+      "sha256": "15f4036123443e9751a818bc6f3d4033957f59c0c83aaeaffb2491ff99b802df",
+      "expectedStatus": "PASS",
+      "classification": "COMPONENT_DATA_PASS",
+      "note": "26 paired funding/liability/HTTP cases with synthetic I/O; not one-grant/100-call native acceptance.",
+      "establishesFullProductAcceptance": false
+    }
+  ]
+}
