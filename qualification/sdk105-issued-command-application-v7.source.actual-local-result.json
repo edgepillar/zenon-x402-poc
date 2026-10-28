@@ -1,0 +1,253 @@
+{
+  "qualification": "FUNDING_LOSS_V7_SOURCE_DECODER_AND_SYNTAX_ONLY",
+  "status": "PASS",
+  "result": {
+    "qualification": "FUNDING_LOSS_V7_SOURCE_AND_DECODER_DATA_ONLY",
+    "cases": [
+      {
+        "id": "SOURCE-ONLY-ONE-MODE-UNCHANGED-RUNTIME",
+        "status": "PASS"
+      },
+      {
+        "id": "DECLARED-TRANSCRIPT-DECODES-WITHOUT-CLAIMING-NATIVE",
+        "status": "PASS"
+      },
+      {
+        "id": "THREE-ISSUED-COMMANDS-NO-IMPLICIT-CLOSE-FRAME",
+        "status": "PASS"
+      },
+      {
+        "id": "FOUR-COMMAND-COUNTER-IS-REFUSED-commandStarts",
+        "status": "PASS"
+      },
+      {
+        "id": "FOUR-COMMAND-COUNTER-IS-REFUSED-commandResults",
+        "status": "PASS"
+      },
+      {
+        "id": "FOUR-STREAM-COUNTER-IS-REFUSED-actualStreamCommands",
+        "status": "PASS"
+      },
+      {
+        "id": "FOUR-STREAM-COUNTER-IS-REFUSED-actualStreamResults",
+        "status": "PASS"
+      },
+      {
+        "id": "RECEIPT-REFUSAL-actual_exit-1",
+        "status": "PASS"
+      },
+      {
+        "id": "RECEIPT-REFUSAL-actual_exit-None",
+        "status": "PASS"
+      },
+      {
+        "id": "RECEIPT-REFUSAL-output_complete-False",
+        "status": "PASS"
+      },
+      {
+        "id": "RECEIPT-REFUSAL-state-UNKNOWN",
+        "status": "PASS"
+      },
+      {
+        "id": "TRANSCRIPT-REFUSAL-counts.executions",
+        "status": "PASS"
+      },
+      {
+        "id": "TRANSCRIPT-REFUSAL-counts.observedSignedTransactions",
+        "status": "PASS"
+      },
+      {
+        "id": "TRANSCRIPT-REFUSAL-fundingProof.grants",
+        "status": "PASS"
+      },
+      {
+        "id": "TRANSCRIPT-REFUSAL-fundingProof.originalPacketUnchanged",
+        "status": "PASS"
+      },
+      {
+        "id": "TRANSCRIPT-REFUSAL-closeProof.fundingOutcomeUnknown",
+        "status": "PASS"
+      },
+      {
+        "id": "TRANSCRIPT-REFUSAL-closeProof.sessionLifecycle",
+        "status": "PASS"
+      },
+      {
+        "id": "TRANSCRIPT-REFUSAL-responseLoss.boundMatched",
+        "status": "PASS"
+      },
+      {
+        "id": "TRANSCRIPT-REFUSAL-responseLoss.stopAttempts",
+        "status": "PASS"
+      },
+      {
+        "id": "TRANSCRIPT-REFUSAL-responseLoss.nativeDeliveryLoss",
+        "status": "PASS"
+      },
+      {
+        "id": "OTHER-MODE-CANNOT-INHERIT-ALLOWANCE",
+        "status": "PASS"
+      },
+      {
+        "id": "OTHER-SOURCE-GRAPH-IS-REFUSED",
+        "status": "PASS"
+      },
+      {
+        "id": "DUPLICATE-COMPLETION-FOOTER-IS-REFUSED",
+        "status": "PASS"
+      }
+    ],
+    "passed": 23,
+    "failed": 0,
+    "applicationFiles": 135,
+    "packageFilesDeclared": 404,
+    "packageFilesRead": 0,
+    "literalEdges": 607,
+    "allApplicationRuntimeRowsUnchanged": true,
+    "nativeExecutions": 0,
+    "syntheticDecoderInputsOnly": true,
+    "SDK": 0,
+    "SQLite": 0,
+    "keys": 0,
+    "signatures": 0,
+    "sockets": 0,
+    "nonceSearches": 0
+  },
+  "syntaxChecks": [
+    {
+      "label": "case-syntax",
+      "actualExit": 0,
+      "outputComplete": true,
+      "stdout": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      }
+    },
+    {
+      "label": "preload-syntax",
+      "actualExit": 0,
+      "outputComplete": true,
+      "stdout": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      }
+    }
+  ],
+  "sourcePins": [
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "LF": 40,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "qualification/sdk105-issued-command-application-v6.case.mjs",
+      "bytes": 40058,
+      "LF": 574,
+      "sha256": "cd78c3be5b0df2a0e92efb2a49501caf5bda1b9aa390abbb47f9315990a64003",
+      "gitBlob": "343e6b920ce8289303cc37c8ace631b31d6a32e3"
+    },
+    {
+      "path": "qualification/sdk105-issued-command-application-v6.preload.mjs",
+      "bytes": 14206,
+      "LF": 266,
+      "sha256": "dcaafa5cd8f64607356b0614287b37a99df67c32b8913107383529148f3ed279",
+      "gitBlob": "6a53aff4c777a6e69ed21e417d4805d52face797"
+    },
+    {
+      "path": "qualification/run-sdk105-issued-command-application-v6.local.py",
+      "bytes": 17437,
+      "LF": 280,
+      "sha256": "9e37274d345b63852a2aec6ac9d1163b2e9db97c39dd4060db869b0ba3b4859c",
+      "gitBlob": "3cea1b21cbd17bb47322523dd300bbd2eb0255db"
+    },
+    {
+      "path": "qualification/sdk105-issued-command-application-v6.inputs.json",
+      "bytes": 7169,
+      "LF": 213,
+      "sha256": "77b17c96dccf571fbab6d41eda78e3fff1f2756e7e226404ac0f094330a57789",
+      "gitBlob": "fda52ffaa117723b73ea1c7bdd37f482fefaafe6"
+    },
+    {
+      "path": "src/buyer-original-funding-command-session.js",
+      "bytes": 14884,
+      "LF": 277,
+      "sha256": "19d91c723622e1cb2244c1fa9b3dd59db5fd72120c7163df53076b833ba0c9c5",
+      "gitBlob": "170054dd880ac1efd432f00006815552de4e523b"
+    },
+    {
+      "path": "qualification/sdk105-issued-command-application-v7.case.mjs",
+      "bytes": 40058,
+      "LF": 574,
+      "sha256": "5f1cf28128a1af5f710157e8552b007d72b7b40aafde95a3be76d6afd8f32141",
+      "gitBlob": "30e6f1a7e156e1947af7d09bf5f11b6879b899e1"
+    },
+    {
+      "path": "qualification/sdk105-issued-command-application-v7.preload.mjs",
+      "bytes": 14206,
+      "LF": 266,
+      "sha256": "f23ec456c857f7c533135773b1c582dd616e37fb7f2d57171a1a522b05e02a5b",
+      "gitBlob": "de1d7caaf4462aebb11729d98af1318a065075c7"
+    },
+    {
+      "path": "qualification/run-sdk105-issued-command-application-v7.local.py",
+      "bytes": 17437,
+      "LF": 280,
+      "sha256": "7fd56681170121c69f6e32187d1d9398d4cc7c5ec7bd28f613dc05a0dc7a01f2",
+      "gitBlob": "f7fb42c888220d0fcd251a2c0994bf35eab06156"
+    },
+    {
+      "path": "qualification/sdk105-issued-command-application-v7.inputs.json",
+      "bytes": 7169,
+      "LF": 213,
+      "sha256": "08b86ae649601a33b0feea0e0738f87616beb26f91feaff407592dda2bea096a",
+      "gitBlob": "b758dcf495ebd63ec78cf28951d764ea7b20a1c2"
+    },
+    {
+      "path": "qualification/issued-funding-loss-v7-source.control.py",
+      "bytes": 8876,
+      "LF": 131,
+      "sha256": "20760c4fa0af474bc28adafde966f49759eb047c49590c33d9ccfee1317278d6",
+      "gitBlob": "92b1980688986a235ada6bd60b8111c5a547fec2"
+    }
+  ],
+  "sourceProofSha256": "13aa22848b358305e764a8bc0323a5dc00329289bfad36abb9d370981ad18d9c",
+  "readOnlyRuntimeProfile": {
+    "evidenceSha256": "937d1f1eaf85b11f1a71a7fb835f74299792a741133e749e6d1eac29b17459f3",
+    "profileSha256": "4c7c20f447fd7dbb12efc323d70016afd61e5b6ec07cbe361fe19e4f8afc8fae",
+    "profileBytes": 224224,
+    "applicationFiles": 135,
+    "packageFilesReadOnly": 404,
+    "literalEdges": 607,
+    "nativeExecutions": 0
+  },
+  "applicationRuntimeRowsChanged": 0,
+  "packageRowsChanged": 0,
+  "nativeExecutions": 0,
+  "SDKPackageEvaluation": 0,
+  "SQLite": 0,
+  "sockets": 0,
+  "keys": 0,
+  "signatures": 0,
+  "nonceSearches": 0,
+  "nativeAcceptance": "NOT_EXECUTED",
+  "fullP1Acceptance": "NOT_ESTABLISHED",
+  "physicalRelease": "NOT_QUALIFIED",
+  "productionQualified": false,
+  "failedV6EvidencePreserved": true,
+  "consumedV6AllowanceReused": false,
+  "ownedTask": {
+    "state": "CLOSED",
+    "outcome": "SUCCESS",
+    "quotaBytes": 4194304
+  }
+}

@@ -1,0 +1,11 @@
+--- a/qualification/sdk105-issued-command-application-v7.case.mjs
++++ b/qualification/sdk105-issued-command-application-v7.case.mjs
+@@ -404,7 +404,7 @@
+     officialSettlementPhase: retained.app.snapshot().binding.officialPhase, counts,
+     actualExistingSdk105KeyPair: true, actualOwnedCommandHost: true, actualApplication: true,
+     actualNativeHTTPS: true, actualOfficialCore: true, sameV6File: true,
+-    actualStreamCommands: 4, actualStreamResults: 4, expectedHeldCommandOwner: true,
++    actualStreamCommands: counts.commandStarts, actualStreamResults: counts.commandResults, expectedHeldCommandOwner: true,
+     actualV6PhysicalRelease: 'NOT_QUALIFIED', taskScratchDisposition: 'PRESERVE_CHILD_FILES',
+     closeProof, fundingProof, responseLoss: retained.faultSelection.gate.inspect(),
+     fundingPosts: 1, actualClientServiceRequests: 0, grantActivation: 'NOT_REQUESTED_FUNDING_UNKNOWN',
