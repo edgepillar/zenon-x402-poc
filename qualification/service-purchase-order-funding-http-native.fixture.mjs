@@ -1,0 +1,67 @@
+import { createHash } from 'node:crypto';
+import { captureFundingPostCheckpointRoute } from '../src/x402-funding-post-checkpoint-route.js';
+import { paymentIntentDigest } from '../src/canonical.js';
+import { captureOriginalPaymentCheckpoint, encodeOriginalPaymentCheckpoint } from '../src/service-credit-pilot-original-payment-checkpoint.js';
+import { deriveServiceCreditResourceBinding } from '../src/service-credit-activation.js';
+import { purchasedTermsStorageDigest } from '../src/service-purchase-storage-contract.js';
+import { purchasedFulfillmentPolicyDigest } from '../src/service-purchase-fulfillment.js';
+import { encodeB64Json } from '../src/x402-wire.js';
+import {
+  deriveZenonFundingObserverTarget, prepareZenonFundingResource,
+} from '../src/service-credit-zenon-funding-evidence.js';
+
+const clone = x => JSON.parse(JSON.stringify(x));
+const hash = letter => 'sha256:' + letter.repeat(64);
+export const orderFundingProof = (id = 'proof.one') => JSON.stringify({ evidenceVersion: 1, artifact: { format: 'synthetic-selected-verifier', id } });
+export function nativeOrderFundingHttpFixture(orderId, resourceUrl, issuedAtMs) {
+  if (arguments.length !== 3 || typeof orderId !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(orderId)
+      || !Number.isSafeInteger(issuedAtMs) || issuedAtMs < 0 || issuedAtMs > Number.MAX_SAFE_INTEGER - 20000) throw new TypeError('native_http_fixture_input_rejected');
+  const route = captureFundingPostCheckpointRoute(resourceUrl), endpoint = new URL(route.resourceUrl);
+  if (endpoint.hostname !== '127.0.0.1' || !/^[1-9][0-9]*$/.test(endpoint.port) || Number(endpoint.port) < 1024) throw new TypeError('native_http_fixture_input_rejected');
+  const NOW = issuedAtMs, EXPIRES = NOW + 10000;
+  const paymentHash = createHash('sha256').update('zenon-x402:synthetic-http-native-payment:v1\0').update(orderId).update('\0').update(resourceUrl).digest('hex');
+  const authorityProfile = { profileId: 'authority.synthetic', profileVersion: 1, verifierVersion: 1, recordDigest: hash('d'),
+    network: 'zenon:testnet', chainProfile: { version: 1, chainIdentifier: '12345', genesisMomentumHash: '1'.repeat(64) },
+    confirmationPolicy: { policyId: 'zenon.authenticated-momentum-inclusion', policyVersion: 1, minimumConfirmations: 2 } };
+  const offer = { modelVersion: 1, providerId: 'provider.synthetic', serviceId: 'metered-api.v1', resourceId: 'resource.funding',
+    resourceBinding: deriveServiceCreditResourceBinding({ resourceId: 'resource.funding', resourceUrl }),
+    offerId: 'offer.synthetic', offerVersion: 1, costPolicyId: 'cost.fixed', fundingPolicyId: 'funding.exact', fundingPolicyVersion: 1 };
+  const selection = { offerId: offer.offerId, offerVersion: 1, holderId: 'z1syntheticpayer', capabilityCommitment: hash('a') };
+  const issued = prepareZenonFundingResource({ offer, selection, resourceUrl, authorityProfile, now: () => NOW,
+    deriveFundingTerms: () => ({ fundingPolicyId: offer.fundingPolicyId, fundingPolicyVersion: 1, totalUnits: 27, expiresAt: EXPIRES,
+      requirement: { scheme: 'exact', network: 'zenon:testnet', asset: 'zts1syntheticasset', amount: '100', payTo: 'z1syntheticpayee',
+        maxTimeoutSeconds: 30, extra: { paymentFlow: 'upfront', poc: true, settlement: 'account-block',
+          zenonChain: clone(authorityProfile.chainProfile), minimumMomentumConfirmations: 2 } } }) });
+  const required = issued.challenge.paymentRequired;
+  const payload = { x402Version: 2, resource: clone(required.resource), accepted: clone(required.accepts[0]),
+    payload: { transaction: { hash: paymentHash, address: selection.holderId }, intentDigest: paymentIntentDigest(required, required.accepts[0]) } };
+  const policyJson = JSON.stringify({ version: 1, quantityUnit: 'api-call', offerExpiresAtMs: EXPIRES,
+    reservationExpiresAtMs: EXPIRES + 10000, maximumDeliveries: 16, compensationRule: 'PRO_RATA_CEILING_ATOMIC_V1' });
+  const terms = { termsVersion: 1, orderId, productId: offer.serviceId, beneficiary: 'beneficiary.synthetic', holder: selection.holderId,
+    price: { asset: payload.accepted.asset, unit: 'zenon-atomic', amount: '100' }, quantity: 10,
+    network: 'zenon:testnet', conditionsDigest: purchasedFulfillmentPolicyDigest(policyJson) };
+  const termsJson = JSON.stringify(terms), termsDigest = purchasedTermsStorageDigest(termsJson);
+  const captured = captureOriginalPaymentCheckpoint({ binding: { requestId: 'funding.original', paymentHash: payload.payload.transaction.hash,
+    origin: new URL(resourceUrl).origin, contextId: 'context.original' }, originalBytes: { requestBody: '', paymentPayload: encodeB64Json(payload),
+    paymentRequirements: encodeB64Json(required), context: Buffer.from('{}').toString('base64') } });
+  const paymentCheckpointJson = encodeOriginalPaymentCheckpoint(captured.checkpoint), paymentPinsJson = JSON.stringify(captured.pins);
+  const context = { version: 1, orderId, acceptedTermsDigest: termsDigest, policyJson,
+    offer: issued.offer, challenge: issued.challenge, authorityProfile };
+  const fundingContextJson = JSON.stringify(context), verifierContext = { offer: issued.offer, challenge: issued.challenge, authorityProfile,
+    transactionHash: payload.payload.transaction.hash, payer: terms.holder, resourceUrl };
+  const target = deriveZenonFundingObserverTarget(verifierContext);
+  const verifiedRecord = { evidenceVersion: 1, evidenceType: 'zenon-authenticated-funding-evidence',
+    authorityProfileId: authorityProfile.profileId, authorityProfileVersion: 1, verifierVersion: 1,
+    authorityRecordDigest: authorityProfile.recordDigest, network: target.network, chainProfile: clone(authorityProfile.chainProfile),
+    transactionId: target.transactionId, payer: target.payer, payee: target.payee, asset: target.asset, amount: target.amount,
+    paymentResourceDigest: target.paymentResourceDigest, paymentRequirementDigest: target.paymentRequirementDigest,
+    paymentIntentDigest: target.paymentIntentDigest, resourceBinding: target.resourceBinding,
+    offerId: target.offerId, offerVersion: target.offerVersion, fundingPolicyId: target.fundingPolicyId,
+    fundingPolicyVersion: target.fundingPolicyVersion, capabilityCommitment: target.capabilityCommitment,
+    totalUnits: target.totalUnits, expiresAt: target.expiresAt, grantFundingCommitment: target.grantFundingCommitment,
+    inclusionEvidence: { state: 'MOMENTUM_INCLUDED', transactionHash: payload.payload.transaction.hash,
+      momentumHeight: 100, momentumHash: 'e'.repeat(64), observedConfirmations: 2 }, confirmationPolicy: clone(authorityProfile.confirmationPolicy) };
+  return { terms, termsJson, termsDigest, paymentCheckpointJson, paymentPinsJson, fundingContextJson,
+    verifierContext, verifiedRecord, payload, required, context };
+}
+export function orderFundingOwnerInputs(f) { return [f.termsJson, f.termsDigest, f.paymentCheckpointJson, f.paymentPinsJson, f.fundingContextJson]; }

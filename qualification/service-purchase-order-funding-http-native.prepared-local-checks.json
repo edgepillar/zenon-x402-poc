@@ -1,0 +1,393 @@
+{
+  "status": "SOURCE_AND_FIXTURE_DATA_READY_NATIVE_NOT_EXECUTED",
+  "qualification": "PURCHASE_ORDER_FUNDING_HTTP_NATIVE_PREPARATION",
+  "recordedAtUTC": "2026-10-28T16:27:54.013465+00:00",
+  "nodeVersion": "24.19.0",
+  "nodeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25",
+  "platform": "darwin-arm64",
+  "executedFixtureDataCases": 5,
+  "failedFixtureDataCases": 0,
+  "cases": [
+    {
+      "id": "loopback-fixture-captures-exact-resource-original-and-independent-pins",
+      "status": "PASS"
+    },
+    {
+      "id": "different-native-port-has-a-different-original-payment-and-context",
+      "status": "PASS"
+    },
+    {
+      "id": "independent-native-orders-do-not-reuse-one-synthetic-payment-hash",
+      "status": "PASS"
+    },
+    {
+      "id": "non-loopback-noncanonical-and-unbounded-time-fixtures-are-refused",
+      "status": "PASS"
+    },
+    {
+      "id": "actual-http-selection-detaches-original-native-fixture-inputs-without-io",
+      "status": "PASS"
+    }
+  ],
+  "dataRuntimeSourcePins": [
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "qualification/service-purchase-order-funding-http-native-fixture.behavior.mjs",
+      "bytes": 4327,
+      "sha256": "f7d8ba89fd9af07cd25a870b47560f3e01999903218026f54e0e485fc0ddb380",
+      "gitBlob": "97fd632bb0607f52ba6ba3db36aa102200e05aba"
+    },
+    {
+      "path": "qualification/service-purchase-order-funding-http-native.fixture.mjs",
+      "bytes": 6908,
+      "sha256": "224a5d94220fea9581ca39abd3670279f1494566a7f70c6e8c5ee759d39f2f83",
+      "gitBlob": "5af77baa3f5ab4a61ad7c6ec10a81ce73e378807"
+    },
+    {
+      "path": "src/canonical.js",
+      "bytes": 967,
+      "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+      "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4"
+    },
+    {
+      "path": "src/service-credit-activation.js",
+      "bytes": 24719,
+      "sha256": "9e1a2ce00b2950b290ebd0797d3a770f51ad252288c630ada5ebcd6cef54233a",
+      "gitBlob": "155be6ee91599e10043c0293de23d669e663b512"
+    },
+    {
+      "path": "src/service-credit-application-deadline-owner-core.js",
+      "bytes": 9917,
+      "sha256": "27de310ebb7452e9be011e46d86e38b04614c259142bb47400ddbb9dedf00149",
+      "gitBlob": "a59133249ef5ada3b1666c476f7c02aa542c4513"
+    },
+    {
+      "path": "src/service-credit-model.js",
+      "bytes": 55461,
+      "sha256": "7ff7e3d88ab8c3b38a0073541533fbdb7a0d9f2be42f337ac35f6a3b05615c3a",
+      "gitBlob": "e6ac17254874584d1a01f70e7abc6f771bd35d73"
+    },
+    {
+      "path": "src/service-credit-original-request-custody-contract.js",
+      "bytes": 15100,
+      "sha256": "483d20e90d78ba95a8c5d5458dd201910e8d42aecbdc0dc03812e7044a464054",
+      "gitBlob": "94d67559a11f87f283a5cd99d2aaf8074374eb0a"
+    },
+    {
+      "path": "src/service-credit-pilot-original-payment-checkpoint.js",
+      "bytes": 4003,
+      "sha256": "930905f31824a6cadc16dfb84572cd4dc38a81e2fce4569b73b6bef29dec97d1",
+      "gitBlob": "51c6391bc22f561ebff0005ced31e538aa83f4fa"
+    },
+    {
+      "path": "src/service-credit-purchased-original-recovery.js",
+      "bytes": 10704,
+      "sha256": "06ecfb702a2d9e78fab9544765fafbea0da74c12b2a54f95bcd16309cb13aa1d",
+      "gitBlob": "44346a21f4c6d63b72d3b29294d826d9ac5a604c"
+    },
+    {
+      "path": "src/service-credit-zenon-funding-evidence.js",
+      "bytes": 52430,
+      "sha256": "adde739cf8f927ce411bd10b45020febcd41cd76073eebdcd3560bf1635df754",
+      "gitBlob": "03f57859481f65f302d1f2c45e847b47730a37b2"
+    },
+    {
+      "path": "src/service-purchase-fulfillment.js",
+      "bytes": 19520,
+      "sha256": "076ce6db7f853639cef0781655858503724a94ab1fb650804a82d98e92f24fcb",
+      "gitBlob": "1802cf29f87bf42a87e91adac52d7ac2bd13685c"
+    },
+    {
+      "path": "src/service-purchase-order-funding-application-core.js",
+      "bytes": 17303,
+      "sha256": "e7af5dd2cd8302b7b5d82f7e6d07b5e27637075f6591006367f7daad9535a3ac",
+      "gitBlob": "c4abfa77f06789e7730c1f5dc415e6a7fb1c2515"
+    },
+    {
+      "path": "src/service-purchase-order-funding-cas-contract.js",
+      "bytes": 13764,
+      "sha256": "2511fe65a8a2cf4432a0871c2fca46c5553d84cc41a9286350b6f0260d095e79",
+      "gitBlob": "53bb536472d9522a84e1dd7193aedec8e7780191"
+    },
+    {
+      "path": "src/service-purchase-order-funding-http-application.js",
+      "bytes": 12606,
+      "sha256": "b9cbd7cf984ed921d67cd5be6b8009e8e29daa9f26943acc2faf0827b4d379e5",
+      "gitBlob": "a78b3c0cceca39b88faa6c360a4dab9836c07f8f"
+    },
+    {
+      "path": "src/service-purchase-order-funding.js",
+      "bytes": 14449,
+      "sha256": "4e8e04e679d32395d9f1696b16d0c2c853d8e3a93e4aef0e1bb53bb87e91765a",
+      "gitBlob": "f953df048a147ebd4a0c5631a078747d5bc3689a"
+    },
+    {
+      "path": "src/service-purchase-storage-contract.js",
+      "bytes": 5158,
+      "sha256": "213f34a964acea11693f07f51fe99cc1eca1460ac5c98b2dd96cc0100a0159e6",
+      "gitBlob": "38d2cdbba760dcd7cdcbfb9fb66f83cbabc0e8ce"
+    },
+    {
+      "path": "src/service-purchase-terms.js",
+      "bytes": 3270,
+      "sha256": "9d3308103b5d573ef6f93f909b15e744f9e752911e602f3c32e882f18ebd6141",
+      "gitBlob": "1dd81d8b5a54fe7cd1bd68eab540c993981b22c0"
+    },
+    {
+      "path": "src/x402-funding-post-checkpoint-route.js",
+      "bytes": 1310,
+      "sha256": "157e80e9f14b41c8cacc05423a7acd8616a6f759adac377f04f1fca21869831e",
+      "gitBlob": "777ff48ac9cf255f80cda7e22c68706b7d7084b3"
+    },
+    {
+      "path": "src/x402-issued-application-response-writer.js",
+      "bytes": 3143,
+      "sha256": "929e619c4261befeba8a583a0096688df5ad6ed1cadee774a89aa579a5a60d95",
+      "gitBlob": "b38f9d6cd2052884f541d737cf8e42a958a56a0d"
+    },
+    {
+      "path": "src/x402-official-funding-post-https-request-binding.js",
+      "bytes": 4154,
+      "sha256": "ce7af7ffe5cb9bf002eb596a4cc8093081ce880687cffd44d2d7c7c56871cc37",
+      "gitBlob": "fa410cf056e9de332e6ff9c3c57b907ddf34b484"
+    },
+    {
+      "path": "src/x402-wire.js",
+      "bytes": 39886,
+      "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+      "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+    }
+  ],
+  "syntaxOnlyInputs": [
+    {
+      "path": "qualification/service-purchase-order-funding-http-native.preload.mjs",
+      "bytes": 4184,
+      "sha256": "285ade7a78389016dfcb2ea141f3acf7124fe8aabeaa0c447e550154ee0f50ca",
+      "gitBlob": "199380bb0cc365172c4a8542ee7e9cfacd3b0a3e"
+    },
+    {
+      "path": "qualification/service-purchase-order-funding-http.native.mjs",
+      "bytes": 25792,
+      "sha256": "2a8f05a367ded03a3edfe7e0025abca8d6f940f8f1d94a4bc30b375dbebc2260",
+      "gitBlob": "7df40555f24ca52868fb2183c1ed4c4a1e7f27cf"
+    }
+  ],
+  "actualDataCommands": 1,
+  "actualSyntaxCommands": 2,
+  "task": "CLOSED/SUCCESS",
+  "rawQualificationSha256": "f56c7c6267e75275598424adc63b1f8d245a169766cc1fe90f4c621aa387ccd3",
+  "preparedNativeSourcePins": [
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f"
+    },
+    {
+      "path": "qualification/service-purchase-order-funding-http-native.fixture.mjs",
+      "bytes": 6908,
+      "sha256": "224a5d94220fea9581ca39abd3670279f1494566a7f70c6e8c5ee759d39f2f83"
+    },
+    {
+      "path": "qualification/service-purchase-order-funding-http-native.preload.mjs",
+      "bytes": 4184,
+      "sha256": "285ade7a78389016dfcb2ea141f3acf7124fe8aabeaa0c447e550154ee0f50ca"
+    },
+    {
+      "path": "qualification/service-purchase-order-funding-http.native.mjs",
+      "bytes": 25792,
+      "sha256": "2a8f05a367ded03a3edfe7e0025abca8d6f940f8f1d94a4bc30b375dbebc2260"
+    },
+    {
+      "path": "src/canonical.js",
+      "bytes": 967,
+      "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c"
+    },
+    {
+      "path": "src/service-credit-activation.js",
+      "bytes": 24719,
+      "sha256": "9e1a2ce00b2950b290ebd0797d3a770f51ad252288c630ada5ebcd6cef54233a"
+    },
+    {
+      "path": "src/service-credit-application-deadline-owner-core.js",
+      "bytes": 9917,
+      "sha256": "27de310ebb7452e9be011e46d86e38b04614c259142bb47400ddbb9dedf00149"
+    },
+    {
+      "path": "src/service-credit-bounded-https-ingress-limits.js",
+      "bytes": 2661,
+      "sha256": "35e2cc603398a929979b2f939f558d43002079038922d6248cc654c425eafb68"
+    },
+    {
+      "path": "src/service-credit-bounded-https-ingress-owner.js",
+      "bytes": 140920,
+      "sha256": "7c8a663f8541373c93cf7b90b243a4d5ec88db43a400fbf411c9535571e20830"
+    },
+    {
+      "path": "src/service-credit-bounded-node-https-server-factory.js",
+      "bytes": 26968,
+      "sha256": "aead901ba154c39ea25e5cdcc363ea91ed6749841f6e8945cd01debc52cae387"
+    },
+    {
+      "path": "src/service-credit-funding-post-native-https-transport.js",
+      "bytes": 20632,
+      "sha256": "61751ba97d98f02393cdf95fba166ece9f517b6e98db66ee05f3d4a52762f3fe"
+    },
+    {
+      "path": "src/service-credit-funding-post-native-response.js",
+      "bytes": 7903,
+      "sha256": "b5084844ecf029445bc55efd0b9d0ef61b8c2e65424ea74a6dfb30941f9f676c"
+    },
+    {
+      "path": "src/service-credit-funding-post-readable-flow.js",
+      "bytes": 1568,
+      "sha256": "e624b56cabfb72aed927f0fb78d866b90da2bde5aefdadd71a16f65159e48d4e"
+    },
+    {
+      "path": "src/service-credit-model.js",
+      "bytes": 55461,
+      "sha256": "7ff7e3d88ab8c3b38a0073541533fbdb7a0d9f2be42f337ac35f6a3b05615c3a"
+    },
+    {
+      "path": "src/service-credit-native-application-deadline-owner.js",
+      "bytes": 2648,
+      "sha256": "f4d4e5f55e43f5a83607da0f27c684fcf98ed40a408e894b8f309ecf9159fb76"
+    },
+    {
+      "path": "src/service-credit-native-client-close-owner.js",
+      "bytes": 7750,
+      "sha256": "519809b2cc6b2bf2d37cf6048e68847255f75dc9869a1fc1119bae310462fbd7"
+    },
+    {
+      "path": "src/service-credit-native-client-request-stop-owner.js",
+      "bytes": 6009,
+      "sha256": "c030e52ba8ff25da68b590fb32f54ba58d983ed80b22aa0c611fb81c17ad4a63"
+    },
+    {
+      "path": "src/service-credit-original-request-custody-contract.js",
+      "bytes": 15100,
+      "sha256": "483d20e90d78ba95a8c5d5458dd201910e8d42aecbdc0dc03812e7044a464054"
+    },
+    {
+      "path": "src/service-credit-pilot-original-payment-checkpoint.js",
+      "bytes": 4003,
+      "sha256": "930905f31824a6cadc16dfb84572cd4dc38a81e2fce4569b73b6bef29dec97d1"
+    },
+    {
+      "path": "src/service-credit-purchased-original-recovery.js",
+      "bytes": 10704,
+      "sha256": "06ecfb702a2d9e78fab9544765fafbea0da74c12b2a54f95bcd16309cb13aa1d"
+    },
+    {
+      "path": "src/service-credit-zenon-funding-evidence.js",
+      "bytes": 52430,
+      "sha256": "adde739cf8f927ce411bd10b45020febcd41cd76073eebdcd3560bf1635df754"
+    },
+    {
+      "path": "src/service-purchase-fulfillment.js",
+      "bytes": 19520,
+      "sha256": "076ce6db7f853639cef0781655858503724a94ab1fb650804a82d98e92f24fcb"
+    },
+    {
+      "path": "src/service-purchase-order-funding-application-core.js",
+      "bytes": 17303,
+      "sha256": "e7af5dd2cd8302b7b5d82f7e6d07b5e27637075f6591006367f7daad9535a3ac"
+    },
+    {
+      "path": "src/service-purchase-order-funding-cas-contract.js",
+      "bytes": 13764,
+      "sha256": "2511fe65a8a2cf4432a0871c2fca46c5553d84cc41a9286350b6f0260d095e79"
+    },
+    {
+      "path": "src/service-purchase-order-funding-http-application.js",
+      "bytes": 12606,
+      "sha256": "b9cbd7cf984ed921d67cd5be6b8009e8e29daa9f26943acc2faf0827b4d379e5"
+    },
+    {
+      "path": "src/service-purchase-order-funding-native-application.js",
+      "bytes": 10162,
+      "sha256": "e692ba86c8f74171b5e3d52f4080445f8fc501d6ef30020a2c3ce355b567a733"
+    },
+    {
+      "path": "src/service-purchase-order-funding-native-http-application.js",
+      "bytes": 10003,
+      "sha256": "45d5ef3d311d7e8b4c3a3048f58c193d2e8cbc9a48c12a3d69a61c9908797ace"
+    },
+    {
+      "path": "src/service-purchase-order-funding-sqlite-store.js",
+      "bytes": 9651,
+      "sha256": "4d4bd87329e286fb909969d38dd92f73677b239abbbeccf04b590f55eb4ba0e9"
+    },
+    {
+      "path": "src/service-purchase-order-funding.js",
+      "bytes": 14449,
+      "sha256": "4e8e04e679d32395d9f1696b16d0c2c853d8e3a93e4aef0e1bb53bb87e91765a"
+    },
+    {
+      "path": "src/service-purchase-storage-contract.js",
+      "bytes": 5158,
+      "sha256": "213f34a964acea11693f07f51fe99cc1eca1460ac5c98b2dd96cc0100a0159e6"
+    },
+    {
+      "path": "src/service-purchase-terms.js",
+      "bytes": 3270,
+      "sha256": "9d3308103b5d573ef6f93f909b15e744f9e752911e602f3c32e882f18ebd6141"
+    },
+    {
+      "path": "src/x402-funding-post-checkpoint-route.js",
+      "bytes": 1310,
+      "sha256": "157e80e9f14b41c8cacc05423a7acd8616a6f759adac377f04f1fca21869831e"
+    },
+    {
+      "path": "src/x402-issued-application-response-writer.js",
+      "bytes": 3143,
+      "sha256": "929e619c4261befeba8a583a0096688df5ad6ed1cadee774a89aa579a5a60d95"
+    },
+    {
+      "path": "src/x402-official-funding-post-https-request-binding.js",
+      "bytes": 4154,
+      "sha256": "ce7af7ffe5cb9bf002eb596a4cc8093081ce880687cffd44d2d7c7c56871cc37"
+    },
+    {
+      "path": "src/x402-official-https-request-binding.js",
+      "bytes": 5085,
+      "sha256": "dabf215408887bd0d2ba346085c5ab2df13f724e8759b7a98b71b09c8dc8d692"
+    },
+    {
+      "path": "src/x402-wire.js",
+      "bytes": 39886,
+      "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56"
+    }
+  ],
+  "preparedNativeGraphFiles": 36,
+  "preparedNativeSourceBytes": 599385,
+  "namedImportSymbolsChecked": 106,
+  "sourceGraphReviewSha256": "60599b0cdd9da8929bb56f531635a27b40bb1de71268c6c860bbdd126caa5c55",
+  "proposedNativeWriteCases": 7,
+  "proposedNativeReopenCases": 3,
+  "nativeCasesExecuted": 0,
+  "nativeNodeCommands": 0,
+  "opensslCommands": 0,
+  "nativeSqliteFilesCreated": 0,
+  "nativeLoopbackConnections": 0,
+  "SDK": 0,
+  "walletKeys": 0,
+  "paymentSignatures": 0,
+  "providerSignatures": 0,
+  "capabilitySignatures": 0,
+  "nonceSearches": 0,
+  "sourceTransforms": false,
+  "sourceTextArchiveCopies": 0,
+  "CASVerifiedReuse": 20,
+  "CASNewImports": 4,
+  "nativeTrialBudgetConsumedByPreparation": 0,
+  "earlierFiniteNativeAuthorityExtended": false,
+  "existing108CISelectionUnchanged": true,
+  "fullFundingServiceAcceptance": "NOT_ESTABLISHED",
+  "physicalOsRelease": "NOT_QUALIFIED",
+  "production": "NOT_ACCEPTED"
+}
