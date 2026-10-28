@@ -64,3 +64,32 @@ fixture. SQLite writes in place. After both processes terminate, the host can
 preserve each registered output once in CAS instead of leaving unregistered
 child output and a full-quota ownership hold. Failed or uncertain attempts retain
 their honest outcome and original evidence; no historical cleanup is involved.
+
+## Selected native SQLite qualification
+
+The [second selected native trial passed](../qualification/service-purchase-original-sqlite-store.actual-local-result.json)
+on Node 24.19.0 / darwin-arm64 with the exact twelve-file input graph. Its first
+Node command passed thirteen write/retention/corruption cases using four native
+SQLite connections. The second independent Node process passed two same-file
+reopen cases using two further connections. Both commands exited 0; the three
+retained files were byte-identical before and after the second process.
+Two private synthetic databases and one independent pin file were used. SDK,
+network, keys, signatures, nonce work, child Node processes and real payments
+were absent. The qualification task closed SUCCESS and retained each output by
+digest in CAS. No historical evidence was removed.
+
+The first trial remains CLOSED/FAILURE. Its write program passed 13 cases and
+exited 0, but the host mistakenly rejected the task manager's registered empty
+command directory, so the separate reopen process did not start. The reviewed
+host correction verifies exact registration, identity, owner, private mode and
+emptiness; it does not accept unknown output or change the native source graph.
+Twelve synthetic metadata-description checks cover that correction separately
+from the fifteen native SQLite cases. Both finite trial slots are consumed.
+
+This qualifies the selected original-purchase storage component and normal
+same-file fresh-process reopen, including refusal of the preserved corrupt
+fixture. It is not an application SIGKILL/power-loss test, authenticated funding,
+service execution, signer recovery, physical release of the full application or
+economic/production acceptance. The newer fulfillment CAS SQLite backend is a
+different development-only source candidate and was not loaded or qualified.
+Package defaults and the existing 108-control hosted selection remain unchanged.
