@@ -1,3 +1,4 @@
+import { captureSdk105OriginalFundingSpendingConfiguration, bindSdk105OriginalFundingSpending } from './sdk105-spending-bounded-client.js';
 import { types as utilTypes } from 'node:util';
 import { captureOriginalFundingServiceHandoffRequest } from './dynamic-plasma-original-funding-service-handoff-request.js';
 import { captureFundingPostCheckpointRoute } from '../x402-funding-post-checkpoint-route.js';
@@ -228,3 +229,15 @@ function rejected(kind){const out=capability();out.reject(error(kind));return ou
 function error(kind){const code='zenon_sdk105_funding_service_'+kind,e=new TypeError(code);
   Object.defineProperty(e,'code',{value:code,enumerable:true});Object.defineProperty(e,'stack',{value:'TypeError: '+code});return F(e);}
 function fail(kind){throw error(kind);}function discard(){}
+
+/** Opt-in G1 spending gate over this actual lifecycle. Construction reads the
+ * explicitly supplied journal; callers retain child cleanup responsibility on
+ * construction refusal. No native opening or default-buyer cutover is added. */
+export function createSpendingBoundedSdk105FundingServiceLifecycle(configuration) {
+  if (arguments.length !== 1 || !invariant()) fail('configuration_rejected');
+  const c = record(configuration, ['client', 'walletOwner', 'fundingResourceUrl', 'spending']);
+  const spending = captureSdk105OriginalFundingSpendingConfiguration(c.spending);
+  const lifecycle = createSdk105FundingServiceLifecycle({ client: c.client, walletOwner: c.walletOwner,
+    fundingResourceUrl: c.fundingResourceUrl });
+  return bindSdk105OriginalFundingSpending(lifecycle, c.fundingResourceUrl, spending);
+}
