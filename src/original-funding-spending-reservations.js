@@ -152,3 +152,40 @@ export function createOriginalFundingSpendingReservations(policyInput, backend) 
     snapshot() { if (arguments.length !== 0) fail('INPUT'); return F({ busy, closed, held, authority: 'NONE' }); },
   });
 }
+
+/** Canonical stored DATA inspection; no authentication, I/O or dispatch rights. */
+export function inspectOriginalFundingSpendingState(raw, policyInput) {
+  if (arguments.length !== 2) fail('INPUT');
+  const policy = captureOriginalFundingSpendingPolicy(policyInput), s = decode(raw, policy);
+  return F({ ...s, policy, reservations: F(s.reservations.map(r => F({ ...r }))) });
+}
+/** The native backend uses the SAME history contract as the actual owner. */
+export function requireOriginalFundingSpendingStateTransition(expected, proposed, policyInput) {
+  if (arguments.length !== 3 || proposed === null) fail('INPUT');
+  const policy = captureOriginalFundingSpendingPolicy(policyInput);
+  const a = decode(expected, policy), b = decode(proposed, policy);
+  if (expected === proposed) return inspectOriginalFundingSpendingState(proposed, policy);
+  if (b.revision !== a.revision + 1 || b.lastDay < a.lastDay) fail('TRANSITION_VERSION');
+  const same = (x, y) => JSON.stringify(x) === JSON.stringify(y);
+  if (expected === null) {
+    if (b.revision !== 1 || b.reservations.length !== 1 || b.reservations[0].status !== 'RESERVED'
+        || b.reservations[0].reservedDay !== b.lastDay) fail('INITIAL_RESERVATION');
+  } else if (b.reservations.length === a.reservations.length + 1) {
+    if (!a.reservations.every((r, i) => same(r, b.reservations[i]))) fail('HISTORY_REPLACEMENT');
+    const added = b.reservations.at(-1);
+    if (added.status !== 'RESERVED' || added.spentDay !== null || added.reservedDay !== b.lastDay) fail('INITIAL_RESERVATION');
+  } else {
+    if (a.reservations.length !== b.reservations.length) fail('HISTORY_REMOVAL');
+    let changed = 0;
+    for (let i = 0; i < a.reservations.length; i++) {
+      const old = a.reservations[i], item = b.reservations[i];
+      if (same(old, item)) continue;
+      changed++;
+      if (!ROW.slice(0, 7).every(k => old[k] === item[k])) fail('ORIGINAL_REPLACEMENT');
+      if (old.status === 'SPENT' || item.status === 'RESERVED') fail('DOWNGRADE');
+      if (item.status === 'SPENT' && item.spentDay !== b.lastDay) fail('SPENT_DAY');
+    }
+    if (changed > 1) fail('BATCH_TRANSITION');
+  }
+  return inspectOriginalFundingSpendingState(proposed, policy);
+}

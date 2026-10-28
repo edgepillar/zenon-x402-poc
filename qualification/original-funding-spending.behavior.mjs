@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { createOriginalFundingSpendingReservations as create, captureOriginalFundingSpendingPolicy as capture } from '../src/original-funding-spending-reservations.js';
@@ -175,6 +176,9 @@ check('close-reentry-uses-one-owned-stop-promise', async () => {
   const h = application(); let reentered; h.onClose = () => { reentered = h.root.close(); };
   const closing = h.root.close(); assert.equal(reentered, closing); assert.equal(h.root.close(), closing); await closing; assert.equal(h.counts().closes, 1);
 });
+export const originalFundingSpendingDataCases = F(checks.map(row => F(row)));
+export const originalFundingSpendingDataFixtures = F({ policy, original, memory, application, gate, H });
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
 const cases = [];
 for (const { id, run } of checks) { try { await run(); cases.push({ id, status: 'PASS' }); } catch (e) { cases.push({ id, status: 'FAIL', error: String(e?.message ?? e) }); } }
 const failed = cases.filter(c => c.status !== 'PASS').length;
@@ -182,3 +186,5 @@ console.log(JSON.stringify({ qualification: 'G1_ORIGINAL_FUNDING_SPENDING_DATA',
   nativeExecutions: 0, SDK: 0, SQLite: 0, keys: 0, signatures: 0, sockets: 0, nonceSearches: 0, nodeChildren: 0,
   actualPrepare: 0, payouts: 0, sourceOnlyProductProfile: true, nativeDurability: 'NOT_ESTABLISHED' }));
 if (failed) process.exitCode = 1;
+
+}
