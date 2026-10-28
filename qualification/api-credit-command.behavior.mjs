@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 // Pure command/lifecycle/model DATA with declared native children and a memory
 // CAS port. Invalid signature-shaped fixture bytes are never signed/verified.
 import assert from 'node:assert/strict';
@@ -44,7 +45,7 @@ function ledgerRequest(input) {
 function service(grantId, id = 'request.1', body = '') { return { grantId, requestId: id,
   originalRequestJson: '{"method":"POST","url":"https://service.example.test/api"}', originalBodyBase64: body,
   serviceResourceUrl: 'https://service.example.test/api', authorizationHeader: 'Bearer declared-test-proof' }; }
-function fixture({ pending = false, onWrite = null } = {}) {
+function fixture({ pending = false, onWrite = null, createLifecycle = join } = {}) {
   const f = retainedOriginalInputFixture(), packet = assemble(f.input, f.candidate, f.resourceUrl), counts = {
     prepares: 0, funding: 0, grants: 0, handoffs: 0, executions: 0, replays: 0, stops: 0, walletStops: 0,
   };
@@ -81,7 +82,7 @@ function fixture({ pending = false, onWrite = null } = {}) {
     return undefined;
   }), inspect: F(function inspect() { return F({ lifecycle: childClosed ? 'CLOSED' : 'OPEN', held: false }); }),
   close: F(async function close() { if (!childClosed) counts.stops++; childClosed = true; }) });
-  h.root = join({ client: child, walletOwner: wallet, fundingResourceUrl: f.resourceUrl,
+  h.root = createLifecycle({ client: child, walletOwner: wallet, fundingResourceUrl: f.resourceUrl,
     spending: { policy, backend, paymentId: 'payment.api.synthetic', readDay: () => 10 } });
   h.output = new Writable({ write(chunk, encoding, done) {
     try { const r = JSON.parse(String(chunk)); h.replies.push(r); if (h.onWrite) h.onWrite(r, done); else done(); }
@@ -210,6 +211,9 @@ check('output-loss-retains-the-original-without-committing-or-submitting-funding
   assert.equal(JSON.parse(h.owner.retainedResult().line).result.serializedCheckpoint, h.packet.serializedCheckpoint);
   assert.equal(h.owner.retainedResult().writeCallbackCompleted, false); assert.equal(JSON.parse(h.raw()).reservations.length, 1);
 });
+export const apiCreditCommandDataCases = F(checks.map(c => F(c)));
+export const apiCreditCommandDataFixtures = F({ fixture, service, command });
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
 const cases = [];
 for (const { id, run } of checks) { try { await run(); cases.push({ id, status: 'PASS' }); } catch (e) { cases.push({ id, status: 'FAIL', error: String(e?.message ?? e) }); } }
 const failed = cases.filter(c => c.status !== 'PASS').length;
@@ -219,3 +223,4 @@ console.log(JSON.stringify({ qualification: 'G1_API_CREDIT_COMMAND_DATA', passed
   grantAuthority: 'DECLARED_MOCK_RECORD', modelBackend: 'IN_MEMORY', spendingBackend: 'DECLARED_MEMORY_CAS',
   nativeHundredCallAcceptance: 'NOT_ESTABLISHED', supportedProductLaunchCommand: 'NOT_ESTABLISHED', nativeDurability: 'NOT_ESTABLISHED' }));
 if (failed) process.exitCode = 1;
+}

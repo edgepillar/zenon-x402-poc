@@ -1,0 +1,261 @@
+{
+  "qualification": "G1_API_CREDIT_APPLICATION_DATA_AND_NATIVE_PARSE",
+  "status": "PASS",
+  "recordedAtUTC": "2026-10-28T20:56:47.887853+00:00",
+  "nodeVersion": "24.19.0",
+  "platform": "darwin-arm64",
+  "nodeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25",
+  "passed": 38,
+  "failed": 0,
+  "priorCommandCases": 17,
+  "newCases": 21,
+  "cases": [
+    {
+      "id": "legacy-default-16-and-maximum-64-are-preserved",
+      "status": "PASS"
+    },
+    {
+      "id": "explicit-api-profile-has-128-commands-with-the-same-byte-and-close-limits",
+      "status": "PASS"
+    },
+    {
+      "id": "api-limit-capture-does-not-enter-accessors-or-proxies",
+      "status": "PASS"
+    },
+    {
+      "id": "funding-and-both-recovery-factories-refuse-api-limits-before-child-capture",
+      "status": "PASS"
+    },
+    {
+      "id": "legacy-channel-refuses-api-limits-without-reserving-the-streams",
+      "status": "PASS"
+    },
+    {
+      "id": "invalid-api-opening-budget-refuses-before-the-client-opener",
+      "status": "PASS"
+    },
+    {
+      "id": "api-opening-reserves-the-same-streams-before-the-fixed-client-opener",
+      "status": "PASS"
+    },
+    {
+      "id": "one-funding-one-grant-and-100-distinct-requests-plus-exact-replay-cross-the-64-command-boundary",
+      "status": "PASS"
+    },
+    {
+      "id": "model-state-rehydration-preserves-100-debits-and-refuses-another-execution-for-the-exact-request",
+      "status": "PASS"
+    },
+    {
+      "id": "unknown-funding-stops-before-handoff-and-retains-the-spending-reservation",
+      "status": "PASS"
+    },
+    {
+      "id": "foreign-grant-refuses-without-service-debit-or-execution",
+      "status": "PASS"
+    },
+    {
+      "id": "changed-body-under-the-same-request-id-cannot-produce-a-second-debit",
+      "status": "PASS"
+    },
+    {
+      "id": "maximum-128-commands-including-close-remains-bounded-at-the-session-and-host",
+      "status": "PASS"
+    },
+    {
+      "id": "command-129-is-refused-before-admission-and-retains-the-last-returned-result",
+      "status": "PASS"
+    },
+    {
+      "id": "legacy-owned-opening-still-uses-the-original-mode-and-16-command-default",
+      "status": "PASS"
+    },
+    {
+      "id": "duplicate-command-id-does-not-reenter-preparation",
+      "status": "PASS"
+    },
+    {
+      "id": "output-loss-retains-the-original-without-committing-or-submitting-funding",
+      "status": "PASS"
+    },
+    {
+      "id": "file-profile-keeps-create-and-existing-ownership-selections-round-trippable",
+      "status": "PASS"
+    },
+    {
+      "id": "file-capacity-includes-10-GiB-floor-all-declared-reserves-and-main-plus-journal-allocation",
+      "status": "PASS"
+    },
+    {
+      "id": "file-profile-rejects-relative-roots-alternate-devices-and-unbounded-file-caps",
+      "status": "PASS"
+    },
+    {
+      "id": "selection-captures-existing-key-identity-policy-and-trust-without-calling-the-key-or-clock",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-mutation-after-selection-cannot-replace-the-captured-recipient-asset-or-transport",
+      "status": "PASS"
+    },
+    {
+      "id": "selection-release-clears-only-owned-trust-copies-and-cannot-refund-consumption",
+      "status": "PASS"
+    },
+    {
+      "id": "selection-rejects-account-asset-and-overlapping-store-roots-before-any-key-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "selection-rejects-nested-accessors-and-unselected-function-capabilities-without-invoking-them",
+      "status": "PASS"
+    },
+    {
+      "id": "unconsumed-released-or-forged-selection-cannot-enter-the-fixed-native-binding",
+      "status": "PASS"
+    },
+    {
+      "id": "application-close-revokes-the-budget-before-physical-close-and-caches-the-same-stop",
+      "status": "PASS"
+    },
+    {
+      "id": "a-pending-wallet-stop-prevents-physical-close-without-marking-a-normal-close-as-held",
+      "status": "PASS"
+    },
+    {
+      "id": "active-preparation-close-retains-unknown-budget-and-never-forces-the-physical-file-closed",
+      "status": "PASS"
+    },
+    {
+      "id": "physical-close-exception-is-held-and-is-not-retried",
+      "status": "PASS"
+    },
+    {
+      "id": "a-nonvoid-physical-close-or-still-open-database-cannot-become-clean-close",
+      "status": "PASS"
+    },
+    {
+      "id": "logical-revoke-refusal-still-stops-the-existing-client-and-holds-physical-close",
+      "status": "PASS"
+    },
+    {
+      "id": "fresh-view-loss-after-close-latches-held-and-never-reopens-or-retries",
+      "status": "PASS"
+    },
+    {
+      "id": "unknown-funding-retains-its-original-budget-and-open-file-under-application-close",
+      "status": "PASS"
+    },
+    {
+      "id": "one-grant-100-request-and-exact-replay-command-flow-joins-the-spending-file-close-owner",
+      "status": "PASS"
+    },
+    {
+      "id": "stale-file-owner-is-refused-before-preparation-or-reserving-another-original",
+      "status": "PASS"
+    },
+    {
+      "id": "owner-epoch-is-rechecked-before-service-even-after-the-budget-is-spent",
+      "status": "PASS"
+    },
+    {
+      "id": "a-nonvoid-current-owner-check-cannot-authorize-an-operation",
+      "status": "PASS"
+    }
+  ],
+  "actualDataNodeCommands": 1,
+  "actualSyntaxNodeCommands": 8,
+  "nativeSourceParserPaths": [
+    "src/original-funding-spending-file-owner.js",
+    "src/zenon/sdk105-native-api-credit-application.js",
+    "src/zenon/sdk105-native-api-credit-command-session.js",
+    "src/zenon/dynamic-plasma-native-funding-service-client.js",
+    "src/x402-native-v6-funding-post-client.js",
+    "src/x402-official-v6-original-payment-client.js",
+    "src/service-credit-custodied-sqlite-http-client.js",
+    "src/buyer-cli.js"
+  ],
+  "sourceProfile": {
+    "path": "qualification/profiles/api-credit-application-source-v1.json",
+    "bytes": 39770,
+    "sha256": "4d6c6349e44ae65fa820f989746f06ee4e41a8e99429b2969543b6b7b39bbea0"
+  },
+  "rawQualificationSha256": "e95b894813c5a856d90e9624caaafc421f72d433d1687f0e12e5b4acdf326994",
+  "sourceTransforms": false,
+  "task": "CLOSED/SUCCESS",
+  "distinctModelRequests": 100,
+  "modelDebits": 100,
+  "modelExecutions": 100,
+  "modelReplays": 1,
+  "grantAuthority": "DECLARED_MOCK_RECORD",
+  "spendingBackend": "DECLARED_MEMORY_CAS",
+  "fileOwner": "DECLARED_DATA_CAPABILITY",
+  "nativeExecutions": 0,
+  "SDK": 0,
+  "SQLite": 0,
+  "keys": 0,
+  "signatures": 0,
+  "sockets": 0,
+  "nonceSearches": 0,
+  "nodeChildren": 0,
+  "actualPrepare": 0,
+  "payouts": 0,
+  "nativeFileOwnerExecution": "NOT_ESTABLISHED",
+  "nativeProductAcceptance": "NOT_ESTABLISHED",
+  "nativeHundredCallAcceptance": "NOT_ESTABLISHED",
+  "nativeDurability": "NOT_ESTABLISHED",
+  "supportedProductLaunchCommand": "NOT_ESTABLISHED",
+  "current108CISeparate": true,
+  "new38DataCasesIncludedIn108CI": false,
+  "retainedPreCommandRefusals": [
+    {
+      "sha256": "454b29a5707330b3017aafcdd48830e57a27549c9072a8282a15f3034e73608c",
+      "errorType": "Refused",
+      "reason": "Receipt metadata limit exceeded",
+      "status": "UNKNOWN",
+      "task": "CLOSED/FAILURE",
+      "actualDataCommands": 0,
+      "actualParserCommands": 0
+    },
+    {
+      "sha256": "b05459ba8eb8dac0f1901f24b18b9bf4835e51712dcd867e06854e133e044209",
+      "errorType": "Refused",
+      "reason": "Task quota exceeded",
+      "status": "UNKNOWN",
+      "task": "CLOSED/FAILURE",
+      "actualDataCommands": 0,
+      "actualParserCommands": 0
+    },
+    {
+      "sha256": "4c6cc0e9ed898351a0b085215240251e92190549b2f844ff2eed99e0bb9dc641",
+      "errorType": "Refused",
+      "reason": "Package member is not retained by this task",
+      "status": "UNKNOWN",
+      "task": "CLOSED/FAILURE",
+      "actualDataCommands": 0,
+      "actualParserCommands": 0
+    },
+    {
+      "sha256": "c76717bab5f78d9a9e7cbae119ec9b91b886e76326f87e6b088046499f720a82",
+      "errorType": "TypeError",
+      "reason": "'Policy' object is not subscriptable",
+      "status": "UNKNOWN",
+      "task": "NOT_CREATED",
+      "actualDataCommands": 0,
+      "actualParserCommands": 0
+    }
+  ],
+  "resources": {
+    "taskQuotaBytes": 4194304,
+    "plannedExecutionPeakBytes": 2295162,
+    "sourceInputs": 112,
+    "dataRuntimeInputs": 44,
+    "parserInputs": 8,
+    "materializedInputs": 52,
+    "sourceOnlyAliasesAvoided": 60,
+    "CASVerifiedReuse": 112,
+    "CASNewImports": 0,
+    "sourceTextArchives": 0,
+    "sourceOnlyObjectsProtectedByPriorOwnedSnapshots": true
+  }
+}
