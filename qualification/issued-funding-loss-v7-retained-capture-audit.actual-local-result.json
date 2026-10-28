@@ -1,0 +1,340 @@
+{
+  "qualification": "RETAINED_V7_NATIVE_CAPTURE_READ_ONLY_AUDIT",
+  "status": "PASS",
+  "result": {
+    "qualification": "V7_RETAINED_NATIVE_CAPTURE_AUDIT_AND_DECLARED_REFUSALS",
+    "audit": {
+      "status": "AUDITED_APPLICATION_CASE_WITH_RETAINED_REPORT_DEFECT",
+      "nativeCaseCompleted": true,
+      "nativeNodeExit": 0,
+      "observedCommandCounters": {
+        "commands": 3,
+        "results": 3
+      },
+      "recordedSummaryCounters": {
+        "commands": 4,
+        "results": 4
+      },
+      "rawSummaryConsistent": false,
+      "originalQualificationStatus": "REFUSED_OR_UNKNOWN",
+      "originalTaskOutcome": "FAILURE",
+      "rawTranscriptChanged": false,
+      "originalDecoderChanged": false,
+      "nativeSourceChanged": false,
+      "nativeReruns": 0,
+      "fullP1Acceptance": "NOT_ESTABLISHED",
+      "physicalRelease": "NOT_QUALIFIED",
+      "productionQualified": false,
+      "observedCase": {
+        "mode": "funding-response-loss",
+        "caseCompleted": true,
+        "officialSettlementPhase": "PENDING",
+        "counts": {
+          "walletKeys": 1,
+          "operatorAddressReads": 1,
+          "observedSignedTransactions": 1,
+          "handoffAfterOwnedKeyClose": false,
+          "capabilityKeys": 0,
+          "capabilitySignatures": 0,
+          "referenceCandidates": 15270,
+          "referenceWindows": 4,
+          "independentPinFiles": 1,
+          "verify": 1,
+          "firstSettle": 1,
+          "pendingObserve": 0,
+          "executions": 0,
+          "rawClientStarts": 1,
+          "rawAuthenticated": 1,
+          "rawCleanCloses": 1,
+          "originalClientRepeatRefusals": 1,
+          "backendExactReplays": 0,
+          "foreignGrantRefusals": 0,
+          "sameFileInitialCloses": 1,
+          "borrowedSqlCloses": 0,
+          "commandStarts": 3,
+          "commandResults": 3,
+          "commandInputBytes": 4667,
+          "commandOutputBytes": 6160
+        },
+        "actualExistingSdk105KeyPair": true,
+        "actualOwnedCommandHost": true,
+        "actualApplication": true,
+        "actualNativeHTTPS": true,
+        "actualOfficialCore": true,
+        "sameV6File": true,
+        "actualStreamCommands": 4,
+        "actualStreamResults": 4,
+        "expectedHeldCommandOwner": true,
+        "actualV6PhysicalRelease": "NOT_QUALIFIED",
+        "taskScratchDisposition": "PRESERVE_CHILD_FILES",
+        "closeProof": {
+          "hostStatus": "CLOSE_UNKNOWN",
+          "sessionLifecycle": "HELD",
+          "sessionHeld": true,
+          "fundingOutcomeUnknown": true,
+          "outputOutcomeUnknown": false,
+          "clientClose": "UNKNOWN",
+          "channelClose": "CLOSED",
+          "currentOwnersClosed": false,
+          "executionDone": true,
+          "repeatedRun": "REJECTED_RETAINED_RUN",
+          "applicationClose": {
+            "outcome": "FULFILLED",
+            "status": "CLOSED"
+          },
+          "applicationPhase": "CLOSED",
+          "applicationAdmissionRevoked": true,
+          "borrowedStores": "NOT_CLOSED_OR_REOPENED",
+          "actualV6PhysicalRelease": "NOT_QUALIFIED"
+        },
+        "fundingProof": {
+          "serverIntake": "BOUND_MATCHED_ORIGINAL",
+          "clientIntake": "OUTCOME_UNKNOWN",
+          "clientPhase": "SUBMISSION_OUTCOME_UNKNOWN",
+          "originalPacketUnchanged": true,
+          "originalHashMatched": true,
+          "sameV6File": true,
+          "serverRetainsOriginal": true,
+          "intakeAttempts": 1,
+          "grants": 0,
+          "requests": 0,
+          "serviceLedgerUnchanged": true,
+          "newFundingOrGrantAuthority": "NONE",
+          "freshProcessRecovery": "NOT_EXECUTED",
+          "backendWireReplay": "NOT_EXECUTED"
+        },
+        "responseLoss": {
+          "phase": "BOUND_STOP_REQUESTED",
+          "unknown": false,
+          "boundMatched": true,
+          "armAttempts": 1,
+          "callbackEntries": 1,
+          "readAttempts": 1,
+          "stopAttempts": 1,
+          "stopVoidObserved": true,
+          "authority": "NONE",
+          "nativeDeliveryLoss": "NOT_ESTABLISHED",
+          "physicalResourceRelease": "NOT_QUALIFIED"
+        },
+        "fundingPosts": 1,
+        "actualClientServiceRequests": 0,
+        "grantActivation": "NOT_REQUESTED_FUNDING_UNKNOWN",
+        "providerKeys": 1,
+        "providerSignatures": 0,
+        "capabilityKeys": 0,
+        "capabilitySignatures": 0,
+        "sourceTransforms": 0,
+        "nativeModuleAliases": 0,
+        "chainObservations": "DECLARED_NOT_AUTHENTICATED",
+        "producerCandidateReservation": 4096,
+        "fixedVerificationReservation": 16384,
+        "aggregateCandidateReservation": 35750,
+        "sdkPrepareBlock": false,
+        "realPayment": false,
+        "productionQualified": false,
+        "nativePhysicalDrain": "NOT_QUALIFIED"
+      },
+      "observedNamespace": {
+        "profileKind": "SDK105_ISSUED_COMMAND_APPLICATION_NODE24_V7",
+        "profileVersion": 1,
+        "mode": "funding-response-loss",
+        "inputsVerifiedBeforeCase": 539,
+        "applicationFiles": 135,
+        "packageFiles": 404,
+        "declaredSourceBytes": 4558124,
+        "sourceRowsSha256": "51c0bf62e5e6d144dd45dd31cc4f44e6c78549a5b2e24ee41123dcf49bbdd094",
+        "resolveCalls": 1065,
+        "bareImportOverrideHits": 9,
+        "declaredFilesResolved": 309,
+        "sourceTransforms": 0,
+        "nativeBuiltinAliases": 0,
+        "ordinaryInstalledNamespaceQualified": false,
+        "nativeOsNetworkSandbox": false
+      }
+    },
+    "cases": [
+      {
+        "id": "ACTUAL_COMPLETED_CAPTURE_WITH_ORIGINAL_REJECTION_PRESERVED",
+        "status": "PASS"
+      },
+      {
+        "id": "REFUSE-counts.observedSignedTransactions",
+        "status": "PASS"
+      },
+      {
+        "id": "REFUSE-counts.executions",
+        "status": "PASS"
+      },
+      {
+        "id": "REFUSE-fundingProof.grants",
+        "status": "PASS"
+      },
+      {
+        "id": "REFUSE-fundingProof.originalPacketUnchanged",
+        "status": "PASS"
+      },
+      {
+        "id": "REFUSE-closeProof.fundingOutcomeUnknown",
+        "status": "PASS"
+      },
+      {
+        "id": "REFUSE-closeProof.currentOwnersClosed",
+        "status": "PASS"
+      },
+      {
+        "id": "REFUSE-responseLoss.physicalResourceRelease",
+        "status": "PASS"
+      },
+      {
+        "id": "CANNOT_SILENTLY_REPLACE_RAW_SUMMARY",
+        "status": "PASS"
+      },
+      {
+        "id": "OTHER_NAMESPACE_IS_REFUSED",
+        "status": "PASS"
+      },
+      {
+        "id": "FAILED_NATIVE_EXIT_IS_REFUSED",
+        "status": "PASS"
+      }
+    ],
+    "passed": 11,
+    "failed": 0,
+    "rawCapturePreserved": true,
+    "nativeExecutions": 0,
+    "SDK": 0,
+    "SQLite": 0,
+    "sockets": 0,
+    "keys": 0,
+    "signatures": 0,
+    "nonceSearches": 0,
+    "originalTaskOutcome": "FAILURE",
+    "originalQualificationStatus": "REFUSED_OR_UNKNOWN"
+  },
+  "sourcePins": [
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "LF": 40,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "qualification/sdk105-issued-command-application-v6.case.mjs",
+      "bytes": 40058,
+      "LF": 574,
+      "sha256": "cd78c3be5b0df2a0e92efb2a49501caf5bda1b9aa390abbb47f9315990a64003",
+      "gitBlob": "343e6b920ce8289303cc37c8ace631b31d6a32e3"
+    },
+    {
+      "path": "qualification/run-sdk105-issued-command-application-v6.local.py",
+      "bytes": 17437,
+      "LF": 280,
+      "sha256": "9e37274d345b63852a2aec6ac9d1163b2e9db97c39dd4060db869b0ba3b4859c",
+      "gitBlob": "3cea1b21cbd17bb47322523dd300bbd2eb0255db"
+    },
+    {
+      "path": "qualification/sdk105-issued-command-application-v7.case.mjs",
+      "bytes": 40058,
+      "LF": 574,
+      "sha256": "5f1cf28128a1af5f710157e8552b007d72b7b40aafde95a3be76d6afd8f32141",
+      "gitBlob": "30e6f1a7e156e1947af7d09bf5f11b6879b899e1"
+    },
+    {
+      "path": "qualification/sdk105-issued-command-application-v7.preload.mjs",
+      "bytes": 14206,
+      "LF": 266,
+      "sha256": "f23ec456c857f7c533135773b1c582dd616e37fb7f2d57171a1a522b05e02a5b",
+      "gitBlob": "de1d7caaf4462aebb11729d98af1318a065075c7"
+    },
+    {
+      "path": "qualification/run-sdk105-issued-command-application-v7.local.py",
+      "bytes": 17437,
+      "LF": 280,
+      "sha256": "7fd56681170121c69f6e32187d1d9398d4cc7c5ec7bd28f613dc05a0dc7a01f2",
+      "gitBlob": "f7fb42c888220d0fcd251a2c0994bf35eab06156"
+    },
+    {
+      "path": "qualification/sdk105-issued-command-application-v7.inputs.json",
+      "bytes": 7169,
+      "LF": 213,
+      "sha256": "08b86ae649601a33b0feea0e0738f87616beb26f91feaff407592dda2bea096a",
+      "gitBlob": "b758dcf495ebd63ec78cf28951d764ea7b20a1c2"
+    },
+    {
+      "path": "qualification/issued-funding-loss-v7-source.control.py",
+      "bytes": 8876,
+      "LF": 131,
+      "sha256": "20760c4fa0af474bc28adafde966f49759eb047c49590c33d9ccfee1317278d6",
+      "gitBlob": "92b1980688986a235ada6bd60b8111c5a547fec2"
+    },
+    {
+      "path": "qualification/sdk105-issued-command-application-v7.source.actual-local-result.json",
+      "bytes": 7614,
+      "LF": 253,
+      "sha256": "e4cd2a4e3ded08415000cac9be9dcce5a6291c444a0ddf8e0e6e947b83c08a8d",
+      "gitBlob": "7cf5a00e337f8e06bd984f860caec07e7906a27c"
+    },
+    {
+      "path": "docs/P1_FUNDING_BOUND_RESPONSE_LOSS_V7_SOURCE.md",
+      "bytes": 2348,
+      "LF": 38,
+      "sha256": "a1e100056ff3eeeca109d64adc38d031ac1296cd81a7516af6c67bcd0f76546a",
+      "gitBlob": "cebb0405edbd811c3e5a887090485b1569817f30"
+    },
+    {
+      "path": "qualification/issued-funding-loss-v7-retained-capture-audit.py",
+      "bytes": 7142,
+      "LF": 87,
+      "sha256": "10b08d6ec635bbd9738abd8896418096586dca5861fc441cf0bfe2528f2a9048",
+      "gitBlob": "6a104659b7ff7d5c150282ef0c20fa528eaa0567"
+    },
+    {
+      "path": "qualification/issued-funding-loss-v7-summary-counter-fix.patch",
+      "bytes": 901,
+      "LF": 11,
+      "sha256": "64aacab998998acb2d5552c45a9f1c8fb0574870eabd2fb6f3e1108a29af3d2a",
+      "gitBlob": "04aa9488a590d7575cf8b160b11f6ab22983191f"
+    },
+    {
+      "path": "qualification/issued-funding-loss-v7-retained-capture-audit.control.py",
+      "bytes": 5681,
+      "LF": 81,
+      "sha256": "5b55898202cecc8f224152eced16c0631350b3f015eb337639ea8b0ec88e1835",
+      "gitBlob": "f18d30801a3d79fcf64e948a5aa5885e4b7c87cc"
+    }
+  ],
+  "privateAuditEvidenceSha256": "b423aaaeab4be789702a9f30c50100db133c067ca5e085f175c8b858d265fd33",
+  "originalNativeObservationSha256": "c27b09def0abead12abb4f38aee465416222f831b9dea76041d33a7813992cb0",
+  "originalNativeStdout": {
+    "sha256": "e26e7d1baaf7b9ef108cd7b02843c0fc13244ecc5e9f2d8f123df248b72abce6",
+    "bytes": 3619
+  },
+  "originalNativeStderr": {
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  "auditCommand": {
+    "actualExit": 0,
+    "outputComplete": true,
+    "stdout": {
+      "sha256": "70148e44709be1b932aa5e396362715ac95ce4000f6ff7629309a8bff8223d51",
+      "bytes": 5088
+    },
+    "stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    }
+  },
+  "ownedAuditTask": {
+    "state": "CLOSED",
+    "outcome": "SUCCESS",
+    "quotaBytes": 4194304
+  },
+  "originalNativeTask": {
+    "state": "CLOSED",
+    "outcome": "FAILURE"
+  },
+  "newNativeExecutions": 0,
+  "originalRawCaptureChanged": false
+}
