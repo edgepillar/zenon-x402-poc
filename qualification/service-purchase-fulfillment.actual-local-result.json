@@ -1,0 +1,207 @@
+{
+  "qualification": "PURCHASE_FULFILLMENT_DATA_PORT_COMPOSITION",
+  "status": "PASS",
+  "recordedAtUTC": "2026-10-28T11:06:12.339231+00:00",
+  "nodeVersion": "24.19.0",
+  "platform": "darwin-arm64",
+  "sourcePins": [
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "qualification/service-purchase-fulfillment.behavior.mjs",
+      "bytes": 20101,
+      "sha256": "c2e25829c5fb0d6d655d9eeb19d8e931b4dbdb7aef5f589e9217078046ea74e1",
+      "gitBlob": "eb979fd646bf686b62d1b93e6e3a208cdd79f15d"
+    },
+    {
+      "path": "qualification/service-purchase-original-storage.fixture.mjs",
+      "bytes": 4373,
+      "sha256": "6e832a9c66f4e3f1f7328def9668d65a32cbb71243ad7a3face9f17cc6236ac6",
+      "gitBlob": "e3fce93eb271e34a059e4262da1e5213a216a4bf"
+    },
+    {
+      "path": "src/canonical.js",
+      "bytes": 967,
+      "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+      "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4"
+    },
+    {
+      "path": "src/service-credit-original-request-custody-contract.js",
+      "bytes": 15100,
+      "sha256": "483d20e90d78ba95a8c5d5458dd201910e8d42aecbdc0dc03812e7044a464054",
+      "gitBlob": "94d67559a11f87f283a5cd99d2aaf8074374eb0a"
+    },
+    {
+      "path": "src/service-credit-pilot-original-payment-checkpoint.js",
+      "bytes": 4003,
+      "sha256": "930905f31824a6cadc16dfb84572cd4dc38a81e2fce4569b73b6bef29dec97d1",
+      "gitBlob": "51c6391bc22f561ebff0005ced31e538aa83f4fa"
+    },
+    {
+      "path": "src/service-credit-purchased-original-recovery.js",
+      "bytes": 10704,
+      "sha256": "06ecfb702a2d9e78fab9544765fafbea0da74c12b2a54f95bcd16309cb13aa1d",
+      "gitBlob": "44346a21f4c6d63b72d3b29294d826d9ac5a604c"
+    },
+    {
+      "path": "src/service-purchase-fulfillment.js",
+      "bytes": 19520,
+      "sha256": "076ce6db7f853639cef0781655858503724a94ab1fb650804a82d98e92f24fcb",
+      "gitBlob": "1802cf29f87bf42a87e91adac52d7ac2bd13685c"
+    },
+    {
+      "path": "src/service-purchase-storage-contract.js",
+      "bytes": 5158,
+      "sha256": "213f34a964acea11693f07f51fe99cc1eca1460ac5c98b2dd96cc0100a0159e6",
+      "gitBlob": "38d2cdbba760dcd7cdcbfb9fb66f83cbabc0e8ce"
+    },
+    {
+      "path": "src/service-purchase-terms.js",
+      "bytes": 3270,
+      "sha256": "9d3308103b5d573ef6f93f909b15e744f9e752911e602f3c32e882f18ebd6141",
+      "gitBlob": "1dd81d8b5a54fe7cd1bd68eab540c993981b22c0"
+    },
+    {
+      "path": "src/x402-wire.js",
+      "bytes": 39886,
+      "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+      "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+    }
+  ],
+  "cases": [
+    {
+      "id": "RECOVERY-AND-ACCEPTED-POLICY-ARE-REQUIRED-BEFORE-TRANSITIONS",
+      "status": "PASS"
+    },
+    {
+      "id": "EXPIRED-UNVERIFIED-PAYMENT-DOES-NOT-BECOME-A-DELIVERY-CLAIM",
+      "status": "PASS"
+    },
+    {
+      "id": "LATE-VERIFIED-PAYMENT-CREATES-THE-FULL-OWED-QUANTITY",
+      "status": "PASS"
+    },
+    {
+      "id": "OFFER-AND-RESERVATION-EXPIRY-CANNOT-ERASE-FUNDED-LIABILITY",
+      "status": "PASS"
+    },
+    {
+      "id": "FUNDING-IS-BOUND-TO-EXACT-CHAIN-PAYMENT-AND-TERMS",
+      "status": "PASS"
+    },
+    {
+      "id": "EXACT-FUNDING-REPEAT-DOES-NOT-CREATE-ANOTHER-OBLIGATION",
+      "status": "PASS"
+    },
+    {
+      "id": "ONE-PAYMENT-DELIVERS-SEVERAL-DISTINCT-ORIGINAL-REQUESTS",
+      "status": "PASS"
+    },
+    {
+      "id": "ORIGINAL-RETENTION-IS-CHECKED-BEFORE-A-DELIVERY-INTENT",
+      "status": "PASS"
+    },
+    {
+      "id": "A-FOREIGN-GRANT-OR-PAYMENT-CANNOT-BECOME-THIS-DELIVERY",
+      "status": "PASS"
+    },
+    {
+      "id": "REPEATED-DELIVERY-INTENT-DOES-NOT-AUTHORIZE-ANOTHER-EXECUTION",
+      "status": "PASS"
+    },
+    {
+      "id": "UNKNOWN-DELIVERY-KEEPS-BOTH-QUANTITY-AND-COMPENSATION-HELD",
+      "status": "PASS"
+    },
+    {
+      "id": "NOT-PERFORMED-RESOLVES-AN-UNKNOWN-WITHOUT-AUTOMATIC-REDISPATCH",
+      "status": "PASS"
+    },
+    {
+      "id": "DECLARED-CACHED-SUCCESS-IS-NOT-DELIVERY-PROOF",
+      "status": "PASS"
+    },
+    {
+      "id": "DELIVERY-PROOF-CANNOT-CHANGE-ORIGINAL-QUANTITY-OR-RESULT",
+      "status": "PASS"
+    },
+    {
+      "id": "QUANTITY-AND-ENTRY-LIMITS-REJECT-WITHOUT-CHANGING-THE-RECORD",
+      "status": "PASS"
+    },
+    {
+      "id": "PARTIAL-DELIVERY-COMPENSATION-USES-EXPLICIT-ATOMIC-CEILING-RULE",
+      "status": "PASS"
+    },
+    {
+      "id": "LOST-COMPENSATION-REPLY-PRESERVES-ONE-EXACT-ORIGINAL",
+      "status": "PASS"
+    },
+    {
+      "id": "CONFIRMED-ORIGINAL-COMPENSATION-SATISFIES-ONLY-REMAINING-QUANTITY",
+      "status": "PASS"
+    },
+    {
+      "id": "COMPENSATION-CANNOT-SUBSTITUTE-PROOF-TYPE-TRANSACTION-OR-PAYEE",
+      "status": "PASS"
+    },
+    {
+      "id": "LOST-FUNDING-CAS-ACK-FENCES-OWNER-AND-RECOVERS-SAME-RECORD",
+      "status": "PASS"
+    },
+    {
+      "id": "LOST-COMPENSATION-CAS-ACK-CANNOT-CREATE-A-SECOND-PAYOUT",
+      "status": "PASS"
+    },
+    {
+      "id": "STALE-OWNER-CAS-CONFLICT-DOES-NOT-OVERWRITE-NEWER-FUNDING",
+      "status": "PASS"
+    },
+    {
+      "id": "CLOSE-DURING-COMMIT-KEEPS-ACK-UNCERTAINTY-AND-BORROWED-OWNERS",
+      "status": "PASS"
+    },
+    {
+      "id": "CORRUPT-OR-NONCANONICAL-STORED-STATE-IS-HELD-WITHOUT-REPAIR",
+      "status": "PASS"
+    },
+    {
+      "id": "ACCESSOR-PORTS-ARE-REFUSED-WITHOUT-CALLING-THE-GETTER",
+      "status": "PASS"
+    },
+    {
+      "id": "NO-JOURNAL-RESULT-CREATES-ECONOMIC-OR-DISPATCH-AUTHORITY",
+      "status": "PASS"
+    }
+  ],
+  "passed": 26,
+  "failed": 0,
+  "actualDataNodeCommands": 1,
+  "actualOwnerAndCodecs": true,
+  "verifierAndOriginalStoreAndAtomicStorePorts": "SYNTHETIC",
+  "recoveryScope": "new-owner objects in one Node process",
+  "casAcknowledgementLoss": "simulated after an in-memory store commit",
+  "nativeExecutions": 0,
+  "SDK": 0,
+  "SQLite": 0,
+  "keys": 0,
+  "signatures": 0,
+  "sockets": 0,
+  "nonceSearches": 0,
+  "payouts": 0,
+  "sourceTransforms": false,
+  "independentAPFSInputClones": 11,
+  "rawQualificationSha256": "684a72e4f992ec0e5052a67d9d6c75236a45906526996b12adc6c812b5fd85f0",
+  "stdoutSha256": "3954e67e67d7508f528eac38c5d38bf1f30c3551e504aaaf92f50307116b67d9",
+  "task": "CLOSED/SUCCESS",
+  "nativeCrashRecovery": "NOT_ESTABLISHED",
+  "durableFulfillmentStoreIntegration": "NOT_ESTABLISHED",
+  "authenticVerifierAdmission": "NOT_ESTABLISHED",
+  "physicalResourceRelease": "NOT_QUALIFIED",
+  "fullP1P2Acceptance": "OPEN",
+  "production": "NOT_ACCEPTED"
+}
