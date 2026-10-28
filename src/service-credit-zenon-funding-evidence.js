@@ -1405,3 +1405,88 @@ export function createZenonFundingEvidenceActivation(options) {
 }
 
 export { EVIDENCE_VERSION as ZENON_FUNDING_EVIDENCE_VERSION };
+
+/**
+ * Rebind an already authenticated record to the exact, persisted issuance.
+ * This is a structural comparison, not a verifier. It intentionally has no
+ * clock, policy derivation, grant creation or activation-store callback: an
+ * expired offer must not erase a payment that the selected verifier confirms.
+ */
+export function captureVerifiedZenonIssuedFunding(input) {
+  const value = exactDataObject(input, [
+    'verifiedRecord', 'offer', 'challenge', 'authorityProfile',
+    'transactionHash', 'payer', 'resourceUrl',
+  ]);
+  const context = snapshotJson({
+    offer: value.offer,
+    challenge: value.challenge,
+    authorityProfile: value.authorityProfile,
+    transactionHash: value.transactionHash,
+    payer: value.payer,
+    resourceUrl: value.resourceUrl,
+  });
+  const authority = normalizeAuthority(context.authorityProfile);
+  const target = deriveZenonFundingObserverTarget(context);
+  const verifiedRecord = captureVerifiedRecord(value.verifiedRecord);
+  if (
+    verifiedRecord.authorityProfileId !== authority.profileId
+    || verifiedRecord.authorityProfileVersion !== authority.profileVersion
+    || verifiedRecord.verifierVersion !== authority.verifierVersion
+    || verifiedRecord.authorityRecordDigest !== authority.recordDigest
+    || !sameJson(verifiedRecord.chainProfile, authority.chainProfile)
+    || !sameJson(verifiedRecord.confirmationPolicy, authority.confirmationPolicy)
+  ) failRejected();
+  const fields = [
+    'network', 'transactionId', 'payer', 'payee', 'asset', 'amount',
+    'paymentResourceDigest', 'paymentRequirementDigest', 'paymentIntentDigest',
+    'resourceBinding', 'offerId', 'offerVersion', 'fundingPolicyId',
+    'fundingPolicyVersion', 'capabilityCommitment', 'totalUnits', 'expiresAt',
+    'grantFundingCommitment',
+  ];
+  for (let index = 0; index < fields.length; index += 1) {
+    const key = fields[index];
+    if (verifiedRecord[key] !== target[key]) failRejected();
+  }
+  const settlement = commitment(AUTHORITY_SETTLEMENT_DOMAIN, {
+    authorityProfileId: authority.profileId,
+    authorityProfileVersion: authority.profileVersion,
+    authorityRecordDigest: authority.recordDigest,
+    transactionId: verifiedRecord.transactionId,
+  });
+  return deepFreeze({
+    verifiedRecord,
+    target,
+    sourceSettlementId: `settlement_${REFLECT_APPLY(STRING_SLICE, settlement, ['sha256:'.length])}`,
+  });
+}
+
+/**
+ * Exactly one call to an application-selected authenticator, without granting
+ * service credit. The caller must retain the original payment first. A caller
+ * success flag, a cached outcome or the capture helper is not authentication.
+ * Context is captured before the callback; custom thenables are never invoked.
+ */
+export async function verifyZenonIssuedFundingWithoutActivation(input) {
+  const value = exactDataObject(input, [
+    'offer', 'challenge', 'authorityProfile', 'transactionHash', 'payer',
+    'resourceUrl', 'fundingEvidence', 'verifyFundingEvidence',
+  ]);
+  if (typeof value.verifyFundingEvidence !== 'function'
+      || REFLECT_APPLY(IS_PROXY, undefined, [value.verifyFundingEvidence])) failInput();
+  const context = snapshotJson({
+    offer: value.offer,
+    challenge: value.challenge,
+    authorityProfile: value.authorityProfile,
+    transactionHash: value.transactionHash,
+    payer: value.payer,
+    resourceUrl: value.resourceUrl,
+  });
+  deriveZenonFundingObserverTarget(context);
+  const candidate = captureEvidenceCandidate(value.fundingEvidence);
+  let verifiedRecord;
+  try {
+    const pending = safeNativePromise(REFLECT_APPLY(value.verifyFundingEvidence, undefined, [candidate]));
+    verifiedRecord = await pending;
+  } catch { failRejected(); }
+  return captureVerifiedZenonIssuedFunding({ verifiedRecord, ...context });
+}
