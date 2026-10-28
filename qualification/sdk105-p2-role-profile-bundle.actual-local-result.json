@@ -1,0 +1,89 @@
+{
+  "kind": "SDK105_P2_ROLE_PROFILE_BUNDLE_LOCAL_DATA_QUALIFICATION",
+  "version": 1,
+  "status": "PASS_DATA_ONLY",
+  "date": "2026-10-28",
+  "runtime": "Python 3.12.14 / darwin-arm64",
+  "sourceInputs": [
+    {
+      "path": "qualification/sdk105_p2_role_profile_bundle.py",
+      "bytes": 1621,
+      "sha256": "a6adca828ef2caf5053e165aaadc4a32ffff07850862b005444b3f10ec9c281c"
+    },
+    {
+      "path": "qualification/node_file_url_profile.py",
+      "bytes": 5301,
+      "sha256": "9f4ca5bc477d9c706870a65d816c7d98dfc27d55befd7780ef934ef8d89ad4a2"
+    },
+    {
+      "path": "qualification/sdk105-p2-role-profiles-data.control.py",
+      "bytes": 11398,
+      "sha256": "50973c8869da6f04fb4a3773c0155f879cc3d7067dd382edcfe0399828aaec4b"
+    }
+  ],
+  "actualCommand": {
+    "commands": 1,
+    "state": "COMPLETE",
+    "exitCode": 0,
+    "stdoutBytes": 1517,
+    "stdoutSha256": "34bad9874a63353a446dc43a1125b52d6525f4573197aa326b248fd49e26ba1e",
+    "stderrBytes": 0,
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "outputComplete": true,
+    "elapsedSeconds": 0.10077458299929276
+  },
+  "actualPureDataControls": {
+    "event": "SDK105_P2_ROLE_PROFILE_BUNDLE_DATA_CONTROLS",
+    "passed": true,
+    "cases": 13,
+    "names": [
+      "three coherent role profiles retain exact mode, source rows and entry binding",
+      "three roles use one inventory of 555 declared reads, not three physical passes",
+      "all role views retain literal scoped-package at signs and the same bare binding",
+      "unsupported mode refuses before a declared read",
+      "unknown role refuses before a declared read",
+      "two roles cannot acquire the same entry",
+      "traversal in a role entry refuses before a declared read",
+      "an unrelated profile kind refuses before a declared read",
+      "a missing child entry cannot produce an incomplete role bundle",
+      "physical aliases refuse before publishing role metadata",
+      "changed declared source bytes refuse every role",
+      "a source-row digest mismatch refuses before a declared read",
+      "decoded role DATA views are independent without a source copy"
+    ],
+    "declaredInventoryRows": 555,
+    "declaredApplicationRows": 151,
+    "declaredPackageRows": 404,
+    "readsPerSuccessfulBundle": 555,
+    "rolesPerBundle": 3,
+    "profileSourceSha256": "a6adca828ef2caf5053e165aaadc4a32ffff07850862b005444b3f10ec9c281c",
+    "canonicalProducerSha256": "9f4ca5bc477d9c706870a65d816c7d98dfc27d55befd7780ef934ef8d89ad4a2",
+    "actualInstalledPackageReads": 0,
+    "SDK": 0,
+    "SQLite": 0,
+    "NodeCommands": 0,
+    "nativeChildren": 0,
+    "signals": 0,
+    "IPC": 0,
+    "keys": 0,
+    "signatures": 0,
+    "sockets": 0,
+    "nonceSearches": 0,
+    "fixtureFilesCreated": 0,
+    "sourceOrDependencyCopies": 0,
+    "nativeQualification": "NOT_EXECUTED"
+  },
+  "retention": {
+    "taskState": "CLOSED",
+    "taskOutcome": "SUCCESS",
+    "commandStreamsVerified": true,
+    "emptyOwnedScratchClosed": true,
+    "historicalNativeEvidenceChanged": false
+  },
+  "limits": [
+    "The 555 source rows are declared in-memory fixture DATA, not installed dependencies.",
+    "These controls do not execute the P2 application, child processes, interruption or recovery.",
+    "One source inventory per bundle was already present in V4; no threefold speedup is claimed.",
+    "P2 V5 native execution, physical resource release and production readiness remain NOT_EXECUTED or unqualified."
+  ]
+}
