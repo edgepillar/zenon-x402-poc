@@ -21,7 +21,9 @@ its operation and retaining any returned original signing DATA before clear.
 
 A claim without a returned wallet remains HELD. If that wallet arrives late,
 it is stopped once; its cleanup facts can be recorded, but the original UNKNOWN
-close cannot become success or authorize another opening. Malformed promises,
+close cannot become success or authorize another opening. A key already held
+before the first close rejects immediately; a malformed later clean-looking
+wallet return cannot leave that close pending or promote it to success. Malformed promises,
 thenables, thrown/non-void clear returns and unproved owner stops remain HELD
 without retry. A clean-looking wallet snapshot cannot replace the actual single
 clear receipt. No key material or signature is exposed by lease inspection.

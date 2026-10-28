@@ -73,7 +73,7 @@ function stopOwner(state) {
         if (!state.ownerStopReturned) fail();
         // A late known stop can improve only its retained cleanup facts.
         // The first UNKNOWN/HELD close never changes into success.
-        if (state.held) return;
+        if (state.held) { state.closing.reject(error()); return; }
         finish(state);
       } catch { hold(state); state.closing.reject(error()); }
     }, () => { hold(state); state.closing.reject(error()); });
@@ -107,7 +107,13 @@ export function createSdk105ApiCreditExistingKeyLease(keyPair) {
   });
   const close = F(function close() {
     if (arguments.length !== 0) fail(); if (state.closing !== null) return state.closing.promise;
-    state.closing = capability(); state.stopRequested = true; state.lifecycle = 'CLOSING';
+    state.closing = capability(); state.stopRequested = true;
+    if (state.held) {
+      state.lifecycle = 'HELD'; state.closing.reject(error());
+      if (state.claimed && state.owner !== null) stopOwner(state);
+      return state.closing.promise;
+    }
+    state.lifecycle = 'CLOSING';
     if (!state.claimed) {
       try { rawClear(state); finish(state); } catch { hold(state); state.closing.reject(error()); }
     } else if (state.owner === null) { hold(state); state.closing.reject(error()); }

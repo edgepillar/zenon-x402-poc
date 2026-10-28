@@ -154,6 +154,22 @@ check('lease-inspection-exposes-no-key-material-and-closed-handles-cannot-reente
   assert.ok(!Reflect.ownKeys(v).some(k => /private|secret|signature|publicKey|address/.test(k)));
   assert.throws(() => r.lease.keyPair.getPublicKey()); assert.throws(() => r.lease.keyPair.clear()); assert.equal(r.calls.clear, 1);
 });
+check('a-previously-held-key-close-rejects-before-a-pending-wallet-stop-can-settle', async () => {
+  const r = fixture({ clearResult: true, delay: true }); r.adopt(); assert.throws(() => r.lease.keyPair.clear());
+  const p = r.lease.close(); let outcome = 'PENDING'; p.then(() => { outcome = 'FULFILLED'; }, () => { outcome = 'REJECTED'; });
+  assert.equal(r.lease.inspect().lifecycle, 'HELD'); await Promise.resolve(); await Promise.resolve(); assert.equal(outcome, 'REJECTED');
+  assert.equal(r.calls.ownerClose, 1); assert.equal(r.calls.clear, 1); r.closed = true; r.resolve(undefined);
+  await Promise.resolve(); await Promise.resolve(); assert.equal(r.lease.inspect().ownerStopReturned, true);
+  assert.equal(r.lease.inspect().held, true); assert.equal(r.lease.close(), p);
+});
+check('held-during-wallet-stop-rejects-even-if-that-wallet-claims-a-clean-return', async () => {
+  const r = fixture({ clearResult: true }); claim(r.lease.keyPair);
+  const owner = F({ close: F(() => { r.calls.ownerClose++; try { r.lease.keyPair.clear(); } catch {} return Promise.resolve(undefined); }),
+    inspect: F(() => F({ sdk105WalletOwnerVersion: 1, lifecycle: 'CLOSED', held: false, activeOperation: null, clearCalls: 1, clearOutcome: 'CLEAR_RETURNED' })) });
+  bind(r.lease.keyPair, owner); const p = r.lease.close(); let outcome = 'PENDING'; p.then(() => { outcome = 'FULFILLED'; }, () => { outcome = 'REJECTED'; });
+  for (let i = 0; i < 5; i++) await Promise.resolve(); assert.equal(outcome, 'REJECTED');
+  assert.equal(r.lease.inspect().held, true); assert.equal(r.calls.clear, 1); assert.equal(r.calls.ownerClose, 1); await assert.rejects(r.lease.close());
+});
 check('unknown-key-leases-have-a-finite-retained-owner-limit', async () => {
   for (const lease of leases) assert.ok(['HELD', 'CLOSED'].includes(lease.inspect().lifecycle));
   let held = leases.filter(l => l.inspect().held).length; assert.ok(held < 16);

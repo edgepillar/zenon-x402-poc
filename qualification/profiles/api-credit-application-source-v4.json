@@ -157,9 +157,9 @@
   "sourcePins": [
     {
       "path": "docs/API_CREDIT_EXISTING_KEY_LEASE.md",
-      "bytes": 2809,
-      "sha256": "3133a270adf895070ce6bc158277026409f24702a7427b070b0e3ac46ed8fd96",
-      "gitBlob": "7172b912173cf843c241344279979637b3317d2a",
+      "bytes": 2976,
+      "sha256": "29bb7c72300fbaa00e48e591d28613b01292b1948faf68030839bac80faf18f5",
+      "gitBlob": "b497b241d5575bd3290d7e749b1c813aac8a863e",
       "lane": "SOURCE_ONLY"
     },
     {
@@ -199,9 +199,9 @@
     },
     {
       "path": "qualification/api-credit-key-lease.behavior.mjs",
-      "bytes": 13873,
-      "sha256": "fa49398c7b956914df72e536098cc670ab7837df0de80ce0dce731c21760d04e",
-      "gitBlob": "10176a178f313e5d4b6c6c170954ba4a9b6c544c",
+      "bytes": 15533,
+      "sha256": "5f8c83c7edd9d8b93d7503a45404b7584d3afd525dab78cd638c798ad34b9542",
+      "gitBlob": "133953d8437a7b89e63a17adafef9575b6543d26",
       "lane": "DATA_RUNTIME"
     },
     {
@@ -927,9 +927,9 @@
     },
     {
       "path": "src/zenon/sdk105-api-credit-existing-key-lease.js",
-      "bytes": 9085,
-      "sha256": "55a293acd04de6cbb922864eae4d574988d8b8b16788b8b700f0c00ccf4a13e7",
-      "gitBlob": "ea3dcf4303f186fe399522c72ce7570c78e3ae36",
+      "bytes": 9318,
+      "sha256": "48527a74d9284a12a73a40d9edc75bd55ee0ff05669c830f399866b63af946e6",
+      "gitBlob": "23ccf5b8063048fe152aee912ef1e8cdfaeccf90",
       "lane": "DATA_RUNTIME"
     },
     {
@@ -1092,5 +1092,14 @@
       "managedTask": "NOT_CREATED",
       "correction": "Fetch every selected parser input before peak accounting and owned-task creation. Application source was unchanged."
     }
-  ]
+  ],
+  "retainedEarlierQualification": {
+    "sha256": "1c73fa0d90009c9761d6d08b913b50ed17c31d8636dee7017939ed3c6666a53f",
+    "passed": 111,
+    "failed": 0,
+    "actualDataNodeCommands": 1,
+    "actualSyntaxNodeCommands": 3,
+    "nativeExecutions": 0
+  },
+  "reviewCorrection": "Known HELD rejects the first close immediately; HELD observed during a malformed clean-looking wallet stop also rejects rather than leaving that close pending."
 }

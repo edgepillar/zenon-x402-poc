@@ -1,14 +1,14 @@
 {
   "qualification": "G0_G2_EXISTING_KEY_LEASE_DATA_AND_NATIVE_PARSE",
   "status": "PASS",
-  "recordedAtUTC": "2026-10-28T22:27:22.829588+00:00",
+  "recordedAtUTC": "2026-10-28T22:37:41.796427+00:00",
   "nodeVersion": "24.19.0",
   "platform": "darwin-arm64",
   "nodeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25",
-  "passed": 111,
+  "passed": 113,
   "failed": 0,
   "priorProductCases": 84,
-  "newCases": 27,
+  "newCases": 29,
   "cases": [
     {
       "id": "legacy-default-16-and-maximum-64-are-preserved",
@@ -451,6 +451,14 @@
       "status": "PASS"
     },
     {
+      "id": "a-previously-held-key-close-rejects-before-a-pending-wallet-stop-can-settle",
+      "status": "PASS"
+    },
+    {
+      "id": "held-during-wallet-stop-rejects-even-if-that-wallet-claims-a-clean-return",
+      "status": "PASS"
+    },
+    {
       "id": "unknown-key-leases-have-a-finite-retained-owner-limit",
       "status": "PASS"
     }
@@ -464,10 +472,10 @@
   ],
   "sourceProfile": {
     "path": "qualification/profiles/api-credit-application-source-v4.json",
-    "bytes": 44767,
-    "sha256": "312daa89e10591991bc9257926f1c94600c96aad13db9f676b126c0e62abf660"
+    "bytes": 45205,
+    "sha256": "efa7e6cf67c080c56692280d987b67a17d7e1c83738f757d89e3669ec7a93dae"
   },
-  "rawQualificationSha256": "1c73fa0d90009c9761d6d08b913b50ed17c31d8636dee7017939ed3c6666a53f",
+  "rawQualificationSha256": "162c68b7f0ceb297d7d78fb5a8acca95082160d20b15400809dba35f475a80cb",
   "sourceTransforms": false,
   "task": "CLOSED/SUCCESS",
   "sourceOrdering": {
@@ -492,6 +500,15 @@
     "managedTask": "NOT_CREATED",
     "correction": "Fetch every selected parser input before peak accounting and owned-task creation. Application source was unchanged."
   },
+  "retainedEarlierQualification": {
+    "sha256": "1c73fa0d90009c9761d6d08b913b50ed17c31d8636dee7017939ed3c6666a53f",
+    "passed": 111,
+    "failed": 0,
+    "actualDataNodeCommands": 1,
+    "actualSyntaxNodeCommands": 3,
+    "nativeExecutions": 0
+  },
+  "reviewCorrection": "Known HELD rejects the first close immediately; HELD observed during a malformed clean-looking wallet stop also rejects rather than leaving that close pending.",
   "nativeExecutions": 0,
   "SDK": 0,
   "SQLite": 0,
@@ -509,18 +526,18 @@
   "operatorKeyBootstrap": "OPEN",
   "providerAuthentication": "NOT_ESTABLISHED",
   "current108CISeparate": true,
-  "new111DataCasesIncludedIn108CI": false,
+  "new113DataCasesIncludedIn108CI": false,
   "resources": {
     "taskQuotaBytes": 4194304,
-    "plannedExecutionPeakBytes": 2243176,
+    "plannedExecutionPeakBytes": 2246962,
     "sourceInputs": 119,
     "dataRuntimeInputs": 51,
     "nativeSourceInputs": 106,
     "parserInputs": 3,
     "materializedInputs": 54,
     "sourceOnlyAliasesAvoided": 65,
-    "CASVerifiedReuse": 114,
-    "CASNewImports": 5,
+    "CASVerifiedReuse": 116,
+    "CASNewImports": 3,
     "sourceTextArchives": 0,
     "sourceOnlyObjectsRetention": "CURRENT_IMPORT_OR_PRIOR_OWNED_SNAPSHOT"
   }
