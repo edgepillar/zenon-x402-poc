@@ -34,9 +34,9 @@ pins during each recovery. Checksums do not authenticate funding or protect an
 arbitrary rollback of every trust source. The configured writer, store and
 authenticator remain trusted application components.
 
-## SQLite implementation candidate
+## Selected SQLite implementation
 
-The separate SQLite candidate uses a dedicated caller-owned DatabaseSync
+The separate SQLite implementation uses a dedicated caller-owned DatabaseSync
 connection. Its exact two-table STRICT schema binds each payment scope to one
 order using a UNIQUE constraint. Capacity is explicit and persisted. Atomic CAS
 updates the canonical envelope and indexed ownership columns in one transaction.
@@ -63,18 +63,40 @@ backend and authenticator are synthetic. Handoff, late stale results, lost
 acknowledgements, release, attempts, immutable liability and independent pins
 are covered. It does not load SQLite or perform signing, network or payment.
 
-The new SQLite store, native entry and source-admission preload are development
-source candidates. Syntax checks do not execute SQLite or qualify durability.
-The prepared native fixture has write and fresh-process reopen phases on two
-new private synthetic databases and one independent pin file. It combines a
-committed verified receipt with lost acknowledgement, an old worker's late
-result, a new owner, duplicate-payment and capacity refusals, corruption
-quarantine and reopening the same retained files. It uses synthetic funding
-authentication, with no SDK, key, signature, socket, nonce work, real grant,
-service execution or payout. Execution needs its own finite native scope.
+The selected native SQLite trial passed on Node 24.19.0 / darwin-arm64 with
+the exact eighteen-file source graph. Ten write/recovery cases used two native
+connections. A separate Node process passed two same-file reopen/refusal cases
+using two further connections. Both processes exited 0 with complete output.
+The two new synthetic databases and independent pin file remained byte-identical
+across the second process. The test task closed SUCCESS and retained every
+output by digest. No second native trial was needed.
 
-The previous original-purchase SQLite allowance is consumed and does not cover
-this different receipt backend. Its retained successful and failed evidence is
-unchanged. Full-application interruption, authentic funding, physical native
-release, signer recovery and economic acceptance remain open. Default runtime
-wiring and the existing 108-control hosted CI selection are unchanged.
+The native composition covers a retained original before verification, unique
+payment refusal, an exact pending candidate through ownership handoff, a native
+verified commit with lost acknowledgement, a stale worker's late result and a
+new owner's recovery without another verifier call. It also covers capacity,
+stable selected-row validation, wrapper/borrowed-connection separation, a
+non-reserved sqliteX schema object refusal, corruption quarantine and the
+preserved corrupt fixture's refusal in the new process. The schema uses a
+literal reserved prefix; the earlier LIKE-pattern source and its preparation
+records are preserved and were not executed natively.
+
+The authenticator remains a fixed synthetic port. Purchased quantity and grant
+funding units stay separate, payment time stays unknown, and expiry does not
+erase the recorded verified liability. There is no SDK, key, signature, socket,
+nonce search, Node child, real grant, service execution, payout or payment.
+This qualifies selected component persistence and normal same-file fresh-process
+recovery, not full-application response loss, forced interruption, authentic
+funding, signer recovery, physical application release or production acceptance.
+
+All eighteen source objects were verified and reused from CAS. Independent APFS
+source clones and a small reference manifest were used; no full-text source
+archive or new source-object import was needed. Quota, mounted-volume identity,
+the 10 GiB floor, extra margin and all discovered reservations were checked
+before each native entry. These are cooperative controls, not an OS sandbox.
+
+The original-purchase SQLite store retains its separate fifteen-case, twelve-file
+qualification and consumed allowance. The older grant-bound fulfillment CAS
+backend is also a separate candidate. Default runtime wiring and the existing
+108-control hosted selection remain unchanged; hosted CI does not run these
+native SQLite cases. See the [actual local result](../qualification/service-purchase-order-funding-sqlite.actual-local-result.json).
