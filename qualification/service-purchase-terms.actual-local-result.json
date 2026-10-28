@@ -1,0 +1,120 @@
+{
+  "qualification": "SERVICE_PURCHASE_TERMS_DATA_COMPONENT_V1",
+  "status": "PASS",
+  "sourcePins": [
+    {
+      "path": "src/service-purchase-terms.js",
+      "bytes": 3270,
+      "sha256": "9d3308103b5d573ef6f93f909b15e744f9e752911e602f3c32e882f18ebd6141"
+    },
+    {
+      "path": "qualification/service-purchase-terms.behavior.mjs",
+      "bytes": 4309,
+      "sha256": "56b790615a0350f4b2223522421872ed38f5fa1b1334ea28006586178ef19665"
+    }
+  ],
+  "result": {
+    "qualification": "DATA_COMPONENT_ONLY",
+    "cases": [
+      {
+        "id": "ORDER-CANONICAL-ROUNDTRIP",
+        "status": "PASS"
+      },
+      {
+        "id": "ORDER-SNAPSHOT-CANNOT-BE-MUTATED",
+        "status": "PASS"
+      },
+      {
+        "id": "ORDER-IMMUTABLE-orderId",
+        "status": "PASS"
+      },
+      {
+        "id": "ORDER-IMMUTABLE-productId",
+        "status": "PASS"
+      },
+      {
+        "id": "ORDER-IMMUTABLE-beneficiary",
+        "status": "PASS"
+      },
+      {
+        "id": "ORDER-IMMUTABLE-holder",
+        "status": "PASS"
+      },
+      {
+        "id": "ORDER-IMMUTABLE-quantity",
+        "status": "PASS"
+      },
+      {
+        "id": "ORDER-IMMUTABLE-network",
+        "status": "PASS"
+      },
+      {
+        "id": "ORDER-IMMUTABLE-conditionsDigest",
+        "status": "PASS"
+      },
+      {
+        "id": "ORDER-IMMUTABLE-price.amount",
+        "status": "PASS"
+      },
+      {
+        "id": "ORDER-IMMUTABLE-price.asset",
+        "status": "PASS"
+      },
+      {
+        "id": "ORDER-IMMUTABLE-price.unit",
+        "status": "PASS"
+      },
+      {
+        "id": "ORDER-PRICE-REPRESENTATIONS-ARE-NOT-ALIASES",
+        "status": "PASS"
+      },
+      {
+        "id": "ORDER-QUANTITY-MUST-BE-A-POSITIVE-SAFE-INTEGER",
+        "status": "PASS"
+      },
+      {
+        "id": "ORDER-UNKNOWN-FIELDS-AND-VERSIONS-ARE-REJECTED",
+        "status": "PASS"
+      },
+      {
+        "id": "ORDER-TEXT-ALIASES-AND-DUPLICATE-FIELDS-ARE-REJECTED",
+        "status": "PASS"
+      },
+      {
+        "id": "ORDER-IDENTIFIERS-ARE-BOUNDED-EXACT-TEXT",
+        "status": "PASS"
+      },
+      {
+        "id": "ORDER-INPUT-AND-ERRORS-DO-NOT-CALL-USER-HOOKS",
+        "status": "PASS"
+      }
+    ],
+    "passed": 18,
+    "failed": 0,
+    "paymentVerification": "NOT_PERFORMED",
+    "deliveryOrCompensation": "NOT_ESTABLISHED",
+    "durableStoreIntegration": "NOT_ESTABLISHED",
+    "nativeExecutions": 0
+  },
+  "actualNodeCommands": 1,
+  "NodeExitCode": 0,
+  "taskState": "CLOSED",
+  "taskOutcome": "SUCCESS",
+  "runtimeBinarySha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25",
+  "evidenceSha256": "9df6f644ed80948ca93e56b569978cec5eeca78b940e46aec1b5db5230c750c2",
+  "preparationHistory": {
+    "priorRefusalBeforeTask": true,
+    "priorActualNodeCommands": 0,
+    "nativeApplicationRerun": false
+  },
+  "nativeApplicationTrials": 0,
+  "SDK": 0,
+  "SQLite": 0,
+  "keys": 0,
+  "signatures": 0,
+  "sockets": 0,
+  "nonceSearches": 0,
+  "installedPackageExecution": 0,
+  "workflowChanged": false,
+  "durableCustodyAndDeliveryCompensationIntegration": "OPEN"
+}
