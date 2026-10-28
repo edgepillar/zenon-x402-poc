@@ -1,0 +1,300 @@
+{
+  "qualification": "PURCHASE_ORDER_GRANT_FREE_FULFILLMENT_DATA",
+  "status": "PASS",
+  "recordedAtUTC": "2026-10-28T17:25:00.540915+00:00",
+  "nodeVersion": "24.19.0",
+  "platform": "darwin-arm64",
+  "nodeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25",
+  "sourcePins": [
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "qualification/service-purchase-order-fulfillment.behavior.mjs",
+      "bytes": 24310,
+      "sha256": "7c97e9e826227259fda8f28913aa37cb628c3b83497f93f301ff605537554c58",
+      "gitBlob": "fe9a424a48f0b94ed192670c3f5e29a3b8c4181a"
+    },
+    {
+      "path": "qualification/service-purchase-order-fulfillment.fixture.mjs",
+      "bytes": 6185,
+      "sha256": "4859c661a8c943fc640f423854fb455a991bbb06f64771af1367e6746e82ca7d",
+      "gitBlob": "29d48bf4d6e1095e646c318b6aa69a50ce3c82a1"
+    },
+    {
+      "path": "src/canonical.js",
+      "bytes": 967,
+      "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+      "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4"
+    },
+    {
+      "path": "src/service-credit-activation.js",
+      "bytes": 24719,
+      "sha256": "9e1a2ce00b2950b290ebd0797d3a770f51ad252288c630ada5ebcd6cef54233a",
+      "gitBlob": "155be6ee91599e10043c0293de23d669e663b512"
+    },
+    {
+      "path": "src/service-credit-model.js",
+      "bytes": 55461,
+      "sha256": "7ff7e3d88ab8c3b38a0073541533fbdb7a0d9f2be42f337ac35f6a3b05615c3a",
+      "gitBlob": "e6ac17254874584d1a01f70e7abc6f771bd35d73"
+    },
+    {
+      "path": "src/service-credit-original-request-custody-contract.js",
+      "bytes": 15100,
+      "sha256": "483d20e90d78ba95a8c5d5458dd201910e8d42aecbdc0dc03812e7044a464054",
+      "gitBlob": "94d67559a11f87f283a5cd99d2aaf8074374eb0a"
+    },
+    {
+      "path": "src/service-credit-pilot-original-payment-checkpoint.js",
+      "bytes": 4003,
+      "sha256": "930905f31824a6cadc16dfb84572cd4dc38a81e2fce4569b73b6bef29dec97d1",
+      "gitBlob": "51c6391bc22f561ebff0005ced31e538aa83f4fa"
+    },
+    {
+      "path": "src/service-credit-purchased-original-recovery.js",
+      "bytes": 10704,
+      "sha256": "06ecfb702a2d9e78fab9544765fafbea0da74c12b2a54f95bcd16309cb13aa1d",
+      "gitBlob": "44346a21f4c6d63b72d3b29294d826d9ac5a604c"
+    },
+    {
+      "path": "src/service-credit-zenon-funding-evidence.js",
+      "bytes": 52430,
+      "sha256": "adde739cf8f927ce411bd10b45020febcd41cd76073eebdcd3560bf1635df754",
+      "gitBlob": "03f57859481f65f302d1f2c45e847b47730a37b2"
+    },
+    {
+      "path": "src/service-purchase-fulfillment.js",
+      "bytes": 19520,
+      "sha256": "076ce6db7f853639cef0781655858503724a94ab1fb650804a82d98e92f24fcb",
+      "gitBlob": "1802cf29f87bf42a87e91adac52d7ac2bd13685c"
+    },
+    {
+      "path": "src/service-purchase-order-fulfillment.js",
+      "bytes": 19938,
+      "sha256": "6e4d4d13219f798670cae46e8de0e4278f98398047c962aa417e5d8698fb9543",
+      "gitBlob": "60b90480592b374023af785fcf69654156829e6a"
+    },
+    {
+      "path": "src/service-purchase-order-funding-cas-contract.js",
+      "bytes": 13764,
+      "sha256": "2511fe65a8a2cf4432a0871c2fca46c5553d84cc41a9286350b6f0260d095e79",
+      "gitBlob": "53bb536472d9522a84e1dd7193aedec8e7780191"
+    },
+    {
+      "path": "src/service-purchase-order-funding.js",
+      "bytes": 14449,
+      "sha256": "4e8e04e679d32395d9f1696b16d0c2c853d8e3a93e4aef0e1bb53bb87e91765a",
+      "gitBlob": "f953df048a147ebd4a0c5631a078747d5bc3689a"
+    },
+    {
+      "path": "src/service-purchase-storage-contract.js",
+      "bytes": 5158,
+      "sha256": "213f34a964acea11693f07f51fe99cc1eca1460ac5c98b2dd96cc0100a0159e6",
+      "gitBlob": "38d2cdbba760dcd7cdcbfb9fb66f83cbabc0e8ce"
+    },
+    {
+      "path": "src/service-purchase-terms.js",
+      "bytes": 3270,
+      "sha256": "9d3308103b5d573ef6f93f909b15e744f9e752911e602f3c32e882f18ebd6141",
+      "gitBlob": "1dd81d8b5a54fe7cd1bd68eab540c993981b22c0"
+    },
+    {
+      "path": "src/x402-wire.js",
+      "bytes": 39886,
+      "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+      "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+    }
+  ],
+  "passed": 35,
+  "failed": 0,
+  "cases": [
+    {
+      "id": "recovery-is-explicit-before-any-liability-transition",
+      "status": "PASS"
+    },
+    {
+      "id": "unverified-expired-order-cannot-become-a-delivery-or-compensation-claim",
+      "status": "PASS"
+    },
+    {
+      "id": "actual-verified-funding-receipt-creates-full-liability-without-a-grant",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-free-full-compensation-retains-one-original-and-never-sends-it",
+      "status": "PASS"
+    },
+    {
+      "id": "pending-funding-receipt-is-never-treated-as-verified",
+      "status": "PASS"
+    },
+    {
+      "id": "funding-copy-replay-does-not-reauthenticate-or-write",
+      "status": "PASS"
+    },
+    {
+      "id": "source-epoch-handoff-preserves-receipt-and-allows-readonly-liability-recovery",
+      "status": "PASS"
+    },
+    {
+      "id": "missing-funding-source-on-recovery-holds-the-existing-liability",
+      "status": "PASS"
+    },
+    {
+      "id": "wrong-source-store-is-held-before-a-funding-copy",
+      "status": "PASS"
+    },
+    {
+      "id": "two-retained-original-requests-track-partial-service-quantity-on-one-payment",
+      "status": "PASS"
+    },
+    {
+      "id": "unretained-service-original-cannot-become-a-delivery-reservation",
+      "status": "PASS"
+    },
+    {
+      "id": "another-grant-and-out-of-profile-resource-cannot-rebind-delivery",
+      "status": "PASS"
+    },
+    {
+      "id": "purchased-service-quantity-caps-reservations-independently-of-funding-units",
+      "status": "PASS"
+    },
+    {
+      "id": "unknown-delivery-blocks-compensation-without-erasing-owed-quantity",
+      "status": "PASS"
+    },
+    {
+      "id": "not-performed-releases-quantity-but-keeps-the-original-request-tombstone",
+      "status": "PASS"
+    },
+    {
+      "id": "terminal-delivery-proof-is-immutable-and-exact-replay-does-not-write",
+      "status": "PASS"
+    },
+    {
+      "id": "delivery-proof-for-another-original-or-quantity-is-rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "partial-compensation-rounds-up-with-exact-bigint-arithmetic",
+      "status": "PASS"
+    },
+    {
+      "id": "large-atomic-price-does-not-round-through-number",
+      "status": "PASS"
+    },
+    {
+      "id": "funding-amount-above-the-existing-2-to-255-limit-is-refused",
+      "status": "PASS"
+    },
+    {
+      "id": "funding-amount-beyond-the-existing-77-digit-profile-is-refused",
+      "status": "PASS"
+    },
+    {
+      "id": "foreign-compensation-binding-or-price-is-refused-before-retention",
+      "status": "PASS"
+    },
+    {
+      "id": "retained-compensation-is-not-replaced-after-an-unknown-outcome",
+      "status": "PASS"
+    },
+    {
+      "id": "confirmed-compensation-replay-is-idempotent-and-proof-binding-is-exact",
+      "status": "PASS"
+    },
+    {
+      "id": "lost-funding-copy-acknowledgement-is-held-and-new-session-recovers-exact-record",
+      "status": "PASS"
+    },
+    {
+      "id": "lost-delivery-acknowledgement-does-not-deliver-twice-on-recovery",
+      "status": "PASS"
+    },
+    {
+      "id": "lost-compensation-acknowledgement-preserves-confirmed-original-without-another-payout",
+      "status": "PASS"
+    },
+    {
+      "id": "boolean-cas-acknowledgement-never-certifies-an-accepted-commit",
+      "status": "PASS"
+    },
+    {
+      "id": "fenced-old-session-cannot-overwrite-a-new-session-delivery",
+      "status": "PASS"
+    },
+    {
+      "id": "reentrant-close-after-cas-does-not-return-a-success-view",
+      "status": "PASS"
+    },
+    {
+      "id": "reentrant-close-after-proof-cannot-commit-delivery",
+      "status": "PASS"
+    },
+    {
+      "id": "missing-retained-original-on-recovery-holds-without-erasing-state",
+      "status": "PASS"
+    },
+    {
+      "id": "corrupt-state-is-not-repaired-or-canonicalized-during-recovery",
+      "status": "PASS"
+    },
+    {
+      "id": "stable-read-and-export-reuse-validated-state-without-whole-history-reparse",
+      "status": "PASS"
+    },
+    {
+      "id": "public-views-omit-private-original-bytes-and-close-never-closes-borrowed-stores",
+      "status": "PASS"
+    }
+  ],
+  "actualDataNodeCommands": 1,
+  "actualSyntaxNodeCommands": 0,
+  "task": "CLOSED/SUCCESS",
+  "rawQualificationSha256": "78829bc1a88b1dcafc6a96c9a329e19c4ae5db270e0dfe55f5770dfc80f7e5b8",
+  "actualOrderFundingReceiptTransitionsAndOriginalCodecs": true,
+  "priorFixtureFailures": [
+    {
+      "passed": 32,
+      "failed": 1,
+      "rawQualificationSha256": "75f95b5a4ad48d55414458919eebd0d49b835a25fae6f38700a271fbf07a0c19",
+      "reason": "An initial fixture exceeded the 77-digit funding field limit."
+    },
+    {
+      "passed": 33,
+      "failed": 1,
+      "rawQualificationSha256": "930982f6c7b19dafdf70c2a9622d1b869f9b9ac18f4400072a5c9f4fae2a2177",
+      "reason": "The next fixture respected the field length but exceeded the existing 2^255-1 wire amount limit. Both failed records and sources are preserved separately."
+    }
+  ],
+  "selectedStoresAndAuthentication": "SYNTHETIC_DATA",
+  "sessionOwnershipFencing": "SYNTHETIC_DATA",
+  "nativeExecutions": 0,
+  "SDK": 0,
+  "SQLite": 0,
+  "keys": 0,
+  "signatures": 0,
+  "sockets": 0,
+  "nonceSearches": 0,
+  "nodeChildren": 0,
+  "grants": 0,
+  "serviceExecutions": 0,
+  "payouts": 0,
+  "sourceTransforms": false,
+  "independentAPFSClones": true,
+  "sourceTextArchiveCopies": 0,
+  "CASVerifiedReuse": 16,
+  "CASNewImports": 1,
+  "nativeDurability": "NOT_ESTABLISHED",
+  "fullP1P2Acceptance": "OPEN",
+  "physicalResourceRelease": "NOT_QUALIFIED",
+  "production": "NOT_ACCEPTED",
+  "existing108CISelectionIsSeparate": true,
+  "defaultApplicationWiringChanged": false,
+  "nativeExecutionDeclinedByUser": true
+}
