@@ -1,0 +1,370 @@
+{
+  "qualification": "G1_API_CREDIT_COMMAND_DATA",
+  "status": "PASS",
+  "recordedAtUTC": "2026-10-28T20:15:30.502886+00:00",
+  "nodeVersion": "24.19.0",
+  "platform": "darwin-arm64",
+  "nodeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25",
+  "passed": 17,
+  "failed": 0,
+  "cases": [
+    {
+      "id": "legacy-default-16-and-maximum-64-are-preserved",
+      "status": "PASS"
+    },
+    {
+      "id": "explicit-api-profile-has-128-commands-with-the-same-byte-and-close-limits",
+      "status": "PASS"
+    },
+    {
+      "id": "api-limit-capture-does-not-enter-accessors-or-proxies",
+      "status": "PASS"
+    },
+    {
+      "id": "funding-and-both-recovery-factories-refuse-api-limits-before-child-capture",
+      "status": "PASS"
+    },
+    {
+      "id": "legacy-channel-refuses-api-limits-without-reserving-the-streams",
+      "status": "PASS"
+    },
+    {
+      "id": "invalid-api-opening-budget-refuses-before-the-client-opener",
+      "status": "PASS"
+    },
+    {
+      "id": "api-opening-reserves-the-same-streams-before-the-fixed-client-opener",
+      "status": "PASS"
+    },
+    {
+      "id": "one-funding-one-grant-and-100-distinct-requests-plus-exact-replay-cross-the-64-command-boundary",
+      "status": "PASS"
+    },
+    {
+      "id": "model-state-rehydration-preserves-100-debits-and-refuses-another-execution-for-the-exact-request",
+      "status": "PASS"
+    },
+    {
+      "id": "unknown-funding-stops-before-handoff-and-retains-the-spending-reservation",
+      "status": "PASS"
+    },
+    {
+      "id": "foreign-grant-refuses-without-service-debit-or-execution",
+      "status": "PASS"
+    },
+    {
+      "id": "changed-body-under-the-same-request-id-cannot-produce-a-second-debit",
+      "status": "PASS"
+    },
+    {
+      "id": "maximum-128-commands-including-close-remains-bounded-at-the-session-and-host",
+      "status": "PASS"
+    },
+    {
+      "id": "command-129-is-refused-before-admission-and-retains-the-last-returned-result",
+      "status": "PASS"
+    },
+    {
+      "id": "legacy-owned-opening-still-uses-the-original-mode-and-16-command-default",
+      "status": "PASS"
+    },
+    {
+      "id": "duplicate-command-id-does-not-reenter-preparation",
+      "status": "PASS"
+    },
+    {
+      "id": "output-loss-retains-the-original-without-committing-or-submitting-funding",
+      "status": "PASS"
+    }
+  ],
+  "distinctServiceRequests": 100,
+  "modelDebits": 100,
+  "modelExecutions": 100,
+  "modelReplays": 1,
+  "modelGrants": 1,
+  "declaredFundingSubmissions": 1,
+  "actualDataNodeCommands": 1,
+  "task": "CLOSED/SUCCESS",
+  "rawQualificationSha256": "20b754616547e3f2202cf0cd9dfb4c18f8a11451a87e7f30723cc18c63bcaddd",
+  "sourcePins": [
+    {
+      "path": "docs/API_CREDIT_COMMAND_ENTRY.md",
+      "bytes": 4025,
+      "sha256": "d39c743df958e717f6f0c9abdaede6dc6e4a8f1f17a69aa83aba59203ddc4727",
+      "gitBlob": "02c80e7929faa91ba3a2362963e2be1a70d97cfc"
+    },
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "qualification/api-credit-command.behavior.mjs",
+      "bytes": 20109,
+      "sha256": "e9bb7254d7a7fd6540af92780c2595ec6d29c55f05891e8eb33b72b7c0fe403f",
+      "gitBlob": "6dd77a371a051983a26dbcdbc15361bf8402be96"
+    },
+    {
+      "path": "qualification/dynamic-plasma-funding-post-input.fixture.mjs",
+      "bytes": 3939,
+      "sha256": "22d291367a3e9b8e8bf56f2a40acacfa2ea40b6050f2aee41da06bba9aa699a2",
+      "gitBlob": "46f914fbce51b6790aa08836567ba12f9e6be6f6"
+    },
+    {
+      "path": "qualification/dynamic-plasma-retained-input.fixture.mjs",
+      "bytes": 1749,
+      "sha256": "38f46d337f2c6a0584e779d26c75a5a5bccc56a42a2c6bbd1e06add4730c10de",
+      "gitBlob": "5bb61e6a3161e4d0d50e97544a86308574e48d24"
+    },
+    {
+      "path": "src/buyer-command-line-channel.js",
+      "bytes": 11874,
+      "sha256": "ccbb7bb59d57d7e39186ab8ebf5431b519295591e5a9de81e98865c4fd8b7e1c",
+      "gitBlob": "62482e88a8aa1e9ee545849d95717a5cafb4393c"
+    },
+    {
+      "path": "src/buyer-funding-owned-stream-session.js",
+      "bytes": 12690,
+      "sha256": "a6b76c8a0ef210934c5b55ca4f44cdbe2f4504f63057b2ff27da065bc6500d75",
+      "gitBlob": "f6d32aa61fe5f641817acd24f8d2ac75b9cde6c1"
+    },
+    {
+      "path": "src/buyer-original-command-host.js",
+      "bytes": 8998,
+      "sha256": "57b6b85f9de7c122e8d200ef3544096e9032f9228359a0c6ec500382f4f7e182",
+      "gitBlob": "036032ce47d612e02b5b63eea76873f3f24e1b4d"
+    },
+    {
+      "path": "src/buyer-original-funding-command-session.js",
+      "bytes": 15391,
+      "sha256": "35f87b553503c7b14b3b66a8b893a48c4cce57579514ea782afc3e2bd2f9bba1",
+      "gitBlob": "31f657ef36e376b148dae10ee15289a172bfb920"
+    },
+    {
+      "path": "src/buyer-original-funding-command.js",
+      "bytes": 14587,
+      "sha256": "581a040b732e4bc4e6ff370459d65e14dd6f357d7a3c9644bf91222df1c9b380",
+      "gitBlob": "6004c9b7f6c48424b575563880a5228b50ab4fc2"
+    },
+    {
+      "path": "src/canonical.js",
+      "bytes": 967,
+      "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+      "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4"
+    },
+    {
+      "path": "src/original-funding-spending-reservations.js",
+      "bytes": 12605,
+      "sha256": "8f968718044f02bedc78ae69fc4bfc003ce5ead9202144d1388cb93be42973b0",
+      "gitBlob": "b9c29dc684c1bb2bd9abf02932cfbe2de2c60d8e"
+    },
+    {
+      "path": "src/service-credit-bounded-close-completion.js",
+      "bytes": 6020,
+      "sha256": "1d59ec72cf9b8877947ba766316746be1e2ca5b82029c9b656757c2953ff7e5e",
+      "gitBlob": "9ccc197dd1090f14bb4c452389be8aa8180d0322"
+    },
+    {
+      "path": "src/service-credit-bounded-operation-drain.js",
+      "bytes": 5474,
+      "sha256": "4ea81e010451f91bb8f0ca668dd6bd3966763ea23385bdd0d511c200e4b3eecd",
+      "gitBlob": "843f9b0a3adb411471f7e345b97362e9035e094b"
+    },
+    {
+      "path": "src/service-credit-model.js",
+      "bytes": 55461,
+      "sha256": "7ff7e3d88ab8c3b38a0073541533fbdb7a0d9f2be42f337ac35f6a3b05615c3a",
+      "gitBlob": "e6ac17254874584d1a01f70e7abc6f771bd35d73"
+    },
+    {
+      "path": "src/service-credit-original-request-custody-contract.js",
+      "bytes": 15100,
+      "sha256": "483d20e90d78ba95a8c5d5458dd201910e8d42aecbdc0dc03812e7044a464054",
+      "gitBlob": "94d67559a11f87f283a5cd99d2aaf8074374eb0a"
+    },
+    {
+      "path": "src/service-credit-pilot-original-payment-checkpoint.js",
+      "bytes": 4003,
+      "sha256": "930905f31824a6cadc16dfb84572cd4dc38a81e2fce4569b73b6bef29dec97d1",
+      "gitBlob": "51c6391bc22f561ebff0005ced31e538aa83f4fa"
+    },
+    {
+      "path": "src/x402-funding-post-checkpoint-route.js",
+      "bytes": 1310,
+      "sha256": "157e80e9f14b41c8cacc05423a7acd8616a6f759adac377f04f1fca21869831e",
+      "gitBlob": "777ff48ac9cf255f80cda7e22c68706b7d7084b3"
+    },
+    {
+      "path": "src/x402-official-https-request-binding.js",
+      "bytes": 5085,
+      "sha256": "dabf215408887bd0d2ba346085c5ab2df13f724e8759b7a98b71b09c8dc8d692",
+      "gitBlob": "47059c772407233b8b6f54632ba065893ff92dd3"
+    },
+    {
+      "path": "src/x402-original-payment-checkpoint-client.js",
+      "bytes": 13457,
+      "sha256": "bba2439e40a2decb75b330440919d8d1ea1fea53f6e684f77b57a9bb66129af1",
+      "gitBlob": "bd732c2c739e6dbe1d4ed583b6b55040bf8aecfd"
+    },
+    {
+      "path": "src/x402-wire.js",
+      "bytes": 39886,
+      "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+      "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+    },
+    {
+      "path": "src/zenon/bounded-dynamic-plasma-strategy.js",
+      "bytes": 15729,
+      "sha256": "7b82560bdeb25e573912090a2fe8de7b45912500a7a7c4434fe06dcf94e06d62",
+      "gitBlob": "ee85b7a4da8bf4190ae099e6bc5074059fccebbc"
+    },
+    {
+      "path": "src/zenon/bounded-json-rpc-read-core.js",
+      "bytes": 22116,
+      "sha256": "1d8873868274045825717ee70b9a402d91cd6235fdaf410d93ddb365fc2d7ca3",
+      "gitBlob": "82d49d18a92c1074819e8976d94a2cfef3975466"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-compatibility.js",
+      "bytes": 7732,
+      "sha256": "b3989ce15e5f2e9d07b0ed035fe96bcce9f22cac93f5e497fdca5c37bf7618dd",
+      "gitBlob": "3811b748b3f905e454c8a4af4650bb7f89eb1cf2"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-funding-post-preparation-input.js",
+      "bytes": 2029,
+      "sha256": "d45623eca3536309de46df816cafb05db14ec25a13a7b2e9a52625591d5a9972",
+      "gitBlob": "466b63e4f1c46731095163b7e922c136df0b5031"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-json-rpc-read-transport.js",
+      "bytes": 10832,
+      "sha256": "fd03b2ad87d16660aa61d3961c163d724d5f89cd6d4bb9c4391d739566d5e5ca",
+      "gitBlob": "0475b7ab42889f67fb030fa7344d73d8bd6957d7"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-observation-normalizer.js",
+      "bytes": 28398,
+      "sha256": "2c3f7d42ded21a5513ff26c23a00a35a53aa334f053d10930f1571a020286897",
+      "gitBlob": "c406db8471aa6c8afd812c222c673c809491cf00"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-original-funding-data.js",
+      "bytes": 16557,
+      "sha256": "8a416a548e827dc71bc6f87e675e265d01c20d6e8147de8617d47b8b8b8b0770",
+      "gitBlob": "8d8e44fba2bd093ec0d0c909530a570b7eb104ce"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-original-funding-service-handoff-request.js",
+      "bytes": 4584,
+      "sha256": "07affc3e40d785406fea54794ee694c03e31ab49fc8857369cdf52e33a331cab",
+      "gitBlob": "0382f9f6235a4fbc6f5935d3db77b29efaf1a345"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-price-policy.js",
+      "bytes": 16224,
+      "sha256": "eba3225c4d26cbb6e0be575ac4fd5073bc8b0c4454eb51e2bea4d91856d0c65e",
+      "gitBlob": "649dd09b60236b43c91d22e34b76f71f4b661361"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-required-fused-policy-adapter.js",
+      "bytes": 12024,
+      "sha256": "e2b693d4df9065d44ba590f4d0c8dffeb8e55187668eedfa396b4026c9905c3e",
+      "gitBlob": "b592aafd4c41461318376ea9acc1373f99317455"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-required-fused-quote.js",
+      "bytes": 5416,
+      "sha256": "f5e10ff2dbfff3b6b63d87f0abadd0bb52b5d6b8fe0ead6a55fc5ea14207b730",
+      "gitBlob": "e820fd31ffde4ef77a2efa6e1fd3ed1775778726"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-user-send-fixed-work.js",
+      "bytes": 3475,
+      "sha256": "4ee83870df0b25c34d35c0f0d0ceb894ca9dab8c047f81b34a48dd816f1fbf38",
+      "gitBlob": "4ce2a790df84c77bc76615e5eebc309ecd2868ac"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-user-send-key-binding.js",
+      "bytes": 4237,
+      "sha256": "37ad7e74b038801297e4bffb0cb8ba92cbd79009ed32c4ae5b134fe2cb154be2",
+      "gitBlob": "c366f0fee4132604b40604547fe22f1bc1dba65d"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-user-send-work-binding.js",
+      "bytes": 1940,
+      "sha256": "79eba29a05427128ae3a12346fd3ee7cbaa526d6f39eb36ed58d388640638266",
+      "gitBlob": "a329d521458a5c5b6dbc87194d91d4165d5e759c"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-user-send-work-input.js",
+      "bytes": 2853,
+      "sha256": "2ff9c089e5903c059746d0a1c38688a2849f94d04d429279811fbbfbb40450a4",
+      "gitBlob": "dad4febf4ef6f09216640245c7e3805e01ad0127"
+    },
+    {
+      "path": "src/zenon/plasma-strategy.js",
+      "bytes": 974,
+      "sha256": "1c597d4e169ba8a5e6d2b7852c4ffa3a8ec9b854332fe354b9b013c36ebae093",
+      "gitBlob": "5cddc2d270aaf043e6e43145e95ffe0be3dde475"
+    },
+    {
+      "path": "src/zenon/sdk105-funding-service-lifecycle.js",
+      "bytes": 16350,
+      "sha256": "bcc7ff9dd2c3cb4b18651b3a15381288077cea6ba7a5eed4b2df5a36efea4e53",
+      "gitBlob": "1f81fec23852c0fd25d66af86d9a9e4338437b41"
+    },
+    {
+      "path": "src/zenon/sdk105-spending-bounded-client.js",
+      "bytes": 8023,
+      "sha256": "52a109c8aca9d3931b140fc778f6e7018e9fce52c33fdf0f69c2f4e605df63c9",
+      "gitBlob": "291ca4953491b88ba62f37f6aab605ad7e91a219"
+    },
+    {
+      "path": "src/zenon/transaction-planner.js",
+      "bytes": 22611,
+      "sha256": "079fe8da938e08e33a20ca1076492a829afa6fce3ae7f9b9f68d3bf4bff94233",
+      "gitBlob": "17b49a3d53974c9b3846ec6f352d6e8974bad7d3"
+    }
+  ],
+  "retainedPriorAttempt": {
+    "rawQualificationSha256": "cb087d3a3da2c0b3f1412fded19529deed7b7263c2e952d030bd7f28863332f3",
+    "status": "FAILURE",
+    "passed": 13,
+    "failed": 4,
+    "classification": "HARNESS_CLOSE_STATUS_EXPECTATION_MISMATCH",
+    "cases": [
+      "unknown-funding-stops-before-handoff-and-retains-the-spending-reservation",
+      "foreign-grant-refuses-without-service-debit-or-execution",
+      "changed-body-under-the-same-request-id-cannot-produce-a-second-debit",
+      "output-loss-retains-the-original-without-committing-or-submitting-funding"
+    ],
+    "runtimeBehaviorChangedForCorrection": false,
+    "sourceAndActualOutputRetained": true
+  },
+  "nativeExecutions": 0,
+  "SDK": 0,
+  "SQLite": 0,
+  "keys": 0,
+  "signatures": 0,
+  "sockets": 0,
+  "nonceSearches": 0,
+  "nodeChildren": 0,
+  "actualPrepare": 0,
+  "payouts": 0,
+  "grantAuthority": "DECLARED_MOCK_RECORD",
+  "modelBackend": "IN_MEMORY",
+  "spendingBackend": "DECLARED_MEMORY_CAS",
+  "nativeHundredCallAcceptance": "NOT_ESTABLISHED",
+  "nativeDurability": "NOT_ESTABLISHED",
+  "supportedProductLaunchCommand": "NOT_ESTABLISHED",
+  "productAcceptance": "NOT_ESTABLISHED",
+  "current108CISeparate": true,
+  "new17DataCasesIncludedIn108CI": false,
+  "sourceTransforms": false,
+  "sourceTextArchiveCopies": 0,
+  "independentAPFSClones": true,
+  "CASVerifiedReuse": 38,
+  "CASNewImports": 1
+}

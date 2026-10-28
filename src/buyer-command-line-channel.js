@@ -2,7 +2,7 @@ import { Buffer } from 'node:buffer';
 import { Readable, Writable } from 'node:stream';
 import { EventEmitter } from 'node:events';
 import { TextDecoder, types as utilTypes } from 'node:util';
-import { captureBuyerOriginalFundingCommandLimits } from './buyer-original-funding-command.js';
+import { captureBuyerOriginalFundingCommandLimits, captureBuyerApiCreditCommandLimits } from './buyer-original-funding-command.js';
 
 const F = Object.freeze, APPLY = Reflect.apply, DESC = Object.getOwnPropertyDescriptor;
 const PROXY = utilTypes.isProxy, OWN = Object.hasOwn;
@@ -17,8 +17,17 @@ const RESERVED = new WeakSet(), FAILED_CONSTRUCTIONS = new Set();
 /** Validate before native acquisition; streams remain caller-owned here. */
 export function captureBuyerCommandLineChannelConfiguration(configuration) {
   if (arguments.length !== 1) fail('configuration_rejected');
+  return captureConfiguration(configuration, false);
+}
+
+export function captureBuyerApiCreditCommandLineChannelConfiguration(configuration) {
+  if (arguments.length !== 1) fail('configuration_rejected');
+  return captureConfiguration(configuration, true);
+}
+
+function captureConfiguration(configuration, apiCredit) {
   const c = fields(configuration, ['input', 'output', 'limits']);
-  const limits = captureBuyerOriginalFundingCommandLimits(c.limits);
+  const limits = (apiCredit ? captureBuyerApiCreditCommandLimits : captureBuyerOriginalFundingCommandLimits)(c.limits);
   const input = c.input, output = c.output;
   if (FAILED_CONSTRUCTIONS.size >= 16 || PROXY(input) || PROXY(output)
       || !(input instanceof Readable) || !(output instanceof Writable)
@@ -42,7 +51,16 @@ export function captureBuyerCommandLineChannelConfiguration(configuration) {
  */
 export function createBuyerCommandLineChannel(configuration) {
   if (arguments.length !== 1) fail('configuration_rejected');
-  const { input, output, limits } = captureBuyerCommandLineChannelConfiguration(configuration);
+  return createChannel(configuration, false);
+}
+
+export function createBuyerApiCreditCommandLineChannel(configuration) {
+  if (arguments.length !== 1) fail('configuration_rejected');
+  return createChannel(configuration, true);
+}
+
+function createChannel(configuration, apiCredit) {
+  const { input, output, limits } = captureConfiguration(configuration, apiCredit);
   const bytes = Buffer.alloc(limits.maxInputBytes), decoder = new TextDecoder('utf8', { fatal: true, ignoreBOM: true });
   let start = 0, end = 0, inputBytes = 0, outputBytes = 0, reads = 0, writes = 0;
   let reading = null, writing = null, writeCallbackPending = false;

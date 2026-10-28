@@ -1,7 +1,7 @@
 import { types as utilTypes } from 'node:util';
 import { createServiceCreditBoundedCloseCompletion } from './service-credit-bounded-close-completion.js';
 import {
-  captureBuyerOriginalFundingCommandLimits, decodeBuyerOriginalFundingCommand,
+  captureBuyerOriginalFundingCommandLimits, captureBuyerApiCreditCommandLimits, decodeBuyerOriginalFundingCommand,
   encodeBuyerOriginalFundingCommandResult,
   decodeBuyerOriginalRecoveryCommand, encodeBuyerOriginalRecoveryCommandResult,
   decodeBuyerOriginalBackendRecoveryCommand, encodeBuyerOriginalBackendRecoveryCommandResult,
@@ -27,6 +27,13 @@ export function createBuyerOriginalFundingCommandSession(configuration) {
   return createSession(configuration, false);
 }
 
+/** Separate opt-in command budget; the original operation/pin/result codecs
+ * and single-owner lifecycle are shared without widening recovery authority. */
+export function createBuyerApiCreditFundingCommandSession(configuration) {
+  if (arguments.length !== 1) fail('configuration_rejected');
+  return createSession(configuration, false, true);
+}
+
 /** Explicit recovery selection over the real retained-original owner; no
  * fake SDK105 facade or funding/preparation capability is manufactured. */
 export function createBuyerOriginalRecoveryCommandSession(configuration) {
@@ -39,10 +46,11 @@ export function createBuyerOriginalBackendRecoveryCommandSession(configuration) 
   return createSession(configuration, 'backend');
 }
 
-function createSession(configuration, recovery) {
+function createSession(configuration, recovery, apiCredit = false) {
   const withBackend = recovery === 'backend';
   const c = fields(configuration, ['client', 'channel', 'limits']);
-  const limits = captureBuyerOriginalFundingCommandLimits(c.limits), client = c.client, channel = c.channel;
+  const limits = (apiCredit ? captureBuyerApiCreditCommandLimits : captureBuyerOriginalFundingCommandLimits)(c.limits);
+  const client = c.client, channel = c.channel;
   const operations = {};
   const methods = withBackend ? BACKEND_METHODS : recovery ? RECOVERY_METHODS : METHODS;
   const DECODE = withBackend ? decodeBuyerOriginalBackendRecoveryCommand : recovery ? decodeBuyerOriginalRecoveryCommand : decodeBuyerOriginalFundingCommand;
@@ -134,7 +142,8 @@ function createSession(configuration, recovery) {
     const ownersClosed = closing !== null && executionDone ? currentClean() : false;
     if (lifecycle === 'CLOSED' && !ownersClosed) hold();
     return F({ buyerOriginalFundingCommandSessionVersion: 1, lifecycle, held,
-      mode: withBackend ? 'RECOVER_EXISTING_ORIGINAL_WITH_BACKEND' : recovery ? 'RECOVER_EXISTING_ORIGINAL' : 'FUNDING_ORIGINAL',
+      mode: withBackend ? 'RECOVER_EXISTING_ORIGINAL_WITH_BACKEND' : recovery ? 'RECOVER_EXISTING_ORIGINAL'
+        : apiCredit ? 'FUNDING_API_CREDIT' : 'FUNDING_ORIGINAL',
       runRequested: running !== null, closeRequested: closing !== null, executionDone, activeKind,
       commands, admittedOperations, clientClose: clientLeg, channelClose: channelLeg, historicalClose,
       outputOutcomeUnknown: outputUnknown, fundingOutcomeUnknown: fundingUnknown,

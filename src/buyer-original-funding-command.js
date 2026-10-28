@@ -13,10 +13,22 @@ const DEFAULTS = F({ maxCommands: 16, maxLineBytes: 262144, maxInputBytes: 10485
 /** An explicit, bounded machine command protocol. No wallet/store acquisition. */
 export function captureBuyerOriginalFundingCommandLimits(input = {}) {
   if (arguments.length > 1) fail('limits_rejected');
+  return captureLimits(input, 16, 64);
+}
+
+/** Explicit API-credit selection: enough commands for funding, 100 distinct
+ * requests and exact replay. All byte and close budgets remain unchanged. */
+export function captureBuyerApiCreditCommandLimits(input = {}) {
+  if (arguments.length > 1) fail('limits_rejected');
+  return captureLimits(input, 128, 128);
+}
+
+function captureLimits(input, defaultCommands, maximumCommands) {
   const selected = fields(input, Object.keys(DEFAULTS), false), out = {};
   for (const name of Object.keys(DEFAULTS)) out[name] = OWN(selected, name) ? selected[name] : DEFAULTS[name];
+  if (!OWN(selected, 'maxCommands')) out.maxCommands = defaultCommands;
   for (const name of Object.keys(out)) if (!Number.isSafeInteger(out[name])) fail('limits_rejected');
-  if (out.maxCommands < 1 || out.maxCommands > 64 || out.closeWaitMs < 1 || out.closeWaitMs > 1000
+  if (out.maxCommands < 1 || out.maxCommands > maximumCommands || out.closeWaitMs < 1 || out.closeWaitMs > 1000
       || out.maxLineBytes < 256 || out.maxLineBytes > 262144
       || out.maxInputBytes < out.maxLineBytes || out.maxInputBytes > 2097152
       || out.maxOutputBytes < out.maxLineBytes || out.maxOutputBytes > 2097152) fail('limits_rejected');

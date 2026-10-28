@@ -1,8 +1,9 @@
 import { types as utilTypes } from 'node:util';
 import { hrtime } from 'node:process';
 import { setTimeout, clearTimeout } from 'node:timers';
-import { captureBuyerCommandLineChannelConfiguration, createBuyerCommandLineChannel } from './buyer-command-line-channel.js';
-import { createBuyerOriginalFundingCommandSession } from './buyer-original-funding-command-session.js';
+import { captureBuyerCommandLineChannelConfiguration, createBuyerCommandLineChannel,
+  captureBuyerApiCreditCommandLineChannelConfiguration, createBuyerApiCreditCommandLineChannel } from './buyer-command-line-channel.js';
+import { createBuyerOriginalFundingCommandSession, createBuyerApiCreditFundingCommandSession } from './buyer-original-funding-command-session.js';
 import { createServiceCreditBoundedCloseCompletion } from './service-credit-bounded-close-completion.js';
 
 const F = Object.freeze, APPLY = Reflect.apply, DESC = Object.getOwnPropertyDescriptor, OWN = Object.hasOwn;
@@ -18,13 +19,27 @@ const CLOCK = hrtime.bigint, START_TIMER = setTimeout, STOP_TIMER = clearTimeout
  * cannot cancel a native opening or clear an unreturned key. */
 export async function openBuyerFundingOwnedStreamSession(configuration) {
   if (arguments.length !== 1 || FAILED.size >= 16) fail();
+  return openSession(configuration, false);
+}
+
+/** Programmatic API-credit command entry. The trusted caller supplies the
+ * fresh fixed client binding; command JSON cannot select an opener or module. */
+export async function openBuyerApiCreditFundingOwnedStreamSession(configuration) {
+  if (arguments.length !== 1 || FAILED.size >= 16) fail();
+  return openSession(configuration, true);
+}
+
+async function openSession(configuration, apiCredit) {
   const withBudget = configuration !== null && typeof configuration === 'object' && !PROXY(configuration)
     && DESC(configuration, 'openWaitMs') !== undefined;
   const c = fields(configuration, ['input', 'output', 'limits', 'openClient', ...(withBudget ? ['openWaitMs'] : [])]);
   if (typeof c.openClient !== 'function' || PROXY(c.openClient) || !Object.isFrozen(c.openClient)) fail();
   const budgetMs = withBudget ? c.openWaitMs : 5000;
   if (!Number.isSafeInteger(budgetMs) || budgetMs < 1 || budgetMs > 60000 || Object.is(budgetMs, -0)) fail();
-  const selected = captureBuyerCommandLineChannelConfiguration({ input: c.input, output: c.output, limits: c.limits });
+  const capture = apiCredit ? captureBuyerApiCreditCommandLineChannelConfiguration : captureBuyerCommandLineChannelConfiguration;
+  const channel = apiCredit ? createBuyerApiCreditCommandLineChannel : createBuyerCommandLineChannel;
+  const session = apiCredit ? createBuyerApiCreditFundingCommandSession : createBuyerOriginalFundingCommandSession;
+  const selected = capture({ input: c.input, output: c.output, limits: c.limits });
   const frame = { streams: selected, channel: null, client: null, openReceipt: null, clientStop: null, channelStop: null,
     session: null, sessionStop: null, opening: null, lateClient: null, lateStop: null,
     lateStopRequested: false, lateStopObservation: 'NOT_REQUESTED', nativeEntered: false, cleanupObserved: false };
@@ -32,7 +47,7 @@ export async function openBuyerFundingOwnedStreamSession(configuration) {
     beginOpening(frame, budgetMs);
     // This constructor reserves both streams before any await/native entry.
     // A partial constructor failure retains its own quarantine; do not compete.
-    frame.channel = createBuyerCommandLineChannel(selected);
+    frame.channel = channel(selected);
     await native(openWithinBudget(frame, c.openClient));
     requireCurrentResources(frame);
     const io = frame.channel.inspect(), client = APPLY(method(frame.client, 'inspect'), frame.client, []);
@@ -42,7 +57,7 @@ export async function openBuyerFundingOwnedStreamSession(configuration) {
         || data(client, 'phase') !== 'FUNDING' || data(client, 'preparedOriginalRetained')
         || data(client, 'fundingBound') || data(client, 'handoffAttempts') !== 0 || data(client, 'closeRequested')) fail();
     requireCurrentResources(frame);
-    frame.session = createBuyerOriginalFundingCommandSession({ client: frame.client, channel: frame.channel, limits: selected.limits });
+    frame.session = session({ client: frame.client, channel: frame.channel, limits: selected.limits });
     requireCurrentResources(frame);
     frame.opening.outcome = 'TRANSFERRED'; stopTimer(frame);
     return frame.session;

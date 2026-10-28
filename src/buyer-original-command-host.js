@@ -4,7 +4,7 @@ const F = Object.freeze, APPLY = Reflect.apply, DESC = Object.getOwnPropertyDesc
 const OWN = Object.hasOwn, PROTO = Object.getPrototypeOf, PROXY = utilTypes.isProxy;
 const NativePromise = Promise, PROMISE = NativePromise.prototype, THEN = PROMISE.then;
 const HOSTS = new WeakMap(), GET = WeakMap.prototype.get, SET = WeakMap.prototype.set;
-const MODES = F(['FUNDING_ORIGINAL', 'RECOVER_EXISTING_ORIGINAL', 'RECOVER_EXISTING_ORIGINAL_WITH_BACKEND']);
+const MODES = F(['FUNDING_ORIGINAL', 'FUNDING_API_CREDIT', 'RECOVER_EXISTING_ORIGINAL', 'RECOVER_EXISTING_ORIGINAL_WITH_BACKEND']);
 
 /** Own one fresh actual command session. Cache its original run and close
  * observations, join its existing close budget, and return only bounded host
@@ -94,10 +94,11 @@ function snapshot(value) {
     'fundingOutcomeUnknown', 'recoveryOutcomeUnknown', 'retainedResult', 'retainedWriteCallbackCompleted', 'currentOwnersClosed'];
   const out = {};
   for (const name of names) Object.defineProperty(out, name, { value: data(value, name), enumerable: true });
+  const maximumCommands = out.mode === 'FUNDING_API_CREDIT' ? 128 : 64;
   if (!MODES.includes(out.mode) || !['OPEN', 'CLOSING', 'CLOSED', 'HELD'].includes(out.lifecycle)
       || ![null, 'READ', 'EXECUTE', 'INSPECT', 'WRITE'].includes(out.activeKind)
-      || !Number.isSafeInteger(out.admittedOperations) || out.admittedOperations < 0 || out.admittedOperations > 64
-      || !Number.isSafeInteger(out.commands) || out.commands < 0 || out.commands > 64
+      || !Number.isSafeInteger(out.admittedOperations) || out.admittedOperations < 0 || out.admittedOperations > maximumCommands
+      || !Number.isSafeInteger(out.commands) || out.commands < 0 || out.commands > maximumCommands
       || !['NOT_REQUESTED', 'FULFILLED_UNDEFINED', 'REJECTED'].includes(out.historicalClose)) fail();
   for (const leg of ['clientClose', 'channelClose']) if (!['NOT_REQUESTED', 'PENDING', 'CLOSED', 'UNKNOWN'].includes(out[leg])) fail();
   for (const flag of ['held', 'runRequested', 'closeRequested', 'executionDone', 'outputOutcomeUnknown',
