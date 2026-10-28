@@ -1,0 +1,81 @@
+{
+  "qualification": "SDK105_ISSUED_COMMAND_APPLICATION_NODE24_V6_FUNDING_RESPONSE_LOSS",
+  "status": "FAILURE",
+  "selectedNativeCasePassed": false,
+  "oneAuthorizedTrialConsumed": true,
+  "automaticRetry": false,
+  "privateEvidenceSha256": "55b79c4cfccc6ce8282e423f31ea65383cbc780b06ff53a144f8d1c431f0b38e",
+  "authorityRecordSha256": "8180b24ee880764d9af2cb9b99807b636ff3fc8fb28759a49b4732273c13a1c1",
+  "planSha256": "b862527d1e0c66d428d78ba1a96ac181486663a4fa0eaa9e63a2c713ae714222",
+  "profileSha256": "8a3ce61c00a6d73412b3d680ceb5c24f9df7dcd6bdc6e8f65478ff02109a8abc",
+  "source": {
+    "controller": "qualification/run-sdk105-issued-command-application-v6.local.py",
+    "controllerSha256": "9e37274d345b63852a2aec6ac9d1163b2e9db97c39dd4060db869b0ba3b4859c",
+    "applicationManifest": "qualification/sdk105-issued-command-application-v6.inputs.json",
+    "applicationManifestSha256": "77b17c96dccf571fbab6d41eda78e3fff1f2756e7e226404ac0f094330a57789",
+    "sourceRowsSha256": "9cbc474bb92549d93825b62e751fcdc0236f02a2d110070fe862668919df1b94",
+    "applicationFiles": 135,
+    "packageFiles": 404,
+    "sourceRevision": "dbb31c8c32107f6829a2bfbe609d422dcf74a61d",
+    "applicationSourceTransforms": 0
+  },
+  "runtime": {
+    "nodeVersion": "24.19.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "sha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25"
+  },
+  "observedFailure": {
+    "kind": "CLOSE_COMMAND_COUNT_MISMATCH",
+    "sourcePath": "qualification/sdk105-issued-command-application-v6.case.mjs",
+    "line": 365,
+    "expectedCommands": 4,
+    "actualCommands": 3,
+    "completeCaseResultEmitted": false
+  },
+  "commands": {
+    "testTls": {
+      "actualExit": 0,
+      "outputComplete": true
+    },
+    "nativeNode": {
+      "actualExit": 1,
+      "outputComplete": true,
+      "stdout": {
+        "sha256": "a28c626ad009010abf03c9681f8c475f252baa7a807043e03b4c09c0a4b55dbc",
+        "bytes": 2165
+      },
+      "stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      }
+    },
+    "actualNativeApplicationCommands": 1,
+    "nodeChildren": 0
+  },
+  "ownedTask": {
+    "state": "CLOSED",
+    "outcome": "FAILURE",
+    "quotaBytes": 4194304
+  },
+  "nativePhysicalRelease": "NOT_QUALIFIED",
+  "responseLossAcceptance": "NOT_ESTABLISHED",
+  "freshProcessRecovery": "NOT_EXECUTED",
+  "backendWireReplay": "NOT_EXECUTED",
+  "SDKPrepareBlock": false,
+  "realPayment": false,
+  "productionQualified": false,
+  "retention": "Original task files, command streams, failed result and source pins preserved.",
+  "sourceReview": {
+    "status": "SOURCE_ANALYSIS_ONLY",
+    "issuedOperations": [
+      "prepare",
+      "commit",
+      "submitFunding"
+    ],
+    "closeIsCommand": false,
+    "remainingCloseAssertionsExecuted": false,
+    "fixtureAndDecoderCountCorrections": "PENDING_SOURCE_CANDIDATE",
+    "nativeRetryPerformed": false
+  }
+}
