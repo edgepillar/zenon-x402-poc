@@ -7,6 +7,7 @@ import { types as utilTypes } from 'node:util';
 import { createFundingPostNativeResponseCustody } from './service-credit-funding-post-native-response.js';
 import { createNativeHttpsClientCloseOwner } from './service-credit-native-client-close-owner.js';
 import { startFundingPostReadableFlow } from './service-credit-funding-post-readable-flow.js';
+import { validateApiCreditWireOwnerGuard, requireCurrentApiCreditWireOwner, inspectApiCreditWireOwnerGuard } from './api-credit-wire-owner-guard.js';
 
 const REQUEST = nativeRequest, ON = EventEmitter.prototype.on, ONCE = EventEmitter.prototype.once;
 const DESTROY_REQUEST = OutgoingMessage.prototype.destroy, DESTROY_SOCKET = Socket.prototype.destroy;
@@ -43,9 +44,16 @@ const SAFE_NATIVE_CODES = new Set(['ERR_ACCESS_DENIED', 'ERR_TLS_CERT_ALTNAME_IN
  * a separately reviewed actual TLS qualification, not merely its component test.
  */
 export function createFundingPostNativeHttpsTransport(configuration) {
+  if (arguments.length !== 1) fail('configuration_rejected');
+  return createTransport(configuration, null);
+}
+export function createFundingPostNativeHttpsTransportWithApiCreditWireOwner(configuration, wireOwner) {
+  if (arguments.length !== 2) fail('configuration_rejected'); validateApiCreditWireOwnerGuard(wireOwner);
+  return createTransport(configuration, wireOwner);
+}
+function createTransport(configuration, wireOwner) {
   let c, resource, ca, hostname, authority;
   try {
-    if (arguments.length !== 1) fail('configuration_rejected');
     c = record(configuration, ['resourceUrl', 'ca', 'maxRequestStarts',
       'requestDeadlineMs', 'handshakeDeadlineMs', 'closeGraceMs']);
     resource = resourceUrl(c.resourceUrl);
@@ -144,7 +152,7 @@ export function createFundingPostNativeHttpsTransport(configuration) {
     catch (cause) { stop(entry, stage + '_REJECTED', cause); }
   }
   const fetchImpl = FREEZE(function fetchImpl(url, options) {
-    let headers, signal;
+    let headers, signal, remainingMs = DEADLINE;
     try {
       if (arguments.length !== 2 || unknown || closing !== null || entries.size !== 0 || starts >= MAX_STARTS
           || url !== URL_VALUE) fail('input_rejected');
@@ -167,6 +175,13 @@ export function createFundingPostNativeHttpsTransport(configuration) {
       signal = o.signal;
       if (typeof signal !== 'object' || signal === null || IS_PROXY(signal) || PROTO(signal) !== SIGNAL
           || APPLY(SIGNAL_ABORTED, signal, []) !== false) fail('input_rejected');
+      if (wireOwner !== null) {
+        remainingMs = requireCurrentApiCreditWireOwner(wireOwner, DEADLINE);
+        // The borrowed guard can block or reenter close. No native request,
+        // abort listener, timer or request-start count exists before this check.
+        if (unknown || closing !== null || entries.size !== 0 || starts >= MAX_STARTS
+            || APPLY(SIGNAL_ABORTED, signal, []) !== false) fail('input_rejected');
+      }
     } catch { return rejected('input_rejected'); }
     starts++;
     let resolve, reject;
@@ -247,7 +262,7 @@ export function createFundingPostNativeHttpsTransport(configuration) {
         }]);
         if (closing !== null || entry.stopping) stop(entry, 'LATE_SOCKET_STOP');
       }]);
-      entry.deadline = timer(() => stop(entry, 'REQUEST_DEADLINE'), DEADLINE);
+      entry.deadline = timer(() => stop(entry, 'REQUEST_DEADLINE'), remainingMs);
       if (entry.stopping || closing !== null) throw error('outcome_unknown');
       entry.request.end(); // The only end entry: fixed POST with zero body.
       lastObservedStage = 'REQUEST_ENDED';
@@ -273,6 +288,7 @@ export function createFundingPostNativeHttpsTransport(configuration) {
       responseHeadersAccepted, responseBodyBytesObserved, responseEndsObserved, responseFlowsStarted,
       lastObservedStage, firstUnknown,
       trackedRequests: entries.size, trackedSockets: sockets.size, ownedTimers: timers.size,
+      ...(wireOwner === null ? {} : { apiCreditWireOwner: inspectApiCreditWireOwnerGuard(wireOwner) }),
       close: state, defaultEnabled: false,
       nativeImplementation: true, nativeRuntimeQualified: false, authority: 'NONE' });
   });

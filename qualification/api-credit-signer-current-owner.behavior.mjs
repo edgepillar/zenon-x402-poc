@@ -1,5 +1,6 @@
 // Declared current-owner/clock/store/key-method/wire ports; no native I/O.
 import assert from 'node:assert/strict';
+import { fileURLToPath } from 'node:url';
 import { apiCreditSignerEntryAgeDataCases } from './api-credit-signer-entry-age.behavior.mjs';
 import { closeApiCreditOperatorDataFixtures } from './api-credit-operator.behavior.mjs';
 import { signerEntryUnitFixture as unit, signerEntryCompositionFixture as composition } from './api-credit-signer-entry-age.fixture.mjs';
@@ -118,9 +119,12 @@ check('signer-current-owner-real-planner-result-write-loss-keeps-one-original-si
  const r=composition({sign:r=>{r.current=false;},retain:r=>{if(!r.current)throw Error('declared stale result write');}});await assert.rejects(r.run());retained(r);
  assert.equal(r.signs,1);assert.equal(r.guardCalls,1);assert.notEqual(r.owner.inspect().wallet.signedOriginal,null);await assert.rejects(r.run());assert.equal(r.signs,1);
 });
+export const apiCreditSignerCurrentOwnerDataCases=F([...checks]);
+if(process.argv[1]!==undefined&&fileURLToPath(import.meta.url)===process.argv[1]){
 const cases=[];for(const {id,run}of checks){try{await run();cases.push({id,status:'PASS'});}catch(e){cases.push({id,status:'FAIL',error:String(e?.message??e)});}}
 await closeApiCreditOperatorDataFixtures();const failed=cases.filter(c=>c.status!=='PASS').length;
 console.log(JSON.stringify({qualification:'G2_SIGNER_CURRENT_OWNER_DATA',passed:cases.length-failed,failed,cases,priorCases:apiCreditSignerEntryAgeDataCases.length,
  declaredGuardClockStoreKeyMethodAndWirePortsOnly:true,actualPlannerDataCompositions:11,existingMaterialTimerEachStartedAndCleared:true,
  nativeExecutions:0,SDK:0,SQLite:0,keys:0,signatures:0,sockets:0,nonceSearches:0,nodeChildren:0,actualPrepare:0,payouts:0,
  pointInTimeOwnerCheckOnly:true,atomicExternalDispatchFencing:'NOT_ESTABLISHED',nativeDurability:'NOT_ESTABLISHED',Linux:'NOT_ESTABLISHED',fullG2:'NOT_ESTABLISHED'}));if(failed)process.exitCode=1;
+}

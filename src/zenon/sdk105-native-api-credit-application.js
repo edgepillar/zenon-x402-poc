@@ -8,6 +8,7 @@ import { captureSdk105FundingServiceConfiguration } from './sdk105-funding-servi
 import { createSdk105AgeBoundSignerContextWalletOwner } from './sdk105-prepared-hash-wallet-owner.js';
 import { openOriginalFundingSpendingSignerContextFileOwner } from '../original-funding-spending-file-owner.js';
 import { createSdk105ApiCreditApplicationLifecycle } from './sdk105-api-credit-application-lifecycle.js';
+import { createApiCreditWireOwnerGuard } from '../api-credit-wire-owner-guard.js';
 
 const F = Object.freeze, NP = Promise, THEN = NP.prototype.then, MONOTONIC = hrtime.bigint;
 // Fixed first-product admission profile, not a chain quote TTL or OS timeout.
@@ -40,22 +41,23 @@ async function openApplication(selection, requireCurrentOpening, productProfile)
   if (failedApplication !== null || typeof requireCurrentOpening !== 'function'
       || types.isProxy(requireCurrentOpening) || !Object.isFrozen(requireCurrentOpening)) fail();
   const selected = consumeSdk105ApiCreditSelection(selection);
-  let c, file = null, wallet = null, client = null, application = null;
+  let c, file = null, wallet = null, client = null, application = null, wireOwner = null;
   try {
     c = captureSdk105FundingServiceConfiguration(selected.configuration);
     requireCurrentOpening();
     file = openOriginalFundingSpendingSignerContextFileOwner({ storageProfile: selected.spendingFile.storageProfile,
       allowedRoot: selected.spendingFile.allowedRoot, filePolicy: selected.spendingFile.filePolicy });
     requireCurrentOpening();
-    const { openZenonDynamicPlasmaNativeFundingServiceClient } = await import('./dynamic-plasma-native-funding-service-client.js');
+    wireOwner = createApiCreditWireOwnerGuard({ fileOwner: file, clock: SIGNER_ENTRY.clock });
+    const { openZenonDynamicPlasmaNativeFundingServiceClientWithApiCreditWireOwner } = await import('./dynamic-plasma-native-funding-service-client.js');
     // No new key capability is entered after an expired module-loading budget.
     requireCurrentOpening();
     claimSdk105ApiCreditExistingKeyLease(c.walletOptions.keyPair);
     wallet = createSdk105AgeBoundSignerContextWalletOwner(c.walletOptions, { paymentId: selected.spending.paymentId, backend: file.signerCustody }, SIGNER_ENTRY);
     bindSdk105ApiCreditExistingKeyLeaseOwner(c.walletOptions.keyPair, wallet);
     requireCurrentOpening();
-    client = await openZenonDynamicPlasmaNativeFundingServiceClient({ storeOptions: c.storeOptions,
-      fundingOptions: { ...c.fundingOptions, wallet }, serviceOptions: c.serviceOptions });
+    client = await openZenonDynamicPlasmaNativeFundingServiceClientWithApiCreditWireOwner({ storeOptions: c.storeOptions,
+      fundingOptions: { ...c.fundingOptions, wallet }, serviceOptions: c.serviceOptions }, wireOwner);
     // Ownership of the returned native client/key is now known. A refusal
     // after this point must stop both of those original owners once.
     requireCurrentOpening();
@@ -64,7 +66,7 @@ async function openApplication(selection, requireCurrentOpening, productProfile)
     const result = productProfile === null ? application : bindSdk105ApiCreditProductLifecycle(application, productProfile);
     requireCurrentOpening(); return result;
   } catch {
-    const retained = { file, wallet, client, application, clientStop: null, walletStop: null, applicationStop: null,
+    const retained = { file, wallet, client, application, wireOwner, clientStop: null, walletStop: null, applicationStop: null,
       clientClosed: false, walletClosed: false, fileCloseEntered: false, fileCloseReturned: false };
     failedApplication = retained;
     if (application !== null) {

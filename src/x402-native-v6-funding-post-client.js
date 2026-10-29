@@ -1,11 +1,13 @@
 import { types as utilTypes } from 'node:util';
-import { createServiceCreditNativeHttpsClientTransport } from './service-credit-native-https-client-transport.js';
+import { createServiceCreditNativeHttpsClientTransport, createServiceCreditNativeHttpsClientTransportWithApiCreditWireOwner } from './service-credit-native-https-client-transport.js';
+import { validateApiCreditWireOwnerGuard } from './api-credit-wire-owner-guard.js';
 import { openOfficialV6GuardedFundingPostOriginalPaymentClient } from './x402-official-v6-original-payment-client.js';
 import { captureFundingPostCheckpointRoute } from './x402-funding-post-checkpoint-route.js';
 import { snapshotOriginalServiceRequestCustodyPolicy } from './service-credit-original-request-custody-contract.js';
 import { createOriginalFundingBoundedReadCloseCoordinator } from './zenon/dynamic-plasma-original-funding-bounded-read-close.js';
 
 const TRANSPORT = createServiceCreditNativeHttpsClientTransport;
+const OWNED_TRANSPORT = createServiceCreditNativeHttpsClientTransportWithApiCreditWireOwner;
 const OPEN = openOfficialV6GuardedFundingPostOriginalPaymentClient;
 const ROUTE = captureFundingPostCheckpointRoute, POLICY = snapshotOriginalServiceRequestCustodyPolicy;
 const JOIN = createOriginalFundingBoundedReadCloseCoordinator;
@@ -55,8 +57,12 @@ export async function openNativeOfficialV6FundingPostOriginalPaymentClientWithFu
   if (arguments.length !== 1 || !invariant()) fail('configuration_rejected');
   return openNativeClient(configuration, true);
 }
+export async function openNativeOfficialV6FundingPostOriginalPaymentClientWithFundingAndApiCreditWireOwner(configuration, wireOwner) {
+  if (arguments.length !== 2 || !invariant()) fail('configuration_rejected'); validateApiCreditWireOwnerGuard(wireOwner);
+  return openNativeClient(configuration, true, wireOwner);
+}
 
-async function openNativeClient(configuration, handoffEnabled) {
+async function openNativeClient(configuration, handoffEnabled, wireOwner = null) {
   let native = null, client = null, joined = null, constructing = true;
   let payerOptions, originalPayment, official, transportOptions, policy, budget;
   let handoffGuard = null, handoffHeld = false, checkingHandoff = false;
@@ -158,7 +164,7 @@ async function openNativeClient(configuration, handoffEnabled) {
         || transportOptions.maxRequestStarts > policy.maxRequests
         || transportOptions.requestDeadlineMs > payerOptions.deadlineMs) fail('configuration_rejected');
     if (!handoffLive()) fail('configuration_rejected');
-    native = TRANSPORT(transportOptions);
+    native = wireOwner === null ? TRANSPORT(transportOptions) : OWNED_TRANSPORT(transportOptions, wireOwner);
     NATIVE_CLOSE = native.close; NATIVE_SNAPSHOT = native.snapshot;
     client = await OPEN({ payerOptions: { ...payerOptions, custodyPolicy: policy,
       requestImpl: native.requestImpl, nativeResourceCloseGuard: actualStoreCloseGuard }, originalPayment, official });

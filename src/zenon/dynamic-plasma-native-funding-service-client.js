@@ -3,7 +3,8 @@ import { Buffer } from 'node:buffer';
 import { types as utilTypes } from 'node:util';
 import { openZenonFundingPayerRecoveryOriginalPaymentSqliteStoreV6,
   ZenonFundingPayerRecoverySqliteStore } from '../service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js';
-import { createFundingPostNativeHttpsTransport } from '../service-credit-funding-post-native-https-transport.js';
+import { createFundingPostNativeHttpsTransport, createFundingPostNativeHttpsTransportWithApiCreditWireOwner } from '../service-credit-funding-post-native-https-transport.js';
+import { validateApiCreditWireOwnerGuard } from '../api-credit-wire-owner-guard.js';
 import { createRetainedDynamicPlasmaHttpsReadSessionV2,
   createRetainedDynamicPlasmaHttpsReadSessionForLocalQualification } from './dynamic-plasma-retained-https-read-session.js';
 import { captureNativeFundingServiceLoopbackReadSelection } from './native-funding-service-loopback-read-selection.js';
@@ -12,7 +13,7 @@ import { createBoundedNonceDynamicPlasmaMaterialExchange } from './dynamic-plasm
 import { createZenonDynamicPlasmaOriginalFundingSubmissionV4 } from './dynamic-plasma-original-funding-submission.js';
 import { captureZenonDynamicPlasmaFundingPostPreparationInput } from './dynamic-plasma-funding-post-preparation-input.js';
 import { captureOriginalFundingServiceHandoffRequest } from './dynamic-plasma-original-funding-service-handoff-request.js';
-import { openNativeOfficialV6FundingPostOriginalPaymentClientWithFundingHandoffGuard } from '../x402-native-v6-funding-post-client.js';
+import { openNativeOfficialV6FundingPostOriginalPaymentClientWithFundingHandoffGuard, openNativeOfficialV6FundingPostOriginalPaymentClientWithFundingAndApiCreditWireOwner } from '../x402-native-v6-funding-post-client.js';
 import { observeServiceCreditOperationDrain } from '../service-credit-bounded-operation-drain.js';
 import { createServiceCreditBoundedCloseCompletion } from '../service-credit-bounded-close-completion.js';
 import { captureNativeFundingServiceOperationalConfiguration } from './native-funding-service-configuration.js';
@@ -20,6 +21,7 @@ import { bindWalletOriginalFundingPreparation } from './original-funding-signer-
 
 const OPEN_STORE = openZenonFundingPayerRecoveryOriginalPaymentSqliteStoreV6;
 const FUNDING = createFundingPostNativeHttpsTransport, READS = createRetainedDynamicPlasmaHttpsReadSessionV2;
+const OWNED_FUNDING = createFundingPostNativeHttpsTransportWithApiCreditWireOwner;
 const LOCAL_READS = createRetainedDynamicPlasmaHttpsReadSessionForLocalQualification;
 const LOCAL_SELECTION = captureNativeFundingServiceLoopbackReadSelection;
 const SESSION = createNativeOriginalFundingCloseSession, MATERIAL = createBoundedNonceDynamicPlasmaMaterialExchange;
@@ -27,6 +29,7 @@ const SUBMISSION = createZenonDynamicPlasmaOriginalFundingSubmissionV4;
 const ORIGINAL_INPUT = captureZenonDynamicPlasmaFundingPostPreparationInput;
 const HANDOFF = captureOriginalFundingServiceHandoffRequest;
 const SERVICE = openNativeOfficialV6FundingPostOriginalPaymentClientWithFundingHandoffGuard;
+const OWNED_SERVICE = openNativeOfficialV6FundingPostOriginalPaymentClientWithFundingAndApiCreditWireOwner;
 const DRAIN = observeServiceCreditOperationDrain, STAT = lstatSync, F = Object.freeze;
 const CLOSE_COMPLETION = createServiceCreditBoundedCloseCompletion;
 const DESC = Object.getOwnPropertyDescriptor, PROTO = Object.getPrototypeOf, KEYS = Reflect.ownKeys;
@@ -66,6 +69,10 @@ export async function openZenonDynamicPlasmaNativeFundingServiceClient(configura
   if (arguments.length !== 1) fail('configuration_or_owner_unavailable');
   return openClient(configuration, null, false);
 }
+export async function openZenonDynamicPlasmaNativeFundingServiceClientWithApiCreditWireOwner(configuration, wireOwner) {
+  if (arguments.length !== 2) fail('configuration_or_owner_unavailable'); validateApiCreditWireOwnerGuard(wireOwner);
+  return openClient(configuration, null, false, wireOwner);
+}
 
 /**
  * Named SOURCE-ONLY local qualification, never selected by the public entry.
@@ -80,7 +87,7 @@ export async function openZenonDynamicPlasmaNativeFundingServiceClientForLocalQu
   return openClient(configuration, localReadOptions, true);
 }
 
-async function openClient(configuration, localReadOptions, localQualification) {
+async function openClient(configuration, localReadOptions, localQualification, wireOwner = null) {
   if (!invariant() || applicationSlot !== null) fail('configuration_or_owner_unavailable');
   let storeOptions, fundingOptions, serviceOptions, policy, materialOptions, fundingTransportOptions;
   let reads = null, post = null, session = null, funder = null, service = null, store = null;
@@ -163,7 +170,7 @@ async function openClient(configuration, localReadOptions, localQualification) {
     serviceOptions = F({ ...serviceOptions, transportOptions: serviceTransport });
     applicationSlot = slot; // No await before claiming this module's application owner.
     const material = MATERIAL(materialOptions); // Inert; no search/signing.
-    post = FUNDING(fundingTransportOptions); slot.post = post;
+    post = wireOwner === null ? FUNDING(fundingTransportOptions) : OWNED_FUNDING(fundingTransportOptions, wireOwner); slot.post = post;
     try {
       reads = localQualification ? LOCAL_READS(fundingOptions.readSessionOptions, localReadSelection)
         : READS(fundingOptions.readSessionOptions);
@@ -307,13 +314,14 @@ async function openClient(configuration, localReadOptions, localQualification) {
     if (held || closing !== null || !fundingHandoffGuard()) fail('handoff_unavailable');
     serviceOpenEntered = true;
     try {
-      service = await SERVICE({
+      const serviceConfiguration = {
         payerOptions: { databasePath: storeOptions.databasePath, allowedRoot: storeOptions.allowedRoot,
           fundingResourceUrl: storeOptions.resourceUrl, custodyPolicy: policy,
           selectedGrantId: selected.selectedGrantId, deadlineMs: serviceOptions.deadlineMs },
         originalPayment: selected.originalPayment, official: serviceOptions.official,
         transportOptions: serviceOptions.transportOptions, fundingHandoffGuard,
-      });
+      };
+      service = await (wireOwner === null ? SERVICE(serviceConfiguration) : OWNED_SERVICE(serviceConfiguration, wireOwner));
       slot.service = service;
       if (closing !== null) { closeServiceOnce(); fail('handoff_unavailable'); }
       if (!fundingHandoffGuard()) fail('handoff_unavailable');

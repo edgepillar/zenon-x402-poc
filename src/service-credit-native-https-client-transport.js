@@ -5,6 +5,7 @@ import { OutgoingMessage } from 'node:http';
 import { isIP, Socket } from 'node:net';
 import { types as utilTypes } from 'node:util';
 import { createNativeHttpsClientCloseOwner } from './service-credit-native-client-close-owner.js';
+import { validateApiCreditWireOwnerGuard, requireCurrentApiCreditWireOwner, inspectApiCreditWireOwnerGuard } from './api-credit-wire-owner-guard.js';
 
 const REQUEST = nativeRequest, ON = EventEmitter.prototype.on, ONCE = EventEmitter.prototype.once;
 const DESTROY_REQUEST = OutgoingMessage.prototype.destroy, DESTROY_SOCKET = Socket.prototype.destroy;
@@ -31,9 +32,15 @@ const ARRAY_BUFFER = DESC(TYPED_ARRAY, 'buffer').get;
  * that late cleanup never repairs the uncertain Promise or authorizes retry.
  */
 export function createServiceCreditNativeHttpsClientTransport(configuration) {
+  if (arguments.length !== 1) fail('configuration_rejected'); return createTransport(configuration, null);
+}
+export function createServiceCreditNativeHttpsClientTransportWithApiCreditWireOwner(configuration, wireOwner) {
+  if (arguments.length !== 2) fail('configuration_rejected'); validateApiCreditWireOwnerGuard(wireOwner);
+  return createTransport(configuration, wireOwner);
+}
+function createTransport(configuration, wireOwner) {
   let c, origin, authority, hostname, ca;
   try {
-    if (arguments.length !== 1) fail('configuration_rejected');
     c = record(configuration, ['origin', 'ca', 'maxRequestStarts', 'maxConcurrentRequests',
       'requestDeadlineMs', 'handshakeDeadlineMs', 'closeGraceMs']);
     if (typeof c.origin !== 'string' || c.origin.length > 2048 || /[^\x21-\x7e]/.test(c.origin))
@@ -88,7 +95,7 @@ export function createServiceCreditNativeHttpsClientTransport(configuration) {
     try { APPLY(DESTROY_REQUEST, entry.request, [error(code)]); } catch {}
   }
   const requestImpl = FREEZE(function requestImpl(resourceUrl, options, onResponse) {
-    let target, method, headers;
+    let target, method, headers, remainingMs = DEADLINE;
     try {
       if (arguments.length !== 3 || !admissionOpen() || starts >= LIMIT
           || requests.size >= CONCURRENT || typeof onResponse !== 'function' || IS_PROXY(onResponse))
@@ -114,6 +121,10 @@ export function createServiceCreditNativeHttpsClientTransport(configuration) {
             || BYTE_LENGTH(found) > limit || /[^\x20-\x7e]/.test(found)) fail('input_rejected');
         headers = { [name]: found };
       }
+      if (wireOwner !== null) {
+        remainingMs = requireCurrentApiCreditWireOwner(wireOwner, DEADLINE);
+        if (!admissionOpen() || starts >= LIMIT || requests.size >= CONCURRENT) fail('unavailable');
+      }
     } catch { fail('input_rejected'); }
     // Count before entering native request construction; no automatic retry.
     starts++;
@@ -132,7 +143,7 @@ export function createServiceCreditNativeHttpsClientTransport(configuration) {
         try { onResponse(response); } catch { destroy(entry, 'response_callback_failed'); response.destroy(); }
       });
       entry.request = request; requests.set(request, entry);
-      entry.deadline = timer(() => { entry.deadline = null; destroy(entry, 'deadline'); }, DEADLINE);
+      entry.deadline = timer(() => { entry.deadline = null; destroy(entry, 'deadline'); }, remainingMs);
       APPLY(ON, request, ['error', markUnknown]);
       APPLY(ONCE, request, ['close', () => {
         entry.requestClosed = true;
@@ -183,6 +194,7 @@ export function createServiceCreditNativeHttpsClientTransport(configuration) {
     return FREEZE({ phase: closeState.phase, unknown: closeState.unknown,
       requestStarts: starts, authenticatedTlsHandshakes: authenticated,
       trackedRequests: requests.size, trackedSockets: sockets.size, ownedTimers: timers.size,
+      ...(wireOwner === null ? {} : { apiCreditWireOwner: inspectApiCreditWireOwnerGuard(wireOwner) }),
       close: closeState,
       defaultEnabled: false, nativeImplementation: true, serviceDelivery: 'NOT_ESTABLISHED' });
   });
