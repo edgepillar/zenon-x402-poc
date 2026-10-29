@@ -10,6 +10,8 @@ import { createOriginalFundingGrantNativeHttpDownstream } from './service-credit
 import { ZenonFundingIntakeSqliteStore } from './service-credit-zenon-funding-intake-sqlite-store.js';
 import { ServiceCreditSqliteStore } from './service-credit-sqlite-store.js';
 import { createServiceCreditBoundedNodeHttpsServerFactory } from './service-credit-bounded-node-https-server-factory.js';
+import { createIssuedFundingGrantActivationOwner } from './issued-funding-grant-activation-owner.js';
+import { createIssuedFundingGrantNativeActivationPreparation } from './x402-issued-funding-grant-native-activation.js';
 
 const F=Object.freeze,D=Object.getOwnPropertyDescriptor,A=Reflect.apply;
 const INTAKE=ZenonFundingIntakeSqliteStore.prototype,SERVICE=ServiceCreditSqliteStore.prototype;
@@ -27,9 +29,14 @@ function brand(value,prototype,name,method){
 }
 /** Fixed native factories only. Both SQL stores are borrowed; activation stays
  * external and explicit. Never reopen, replace or force-close a held owner. */
-export function createIssuedFundingGrantNativeApplication(options){
+export async function createIssuedFundingGrantNativeApplication(options){
   if(arguments.length!==1)throw new TypeError('ISSUED_FUNDING_GRANT_NATIVE_CONFIGURATION');
   const c=exact(options,['funding','service','transport']);
+  const f=exact(c.funding,['intake','official','maxIntakeAttempts','closeBudgetMs']);
+  const i=exact(f.intake,['store','serviceCreditStore','authorityRecord','deriveFundingTerms','now','observerRoot','observerCatchUp','selection','resourceUrl']);
+  const selection=F(exact(i.selection,['offerId','offerVersion','holderId','capabilityCommitment']));
+  const funding=F({...f,intake:F({...i,selection,observerCatchUp:F(exact(i.observerCatchUp,['maximumPageEntries','maximumBackfillSpan','maximumMembersPerMomentum']))}),
+    official:F(exact(f.official,['localFacilitator','validateChallenge','reconcilePendingSettlement','maxPendingReconciliations']))});
   const t=exact(c.transport,['origin','generation','limits','bind','tlsMaterial']),s=exact(c.service,['store','execute','selectedDurationMs']);
   const bind=F(exact(t.bind,['host','port','exclusive'])),tlsMaterial=F(exact(t.tlsMaterial,['key','cert']));
   const schedule=F((callback,delay)=>SCHEDULE(callback,delay)),cancel=F(token=>{CANCEL(token);});
@@ -38,7 +45,9 @@ export function createIssuedFundingGrantNativeApplication(options){
   const nativeServerFactory=F((settings,callbacks)=>createServiceCreditBoundedNodeHttpsServerFactory(F({bind,tlsMaterial}))(settings,callbacks));
   const transport=F({origin:t.origin,generation:t.generation,limits:t.limits,deadlineRuntime:F({schedule,cancel}),httpsServerFactory:nativeServerFactory});
   const service=F({...s,deadlineRuntime:F({monotonicNowNs:F(()=>A(CLOCK,hrtime,[])),schedule,cancel})});
-  return createIssuedFundingGrantApplicationCore(F({...c,service,transport}),F({
+  const activationPorts=createIssuedFundingGrantNativeActivationPreparation(F({intakeStore:i.store,serviceStore:s.store,
+    authorityRecord:i.authorityRecord,deriveFundingTerms:i.deriveFundingTerms,now:i.now}));
+  const root=await createIssuedFundingGrantApplicationCore(F({funding,service,transport}),F({
     createFunding:F(c=>createDurableOfficialFundingPostIntakeComposition(c)),
     createIngress:F((c,route)=>createServiceCreditBoundedHttpsIngressOwnerForIssuedFundingGrant({...c,httpsServerFactory:nativeServerFactory},route)),
     createServiceSession:F(c=>createDurableServiceCreditHttpSession(c)),
@@ -47,4 +56,11 @@ export function createIssuedFundingGrantNativeApplication(options){
     loadBound:F(store=>{brand(store,INTAKE,'loadBound',LOAD);return A(LOAD,store,[]);}),
     readCommittedGrant:F((store,id)=>{brand(store,SERVICE,'getGrant',GET);return A(GET,store,[id]);}),
   }));
+  let activation;
+  try{activation=createIssuedFundingGrantActivationOwner(F({selection,resourceUrl:i.resourceUrl,port:F({providerSnapshot:root.snapshot,providerClose:root.close,
+    loadBound:activationPorts.loadBound,prepareActivation:activationPorts.prepareActivation,admitCommittedServiceGrant:root.admitCommittedServiceGrant})}));}
+  catch{try{await root.close();}catch{throw new TypeError('ISSUED_FUNDING_GRANT_ACTIVATION_CLOSE_HELD');}throw new TypeError('ISSUED_FUNDING_GRANT_NATIVE_CONFIGURATION');}
+  return F({...root,close:activation.close,admitCommittedServiceGrant:activation.admitCommittedServiceGrant,
+    activateOriginalCommittedFunding:activation.activateOriginalCommittedFunding,
+    snapshot:F(function snapshot(){if(arguments.length!==0)throw new TypeError('ISSUED_FUNDING_GRANT_NATIVE_CONFIGURATION');return F({...root.snapshot(),localActivation:activation.snapshot()});})});
 }

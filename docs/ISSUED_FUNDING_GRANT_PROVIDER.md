@@ -33,6 +33,15 @@ select test factories, timers, a verifier or a store implementation. TLS
 material is copied by the real server factory only when the owned start enters
 server construction; a refused controller constructor acquires no TLS copy.
 
+The same source entry now adds the explicit LOCAL operator method
+`activateOriginalCommittedFunding(observerStore)`. It binds the original actual
+observer/store/authority context to the existing committed-evidence activation
+composition, then uses the existing actual committed-grant admission. SETTLED
+and a raw READY flag never mint a grant; authentication remains in that actual
+composition. There is no new HTTP route or automatic activation on replay.
+See [the local activation protocol](ISSUED_ORIGINAL_FUNDING_ACTIVATION.md).
+Native activation/authentication, lifecycle and 100-call acceptance remain OPEN.
+
 The funding challenge is durably issued by the selected durable native intake
 composition. The fixed native factory now requires the explicit three-table
 official-outcome store profile. Intent precedes SDK entry; exact outcome

@@ -2,6 +2,7 @@
 // listener, verifier, writer and timer ports. No SQL/core/TLS/keys/signatures.
 import assert from 'node:assert/strict';
 import { Buffer } from 'node:buffer';
+import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
 import { canonicalJson,paymentIntentDigest } from '../src/canonical.js';
 import { InMemoryServiceCreditModel } from '../src/service-credit-model.js';
@@ -141,6 +142,14 @@ check('issued-provider-actual-holder-owner-consumes-shared-root-history-after-cl
   assert.equal(result.spendingReservation,'UNCHANGED');assert.equal(f.s.serviceCreates,0);assert.equal(f.s.storeCloses,0);await f.s.root.close();
 });
 
+export const issuedProviderDataFixture=fixture;
+export const issuedProviderFundingRequest=fundingRequest;
+export const issuedProviderServiceRequest=serviceRequest;
+export const issuedProviderRequired=required;
+export const issuedProviderSelection=selection;
+export const issuedProviderFlush=flush;
+
+if(process.argv[1]===fileURLToPath(import.meta.url)){
 // Retain a bounded DATA result if a declared Promise never settles. No timer,
 // process interruption, native cleanup or automatic retry is introduced.
 const cases=[];let current=null,reported=false;
@@ -152,3 +161,4 @@ function unsettled(){if(current===null)return;cases.push({id:current,status:'FAI
 process.once('beforeExit',unsettled);
 for(const {id,run}of checks){current=id;try{await run();cases.push({id,status:'PASS'});}catch(e){cases.push({id,status:'FAIL',error:String(e?.message??'unknown').slice(0,256)});}current=null;}
 process.off('beforeExit',unsettled);report();
+}
