@@ -2769,8 +2769,8 @@
     },
     {
       "path": "src/service-credit-model.js",
-      "bytes": 55461,
-      "sha256": "7ff7e3d88ab8c3b38a0073541533fbdb7a0d9f2be42f337ac35f6a3b05615c3a",
+      "bytes": 56835,
+      "sha256": "f8e57c6e4b576c4b4c650d757ab9c86580c5bc4e7d457440092668b2894cefda",
       "format": "module"
     },
     {
@@ -2789,6 +2789,12 @@
       "path": "src/service-credit-native-https-client-transport.js",
       "bytes": 13002,
       "sha256": "dfa3c6989facb2c25eae6d3018206d9aa440962ad93030b937743954c70b776b",
+      "format": "module"
+    },
+    {
+      "path": "src/service-credit-original-funding-grant.js",
+      "bytes": 7995,
+      "sha256": "61fd9aee09949462ae6fa0e1a0c0fd4e67f15f8c7be78612bfe9928559b6be70",
       "format": "module"
     },
     {
@@ -2829,8 +2835,8 @@
     },
     {
       "path": "src/service-credit-sqlite-store.js",
-      "bytes": 83516,
-      "sha256": "eea4032830dc1f641c4832e0dab33066633ba487eaf19581e3295cf8810460f3",
+      "bytes": 83873,
+      "sha256": "c7a5559685f0ccd130d35804d58879133a2c05101adbdf965f65b5b152b99e40",
       "format": "module"
     },
     {

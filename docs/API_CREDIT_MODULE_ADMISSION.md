@@ -15,7 +15,7 @@ environment, package lock, old cache or operator JSON. Missing ordinary
 `node_modules` is a refusal, never an instruction to install or use a cache.
 Keyless inspection keeps its separate SDK-free graph.
 
-The catalog contains 559 rows: 154 application files, root `package.json` and
+The catalog contains 560 rows: 155 application files, root `package.json` and
 404 retained package-source files. The package rows span 69 package roots,
 including nested versions, and match the current lock's corresponding versions.
 This is a reviewed selection; the lock, version labels and an old reachable
@@ -91,3 +91,9 @@ The returned-client failed-opening branch uses the fixed
 and wallet stops once, revokes file admission, and rechecks both current owners
 at physical close and on later clean observations. A cached stop callback is
 not a current release observation. This native binding remains unexecuted.
+
+The original-funding identity/result helper is a dependency of the ledger model
+and is included in this RUN catalog. The additional provider grant-reader core
+and native borrowed-store binding are separate API source; they are not selected
+by the buyer CLI or mounted as a network route by this catalog. Capability
+verification, SQL query and HTTP recovery acceptance remain unexecuted.

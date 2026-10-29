@@ -1195,6 +1195,13 @@ export class ServiceCreditSqliteStore {
     return this.#modelOperation('getGrant', grantId);
   }
 
+  /** Existing validated ledger, original identity only. The model operation
+   * leaves canonical state unchanged, so no revision or grant write occurs. */
+  readOriginalFundingGrant(input) {
+    if (arguments.length !== 1) failStore('SERVICE_CREDIT_STORE_INVALID_EXECUTION_INPUT');
+    return this.#modelOperation('readOriginalFundingGrant', input);
+  }
+
   revokeGrant(input) {
     return this.#modelOperation('revokeGrant', input);
   }

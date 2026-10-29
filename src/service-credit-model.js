@@ -1,5 +1,7 @@
 import crypto from 'node:crypto';
 import { types as utilTypes } from 'node:util';
+import { captureServiceCreditOriginalFundingIdentity, matchesServiceCreditOriginalFundingGrant,
+  createServiceCreditOriginalFundingGrantResult } from './service-credit-original-funding-grant.js';
 
 const APPLY = Reflect.apply;
 const DESCRIPTOR = Object.getOwnPropertyDescriptor;
@@ -1178,6 +1180,26 @@ export class InMemoryServiceCreditModel {
       if (!record) return null;
       this.#refreshGrant(record);
       return this.#grantSnapshot(record);
+    });
+  }
+
+  /** Exact original-only history lookup. It deliberately does not refresh
+   * expiry, consult time/pricing, activate, reserve or mutate any grant. */
+  readOriginalFundingGrant(input) {
+    if (arguments.length !== 1) fail('INVALID_INPUT');
+    return this.#runPublicOperation(() => {
+      let query;
+      try { query = captureServiceCreditOriginalFundingIdentity(input); }
+      catch { fail('INVALID_INPUT'); }
+      const activationId = this.#activationByTransaction.get(query.transactionId);
+      const grantId = this.#grantByCapability.get(query.capabilityCommitment);
+      if (activationId === undefined || grantId === undefined) return createServiceCreditOriginalFundingGrantResult(query, null);
+      const record = this.#grants.get(grantId);
+      if (!record) failState();
+      if (record.activationId !== activationId) return createServiceCreditOriginalFundingGrantResult(query, null);
+      const stored = this.#grantSnapshot(record);
+      if (!matchesServiceCreditOriginalFundingGrant(query, stored)) return createServiceCreditOriginalFundingGrantResult(query, null);
+      return createServiceCreditOriginalFundingGrantResult(query, stored);
     });
   }
 
