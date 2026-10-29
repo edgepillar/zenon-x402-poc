@@ -78,3 +78,12 @@ the shared route profile. No default operator or active provider is cut over.
 Actual same-origin SDK/SQL/TLS acceptance, ACK loss, fresh-process reopen,
 ownership transfer, physical release, Linux and G1's 100-call scenario remain
 open. G0-G5 are not completed by this source/DATA change.
+
+## Explicit recorded recovery source entry
+
+The separate `restoreIssuedFundingGrantNativeApplication` entry now selects
+independently pinned original BOUND/outcome history without constructing an
+intake, SDK server, observer or continuation. It retains the same explicit
+committed-grant admission and scoped service gate. Fresh startup still refuses
+BOUND rows. See [recorded provider recovery](ISSUED_PROVIDER_RECORDED_RECOVERY.md).
+Actual process restart, SQL/HTTPS, owner fencing and Linux remain OPEN.

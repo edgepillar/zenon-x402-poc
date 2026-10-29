@@ -1,3 +1,4 @@
+import { captureIssuedFundingGrantRecoveryExpectation,captureIssuedFundingGrantRecoveryRows } from './x402-issued-funding-grant-recovery.js';
 import { writeIssuedApplicationResponse as WRITE } from './x402-issued-application-response-writer.js';
 import { types as utilTypes } from 'node:util';
 import { createHash } from 'node:crypto';
@@ -48,14 +49,22 @@ const SERVICE_UNAVAILABLE=F({statusCode:503,contentType:'application/json',body:
  * SDK, SQLite, TLS, activation, native release and production are NOT qualified.
  */
 export async function createIssuedFundingGrantApplicationCore(options, ports) {
-  if(arguments.length!==2||!invariant()||HELD.size>=64)fail('configuration');
+  if(arguments.length!==2)fail('configuration');return createCore(options,ports,false);
+}
+/** Explicit recorded recovery; never choose this mode from an HTTP request. */
+export async function restoreIssuedFundingGrantApplicationCore(options,ports){
+  if(arguments.length!==2)fail('configuration');return createCore(options,ports,true);
+}
+async function createCore(options,ports,restoring){
+  if(!invariant()||HELD.size>=64)fail('configuration');
   const caps=exact(ports,['createFunding','createIngress','createServiceSession','validateStores','loadBound','readCommittedGrant','createQueryDownstream'],true);
   for(const fn of Object.values(caps))if(!callable(fn))fail('configuration');
   const FUNDING=caps.createFunding,INGRESS=caps.createIngress,SESSION=caps.createServiceSession,BINDING=createIssuedFundingPostApplicationBinding;
   const fresh=store=>captureFreshRows(caps.loadBound(store));
-  let fundingConfig,serviceConfig,transport,selection,route;
+  let fundingConfig,serviceConfig,transport,selection,route,recovery=null;
   try {
-    const c=exact(options,['funding','service','transport']);
+    const c=exact(options,restoring?['funding','service','transport','recovery']:['funding','service','transport']);
+    if(restoring)recovery=captureIssuedFundingGrantRecoveryExpectation(c.recovery);
     const f=exact(c.funding,['intake','official','maxIntakeAttempts','closeBudgetMs']);
     const i=exact(f.intake,['store','serviceCreditStore','authorityRecord','deriveFundingTerms','now',
       'observerRoot','observerCatchUp','selection','resourceUrl']);
@@ -83,7 +92,7 @@ export async function createIssuedFundingGrantApplicationCore(options, ports) {
         ||typeof transport.httpsServerFactory!=='function'||IS_PROXY(transport.httpsServerFactory))fail('configuration');
     fundingConfig=F({...f,official,intake:F({...i,selection:chosen,
       observerCatchUp:F(exact(i.observerCatchUp,['maximumPageEntries','maximumBackfillSpan','maximumMembersPerMomentum']))})});
-    fresh(i.store);
+    if(restoring)captureIssuedFundingGrantRecoveryRows(caps.loadBound(i.store),selection,route.resourceUrl,recovery);else fresh(i.store);
   }catch{fail('configuration');}finally{options=null;}
 
   let funding=null,binding=null,ingress=null,service=null,query=null,mixedRoutes=null,opening=false;
@@ -96,6 +105,14 @@ export async function createIssuedFundingGrantApplicationCore(options, ports) {
   const retained=F(()=>[funding,binding,ingress,service,query,operations,opaqueQueryReturns]);
   function hold(){uncertain=true;HELD.add(retained);if(terminal==='CLOSED')terminal='CLOSE_UNCERTAIN';}
   function available(){return invariant()&&!admissionRevoked&&!closed&&!uncertain;}
+  function captureRestoredOutcome(){
+    if(!restoring)return;
+    const value=funding.getRecordedOutcome();
+    if(IS_PROMISE(value)||IS_PROXY(value)){opaqueQueryReturns.add(value);discardNative(value);hold();fail('recovery_unknown');}
+    if(value===null){if(binding.inspect().boundRetained){hold();fail('recovery_unknown');}return;}
+    binding.captureBoundOutcome(value);
+    if(!available())fail('recovery_unknown');
+  }
   function finish(done,clean){try{if(A(clean?done.success:done.failure,undefined,[])!==undefined)hold();}catch{hold();}}
   function isQueryTarget(request){try{return own(request,'url')===ORIGINAL_FUNDING_GRANT_PATH;}catch{return false;}}
   function invokeQuery(method,args,onDone){
@@ -175,6 +192,7 @@ export async function createIssuedFundingGrantApplicationCore(options, ports) {
       const admitted=captureIssuedFundingGrantRequest(request,mixedRoutes);target=admitted.target;
       if(target==='/funding')captured=REQUEST(request,routed);
     }catch{finish(done,write(response,BAD));return undefined;}
+    if(restoring){try{captureRestoredOutcome();}catch{hold();finish(done,write(response,UNAVAILABLE,target));return undefined;}}
     if(target===ORIGINAL_FUNDING_GRANT_PATH){
       if(fundingBusy||opening||active!==0){queryRefusals++;invokeQuery(query.reject,[request,response,transportContext],clean=>{if(!clean)hold();finish(done,clean);});return undefined;}
       const op=acquire(response,done,false);queryCalls++;
@@ -184,6 +202,7 @@ export async function createIssuedFundingGrantApplicationCore(options, ports) {
     if(target==='/funding'&&fundingBusy){finish(done,write(response,UNAVAILABLE,target));return undefined;}
     if(target===CREDIT&&service===null){finish(done,write(response,SERVICE_UNAVAILABLE,target));return undefined;}
     if(target==='/funding'&&captured.paymentSignature===null){
+      if(restoring){finish(done,write(response,UNAVAILABLE,target));return undefined;}
       challengeCalls++;finish(done,write(response,binding.getChallenge(),target));return undefined;
     }
     const op=acquire(response,done,target==='/funding');
@@ -199,9 +218,10 @@ export async function createIssuedFundingGrantApplicationCore(options, ports) {
       },()=>{
         if(!available()||op.cell.response===null){op.settle(false);return;}
         // The actual root distinguishes pre-SDK refusal from unknown side effects.
-        let known=false;
-        try{known=target==='/funding'&&!funding.snapshot().held;}catch{}
-        const sent=write(op.cell.response,known?BAD:UNAVAILABLE,target);
+        let known=false,waiting=false;
+        try{const state=target==='/funding'?funding.snapshot():null;
+          known=state!==null&&!state.held;waiting=restoring&&known&&state.recoveryHeld===true;}catch{}
+        const sent=write(op.cell.response,waiting?UNAVAILABLE:known?BAD:UNAVAILABLE,target);
         op.settle(known&&sent);
       });
     }catch{if(!closed&&op.cell.response!==null)write(op.cell.response,UNAVAILABLE,target);op.settle(false);}
@@ -210,17 +230,18 @@ export async function createIssuedFundingGrantApplicationCore(options, ports) {
 
   try{
     const opened=capability();let pending;
-    try{pending=FUNDING(fundingConfig);observe(pending,value=>{
-      try{for(const name of ['getIssuedChallenge','processHttpRequest','resumeOriginalSettlement','close','snapshot'])
+    try{pending=FUNDING(restoring?F({funding:fundingConfig,recovery}):fundingConfig);observe(pending,value=>{
+      try{for(const name of (restoring?['getIssuedChallenge','getRecordedOutcome','processHttpRequest','resumeOriginalSettlement','close','snapshot']:['getIssuedChallenge','processHttpRequest','resumeOriginalSettlement','close','snapshot']))
         if(!callable(own(value,name))||!Object.isFrozen(value)||P(value)!==Object.prototype||D(value,'then')!==undefined)fail('construction');
         if(!invariant())fail('construction');opened.resolve(value);
       }catch{hold();opened.reject(error('construction_close_unknown'));}
     },()=>{hold();opened.reject(error('construction_close_unknown'));});}catch{hold();discardNative(pending);opened.reject(error('construction_close_unknown'));}
     funding=await opened.promise;
     // Reinspect actual startup state across the SDK-initialization await.
-    fresh(fundingConfig.intake.store);
+    if(restoring)captureIssuedFundingGrantRecoveryRows(caps.loadBound(fundingConfig.intake.store),fixedSelection,routed.resourceUrl,recovery);else fresh(fundingConfig.intake.store);
     const issuedFrame=funding.getIssuedChallenge();
     binding=BINDING({issuedFrame,resourceUrl:routed.resourceUrl,serviceSelection:fixedSelection});
+    captureRestoredOutcome();
     const issued=createIssuedFundingPostSdkResourceBinding(issuedFrame,routed.resourceUrl).selection();
     const resourceDigest='sha256:'+createHash('sha256').update('zenon-x402-service-credit-payment-resource-v1\0','ascii').update(canonicalJson(issued.resource)).digest('hex');
     const queryRoute=captureOriginalFundingGrantRoute(routed.resourceUrl,resourceDigest);
@@ -241,6 +262,7 @@ export async function createIssuedFundingGrantApplicationCore(options, ports) {
   const admitCommittedServiceGrant=F(function admitCommittedServiceGrant(grantId){
     if(arguments.length!==1||typeof grantId!=='string'||!/^grant_[0-9a-f]{64}$/.test(grantId)
         ||!available()||opening||service!==null||fundingBusy||active!==0||admissionAttempts>=16)fail('service_unavailable');
+    captureRestoredOutcome();
     const state=binding.inspect(),actual=funding.snapshot();
     if(!state.boundRetained||state.officialPhase!=='SETTLED'||!actual.intakeBound||actual.active||actual.held)fail('service_not_ready');
     opening=true;admissionAttempts++;
@@ -252,6 +274,7 @@ export async function createIssuedFundingGrantApplicationCore(options, ports) {
       if(!available())fail('service_unavailable');
       if(committed===null)return F({status:'NOT_READY',authority:'NONE'});
       // This is a genuine read from the fixed actual store, never HTTP input.
+      captureRestoredOutcome();
       const pin=binding.captureCommittedGrant(committed,grantId);
       admittedGrantId=pin.admittedGrantId;
       try{service=SESSION({...serviceOptions,admittedGrantId});const session=exact(service,['handle','close'],true);
@@ -262,7 +285,7 @@ export async function createIssuedFundingGrantApplicationCore(options, ports) {
   });
   const resumeOriginalSettlement=F(function resumeOriginalSettlement(){
     if(arguments.length!==0||!available()||fundingBusy||active!==0)return rejected('pending_unavailable');
-    if(binding.inspect().officialPhase!=='PENDING')return rejected('pending_unavailable');
+    if(restoring||binding.inspect().officialPhase!=='PENDING')return rejected('pending_unavailable');
     const c=capability(),op=acquire(null,null,true);
     pendingObservations++;
     try{observe(funding.resumeOriginalSettlement(),value=>{
@@ -279,7 +302,8 @@ export async function createIssuedFundingGrantApplicationCore(options, ports) {
       queryCalls,queryRefusals,queryCloseDone,query:query===null?null:query.inspect(),
       fundingCloseDone:rootCloseDone,serviceCloseDone,uncertain,ingress:NATIVE.snapshotMetrics(),funding:funding.snapshot(),
       binding:binding.inspect(),serviceStore:'BORROWED_NOT_CLOSED',intakeStore:'BORROWED_NOT_CLOSED',
-      grantActivation:'EXTERNAL_EXPLICIT_AUTHORITY_REQUIRED',automaticRecovery:false,persistence:'MEMORY_ONLY_PENDING',
+      grantActivation:'EXTERNAL_EXPLICIT_AUTHORITY_REQUIRED',automaticRecovery:false,persistence:restoring?'PINNED_RECORDED_HISTORY_NO_LIVE_CONTINUATION':'MEMORY_ONLY_PENDING',
+      ...(restoring?{recoveryMode:'PINNED_RECORDED_OUTCOME',newSDKEntries:0,restoredObservationBudgetRenewed:false}:{}),
       nativeQualified:false,production:'NOT_ESTABLISHED'});});
   let nativeCloseClaimed=false,nativeCloseReceipt=null;
   const close=F(function close(){
