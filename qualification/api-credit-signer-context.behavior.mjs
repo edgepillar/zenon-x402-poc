@@ -1,6 +1,8 @@
 // Exact DATA/declared synchronous methods and memory stores only. Signature
 // shaped fixture bytes are deliberately invalid; no signing algorithm is run.
 import assert from 'node:assert/strict';
+import { fileURLToPath } from 'node:url';
+import process from 'node:process';
 import { Buffer } from 'node:buffer';
 import { apiCreditSignerCustodyDataCases } from './api-credit-signer-custody.behavior.mjs';
 import { closeApiCreditOperatorDataFixtures } from './api-credit-operator.behavior.mjs';
@@ -194,6 +196,9 @@ check('signer-context-input-digest-matches-the-actual-application-reservation-co
   await gate.prepareOriginalFunding(d.f.input); assert.equal(entered, 1); await gate.close(); assert.equal(JSON.parse(raw).reservations[0].status, 'RESERVED');
 });
 
+export const apiCreditSignerContextDataCases = F([...checks]);
+export const signerContextDataFixture = data;
+if (process.argv[1] !== undefined && fileURLToPath(import.meta.url) === process.argv[1]) {
 const cases = [];
 for (const { id, run } of checks) { try { await run(); cases.push({ id, status: 'PASS' }); } catch (e) { cases.push({ id, status: 'FAIL', error: String(e?.message ?? e) }); } }
 await closeApiCreditOperatorDataFixtures(); const failed = cases.filter(c => c.status !== 'PASS').length;
@@ -201,3 +206,4 @@ console.log(JSON.stringify({ qualification: 'G2_ORIGINAL_SIGNER_CONTEXT_DATA', p
   declaredMethodAndMemoryPortsOnly: true, nativeExecutions: 0, SDK: 0, SQLite: 0, keys: 0, signatures: 0, sockets: 0, nonceSearches: 0, nodeChildren: 0, actualPrepare: 0, payouts: 0,
   nativeReopen: 'NOT_ESTABLISHED', signerLossAcceptance: 'NOT_ESTABLISHED', Linux: 'NOT_ESTABLISHED', fullG2: 'NOT_ESTABLISHED' }));
 if (failed) process.exitCode = 1;
+}

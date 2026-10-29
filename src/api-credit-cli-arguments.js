@@ -8,13 +8,14 @@ export function captureApiCreditCliArguments(argv) {
   for (let i = 0; i < argv.length; i++) { const d = Object.getOwnPropertyDescriptor(argv, String(i));
     if (!d?.enumerable || !Object.hasOwn(d, 'value') || typeof d.value !== 'string') fail(); values.push(d.value); }
   if (values.length === 1 && values[0] === '--help') return F({ mode: 'HELP' });
-  if (values.length === 6 && values[0] === '--inspect-fd' && values[2] === '--output-fd' && values[4] === '--bootstrap-ms') {
+  if (values.length === 6 && ['--inspect-fd', '--signer-inspect-fd'].includes(values[0]) && values[2] === '--output-fd' && values[4] === '--bootstrap-ms') {
     const numbers = [values[1], values[3], values[5]].map((value, index) => {
       if (/^[1-9][0-9]{0,4}$/.exec(value)?.[0] !== value) fail(); const n = Number(value);
       if (index < 2 ? n < 3 || n > 1023 : n < 1 || n > 60000) fail(); return n;
     });
     if (numbers[0] === numbers[1]) fail();
-    return F({ mode: 'INSPECT', inspectionFd: numbers[0], outputFd: numbers[1], bootstrapMs: numbers[2] });
+    return values[0] === '--inspect-fd' ? F({ mode: 'INSPECT', inspectionFd: numbers[0], outputFd: numbers[1], bootstrapMs: numbers[2] })
+      : F({ mode: 'SIGNER_INSPECT', signerInspectionFd: numbers[0], outputFd: numbers[1], bootstrapMs: numbers[2] });
   }
   if (values.length !== 10) fail();
   const names = ['--profile-fd', '--key-fd', '--input-fd', '--output-fd', '--bootstrap-ms'];

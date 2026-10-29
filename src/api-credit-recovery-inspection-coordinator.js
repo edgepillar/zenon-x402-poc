@@ -2,6 +2,8 @@ import { types } from 'node:util';
 import { canonicalJson } from './canonical.js';
 import { decodeApiCreditRecoveryInspectionProfile } from './api-credit-recovery-inspection-profile.js';
 import { captureServiceCreditRecoveryInspectionOutput } from './service-credit-recovery-inspection-owner.js';
+import { decodeApiCreditSignerInspectionProfile } from './api-credit-signer-inspection-profile.js';
+import { captureApiCreditSignerInspectionOutput } from './original-funding-signer-inspection-owner.js';
 
 const F = Object.freeze, DESC = Object.getOwnPropertyDescriptor, OWN = Object.hasOwn, PP = Promise.prototype, THEN = PP.then, FAILED = new Set();
 function fail() { throw new TypeError('API_CREDIT_RECOVERY_INSPECTION_UNKNOWN'); }
@@ -24,10 +26,19 @@ function signal() { let resolve, reject; const promise = new Promise((a, b) => {
  * startup budget includes EOF, admission, native inspection and result write.
  * Expiry is observation, never cancellation or a competing store close. */
 export async function runApiCreditRecoveryInspectionCoordinator(configuration) {
-  if (arguments.length !== 1 || FAILED.size >= 16) fail();
-  const c = fields(configuration, ['arguments', 'ports']), a = fields(c.arguments, ['mode', 'inspectionFd', 'outputFd', 'bootstrapMs']);
-  if (a.mode !== 'INSPECT' || !Number.isSafeInteger(a.bootstrapMs) || a.bootstrapMs < 1 || a.bootstrapMs > 60000
-      || [a.inspectionFd, a.outputFd].some(n => !Number.isSafeInteger(n) || n < 3 || n > 1023) || a.inspectionFd === a.outputFd) fail();
+  if (arguments.length !== 1) fail(); return coordinate(configuration, false);
+}
+export async function runApiCreditSignerInspectionCoordinator(configuration) {
+  if (arguments.length !== 1) fail(); return coordinate(configuration, true);
+}
+async function coordinate(configuration, signer) {
+  if (FAILED.size >= 16) fail();
+  const fd = signer ? 'signerInspectionFd' : 'inspectionFd', mode = signer ? 'SIGNER_INSPECT' : 'INSPECT';
+  const c = fields(configuration, ['arguments', 'ports']), a = fields(c.arguments, ['mode', fd, 'outputFd', 'bootstrapMs']);
+  if (a.mode !== mode || !Number.isSafeInteger(a.bootstrapMs) || a.bootstrapMs < 1 || a.bootstrapMs > 60000
+      || [a[fd], a.outputFd].some(n => !Number.isSafeInteger(n) || n < 3 || n > 1023) || a[fd] === a.outputFd) fail();
+  const decodeProfile = signer ? decodeApiCreditSignerInspectionProfile : decodeApiCreditRecoveryInspectionProfile;
+  const captureOutput = signer ? captureApiCreditSignerInspectionOutput : captureServiceCreditRecoveryInspectionOutput;
   const p = fields(c.ports, ['readProfile', 'inspectOriginal', 'writeResult', 'close', 'inspect', 'clock', 'armTimer', 'cancelTimer']);
   for (const fn of Object.values(p)) if (typeof fn !== 'function' || types.isProxy(fn) || !Object.isFrozen(fn)) fail();
   const frame = { stage: 'PROFILE', prepared: null, inspectionEntered: false, outputWritten: false, opening: true, unknown: false,
@@ -76,9 +87,11 @@ export async function runApiCreditRecoveryInspectionCoordinator(configuration) {
   try {
     frame.deadline = clock() + BigInt(a.bootstrapMs) * 1000000n; frame.timer = p.armTimer(a.bootstrapMs, F(expire));
     await stage(g => p.readProfile(g)); const text = frame.value; frame.value = null;
-    frame.prepared = decodeApiCreditRecoveryInspectionProfile(text); guard(); frame.stage = 'INSPECTION';
+    frame.prepared = decodeProfile(text); guard(); frame.stage = 'INSPECTION';
     await stage(g => { frame.inspectionEntered = true; return p.inspectOriginal(frame.prepared, g); });
-    const result = captureServiceCreditRecoveryInspectionOutput(frame.value); frame.value = null; guard(); frame.stage = 'OUTPUT';
+    const result = captureOutput(frame.value); frame.value = null;
+    if (signer && (result.paymentId !== frame.prepared.paymentId || result.originalDigest !== frame.prepared.originalDigest || result.fundingResourceUrl !== frame.prepared.fundingResourceUrl)) fail();
+    guard(); frame.stage = 'OUTPUT';
     await stage(g => p.writeResult(canonicalJson(result) + '\n', g)); if (frame.value !== undefined) fail(); frame.value = null;
     frame.outputWritten = true;
   } catch { if (frame.inspectionEntered) frame.unknown = true; }
@@ -90,7 +103,7 @@ export async function runApiCreditRecoveryInspectionCoordinator(configuration) {
   }
   const clean = frame.closed && !frame.unknown, success = clean && frame.outputWritten;
   if (!clean) FAILED.add(frame);
-  return F({ apiCreditRecoveryInspectionVersion: 1, status: success ? 'CLOSED' : clean ? 'BOOTSTRAP_REFUSED' : 'CLOSE_UNKNOWN',
+  return F({ ...(signer ? { apiCreditSignerInspectionVersion: 1 } : { apiCreditRecoveryInspectionVersion: 1 }), status: success ? 'CLOSED' : clean ? 'BOOTSTRAP_REFUSED' : 'CLOSE_UNKNOWN',
     exitCode: success ? 0 : clean ? 1 : 4, stage: frame.stage, inspectionEntered: frame.inspectionEntered,
     outputWriteObserved: frame.outputWritten, channelClosedObserved: frame.closed, historicalObservation: true,
     authority: 'NONE', mayDispatchService: false, mayStartPayment: false, maySignPayment: false,

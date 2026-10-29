@@ -10,6 +10,8 @@ const HELP = 'API credit operator source candidate (native acceptance is OPEN).\
   + 'Input/output: bounded explicit original-funding and service commands.\n'
   + 'History only: node src/api-credit-cli.js --inspect-fd 3 --output-fd 6 --bootstrap-ms 1000\n'
   + 'Inspect input: one canonical recovery envelope and its existing service proof, then EOF.\n'
+  + 'Signer history: node src/api-credit-cli.js --signer-inspect-fd 3 --output-fd 6 --bootstrap-ms 1000\n'
+  + 'Signer output contains private existing signed-payment DATA; history grants no dispatch.\n'
   + 'No stdin, environment secret, mnemonic, generated key or default profile.\n';
 
 /** Single documented candidate entry. Parsing/help never import the native
@@ -19,7 +21,10 @@ export async function runApiCreditCli(argv) {
   if (args.mode === 'HELP') { process.stdout.write(HELP); return 0; }
   let result;
   try {
-    if (args.mode === 'INSPECT') {
+    if (args.mode === 'SIGNER_INSPECT') {
+      const { runNativeApiCreditSignerInspection } = await import('./zenon/native-api-credit-recovery-inspection-launcher.js');
+      result = await runNativeApiCreditSignerInspection(args);
+    } else if (args.mode === 'INSPECT') {
       const { runNativeApiCreditRecoveryInspection } = await import('./zenon/native-api-credit-recovery-inspection-launcher.js');
       result = await runNativeApiCreditRecoveryInspection(args);
     } else {
