@@ -63,8 +63,9 @@ DATA controls use the actual checkpoint/wire/profile codecs, owner and CLI
 coordinator with declared transport, clock, timer and FIFO ports. They execute
 no native CLI, socket/TLS, SQL, SDK/core package, key/signature, nonce search,
 PREPARE, payment or pilot. Native bindings receive source and parser checks.
-The provider query listener remains an explicit separate source composition;
-the issued-funding root is not replaced. End-to-end ACK loss, fresh-process
+The [shared issued-provider root](ISSUED_FUNDING_GRANT_PROVIDER.md) now
+mounts the query alongside funding/service in source. No active provider or held
+listener is replaced. End-to-end ACK loss, fresh-process
 reopen, real proof/TLS composition, native release, Linux installation and the
 G1 100-call product scenario still require their own acceptance. G0-G5 remain
 open. Prior native evidence keeps its original source/runtime binding.

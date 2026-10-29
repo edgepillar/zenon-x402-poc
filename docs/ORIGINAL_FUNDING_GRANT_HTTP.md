@@ -22,8 +22,10 @@ The dedicated ingress factory accepts exactly this one GET target and repeats
 its binding check at admission reinspection. The ordinary POST and official
 x402 factories retain their existing method contracts. The native downstream
 is supplied explicitly to that ingress, together with the existing bounded
-Node HTTPS server factory. It is an independent opt-in query listener; it does
-not replace, stop or recover an existing funding listener. An uncertain old
+Node HTTPS server factory. The [shared issued-provider application](ISSUED_FUNDING_GRANT_PROVIDER.md)
+adds an explicit mixed profile at the same origin as funding and service. The
+dedicated query-only profile remains separate; neither replaces or stops a held
+listener. An uncertain old
 owner must remain held. Bind refusal is not authority to interrupt it.
 
 The holder selects `createOriginalFundingGrantNativeHttpsTransport` with the
@@ -52,8 +54,8 @@ The holder query is mounted in the explicit source-only
 It requires the original checkpoint/independent pins, retained selection and an
 existing read proof; it creates no key or signature. The single owner requires
 the transport's actual CLOSED receipt and fresh zero-count snapshots before
-result output. The issued-funding root is not replaced, and provider listener
-startup remains an explicit separate composition. Native proof/TLS composition,
+result output. The new shared issued-provider root is source-only and does not replace an
+active provider; startup and owner admission remain explicit. Native proof/TLS composition,
 restart/ownership admission and the single Linux product entry still need
 acceptance. Funding ACK loss, fresh-process reopen, release and G1's 100-call
 scenario are not established by these DATA results. Existing historical native

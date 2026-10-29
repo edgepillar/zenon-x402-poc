@@ -1,0 +1,298 @@
+{
+  "qualification": "G2_ISSUED_FUNDING_GRANT_PROVIDER_DATA",
+  "status": "RETAINED_UNKNOWN_FAILURES",
+  "failures": [
+    {
+      "status": "UNKNOWN",
+      "rawQualificationSha256": "0e20d2dcc4a80f63e55e5af78a49c2613e2c276ddf9171bd94da9e6a29f48365",
+      "recordedAtUTC": "2026-10-29T14:57:39.922613+00:00",
+      "classification": "SOURCE_PREPARATION",
+      "task": "NOT_STARTED",
+      "actualDataNodeCommands": 0,
+      "actualSyntaxNodeCommands": 0,
+      "nativeExecutions": 0,
+      "actualExits": [],
+      "groupResults": {},
+      "correction": {
+        "sha256": "0e20d2dcc4a80f63e55e5af78a49c2613e2c276ddf9171bd94da9e6a29f48365",
+        "status": "UNKNOWN",
+        "actualDataNodeCommands": 0,
+        "actualSyntaxNodeCommands": 0,
+        "nativeExecutions": 0,
+        "correction": "Unselected provider source must come from current public main, not a differing protected local draft; acquire exact public blobs through the managed source task and preserve the original draft."
+      },
+      "wholeSourceTaskPassed": false
+    },
+    {
+      "status": "UNKNOWN",
+      "rawQualificationSha256": "21eaf13e3f23af16deb739925cb82a9f99c248dc5451df6ec0dc19733768d1ff",
+      "recordedAtUTC": "2026-10-29T15:04:23.021578+00:00",
+      "classification": "SOURCE_PREPARATION",
+      "task": "NOT_STARTED",
+      "actualDataNodeCommands": 0,
+      "actualSyntaxNodeCommands": 0,
+      "nativeExecutions": 0,
+      "actualExits": [],
+      "groupResults": {},
+      "correction": {
+        "sha256": "21eaf13e3f23af16deb739925cb82a9f99c248dc5451df6ec0dc19733768d1ff",
+        "status": "UNKNOWN",
+        "actualDataNodeCommands": 0,
+        "actualSyntaxNodeCommands": 0,
+        "nativeExecutions": 0,
+        "correction": "The public GET selected server lacks the issued-funding export. Add only the reviewed issued-POST composition to that source while preserving the public GET entry; keep the protected original and omit its unused bare-POST entry."
+      },
+      "wholeSourceTaskPassed": false
+    },
+    {
+      "status": "UNKNOWN",
+      "rawQualificationSha256": "04224d742c0539d7a0e73cbb91bc3b96b322e508054b4f2e992005e4c6e6a1bf",
+      "recordedAtUTC": "2026-10-29T15:06:49.195287+00:00",
+      "classification": "SOURCE_PREPARATION",
+      "task": "NOT_STARTED",
+      "actualDataNodeCommands": 0,
+      "actualSyntaxNodeCommands": 0,
+      "nativeExecutions": 0,
+      "actualExits": [],
+      "groupResults": {},
+      "correction": {
+        "sha256": "04224d742c0539d7a0e73cbb91bc3b96b322e508054b4f2e992005e4c6e6a1bf",
+        "status": "UNKNOWN",
+        "actualDataNodeCommands": 0,
+        "actualSyntaxNodeCommands": 0,
+        "nativeExecutions": 0,
+        "correction": "A source preparation variable shadowed the buyer graph set with downstream source text. Keep graph and source text separate; no task or DATA/parser command had started."
+      },
+      "wholeSourceTaskPassed": false
+    },
+    {
+      "status": "UNKNOWN",
+      "rawQualificationSha256": "102a84c6ad62776af778943b403a512f5d2ebede32fe6ad25ced96fd4f17e51d",
+      "recordedAtUTC": "2026-10-29T15:11:10.770955+00:00",
+      "classification": "HARNESS_CLOSE_OBSERVATION",
+      "task": "CLOSED/FAILURE",
+      "actualDataNodeCommands": 1,
+      "actualSyntaxNodeCommands": 0,
+      "nativeExecutions": 0,
+      "actualExits": [
+        13
+      ],
+      "groupResults": {},
+      "correction": {
+        "sha256": "102a84c6ad62776af778943b403a512f5d2ebede32fe6ad25ced96fd4f17e51d",
+        "status": "UNKNOWN",
+        "actualDataNodeCommands": 1,
+        "actualSyntaxNodeCommands": 0,
+        "nativeExecutions": 0,
+        "taskOutcome": "FAILURE",
+        "actualExit": 13,
+        "correction": "Retain the unsettled declared DATA Promise as UNKNOWN. Add bounded beforeExit result capture to identify the current case; do not infer any native result or repeat the unchanged prior regression controls."
+      },
+      "wholeSourceTaskPassed": false
+    },
+    {
+      "status": "UNKNOWN",
+      "rawQualificationSha256": "e188606a9b214b95fe41c92b2f9b280779b78a47af26f1f3252fd0885b4dc891",
+      "recordedAtUTC": "2026-10-29T15:13:26.126702+00:00",
+      "classification": "HARNESS_CLOSE_OBSERVATION",
+      "task": "CLOSED/FAILURE",
+      "actualDataNodeCommands": 1,
+      "actualSyntaxNodeCommands": 0,
+      "nativeExecutions": 0,
+      "actualExits": [
+        1
+      ],
+      "groupResults": {
+        "issuedGrantProvider": {
+          "passed": 40,
+          "failed": 1,
+          "cases": [
+            {
+              "id": "issued-provider-three-fixed-routes-share-one-origin-and-one-listener-capability",
+              "status": "PASS"
+            },
+            {
+              "id": "issued-provider-unpaid-funding-retains-original-402-post-contract",
+              "status": "PASS"
+            },
+            {
+              "id": "issued-provider-paid-bound-retains-202-without-activation",
+              "status": "PASS"
+            },
+            {
+              "id": "issued-provider-query-before-grant-is-not-recorded-with-no-authority",
+              "status": "PASS"
+            },
+            {
+              "id": "issued-provider-committed-original-is-found-without-service-admission",
+              "status": "PASS"
+            },
+            {
+              "id": "issued-provider-query-never-refreshes-price-time-or-debits",
+              "status": "PASS"
+            },
+            {
+              "id": "issued-provider-query-and-service-use-separate-response-vary-contracts",
+              "status": "PASS"
+            },
+            {
+              "id": "issued-provider-service-requires-explicit-committed-grant-admission",
+              "status": "PASS"
+            },
+            {
+              "id": "issued-provider-query-is-blocked-while-funding-operation-is-active",
+              "status": "PASS"
+            },
+            {
+              "id": "issued-provider-query-is-blocked-while-service-operation-is-active",
+              "status": "PASS"
+            },
+            {
+              "id": "issued-provider-query-is-blocked-during-external-grant-read-admission",
+              "status": "PASS"
+            },
+            {
+              "id": "issued-provider-query-history-does-not-advance-pending-official-settlement",
+              "status": "PASS"
+            },
+            {
+              "id": "issued-provider-unknown-query-read-holds-all-application-admission",
+              "status": "PASS"
+            },
+            {
+              "id": "issued-provider-bad-proof-does-not-read-store-or-hold-healthy-root",
+              "status": "PASS"
+            },
+            {
+              "id": "issued-provider-funding-response-write-loss-cannot-admit-new-authority",
+              "status": "PASS"
+            },
+            {
+              "id": "issued-provider-close-retires-query-service-and-funding-without-closing-stores",
+              "status": "PASS"
+            },
+            {
+              "id": "issued-provider-close-reuses-the-same-native-close-receipt",
+              "status": "PASS"
+            },
+            {
+              "id": "issued-provider-rejects-nonempty-startup-without-sdk-or-listener-entry",
+              "status": "PASS"
+            },
+            {
+              "id": "issued-provider-rejects-invalid-limits-before-funding-construction",
+              "status": "PASS"
+            },
+            {
+              "id": "issued-provider-query-callback-success-with-nonvoid-return-stays-held",
+              "status": "PASS"
+            },
+            {
+              "id": "issued-provider-query-close-nonvoid-after-inline-success-cannot-publish-closed",
+              "status": "PASS"
+            },
+            {
+              "id": "issued-provider-wrong-method-and-path-never-enter-provider-ports",
+              "status": "PASS"
+            },
+            {
+              "id": "issued-provider-foreign-host-is-rejected-for-all-three-routes",
+              "status": "PASS"
+            },
+            {
+              "id": "issued-provider-query-method-cannot-reach-funding-or-service",
+              "status": "PASS"
+            },
+            {
+              "id": "issued-provider-post-cannot-reach-original-grant-query",
+              "status": "PASS"
+            },
+            {
+              "id": "issued-provider-service-chunked-or-query-headers-are-rejected",
+              "status": "PASS"
+            },
+            {
+              "id": "issued-provider-service-body-size-and-content-type-are-closed",
+              "status": "PASS"
+            },
+            {
+              "id": "issued-provider-query-foreign-resource-is-rejected-before-verifier",
+              "status": "PASS"
+            },
+            {
+              "id": "issued-provider-descriptor-only-metadata-never-enters-a-getter",
+              "status": "PASS"
+            },
+            {
+              "id": "issued-provider-proxy-metadata-never-enters-a-trap",
+              "status": "PASS"
+            },
+            {
+              "id": "issued-provider-duplicate-host-and-sparse-headers-are-rejected",
+              "status": "PASS"
+            },
+            {
+              "id": "issued-provider-query-four-argument-seam-claims-completion-before-read",
+              "status": "PASS"
+            },
+            {
+              "id": "issued-provider-query-legacy-three-argument-call-does-not-read",
+              "status": "PASS"
+            },
+            {
+              "id": "issued-provider-query-malformed-completion-is-rejected-before-reader",
+              "status": "PASS"
+            },
+            {
+              "id": "issued-provider-query-completion-cannot-be-reused",
+              "status": "PASS"
+            },
+            {
+              "id": "issued-provider-query-opaque-context-is-not-wire-authentication",
+              "status": "PASS"
+            },
+            {
+              "id": "issued-provider-query-writer-failure-holds-with-no-store-close",
+              "status": "PASS"
+            },
+            {
+              "id": "issued-provider-query-refusal-uses-no-verifier-or-store",
+              "status": "PASS"
+            },
+            {
+              "id": "issued-provider-query-close-is-logical-and-late-reads-cannot-enter-store",
+              "status": "PASS"
+            },
+            {
+              "id": "issued-provider-query-reentry-latches-held-before-a-second-read",
+              "status": "PASS"
+            },
+            {
+              "id": "issued-provider-actual-holder-owner-consumes-shared-root-history-after-close",
+              "status": "FAIL",
+              "error": "UNSETTLED_DECLARED_DATA_PROMISE"
+            }
+          ]
+        }
+      },
+      "correction": {
+        "sha256": "e188606a9b214b95fe41c92b2f9b280779b78a47af26f1f3252fd0885b4dc891",
+        "status": "UNKNOWN",
+        "actualDataNodeCommands": 1,
+        "actualSyntaxNodeCommands": 0,
+        "nativeExecutions": 0,
+        "taskOutcome": "FAILURE",
+        "passed": 40,
+        "failed": 1,
+        "correction": "The holder fixture requested the actual pure close owner receipt without calling its separate observe() contract. Observe declared zero-count sets after beginClose(), matching the existing native caller ordering. No product close-owner source changed and no physical release is claimed; preserve both earlier DATA failures."
+      },
+      "wholeSourceTaskPassed": false
+    }
+  ],
+  "correctedCurrentDataPassed": 41,
+  "failedTaskUpgraded": false,
+  "sourcePreparationFailures": 3,
+  "earlierDataFailures": 2,
+  "nativeExecutions": 0,
+  "scope": "SOURCE_PREPARATION_AND_DECLARED_CLOSE_OWNER_FIXTURE_ONLY;NO_NATIVE_ACCEPTANCE"
+}

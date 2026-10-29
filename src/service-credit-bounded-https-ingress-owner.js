@@ -4,6 +4,7 @@ import { isIP } from 'node:net';
 import { types as utilTypes } from 'node:util';
 import { captureServiceCreditBoundedHttpsIngressLimits } from './service-credit-bounded-https-ingress-limits.js';
 import { captureOriginalFundingGrantSelectedRoute, captureOriginalFundingGrantHttpsRequest } from './service-credit-original-grant-http-binding.js';
+import { captureIssuedFundingGrantRoutes, captureIssuedFundingGrantRequest } from './x402-issued-funding-grant-request-binding.js';
 import {
   captureOfficialUpfrontHttpsRoute,
   captureOfficialUpfrontHttpsRequest,
@@ -1045,7 +1046,7 @@ function scanRawHeaders(rawHeaders, authority, limits) {
   }
 }
 
-function captureRequestAdmission(request, authority, limits, allowedTargets, officialRoute, originalGrantRoute) {
+function captureRequestAdmission(request, authority, limits, allowedTargets, officialRoute, originalGrantRoute, issuedGrantRoutes) {
   try {
     if (
       request === null
@@ -1074,7 +1075,11 @@ function captureRequestAdmission(request, authority, limits, allowedTargets, off
         selectedMethod = true;
       } catch { selectedMethod = false; }
     }
-    if (originalGrantRoute !== null) {
+    if (issuedGrantRoutes !== null) {
+      selectedMethod = false;
+      try { captureIssuedFundingGrantRequest(request, issuedGrantRoutes); selectedMethod = true; }
+      catch { selectedMethod = false; }
+    } else if (originalGrantRoute !== null) {
       selectedMethod = false;
       try { captureOriginalFundingGrantHttpsRequest(request, originalGrantRoute); selectedMethod = true; }
       catch { selectedMethod = false; }
@@ -1152,7 +1157,14 @@ export function createServiceCreditBoundedHttpsIngressOwnerForOriginalFundingGra
   return createBoundedHttpsIngressOwner(options, false, captureOriginalFundingGrantSelectedRoute(route));
 }
 
-function createBoundedHttpsIngressOwner(options, officialProfile, originalGrantRoute = null) {
+/** Explicit source-selected POST funding/service plus GET original-grant
+ * recovery on one origin/listener. Ordinary POST/official factories stay fixed. */
+export function createServiceCreditBoundedHttpsIngressOwnerForIssuedFundingGrant(options, route) {
+  if (arguments.length !== 2) throw failure(CODE.invalidConfiguration);
+  return createBoundedHttpsIngressOwner(options, false, captureOriginalFundingGrantSelectedRoute(route), true);
+}
+
+function createBoundedHttpsIngressOwner(options, officialProfile, originalGrantRoute = null, issuedGrantProfile = false) {
   let configuration = exactDataObject(options, CONFIGURATION_KEYS);
   const origin = configuration === null ? null : captureOrigin(configuration.origin);
   const requestTargets = configuration === null
@@ -1179,7 +1191,12 @@ function createBoundedHttpsIngressOwner(options, officialProfile, originalGrantR
     || !safeCallable(configuration.httpsServerFactory, true)
   ) throw failure(CODE.invalidConfiguration);
 
-  if (originalGrantRoute !== null && (origin.canonicalOrigin !== originalGrantRoute.origin
+  const issuedGrantRoutes = issuedGrantProfile ? captureIssuedFundingGrantRoutes(originalGrantRoute) : null;
+  if (issuedGrantRoutes !== null) {
+    if (origin.canonicalOrigin !== issuedGrantRoutes.origin || requestTargets.length !== 3
+        || issuedGrantRoutes.requestTargets.some(target => !requestTargets.includes(target)))
+      throw failure(CODE.invalidConfiguration);
+  } else if (originalGrantRoute !== null && (origin.canonicalOrigin !== originalGrantRoute.origin
       || requestTargets.length !== 1 || requestTargets[0] !== originalGrantRoute.requestTarget))
     throw failure(CODE.invalidConfiguration);
 
@@ -3195,6 +3212,7 @@ function createBoundedHttpsIngressOwner(options, officialProfile, originalGrantR
       allowedTargets,
       officialRoute,
       originalGrantRoute,
+      issuedGrantRoutes,
     );
     if (!sameRequestAdmission(requestState.requestAdmission, currentAdmission)) {
       return 'DRIFT';
@@ -3406,6 +3424,7 @@ function createBoundedHttpsIngressOwner(options, officialProfile, originalGrantR
       allowedTargets,
       officialRoute,
       originalGrantRoute,
+      issuedGrantRoutes,
     );
     if (requestAdmission === null) {
       increment('requestsRejected');
