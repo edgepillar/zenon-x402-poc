@@ -67,7 +67,13 @@ check('multiple-offers-are-not-an-implicit-product-selection', async () => {
 });
 check('the-selected-product-budgets-support-100-distinct-requests-and-an-exact-replay', async () => {
   await refused(r => { r.input.configuration.storeOptions.custodyPolicy.maxRequests = 99; r.input.configuration.serviceOptions.transportOptions.maxRequestStarts = 99; });
-  await refused(r => { r.input.configuration.serviceOptions.transportOptions.maxRequestStarts = 100; });
+  await refused(r => { r.input.configuration.serviceOptions.transportOptions.maxRequestStarts = 99; });
+  const r = fixture(); r.input.configuration.storeOptions.custodyPolicy.maxRequests = 100;
+  r.input.configuration.serviceOptions.transportOptions.maxRequestStarts = 100;
+  const selected = select(r.input); assert.equal(selected.configuration.storeOptions.custodyPolicy.maxRequests, 100);
+  assert.equal(selected.configuration.serviceOptions.transportOptions.maxRequestStarts, 100);
+  assert.equal(selected.configuration.fundingOptions.fundingTransportOptions.maxRequestStarts, 1);
+  assert.equal(r.keyCalls + r.clockCalls, 0); selected.release(); await r.h.root.close();
 });
 check('malformed-oversized-and-noncanonical-wire-headers-refuse-before-acquisition', async () => {
   for (const header of ['bad', 'A'.repeat(5468), Buffer.from(' {"x402Version":2} ').toString('base64')]) await refused(r => { r.input.paymentRequiredHeader = header; });

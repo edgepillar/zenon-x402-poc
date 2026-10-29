@@ -77,7 +77,10 @@ export function captureSdk105ApiCreditProductOperatorData(configuration) {
       || file.storageProfile.databasePath === store.databasePath || fixed.challenge.resource.url !== store.resourceUrl
       || policy.network !== requirement.network || policy.asset !== requirement.asset || policy.recipients.length !== 1
       || policy.recipients[0] !== requirement.payTo || BigInt(requirement.amount) > BigInt(policy.maxPayment)
-      || store.custodyPolicy.maxRequests < 100 || admitted.serviceOptions.transportOptions.maxRequestStarts < 101) fail();
+      || store.custodyPolicy.maxRequests < 100 || admitted.serviceOptions.transportOptions.maxRequestStarts < 100) fail();
+  // Funding POST has its separate one-start transport. An exact recorded
+  // service replay reads the same V6 history and allocates no new wire request.
+  // The minimum service wire/custody budget therefore covers 100 distinct calls.
   const profile = F({ productProfileVersion: 1, fundingResourceUrl: store.resourceUrl,
     serviceResourceUrl: store.custodyPolicy.serviceResourceUrl, network: requirement.network, asset: requirement.asset,
     recipient: requirement.payTo, amount: requirement.amount, providerAuthentication: 'NOT_ESTABLISHED', nativeAcceptance: 'NOT_ESTABLISHED' });

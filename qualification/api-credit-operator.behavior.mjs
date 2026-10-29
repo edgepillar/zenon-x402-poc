@@ -110,7 +110,7 @@ check('operator-bootstrap-rejects-secret-loader-clock-validator-and-module-field
 check('operator-bootstrap-rejects-overlapping-roots-and-foreign-network-before-key-read', async () => {
   for (const edit of [d => { d.spendingFile.allowedRoot = d.configuration.storeOptions.allowedRoot; },
     d => { d.spendingFile.storageProfile.policy.network = 'zenon:foreign'; }, d => { d.limits.maxCommands = 105; },
-    d => { d.configuration.serviceOptions.transportOptions.maxRequestStarts = 100; }]) {
+    d => { d.configuration.serviceOptions.transportOptions.maxRequestStarts = 99; }]) {
     const r = declaredOperator({ edit }), result = await r.start(); assert.equal(result.status, 'BOOTSTRAP_REFUSED');
     assert.deepEqual(r.trace, ['profile', 'inputs-close']); assert.equal(r.calls.key + r.calls.session + r.calls.host, 0);
   }

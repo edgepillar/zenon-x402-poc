@@ -14,7 +14,7 @@ const F=Object.freeze,NOW=2_000_000_000_000;
 const EMPTY='sha256:'+createHash('sha256').update('').digest('hex');
 const digest=c=>'sha256:'+c.repeat(64);
 export function deferred(){let resolve,reject;const promise=new Promise((a,b)=>{resolve=a;reject=b;});return{promise,resolve,reject};}
-export function recordedResultFixture({onRead=null,onSubmit=null}={}){
+export function recordedResultFixture({onRead=null,onSubmit=null,requestBudget=128}={}){
  let h,s;
  h=commands.fixture({createLifecycle(c){
   s={current:true,closed:false,held:false,currentCalls:0,reads:0,submissions:0,reserves:0,begins:0,completes:0,records:new Map(),onRead,onSubmit};
@@ -35,7 +35,7 @@ export function recordedResultFixture({onRead=null,onSubmit=null}={}){
     {fundingResourceUrl:c.fundingResourceUrl,paymentHash:h.f.candidate.accountBlock.hash,network:h.policy.network});
    const funding=F({revision:3,status:'BOUND',ambiguityLatched:false,fundingResourceUrl:c.fundingResourceUrl,paymentHash:original.paymentHash,network:original.network});
    const dispatchIntent=captureOriginalServiceDispatchIntent(original,{fundingRevision:3,challengeDigest:digest('a'),paymentDigest:digest('b'),
-    custodyPolicy:{policyVersion:1,maxRequests:128,serviceResourceUrl:input.serviceResourceUrl}});
+    custodyPolicy:{policyVersion:1,maxRequests:requestBudget,serviceResourceUrl:input.serviceResourceUrl}});
    const responseObservation=F({responseObservationVersion:1,scope:'LOCAL_DECLARED_HTTP_SUCCESS_RESPONSE',status:'DECLARED_SUCCESS_RESPONSE_OBSERVED',
     grantId:input.grantId,requestId:input.requestId,paymentHash:original.paymentHash,network:original.network,fundingResourceUrl:c.fundingResourceUrl,fundingRevision:3,
     responseJson,resultCode:'api.'+input.requestId,authority:'NONE',mayStartPayment:false,maySignPayment:false,mayDispatchService:false,deliveryConfirmed:false,serviceDelivery:'NOT_ESTABLISHED'});
@@ -51,6 +51,8 @@ export function recordedResultFixture({onRead=null,onSubmit=null}={}){
  const profileFixture=applications.capturedConfiguration(),config=profileFixture.input.configuration.serviceOptions,{official,...transport}=config;
  profileFixture.input.configuration.serviceOptions={...transport,assetInfo:official.assetInfo,contextLimit:official.contextLimit};
  profileFixture.input.productProfileVersion=1;profileFixture.input.paymentRequiredHeader=h.f.input.challenge.paymentRequiredHeader;
+ profileFixture.input.configuration.storeOptions.custodyPolicy.maxRequests=requestBudget;
+ profileFixture.input.configuration.serviceOptions.transportOptions.maxRequestStarts=requestBudget;
  const selected=captureSdk105ApiCreditProductSelection(profileFixture.input),profile=consumeSdk105ApiCreditProductSelection(selected).profile;
  s.readState=F(key=>{s.owner.assertCurrent();s.reads++;if(key.grantId!==h.grant?.grantId)throw Error('declared foreign grant');
   let value=s.records.get(key.requestId)??null;if(s.onRead)value=s.onRead(value,key,s);s.owner.assertCurrent();return value;});

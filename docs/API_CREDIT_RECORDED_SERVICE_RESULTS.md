@@ -54,3 +54,18 @@ Changed native wiring receives parser checks only. No SDK/core package, SQLite,
 socket/TLS, key/signature, nonce search, native child, real PREPARE or payment is
 executed. G1 native 100-call acceptance, authenticated funding/grant, fresh-process
 recovery, Linux and G2 remain open.
+
+## Exact 100-request budget
+
+The selected product admits 100 service custody records and 100 service wire
+starts. The funding POST has a separate one-start transport; restoring the
+original during handoff does not send another funding POST. Exact recorded
+service replay uses the same current V6 history reader and consumes no new
+service wire start, reservation or execution. A new request after grant
+exhaustion remains a refusal; uncertain work never refunds or renews a budget.
+
+All existing service upper bounds, one-concurrent-request policy, byte/time
+limits, ownership checks and original-only behavior remain unchanged. DATA
+controls use declared memory history/native children and a reference grant;
+they do not establish native transport counts, SQLite durability or G1/Linux
+acceptance.
