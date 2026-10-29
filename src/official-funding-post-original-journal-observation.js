@@ -1,7 +1,7 @@
 import { Buffer } from 'node:buffer';
 import { types } from 'node:util';
 import { canonicalJson,sha256Hex,paymentIntentDigest } from './canonical.js';
-import { decodeB64Json,effectiveMinimumMomentumConfirmations } from './x402-wire.js';
+import { decodeB64Json,effectiveMinimumMomentumConfirmations,validatePaymentPayloadEnvelope,validatePaymentRequired,sameResource,sameRequirements,snapshotActiveUpfrontRequirement } from './x402-wire.js';
 import { captureIssuedFundingGrantRecoveryExpectation,captureIssuedFundingGrantRecoveryRows } from './x402-issued-funding-grant-recovery.js';
 import { captureOfficialFundingPostCustodyContext,requireOfficialFundingPostCustodyContext,
  createOfficialFundingPostObservationRecord,createOfficialFundingPostOutcomeRecord,
@@ -14,6 +14,7 @@ const F=Object.freeze,D=Object.getOwnPropertyDescriptor,O=Object.hasOwn,K=Reflec
 const THEN=D(PP,'then'),CTOR=D(PP,'constructor'),SPECIES=D(NP,Symbol.species),HELD=new Set();
 const ORIGINAL=['authorizationKey','transactionHash','chainProfile','intentDigest','resourceIdentity','resourceDigest','payer','signedAccountBlock'];
 const ENTRY=[...ORIGINAL,'evidenceState','momentumEvidence','deliveryState','cachedResponse','createdAt','updatedAt'];
+const SELECTED_JOURNAL_BINDINGS=new WeakSet();
 function fail(){throw new TypeError('ORIGINAL_FUNDING_JOURNAL_OBSERVATION');}
 function fields(v,names){if(v===null||typeof v!=='object'||types.isProxy(v)||Object.getPrototypeOf(v)!==Object.prototype||K(v).length!==names.length)fail();
  const out={};for(const k of names){const d=D(v,k);if(!d?.enumerable||!O(d,'value'))fail();Object.defineProperty(out,k,{value:d.value,enumerable:true});}return out;}
@@ -68,6 +69,35 @@ function captureJournal(value,binding){
  return F({response:snapshot(JSON.parse(normalized.responseJson)),wireHeader:Buffer.from(normalized.responseJson).toString('base64'),success,
    source:F({kind:'EXISTING_FACILITATOR_JOURNAL',revision:packet.revision,recordDigest:'sha256:'+sha256Hex(packet.entry),evidenceState:e.evidenceState,
      publicationStatus:normalized.publicationStatus,SDKReentered:false,currentCanonicality:'NOT_ESTABLISHED',serviceDelivery:'NOT_ESTABLISHED'})});
+}
+
+/** Bind the original selected SDK tuple before a journal read. This DATA
+ * operation neither verifies its signature nor authenticates a chain. The
+ * caller must already own the selected server context and verifier admission.
+ * Never derive a replacement transaction or accept a caller authorization key.
+ */
+export function captureOriginalSelectedFundingJournalBinding(payload,requirements,challenge){
+ if(arguments.length!==3)fail();const p=snapshot(payload),r=snapshot(requirements),c=snapshot(challenge);
+ validatePaymentPayloadEnvelope(p);validatePaymentRequired(c);snapshotActiveUpfrontRequirement(r);
+ if(c.accepts.length!==1||!sameResource(p.resource,c.resource)||!sameRequirements(p.accepted,r)||!sameRequirements(c.accepts[0],r))fail();
+ const intent=paymentIntentDigest(c,r),resourceDigest=sha256Hex(p.resource),tx=p.payload.transaction;
+ if(p.payload.intentDigest!==intent||typeof tx.hash!=='string'||!/^[0-9a-f]{64}$/.test(tx.hash)
+    ||tx.data!==Buffer.from(intent,'hex').toString('base64'))fail();
+ const authorizationKey=sha256Hex({domain:'zenon-x402-authorization-v1',chainProfile:r.extra.zenonChain,intentDigest:intent,resourceDigest,transactionHash:tx.hash});
+ const binding=F({original:snapshot({authorizationKey,transactionHash:tx.hash,chainProfile:r.extra.zenonChain,intentDigest:intent,
+  resourceIdentity:p.resource,resourceDigest,payer:tx.address,signedAccountBlock:tx}),requirement:r,
+  normalizer:F({payloadJson:canonicalJson(p),requirementsJson:canonicalJson(r),challengeJson:canonicalJson(c),paymentHash:tx.hash,network:r.network})});
+ SELECTED_JOURNAL_BINDINGS.add(binding);return binding;
+}
+
+/** Reuse the original recovery projection, including all eight immutable
+ * fields, delivery exclusion and the original confirmation threshold. An ACK
+ * is PENDING. An included local journal record is historical evidence only;
+ * this function does not establish current canonicality or grant authority.
+ */
+export function projectOriginalSelectedFundingJournalSnapshot(value,binding){
+ if(arguments.length!==2||binding===null||typeof binding!=='object'||types.isProxy(binding)||!SELECTED_JOURNAL_BINDINGS.has(binding))fail();
+ return captureJournal(value,binding);
 }
 
 /** Explicit local operation: close the SAME provider first, claim a durable

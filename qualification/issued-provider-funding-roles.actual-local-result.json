@@ -1,0 +1,615 @@
+{
+  "qualification": "G1_ISSUED_PROVIDER_FUNDING_ROLES_DATA",
+  "status": "PASS",
+  "recordedAtUTC": "2026-10-29T23:09:07.058487+00:00",
+  "passed": 111,
+  "failed": 0,
+  "newControls": 26,
+  "reexecutedRelevantDataControls": 85,
+  "retainedEarlierTurnExactControls": 1096,
+  "aggregateVerifiedControls": 1207,
+  "cases": [
+    {
+      "id": "witness-intent-is-canonical-bounded-and-no-commit-or-economic-receipt",
+      "status": "PASS"
+    },
+    {
+      "id": "witness-codec-refuses-noncanonical-extra-and-oversized-records",
+      "status": "PASS"
+    },
+    {
+      "id": "witness-codec-rejects-getter-anchor-without-running-it",
+      "status": "PASS"
+    },
+    {
+      "id": "witness-chain-is-anchored-and-ordered-by-pinned-digest-not-file-enumeration",
+      "status": "PASS"
+    },
+    {
+      "id": "witness-chain-refuses-branches-cycles-and-policy-or-context-substitution",
+      "status": "PASS"
+    },
+    {
+      "id": "witness-intent-before-cas-is-not-promoted-to-observed-commit",
+      "status": "PASS"
+    },
+    {
+      "id": "witness-proposed-observation-keeps-unknown-and-consumed-count",
+      "status": "PASS"
+    },
+    {
+      "id": "witness-latest-transition-permits-before-or-proposed-only-not-an-older-state",
+      "status": "PASS"
+    },
+    {
+      "id": "witness-projection-checks-actual-context-and-phase-after-matching-digest",
+      "status": "PASS"
+    },
+    {
+      "id": "witness-construction-is-inert-and-rejects-aliased-or-accessor-ports",
+      "status": "PASS"
+    },
+    {
+      "id": "witness-retain-and-readback-precede-each-original-cas",
+      "status": "PASS"
+    },
+    {
+      "id": "witness-retention-throw-prevents-even-the-reservation-cas",
+      "status": "PASS"
+    },
+    {
+      "id": "witness-nonstring-or-lost-readback-prevents-cas",
+      "status": "PASS"
+    },
+    {
+      "id": "witness-rejected-promise-receipt-is-observed-and-never-treated-as-sync-ack",
+      "status": "PASS"
+    },
+    {
+      "id": "witness-close-reentry-during-retention-fences-the-target-cas",
+      "status": "PASS"
+    },
+    {
+      "id": "witness-observe-reentry-is-refused-without-a-second-reservation",
+      "status": "PASS"
+    },
+    {
+      "id": "witness-lost-reservation-ack-can-read-consumed-history-without-repairing-held",
+      "status": "PASS"
+    },
+    {
+      "id": "witness-lost-final-ack-can-read-settled-history-without-a-new-journal-or-cas",
+      "status": "PASS"
+    },
+    {
+      "id": "witness-lost-final-write-before-cas-matches-only-the-inflight-before-state",
+      "status": "PASS"
+    },
+    {
+      "id": "witness-original-budget-is-shared-across-explicit-observations",
+      "status": "PASS"
+    },
+    {
+      "id": "witness-original-exhausted-budget-cannot-be-renewed-by-history-inspection",
+      "status": "PASS"
+    },
+    {
+      "id": "witness-store-reader-compares-full-bound-rows-before-and-after",
+      "status": "PASS"
+    },
+    {
+      "id": "witness-store-reader-refuses-a-changed-outcome-between-read-witnesses",
+      "status": "PASS"
+    },
+    {
+      "id": "witness-store-reader-detaches-the-first-chain-before-a-mutating-second-read",
+      "status": "PASS"
+    },
+    {
+      "id": "witness-inspection-reentry-close-stops-before-another-store-read",
+      "status": "PASS"
+    },
+    {
+      "id": "witness-inspection-before-provider-close-or-during-observation-does-no-io",
+      "status": "PASS"
+    },
+    {
+      "id": "witness-independent-anchor-and-selected-policy-cannot-be-replaced-by-file-rows",
+      "status": "PASS"
+    },
+    {
+      "id": "witness-history-return-does-not-reopen-the-old-provider-or-close-borrowed-files",
+      "status": "PASS"
+    },
+    {
+      "id": "first-result-construction-is-inert-and-ordinary-observe-remains-pending-only",
+      "status": "PASS"
+    },
+    {
+      "id": "first-result-explicit-method-refuses-payment-or-grant-arguments-without-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "first-result-included-original-records-one-outcome-with-zero-observation-reservations",
+      "status": "PASS"
+    },
+    {
+      "id": "first-result-acknowledgement-stays-pending-with-original-zero-count",
+      "status": "PASS"
+    },
+    {
+      "id": "first-result-original-confirmation-policy-is-not-lowered",
+      "status": "PASS"
+    },
+    {
+      "id": "first-result-zero-continuation-budget-does-not-prevent-original-result-read-or-renew-budget",
+      "status": "PASS"
+    },
+    {
+      "id": "first-result-explicit-continuation-preserves-and-exhausts-the-original-policy",
+      "status": "PASS"
+    },
+    {
+      "id": "first-result-ineligible-recorded-phases-do-not-reuse-the-first-attempt",
+      "status": "PASS"
+    },
+    {
+      "id": "first-result-does-not-read-before-known-close-and-quiescent-view",
+      "status": "PASS"
+    },
+    {
+      "id": "first-result-unknown-provider-close-prevents-all-history-access",
+      "status": "PASS"
+    },
+    {
+      "id": "first-result-independent-pin-refusal-precedes-journal-and-cas",
+      "status": "PASS"
+    },
+    {
+      "id": "first-result-foreign-signed-block-or-transaction-keeps-original-inflight",
+      "status": "PASS"
+    },
+    {
+      "id": "first-result-missing-tombstone-or-unknown-publication-never-manufactures-an-outcome",
+      "status": "PASS"
+    },
+    {
+      "id": "first-result-rejected-journal-read-remains-held-with-no-outcome-write",
+      "status": "PASS"
+    },
+    {
+      "id": "first-result-row-change-during-journal-read-stops-before-cas",
+      "status": "PASS"
+    },
+    {
+      "id": "first-result-outcome-change-during-journal-read-stops-before-cas",
+      "status": "PASS"
+    },
+    {
+      "id": "first-result-concurrent-first-or-pending-operation-cannot-read-again",
+      "status": "PASS"
+    },
+    {
+      "id": "first-result-close-during-journal-read-fences-late-outcome",
+      "status": "PASS"
+    },
+    {
+      "id": "first-result-lost-outcome-ack-never-repairs-the-old-owner-by-matching-storage",
+      "status": "PASS"
+    },
+    {
+      "id": "first-result-asynchronous-cas-rejection-is-observed-with-no-second-write",
+      "status": "PASS"
+    },
+    {
+      "id": "first-result-actual-recorded-provider-closes-and-new-controller-gets-history-only",
+      "status": "PASS"
+    },
+    {
+      "id": "first-result-witness-retain-and-readback-precede-the-only-outcome-cas",
+      "status": "PASS"
+    },
+    {
+      "id": "first-result-witness-lost-retain-receipt-leaves-inflight-before-state",
+      "status": "PASS"
+    },
+    {
+      "id": "first-result-witness-lost-outcome-ack-allows-history-without-old-owner-repair",
+      "status": "PASS"
+    },
+    {
+      "id": "first-result-witness-close-reentry-fences-the-outcome-cas",
+      "status": "PASS"
+    },
+    {
+      "id": "first-result-witness-chain-carries-zero-first-count-then-original-observation-budget",
+      "status": "PASS"
+    },
+    {
+      "id": "first-result-witness-codec-refuses-count-increase-exhausted-or-false-origin-phase",
+      "status": "PASS"
+    },
+    {
+      "id": "first-result-full-16-observation-policy-fits-exactly-33-witnesses",
+      "status": "PASS"
+    },
+    {
+      "id": "journal-observation-construction-captures-no-io-and-rejects-foreign-capability-shapes",
+      "status": "PASS"
+    },
+    {
+      "id": "journal-observation-closes-the-same-provider-before-any-store-or-journal-read",
+      "status": "PASS"
+    },
+    {
+      "id": "journal-observation-waits-for-a-void-close-and-a-fresh-quiescent-view",
+      "status": "PASS"
+    },
+    {
+      "id": "journal-observation-sync-or-nonvoid-close-cannot-acquire-custody",
+      "status": "PASS"
+    },
+    {
+      "id": "journal-observation-nonclosed-or-active-provider-never-writes",
+      "status": "PASS"
+    },
+    {
+      "id": "journal-observation-unreleased-native-metrics-prevent-custody",
+      "status": "PASS"
+    },
+    {
+      "id": "journal-observation-current-closed-view-is-rechecked-after-close-await",
+      "status": "PASS"
+    },
+    {
+      "id": "journal-observation-independent-outcome-pin-is-checked-before-reservation",
+      "status": "PASS"
+    },
+    {
+      "id": "journal-observation-zero-budget-and-existing-settled-state-never-call-journal",
+      "status": "PASS"
+    },
+    {
+      "id": "journal-observation-lost-reservation-ack-retains-count-without-reading-journal",
+      "status": "PASS"
+    },
+    {
+      "id": "journal-observation-strict-cas-refuses-a-stale-identical-claim",
+      "status": "PASS"
+    },
+    {
+      "id": "journal-observation-missing-claim-readback-does-not-fall-back-to-a-second-claim",
+      "status": "PASS"
+    },
+    {
+      "id": "journal-observation-promise-cas-rejection-is-observed-without-invoking-journal",
+      "status": "PASS"
+    },
+    {
+      "id": "journal-observation-acknowledged-journal-state-stays-pending",
+      "status": "PASS"
+    },
+    {
+      "id": "journal-observation-original-confirmation-threshold-is-not-lowered",
+      "status": "PASS"
+    },
+    {
+      "id": "journal-observation-included-original-at-threshold-records-settled-data",
+      "status": "PASS"
+    },
+    {
+      "id": "journal-observation-last-pending-count-exhausts-the-original-policy",
+      "status": "PASS"
+    },
+    {
+      "id": "journal-observation-repeated-explicit-observations-share-one-provider-close-and-budget",
+      "status": "PASS"
+    },
+    {
+      "id": "journal-observation-foreign-transaction-or-signed-bytes-remain-inflight",
+      "status": "PASS"
+    },
+    {
+      "id": "journal-observation-tombstones-and-publication-unknown-do-not-become-settlement",
+      "status": "PASS"
+    },
+    {
+      "id": "journal-observation-delivery-and-compensation-are-not-inferred-from-inclusion",
+      "status": "PASS"
+    },
+    {
+      "id": "journal-observation-journal-getters-never-run-and-uncertainty-is-retained",
+      "status": "PASS"
+    },
+    {
+      "id": "journal-observation-rejected-journal-read-never-refunds-the-reservation",
+      "status": "PASS"
+    },
+    {
+      "id": "journal-observation-lost-outcome-ack-is-not-repaired-by-matching-storage",
+      "status": "PASS"
+    },
+    {
+      "id": "journal-observation-row-change-during-journal-read-blocks-result-commit",
+      "status": "PASS"
+    },
+    {
+      "id": "journal-observation-concurrent-call-cannot-start-a-second-observer",
+      "status": "PASS"
+    },
+    {
+      "id": "journal-observation-close-during-read-retains-held-and-never-persists-a-late-result",
+      "status": "PASS"
+    },
+    {
+      "id": "journal-observation-result-is-an-independent-pin-candidate-with-none-authority",
+      "status": "PASS"
+    },
+    {
+      "id": "journal-observation-actual-restored-controller-closes-before-observation-and-needs-explicit-reopen",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-funding-roles-construction-does-not-read-journal-or-call-facilitator",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-selected-journal-binding-matches-all-original-fields",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-selected-journal-projection-refuses-forged-or-copied-bindings",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-selected-journal-ack-is-pending-and-grants-no-publication-or-service",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-selected-journal-original-confirmation-threshold-is-preserved",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-selected-journal-included-original-produces-only-sdk-shaped-result",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-selected-journal-pending-budget-exhausts-without-reset-or-extra-read",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-selected-journal-zero-budget-never-enters-reader",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-selected-journal-max-16-policy-refuses-the-seventeenth-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-selected-journal-concurrent-reentry-is-refused-before-reading",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-selected-journal-read-failure-consumes-entry-and-keeps-held",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-selected-journal-close-fences-late-result-with-no-new-authority",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-selected-journal-nonpromise-read-is-held-without-thenable-assimilation",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-selected-journal-promised-then-getter-is-not-invoked",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-selected-journal-tombstone-missing-and-unknown-cannot-claim-success",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-selected-journal-every-original-field-must-match-before-result",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-selected-journal-delivery-or-cached-response-is-not-funding-proof",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-selected-journal-malformed-or-changed-context-does-not-enter-reader",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-selected-journal-input-getters-are-not-invoked",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-selected-journal-wrong-arity-and-closed-state-have-no-read",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-chain-selection-is-explicit-and-environment-is-detached",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-chain-selection-current-profile-reuses-existing-explicit-policy",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-chain-selection-does-not-default-or-fall-back-on-mismatch",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-chain-selection-refuses-ambiguous-or-unencrypted-remote-endpoints",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-chain-selection-proxies-and-getters-are-rejected-without-hooks",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-selected-journal-real-sdk-free-bridge-uses-one-first-and-original-read",
+      "status": "PASS"
+    }
+  ],
+  "nodeVersion": "24.19.0",
+  "platform": "darwin-arm64",
+  "nodeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25",
+  "rawQualificationSha256": "477da437de1ed9bc69de1cdafc21cbca950590f460196e34800eb0c18882a781",
+  "sourceProfile": {
+    "path": "qualification/profiles/api-credit-application-source-v41.json",
+    "bytes": 305039,
+    "sha256": "9cedb771e815ae9447219fcbcec7a430a3ebdbdcd664ae27b705f28b1b0541c5"
+  },
+  "fixedProviderFundingRoles": {
+    "version": 1,
+    "scope": "FIXED_FACILITATOR_AND_ORIGINAL_JOURNAL_PENDING_ROLES",
+    "nativeEntry": "src/issued-provider-native-funding-roles.js",
+    "factory": "createIssuedProviderNativeFundingRoles",
+    "observer": "src/issued-provider-selected-journal-observer.js",
+    "selector": "src/issued-provider-chain-selection.js",
+    "sharedProjection": "src/official-funding-post-original-journal-observation.js",
+    "actualFacilitator": true,
+    "borrowedActualJournal": true,
+    "immutableExistingOnlyJournalRequired": true,
+    "missingStateCannotInitialize": true,
+    "capturedPrototypeReader": true,
+    "explicitExistingTrustSelectors": true,
+    "matchingRequirementChain": true,
+    "explicitRpcAndTimeout": true,
+    "noAmbientEnvironment": true,
+    "resetEpochExpectedSelectedHolder": true,
+    "noArbitraryVerifierOrSettlerInjection": true,
+    "noGeneralMaintenanceAsPendingObserver": true,
+    "originalTupleCapturedBeforeRead": true,
+    "allEightImmutableJournalFieldsCompared": true,
+    "originalConfirmationThreshold": true,
+    "ackRemainsPending": true,
+    "maximumOriginalJournalReads": 16,
+    "unknownConsumesEntry": true,
+    "closeFencesLateRead": true,
+    "noPublishSignOrStoreWriteInObserver": true,
+    "noNativeExecution": true,
+    "sourceFundingRoleInputs": 23,
+    "sourceOwnedProviderInputs": 67,
+    "sourceProviderInputs": 57,
+    "sourceRecoveryInputs": 36,
+    "sourceJournalRecoveryInputs": 43,
+    "sourceWitnessHistoryInputs": 18,
+    "sourceBuyerInputs": 165,
+    "moduleCatalogRows": 568,
+    "packageRows": 404,
+    "directBareEdges": 9,
+    "originalProviderFactoriesUnchanged": true,
+    "nativeJournalIO": "NOT_ESTABLISHED",
+    "freshObservation": "NOT_ESTABLISHED",
+    "currentCanonicality": "NOT_ESTABLISHED",
+    "nativeRoleLifetime": "NOT_ESTABLISHED",
+    "physicalRelease": "NOT_ESTABLISHED",
+    "LinuxCommand": "NOT_ESTABLISHED",
+    "LinuxAcceptance": "NOT_ESTABLISHED",
+    "G1G2Acceptance": "OPEN"
+  },
+  "proofManifest": {
+    "path": "qualification/issued-provider-funding-roles.proof-manifest.json",
+    "bytes": 263500,
+    "sha256": "09a272f531cc060d8c96dce3117eace25a13b8d23f5a9156a64c3207dcb4848b"
+  },
+  "journalAndFacilitatorPorts": "DECLARED_MEMORY_ONLY",
+  "signatureData": "UNAUTHENTICATED_EXISTING_FIELDS",
+  "actualDataNodeCommands": 4,
+  "actualSyntaxNodeCommands": 2,
+  "currentSourceParserCommands": 1,
+  "supersededSourceParserCommands": 1,
+  "postReviewParserQualificationSha256": "0e3190c5fc5634f170082d015337c7d511f973381f1f340dc37246bd9d1b78c5",
+  "sourceReviewCorrections": [
+    {
+      "path": "docs/ISSUED_PROVIDER_FUNDING_ROLES.md",
+      "previousSourceSha256": "5b4e2ee797397a13851a87512e6c8f7904aab29f1245c5b5156d703b661681ae",
+      "currentSourceSha256": "1616fe70f33cfff460fc8752287de786ecf37d6f0528c64fb52403dae8c24768",
+      "scope": "SOURCE_ONLY_REVIEW_CORRECTION;NO_DATA_RUNTIME_CHANGE",
+      "reason": "Require the immutable existingOnly journal flag; document the missing-state refusal instead of an initializer."
+    },
+    {
+      "path": "src/issued-provider-native-funding-roles.js",
+      "previousSourceSha256": "bc9b0cff3474f9fc112d3df003e25523abccef364a5cf97c0e365d4ba40e41ba",
+      "currentSourceSha256": "8b46f45df756b773c6a3f019b223fd5c37fab5add29f797fabc20f31ebd4ca0b",
+      "scope": "SOURCE_ONLY_REVIEW_CORRECTION;NO_DATA_RUNTIME_CHANGE",
+      "reason": "Require the immutable existingOnly journal flag; document the missing-state refusal instead of an initializer."
+    }
+  ],
+  "failureInventory": {
+    "path": "qualification/issued-provider-funding-roles.failure-inventory.json",
+    "bytes": 1799,
+    "sha256": "bde13c28978b3f0381c0571e4756ffd6ea014b9ce4858abb38b66b863e442f6f"
+  },
+  "sourceContract": {
+    "path": "qualification/issued-provider-funding-roles.source-contract.json",
+    "bytes": 3989,
+    "sha256": "6149d80e89d332b5623c5a7b42f60000c19cde292c8c8fb869ab301845113007"
+  },
+  "nativeExecutions": 0,
+  "SDK": 0,
+  "SQLite": 0,
+  "keys": 0,
+  "signatures": 0,
+  "sockets": 0,
+  "nonceSearches": 0,
+  "nodeChildren": 0,
+  "actualPrepare": 0,
+  "payouts": 0,
+  "task": "CLOSED/SUCCESS",
+  "resources": {
+    "taskQuotaBytes": 4194304,
+    "plannedExecutionPeakBytes": 2924539,
+    "sourceInputs": 271,
+    "dataRuntimeInputs": 64,
+    "fundingRoleSourceInputs": 23,
+    "parserInputs": 1,
+    "reusedParserInputs": 37,
+    "invalidatedParserInputs": 0,
+    "retainedExactRuntimeDataControls": 1096,
+    "reexecutedRelevantDataControls": 85,
+    "sourceOnlyCASLookupsAvoided": 206,
+    "materializedInputs": 65,
+    "sourceOnlyAliasesAvoided": 206,
+    "CASVerifiedReuse": 60,
+    "CASNewImports": 5,
+    "sourceTextArchives": 0,
+    "minimumFreeFloorBytes": 10737418240,
+    "streamAllocationPlan": {
+      "serialCommands": true,
+      "maximumRetainedSuccessfulDataStdoutBytes": 41223,
+      "requiredSuccessfulStderrBytes": 0,
+      "maximumOnePendingStderrBytes": 1048576,
+      "unchangedParserReceiptsReused": 37,
+      "newParserCommands": 1,
+      "sourceAliasBytes": 753530,
+      "newSourceCASBytes": 47446,
+      "allReferencedSourceCASBytes": 753530,
+      "metadataMarginBytes": 262144,
+      "allReferencedCASChargedPerTask": true,
+      "preexistingCASAlsoCharged": true,
+      "serialDataCommands": 4
+    },
+    "serialDataCommands": 4,
+    "actualCurrentParserCommands": 1,
+    "supersededCurrentParserCommands": 1,
+    "postReviewParserTaskPlannedPeakBytes": 1390514,
+    "earlierDataCommands": 0,
+    "earlierFailedDataCommands": 0,
+    "failedDataTasks": 0,
+    "quotaExpanded": false,
+    "parserBatchAdmission": true,
+    "proofManifestDeduplicated": true
+  },
+  "nativePersistence": "NOT_ESTABLISHED",
+  "nativeAcceptance": "NOT_ESTABLISHED",
+  "externalOwnerFencing": "NOT_ESTABLISHED",
+  "physicalRelease": "NOT_ESTABLISHED",
+  "LinuxAcceptance": "NOT_ESTABLISHED",
+  "current108CISeparate": true,
+  "newControlsIncludedIn108CI": false
+}

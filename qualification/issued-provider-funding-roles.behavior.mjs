@@ -1,0 +1,72 @@
+// Actual tuple projection, pending observer, trust selector and SDK-free bridge.
+// Journal/facilitator callbacks and existing signature fields are declared DATA.
+import assert from 'node:assert/strict';
+import { Buffer } from 'node:buffer';
+import { fileURLToPath } from 'node:url';
+import { canonicalJson } from '../src/canonical.js';
+import { captureOriginalSelectedFundingJournalBinding as bind,projectOriginalSelectedFundingJournalSnapshot as project } from '../src/official-funding-post-original-journal-observation.js';
+import { createIssuedProviderSelectedJournalObserver as create } from '../src/issued-provider-selected-journal-observer.js';
+import { captureIssuedProviderChainSelection as chain } from '../src/issued-provider-chain-selection.js';
+import { createSelectedSettlementServerBridgeForOfficialX402Core223 as bridge } from '../src/x402-selected-settlement-server-bridge.js';
+import { originalJournalObservationDataFixture as original,originalJournalObservationDataFlush as flush } from './original-journal-observation.behavior.mjs';
+import { OPERATOR_TRUSTED_PUBLIC_TESTNET_PROFILE_NAME,OPERATOR_TRUST_ACKNOWLEDGEMENT,TESTNET_LIVE_ACKNOWLEDGEMENT,
+ OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE,GATE_B_CURRENT_TESTNET_PROFILE_NAME,GATE_B_CURRENT_TESTNET_OPERATOR_TRUST_ACKNOWLEDGEMENT,
+ GATE_B_CURRENT_TESTNET_CHAIN_PROFILE } from '../src/zenon/operator-trusted-testnet-profile.js';
+
+const F=Object.freeze,checks=[],clone=v=>JSON.parse(JSON.stringify(v));
+function check(id,run){checks.push({id,run});}
+function fixture(options={}){
+ const prior=original(options),d=prior.d,payload=clone(d.row.binding.publication.paymentPayload),challenge=JSON.parse(Buffer.from(d.config.issuedFrame.paymentRequiredHeader,'base64').toString('utf8'));
+ const state={reads:0,journal:clone(d.journal)},reader=F(value=>{state.reads++;assert.deepEqual(value,d.original);return options.read?options.read(state,value,prior):Promise.resolve(state.journal);});
+ const owner=create({requirement:payload.accepted,readJournal:reader,maximumObservations:options.maximum??2});
+ return {d,state,reader,owner,payload,requirement:payload.accepted,challenge,args:()=>[payload,payload.accepted,challenge]};
+}
+function ack(f){f.state.journal.entry.evidenceState='SUBMISSION_ACKNOWLEDGED';f.state.journal.entry.momentumEvidence=null;}
+function policy(current=false){const f=fixture(),r=clone(f.requirement);r.extra.zenonChain=clone(current?GATE_B_CURRENT_TESTNET_CHAIN_PROFILE:OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE);
+ return {r,c:{selection:{profileName:current?GATE_B_CURRENT_TESTNET_PROFILE_NAME:OPERATOR_TRUSTED_PUBLIC_TESTNET_PROFILE_NAME,
+  operatorTrustAcknowledgement:current?GATE_B_CURRENT_TESTNET_OPERATOR_TRUST_ACKNOWLEDGEMENT:OPERATOR_TRUST_ACKNOWLEDGEMENT,
+  liveAcknowledgement:TESTNET_LIVE_ACKNOWLEDGEMENT},rpcUrl:'wss://operator-selected.invalid/',rpcTimeoutMs:1000}};}
+
+check('provider-funding-roles-construction-does-not-read-journal-or-call-facilitator',()=>{const f=fixture();assert.equal(f.state.reads,0);assert.equal(f.owner.snapshot().readEntries,0);assert.equal(f.owner.snapshot().originalBound,false);f.owner.close();});
+check('provider-selected-journal-binding-matches-all-original-fields',()=>{const f=fixture(),selected=bind(...f.args());assert.deepEqual(selected.original,f.d.original);assert.equal(project(f.state.journal,selected).response.success,true);assert.equal(project(f.state.journal,selected).source.currentCanonicality,'NOT_ESTABLISHED');f.owner.close();});
+check('provider-selected-journal-projection-refuses-forged-or-copied-bindings',()=>{const f=fixture(),selected=bind(...f.args());assert.throws(()=>project(f.state.journal,clone(selected)));assert.throws(()=>project(f.state.journal,new Proxy(selected,{})));f.owner.close();});
+check('provider-selected-journal-ack-is-pending-and-grants-no-publication-or-service',async()=>{const f=fixture();ack(f);const r=await f.owner.observe(...f.args());assert.equal(r.success,false);assert.equal(r.errorReason,'settlement_pending');assert.equal(r.transaction,f.d.original.transactionHash);assert.equal(f.owner.snapshot().publicationCalls+f.owner.snapshot().grantCalls,0);f.owner.close();});
+check('provider-selected-journal-original-confirmation-threshold-is-preserved',async()=>{const f=fixture({minimum:3,confirmations:2}),r=await f.owner.observe(...f.args());assert.equal(r.success,false);assert.equal(r.errorReason,'settlement_pending');f.owner.close();});
+check('provider-selected-journal-included-original-produces-only-sdk-shaped-result',async()=>{const f=fixture(),r=await f.owner.observe(...f.args());assert.equal(r.success,true);assert.equal(r.transaction,f.d.original.transactionHash);assert.equal(r.payer,f.d.original.payer);assert.equal(Object.isFrozen(r),true);assert.equal(f.state.reads,1);assert.equal(f.owner.snapshot().newChainObservation,false);f.owner.close();});
+check('provider-selected-journal-pending-budget-exhausts-without-reset-or-extra-read',async()=>{const f=fixture({maximum:2});ack(f);await f.owner.observe(...f.args());await f.owner.observe(...f.args());await assert.rejects(f.owner.observe(...f.args()));assert.equal(f.state.reads,2);assert.equal(f.owner.snapshot().readEntries,2);assert.equal(f.owner.snapshot().held,false);f.owner.close();});
+check('provider-selected-journal-zero-budget-never-enters-reader',async()=>{const f=fixture({maximum:0});await assert.rejects(f.owner.observe(...f.args()));assert.equal(f.state.reads,0);f.owner.close();});
+check('provider-selected-journal-max-16-policy-refuses-the-seventeenth-entry',async()=>{const f=fixture({maximum:16});ack(f);for(let i=0;i<16;i++)await f.owner.observe(...f.args());await assert.rejects(f.owner.observe(...f.args()));assert.equal(f.state.reads,16);f.owner.close();});
+check('provider-selected-journal-concurrent-reentry-is-refused-before-reading',async()=>{let resolve;const pending=new Promise(yes=>resolve=yes),f=fixture({read:()=>pending}),work=f.owner.observe(...f.args());await assert.rejects(f.owner.observe(...f.args()));assert.equal(f.state.reads,1);resolve(f.state.journal);await work;f.owner.close();});
+check('provider-selected-journal-read-failure-consumes-entry-and-keeps-held',async()=>{const f=fixture({read:()=>Promise.reject(Error('declared journal read loss'))});await assert.rejects(f.owner.observe(...f.args()));await assert.rejects(f.owner.observe(...f.args()));assert.equal(f.state.reads,1);assert.equal(f.owner.snapshot().held,true);assert.throws(()=>f.owner.close());});
+check('provider-selected-journal-close-fences-late-result-with-no-new-authority',async()=>{let resolve;const pending=new Promise(yes=>resolve=yes),f=fixture({read:()=>pending}),work=f.owner.observe(...f.args());assert.throws(()=>f.owner.close());resolve(f.state.journal);await assert.rejects(work);assert.equal(f.owner.snapshot().held,true);await assert.rejects(f.owner.observe(...f.args()));assert.equal(f.state.reads,1);});
+check('provider-selected-journal-nonpromise-read-is-held-without-thenable-assimilation',async()=>{let hooks=0;const f=fixture({read:()=>Object.defineProperty({},'then',{get(){hooks++;throw Error();}})});await assert.rejects(f.owner.observe(...f.args()));assert.equal(hooks,0);assert.equal(f.owner.snapshot().held,true);});
+check('provider-selected-journal-promised-then-getter-is-not-invoked',async()=>{let hooks=0;const f=fixture({read:()=>{const p=Promise.reject(Error('declared prehandled native promise'));p.catch(()=>{});Object.defineProperty(p,'then',{get(){hooks++;throw Error();}});return p;}});await assert.rejects(f.owner.observe(...f.args()));await flush();assert.equal(hooks,0);assert.equal(f.owner.snapshot().held,true);});
+check('provider-selected-journal-tombstone-missing-and-unknown-cannot-claim-success',async()=>{for(const change of [v=>v.kind='tombstone',v=>v.kind=null,v=>v.entry.evidenceState='SUBMISSION_OUTCOME_UNKNOWN']){const f=fixture();change(f.state.journal);await assert.rejects(f.owner.observe(...f.args()));assert.equal(f.owner.snapshot().held,true);}});
+check('provider-selected-journal-every-original-field-must-match-before-result',async()=>{for(const key of ['authorizationKey','transactionHash','chainProfile','intentDigest','resourceIdentity','resourceDigest','payer','signedAccountBlock']){const f=fixture();f.state.journal.entry[key]=null;await assert.rejects(f.owner.observe(...f.args()));assert.equal(f.owner.snapshot().held,true);}});
+check('provider-selected-journal-delivery-or-cached-response-is-not-funding-proof',async()=>{for(const change of [v=>v.entry.deliveryState='DELIVERED',v=>v.entry.cachedResponse={status:200}]){const f=fixture();change(f.state.journal);await assert.rejects(f.owner.observe(...f.args()));assert.equal(f.owner.snapshot().held,true);}});
+check('provider-selected-journal-malformed-or-changed-context-does-not-enter-reader',async()=>{const f=fixture();for(const change of [v=>v[0].resource.url+='changed',v=>v[1].amount='99',v=>v[2].accepts.push(clone(v[2].accepts[0])),v=>v[0].payload.intentDigest='f'.repeat(64),v=>v[0].payload.transaction.data='AA==']){const args=clone(f.args());change(args);await assert.rejects(f.owner.observe(...args));}assert.equal(f.state.reads,0);assert.equal(f.owner.snapshot().held,false);f.owner.close();});
+check('provider-selected-journal-input-getters-are-not-invoked',async()=>{const f=fixture();let hooks=0;Object.defineProperty(f.payload,'resource',{enumerable:true,get(){hooks++;throw Error();}});await assert.rejects(f.owner.observe(...f.args()));assert.equal(hooks,0);assert.equal(f.state.reads,0);f.owner.close();});
+check('provider-selected-journal-wrong-arity-and-closed-state-have-no-read',async()=>{const f=fixture();await assert.rejects(f.owner.observe(...f.args(),true));f.owner.close();f.owner.close();await assert.rejects(f.owner.observe(...f.args()));assert.equal(f.state.reads,0);});
+check('provider-chain-selection-is-explicit-and-environment-is-detached',()=>{const {c,r}=policy(),s=chain(c,r);assert.equal(s.remoteChainAuthenticated,false);assert.equal(s.environment.ZENON_LIVE_ACK,TESTNET_LIVE_ACKNOWLEDGEMENT);assert.equal(s.environment.ZENON_NETWORK_ID,'3');assert.equal(Object.keys(s.environment).length,2);c.rpcUrl='wss://different.invalid/';assert.equal(s.rpcUrl,'wss://operator-selected.invalid/');});
+check('provider-chain-selection-current-profile-reuses-existing-explicit-policy',()=>{const {c,r}=policy(true),s=chain(c,r);assert.deepEqual(s.chainProfile,GATE_B_CURRENT_TESTNET_CHAIN_PROFILE);assert.equal(s.currentNetworkAcceptance,'NOT_ESTABLISHED');});
+check('provider-chain-selection-does-not-default-or-fall-back-on-mismatch',()=>{for(const change of [c=>delete c.selection.profileName,c=>c.selection.profileName='unknown',c=>c.selection.liveAcknowledgement='',c=>c.selection.operatorTrustAcknowledgement='',c=>c.rpcTimeoutMs=0,c=>c.rpcTimeoutMs=60001,c=>c.selection.extra=true]){const {c,r}=policy();change(c);assert.throws(()=>chain(c,r));}const {c,r}=policy();r.extra.zenonChain=clone(GATE_B_CURRENT_TESTNET_CHAIN_PROFILE);assert.throws(()=>chain(c,r));});
+check('provider-chain-selection-refuses-ambiguous-or-unencrypted-remote-endpoints',()=>{for(const url of ['ws://external.invalid/','https://operator-selected.invalid/','wss://operator-selected.invalid/path','wss://user:secret@operator-selected.invalid/','wss://operator-selected.invalid/?x=1','wss://operator-selected.invalid/#x','wss://operator-selected.invalid']){const {c,r}=policy();c.rpcUrl=url;assert.throws(()=>chain(c,r));}const {c,r}=policy();c.rpcUrl='ws://127.0.0.1:36999/';assert.equal(chain(c,r).rpcUrl,c.rpcUrl);});
+check('provider-chain-selection-proxies-and-getters-are-rejected-without-hooks',()=>{const {c,r}=policy();let hooks=0;c.selection=new Proxy(c.selection,{getOwnPropertyDescriptor(){hooks++;throw Error();}});assert.throws(()=>chain(c,r));assert.equal(hooks,0);const v=policy();Object.defineProperty(v.c.selection,'profileName',{enumerable:true,get(){hooks++;throw Error();}});assert.throws(()=>chain(v.c,v.r));assert.equal(hooks,0);});
+check('provider-selected-journal-real-sdk-free-bridge-uses-one-first-and-original-read',async()=>{const f=fixture(),calls={verify:0,first:0};
+ const local=F({verify:F(()=>{calls.verify++;return {isValid:true,payer:f.d.original.payer};}),settle:F(()=>{calls.first++;return {success:false,errorReason:'settlement_pending',transaction:f.d.original.transactionHash,network:f.requirement.network,publicationStatus:'ACKNOWLEDGED'};})});
+ const b=bridge({requirement:f.requirement,localFacilitator:local,validateChallenge:F(()=>{}),reconcilePendingSettlement:f.owner.observe,maxPendingReconciliations:2,contextLimit:1});
+ const challenge=clone(f.challenge),view=challenge.accepts[0];await b.schemeServer.enrichPaymentRequiredResponse({paymentRequiredResponse:challenge,requirements:[view]});
+ const pending=await b.facilitatorClient.settle(f.payload,view);assert.equal(pending.success,false);assert.equal(f.state.reads,0);
+ const done=await b.facilitatorClient.settle(f.payload,view);assert.equal(done.success,true);assert.equal(calls.verify,1);assert.equal(calls.first,1);assert.equal(f.state.reads,1);assert.equal(b.getSnapshot().firstSettlementCalls,1);assert.equal(b.getSnapshot().pendingObservationCalls,1);f.owner.close();});
+
+export const issuedProviderFundingRolesDataCases=F([...checks]);
+if(process.argv[1]===fileURLToPath(import.meta.url)){
+ const cases=[];let current=null,reported=false;
+ function report(){if(reported)return;reported=true;const failed=cases.filter(c=>c.status==='FAIL').length;console.log(JSON.stringify({qualification:'G1_ISSUED_PROVIDER_FUNDING_ROLES_DATA',passed:cases.length-failed,failed,cases,
+  actualProjectionObserverTrustSelectorAndSdkFreeBridge:true,journalAndFacilitatorPorts:'DECLARED_MEMORY_ONLY',signatureData:'UNAUTHENTICATED_EXISTING_FIELDS',
+  nativeExecutions:0,SDK:0,SQLite:0,keys:0,signatures:0,sockets:0,nonceSearches:0,nodeChildren:0,actualPrepare:0,payouts:0,
+  nativeJournalIO:'NOT_ESTABLISHED',nativeSDKCore:'NOT_ESTABLISHED',currentCanonicality:'NOT_ESTABLISHED',LinuxCommand:'NOT_ESTABLISHED',G1G2:'OPEN'}));if(failed)process.exitCode=1;}
+ function unsettled(){if(current!==null){cases.push({id:current,status:'FAIL',error:'UNSETTLED_DECLARED_DATA_PROMISE'});report();}}
+ process.once('beforeExit',unsettled);for(const {id,run}of checks){current=id;try{await run();cases.push({id,status:'PASS'});}catch(e){cases.push({id,status:'FAIL',error:String(e?.message??'unknown').slice(0,256)});}current=null;}
+ process.off('beforeExit',unsettled);report();
+}

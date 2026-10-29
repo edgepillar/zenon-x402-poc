@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "qualification": "G1_ISSUED_PROVIDER_FUNDING_ROLES_FAILURE_INVENTORY",
+  "status": "PREPARATION_UNKNOWN_PRESERVED",
+  "failures": [
+    {
+      "rawQualificationSha256": "5e7da7e412be03a250e050bf4fbe197d07d1245a7938fb76ae55af7a1f146c2e",
+      "status": "UNKNOWN",
+      "kind": "PRE_QUALIFICATION_REFERENCE_ERROR",
+      "actualDataCommands": 0,
+      "actualParserCommands": 0,
+      "managedTaskCreated": false,
+      "preserved": true,
+      "correction": "Corrected the predecessor receipt pointer before qualification. No application source changed and no native command was entered."
+    }
+  ],
+  "currentDataFailures": 0,
+  "currentParserFailures": 0,
+  "priorInventory": "qualification/issued-provider-store-owner.failure-inventory.json",
+  "priorFailuresReclassified": false,
+  "nativeExecutions": 0,
+  "sourceReviewCorrections": [
+    {
+      "path": "docs/ISSUED_PROVIDER_FUNDING_ROLES.md",
+      "previousSourceSha256": "5b4e2ee797397a13851a87512e6c8f7904aab29f1245c5b5156d703b661681ae",
+      "currentSourceSha256": "1616fe70f33cfff460fc8752287de786ecf37d6f0528c64fb52403dae8c24768",
+      "scope": "SOURCE_ONLY_REVIEW_CORRECTION;NO_DATA_RUNTIME_CHANGE",
+      "reason": "Require the immutable existingOnly journal flag; document the missing-state refusal instead of an initializer."
+    },
+    {
+      "path": "src/issued-provider-native-funding-roles.js",
+      "previousSourceSha256": "bc9b0cff3474f9fc112d3df003e25523abccef364a5cf97c0e365d4ba40e41ba",
+      "currentSourceSha256": "8b46f45df756b773c6a3f019b223fd5c37fab5add29f797fabc20f31ebd4ca0b",
+      "scope": "SOURCE_ONLY_REVIEW_CORRECTION;NO_DATA_RUNTIME_CHANGE",
+      "reason": "Require the immutable existingOnly journal flag; document the missing-state refusal instead of an initializer."
+    }
+  ]
+}
