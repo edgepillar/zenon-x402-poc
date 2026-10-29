@@ -146,7 +146,9 @@ function openFile(configuration, signerCustodyEnabled, signerContextEnabled = fa
       nativeResourceCleanup: 'NOT_QUALIFIED', authority: 'NONE' });
   }
   const signerCustody = signerCustodyEnabled ? F({
-    ...(signerContextEnabled ? { requirePreparationContext: true } : {}),
+    // The selected context wallet rechecks this same existing owner/token
+    // after intent I/O, outside the SDK signer call. No owner is acquired.
+    ...(signerContextEnabled ? { requirePreparationContext: true, assertCurrent: F(assertCurrent) } : {}),
     beginSignerAttempt: F(function beginSignerAttempt(paymentId, unsignedBlock, context) {
       if (arguments.length !== (signerContextEnabled ? 3 : 2)) fail('INPUT');
       return operation('beginSignerAttempt', signerContextEnabled ? [paymentId, unsignedBlock, context] : [paymentId, unsignedBlock]);

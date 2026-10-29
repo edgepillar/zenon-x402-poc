@@ -1,6 +1,7 @@
 // Real wallet/planner source with declared clock/store/key-method/wire ports.
 // No SDK, SQL, socket, real keys/signatures, work search or native PREPARE.
 import assert from 'node:assert/strict';
+import { fileURLToPath } from 'node:url';
 import { apiCreditSignerInspectionDataCases } from './api-credit-signer-inspection.behavior.mjs';
 import { closeApiCreditOperatorDataFixtures } from './api-credit-operator.behavior.mjs';
 import { signerEntryUnitFixture as unit, signerEntryCompositionFixture as composition } from './api-credit-signer-entry-age.fixture.mjs';
@@ -116,9 +117,12 @@ check('signer-age-real-planner-preserves-original-signed-bytes-after-signer-late
   assert.equal(JSON.parse(record.signedBlockJson).hash,result.accountBlock.hash);assert.equal(r.signs,1);assert.equal(r.materialCalls,1);await assert.rejects(r.run());assert.equal(r.signs,1);await r.owner.close();
 });
 
+export const apiCreditSignerEntryAgeDataCases = F([...checks]);
+if(process.argv[1]!==undefined&&fileURLToPath(import.meta.url)===process.argv[1]){
 const cases=[];for(const {id,run}of checks){try{await run();cases.push({id,status:'PASS'});}catch(e){cases.push({id,status:'FAIL',error:String(e?.message??e)});}}
 await closeApiCreditOperatorDataFixtures();const failed=cases.filter(r=>r.status!=='PASS').length;
 console.log(JSON.stringify({qualification:'G2_SIGNER_ENTRY_AGE_DATA',passed:cases.length-failed,failed,cases,priorCases:apiCreditSignerInspectionDataCases.length,
   declaredClockStoreKeyMethodAndWirePortsOnly:true,actualPlannerDataCompositions:5,existingMaterialTimersEachStartedAndCleared:1,
   nativeExecutions:0,SDK:0,SQLite:0,keys:0,signatures:0,sockets:0,nonceSearches:0,nodeChildren:0,actualPrepare:0,payouts:0,
   localElapsedTimeOnly:true,chainFreshness:'NOT_ESTABLISHED',nativeDurability:'NOT_ESTABLISHED',Linux:'NOT_ESTABLISHED',fullG2:'NOT_ESTABLISHED'}));if(failed)process.exitCode=1;
+}

@@ -50,7 +50,9 @@ export function createSdk105AgeBoundSignerContextWalletOwner(configuration, cust
   const custody = captureCustody(custodyConfiguration), entry = record(entryConfiguration, ['clock', 'maxReadToSignerMs']);
   if (!custody.contextRequired || typeof entry.clock !== 'function' || PROXY(entry.clock) || !Object.isFrozen(entry.clock)
       || !Number.isSafeInteger(entry.maxReadToSignerMs) || entry.maxReadToSignerMs < 1 || entry.maxReadToSignerMs > 60000) fail('configuration_rejected');
-  return createOwner(configuration, custody, entry);
+  const current = method(custody.backend, 'assertCurrent');
+  if (!Object.isFrozen(current)) fail('configuration_rejected');
+  return createOwner(configuration, { ...custody, current }, entry);
 }
 function captureCustody(custodyConfiguration) {
   const c = record(custodyConfiguration, ['paymentId', 'backend']);
@@ -72,7 +74,8 @@ function createOwner(configuration, custody, entry = null) {
   let signAttempted = false, sdkSignerEntered = false, sdkSignReturned = false;
   let signingOutcome = 'NOT_ENTERED', clearOutcome = 'NOT_REQUESTED', clearCalls = 0;
   let unobservableSdkResult = null, unboundSdkResult = null, closeTerminal = false;
-  const saved = { intent: null, intentEntered: false, intentReturned: false, resultEntered: false, resultReturned: false, transactionHash: null };
+  const saved = { intent: null, intentEntered: false, intentReturned: false, resultEntered: false, resultReturned: false, transactionHash: null,
+    currentEntered: false, currentReturned: false };
   const contextRequired = custody !== null && custody.contextRequired, DECODE = contextRequired ? decodeOriginalFundingSignerContextRecord : decodeOriginalFundingSignerRecord;
   let preparedContext = null, preSignContext = null, preparationBindEntered = false, preSignBindEntered = false;
   const window = { entered: false, started: false, refused: false, last: null, deadline: null, checks: 0 };
@@ -142,6 +145,16 @@ function createOwner(configuration, custody, entry = null) {
             saved.intent = raw; saved.transactionHash = record.transactionHash; saved.intentReturned = true;
           } catch { held = true; throw error('custody_unknown'); }
           if (closing !== null || held || !invariant() || APPLY(TEXT, hashBytes, ['hex']) !== hashAtEntry) fail('closed');
+          if (entry !== null) {
+            requireSignerEntryAge(); saved.currentEntered = true;
+            const value = APPLY(custody.current, custody.backend, []);
+            if (safePromise(value)) { try { APPLY(THEN, value, [discard, discard]); } catch {} }
+            if (value !== undefined) fail('owner_check_unknown');
+            saved.currentReturned = true;
+            // A guard can block or request close. It cannot extend this run
+            // or authorize a changed hash before the final age check below.
+            if (closing !== null || held || !invariant() || APPLY(TEXT, hashBytes, ['hex']) !== hashAtEntry) fail('closed');
+          }
         }
         // No await, key/DB callback or renewal occurs between this final
         // monotonic check and the captured synchronous SDK signer entry.
@@ -256,7 +269,9 @@ function createOwner(configuration, custody, entry = null) {
         resultEntered: saved.resultEntered, resultReturned: saved.resultReturned, transactionHash: saved.transactionHash,
         ...(contextRequired ? { contextRequired: true, preparationBound: preparedContext !== null, preSignContextBound: preSignContext !== null } : {}),
         ...(entry === null ? {} : { signerEntryAge: F({ version: 1, maxReadToSignerMs: entry.maxReadToSignerMs, observationEntered: window.entered,
-          started: window.started, refused: window.refused, checks: window.checks, authority: 'NONE', chainFreshness: 'NOT_ESTABLISHED' }) }),
+          started: window.started, refused: window.refused, checks: window.checks, authority: 'NONE', chainFreshness: 'NOT_ESTABLISHED' }),
+          currentOwnerCheck: F({ version: 1, entered: saved.currentEntered, returned: saved.currentReturned,
+            authority: 'NONE', atomicExternalDispatchFencing: 'NOT_ESTABLISHED' }) }),
         localCommitReceipt: saved.resultReturned ? 'SIGNED_RESULT_RETURNED' : saved.intentReturned ? 'INTENT_RETURNED' : 'NOT_ESTABLISHED', authority: 'NONE' }) }),
       signatureValidation:'NOT_PERFORMED',keyErasure:'NOT_ESTABLISHED',authority:'NONE' });
   });

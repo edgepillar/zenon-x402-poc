@@ -13,13 +13,16 @@ import { createDynamicPlasmaJsonRpcReadTransport } from '../src/zenon/dynamic-pl
 
 const F = Object.freeze, copy = x => JSON.parse(JSON.stringify(x)), ZERO = '0'.repeat(64), H = '33'.repeat(32), PREVIOUS = '66'.repeat(32);
 function make(d, options) {
-  const r = { ...d, now: options.start ?? 0n, raw: null, trace: [], clockCalls: 0, signs: 0, clears: 0, keyCalls: 0, begins: 0, retains: 0, stop: null };
+  const r = { ...d, now: options.start ?? 0n, raw: null, trace: [], clockCalls: 0, signs: 0, clears: 0, keyCalls: 0, begins: 0, retains: 0, stop: null,
+    guardCalls: 0, current: true, fileClosed: false };
   r.backend = F({ requirePreparationContext: true,
+    assertCurrent: F(function assertCurrent() { assert.equal(this,r.backend);assert.equal(arguments.length,0);r.guardCalls++; r.trace.push('owner-check'); if(options.guard)return options.guard(r);
+      if(!r.current||r.fileClosed)throw Error('declared stale/closed file owner'); }),
     beginSignerAttempt: F((id, block, context) => { r.trace.push('intent-entry'); r.begins++; assert.equal(id, d.row.paymentId); assert.equal(r.raw, null);
       r.raw = createOriginalFundingSignerContextIntent(d.row, block, context); r.trace.push('intent-commit');
       if (options.intent) options.intent(r); return r.raw;
     }),
-    retainSignerResult: F((id, expected, block) => { r.retains++; r.trace.push('result-entry'); assert.equal(expected, r.raw); assert.equal(id, d.row.paymentId);
+    retainSignerResult: F((id, expected, block) => { r.retains++; r.trace.push('result-entry'); assert.equal(expected, r.raw); assert.equal(id, d.row.paymentId);if(options.retain)options.retain(r);
       r.raw = completeOriginalFundingSignerContextRecord(expected, block, d.row); r.trace.push('result-commit'); return r.raw;
     }) });
   r.key = { getAddress() { r.keyCalls++; return d.unsigned.address; }, getPublicKey() { r.keyCalls++; return Buffer.from(d.unsigned.publicKey, 'base64'); },
