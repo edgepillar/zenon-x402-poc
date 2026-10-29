@@ -8,7 +8,7 @@ import {
   snapshotOriginalServiceRequestCustodyPolicy,
   snapshotOriginalServiceRequestCustodyKey,
 } from './service-credit-original-request-custody-contract.js';
-import { runServiceCreditRecoveryInspectionOwner } from './service-credit-recovery-inspection-owner.js';
+import { runServiceCreditRecoveryInspectionOwner, runServiceCreditRecordedResultInspectionOwner } from './service-credit-recovery-inspection-owner.js';
 import { consumeApiCreditRecoveryInspectionProfile, releaseApiCreditRecoveryInspectionProfile } from './api-credit-recovery-inspection-profile.js';
 
 const FREEZE = Object.freeze, KEYS = Reflect.ownKeys, DESC = Object.getOwnPropertyDescriptor;
@@ -77,13 +77,20 @@ export async function inspectServiceCreditOriginal(configuration) {
  * Only existing stores and the actual V6 no-dispatch connection are opened.
  * A pending consumer owns its profile release, including after outer expiry. */
 export async function inspectServiceCreditCapturedOriginal(profile, requireOpening) {
+  if (arguments.length !== 2) fail(); return inspectCapturedProfile(profile, requireOpening, false);
+}
+/** Explicit product-only cache output; the legacy redacted mode is unchanged. */
+export async function inspectServiceCreditCapturedRecordedResult(profile, requireOpening) {
+  if (arguments.length !== 2) fail(); return inspectCapturedProfile(profile, requireOpening, true);
+}
+async function inspectCapturedProfile(profile, requireOpening, recorded) {
   try {
-    if (arguments.length !== 2 || typeof requireOpening !== 'function' || IS_PROXY(requireOpening) || !Object.isFrozen(requireOpening)) fail();
+    if (typeof requireOpening !== 'function' || IS_PROXY(requireOpening) || !Object.isFrozen(requireOpening)) fail();
     requireOpening(); const captured = consumeApiCreditRecoveryInspectionProfile(profile);
-    return await inspectCaptured(captured.manifest, captured.authorizationHeader, captured.serializedCheckpoint, requireOpening);
+    return await inspectCaptured(captured.manifest, captured.authorizationHeader, captured.serializedCheckpoint, requireOpening, recorded);
   } finally { try { releaseApiCreditRecoveryInspectionProfile(profile); } catch {} }
 }
-async function inspectCaptured(manifest, proof, serializedCheckpoint, requireOpening) {
+async function inspectCaptured(manifest, proof, serializedCheckpoint, requireOpening, recorded = false) {
   requireOpening(); const { ServiceCreditSqliteStore } = await import('./service-credit-sqlite-store.js');
   requireOpening(); const { openServiceCreditCustodiedSqliteBackendRecoveryClientV6 } = await import('./service-credit-custodied-backend-recovery-client.js');
   requireOpening(); const OPEN_BACKEND = ServiceCreditSqliteStore.openExisting, CLOSE_BACKEND = ServiceCreditSqliteStore.prototype.close;
@@ -98,7 +105,7 @@ async function inspectCaptured(manifest, proof, serializedCheckpoint, requireOpe
     }),
     closeBackend: FREEZE(function closeExistingBackend(store) { return APPLY(CLOSE_BACKEND, store, []); })
   });
-  return runServiceCreditRecoveryInspectionOwner({ manifest, authorizationHeader: proof, serializedCheckpoint, ports, requireOpening });
+  return (recorded ? runServiceCreditRecordedResultInspectionOwner : runServiceCreditRecoveryInspectionOwner)({ manifest, authorizationHeader: proof, serializedCheckpoint, ports, requireOpening });
 }
 
 /** Same bounded argument/manifest/owner path as the launcher; no output hook. */

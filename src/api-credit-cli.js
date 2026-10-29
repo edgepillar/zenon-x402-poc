@@ -10,6 +10,8 @@ const HELP = 'API credit operator source candidate (native acceptance is OPEN).\
   + 'Input/output: bounded explicit original-funding and service commands.\n'
   + 'History only: node src/api-credit-cli.js --inspect-fd 3 --output-fd 6 --bootstrap-ms 1000\n'
   + 'Inspect input: one canonical recovery envelope and its existing service proof, then EOF.\n'
+  + 'Recorded result: node src/api-credit-cli.js --recorded-result-fd 3 --output-fd 6 --bootstrap-ms 1000\n'
+  + 'Same original/proof envelope; returns bounded cache DATA without dispatch authority.\n'
   + 'Signer history: node src/api-credit-cli.js --signer-inspect-fd 3 --output-fd 6 --bootstrap-ms 1000\n'
   + 'Signer output contains private existing signed-payment DATA; history grants no dispatch.\n'
   + 'No stdin, environment secret, mnemonic, generated key or default profile.\n';
@@ -21,7 +23,10 @@ export async function runApiCreditCli(argv) {
   if (args.mode === 'HELP') { process.stdout.write(HELP); return 0; }
   let result;
   try {
-    if (args.mode === 'SIGNER_INSPECT') {
+    if (args.mode === 'RECORDED_RESULT') {
+      const { runNativeApiCreditRecordedResultInspection } = await import('./zenon/native-api-credit-recovery-inspection-launcher.js');
+      result = await runNativeApiCreditRecordedResultInspection(args);
+    } else if (args.mode === 'SIGNER_INSPECT') {
       const { runNativeApiCreditSignerInspection } = await import('./zenon/native-api-credit-recovery-inspection-launcher.js');
       result = await runNativeApiCreditSignerInspection(args);
     } else if (args.mode === 'INSPECT') {

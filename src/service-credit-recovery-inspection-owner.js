@@ -1,3 +1,4 @@
+import { captureApiCreditRecordedResultInspection } from './api-credit-recorded-result-inspection.js';
 import { types } from 'node:util';
 import { encodeOriginalPaymentCheckpoint } from './service-credit-pilot-original-payment-checkpoint.js';
 
@@ -64,12 +65,19 @@ export function captureServiceCreditRecoveryInspectionOutput(value) {
  * only a returned payer's void stop AND fresh RELEASED view permit backend stop.
  * No retry, competing raw close, snapshot-based repair or external dispatch. */
 export async function runServiceCreditRecoveryInspectionOwner(configuration) {
-  if (arguments.length !== 1 || ACTIVE.size + FAILED.size >= 16) fail('INPUT');
+  if (arguments.length !== 1) fail('INPUT'); return runInspection(configuration, false);
+}
+export async function runServiceCreditRecordedResultInspectionOwner(configuration) {
+  if (arguments.length !== 1) fail('INPUT'); return runInspection(configuration, true);
+}
+async function runInspection(configuration, recorded) {
+  if (ACTIVE.size + FAILED.size >= 16) fail('INPUT');
   const c = fields(configuration, ['manifest', 'authorizationHeader', 'serializedCheckpoint', 'ports', 'requireOpening']);
   const p = fields(c.ports, ['openBackend', 'openPayer', 'closeBackend']);
   for (const fn of [...Object.values(p), c.requireOpening]) if (typeof fn !== 'function' || types.isProxy(fn) || !Object.isFrozen(fn)) fail('INPUT');
   if (typeof c.authorizationHeader !== 'string' || !c.authorizationHeader.startsWith('ServiceCredit ') || c.authorizationHeader.length > 1024
       || /[\r\n\0]/.test(c.authorizationHeader) || c.serializedCheckpoint !== null && typeof c.serializedCheckpoint !== 'string') fail('INPUT');
+  if (recorded && (typeof c.serializedCheckpoint !== 'string' || c.serializedCheckpoint.length === 0 || c.serializedCheckpoint.length > 32768)) fail('INPUT');
   const frame = { backend: null, backendKnown: false, payer: null, payerKnown: false, payerEntered: false,
     payerStopEntered: false, payerStop: null, backendStopEntered: false, backendStopReturned: false, stage: 'INPUT' };
   ACTIVE.add(frame); let result = null, bad = false, reason = 'INPUT';
@@ -91,7 +99,8 @@ export async function runServiceCreditRecoveryInspectionOwner(configuration) {
     c.requireOpening(); checkpoint(); frame.stage = 'ORIGINAL_READ';
     const observed = Reflect.apply(method(frame.payer, 'readOriginalBackendRecoveryState'), frame.payer,
       [c.manifest.requestKey, c.authorizationHeader, c.manifest.expectedCheckpointPins]);
-    c.requireOpening(); checkpoint(); frame.stage = 'REDACTED_RESULT'; result = captureServiceCreditRecoveryInspectionResult(observed);
+    c.requireOpening(); checkpoint(); frame.stage = recorded ? 'RECORDED_RESULT' : 'REDACTED_RESULT';
+    result = recorded ? captureApiCreditRecordedResultInspection(observed, c.manifest) : captureServiceCreditRecoveryInspectionResult(observed);
   } catch { bad = true; reason = frame.stage; }
   finally {
     let payerClean = !frame.payerEntered;

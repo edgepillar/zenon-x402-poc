@@ -99,3 +99,34 @@ one funding/grant with 100 distinct requests and exact replay, normal/fresh
 reopen and Linux. G2 still requires source-bound funding ACK loss, signer
 response loss, stale-owner fencing and actual native release/controlled HELD.
 G3 trust/DP and G4/G5 pilot/economic acceptance remain separate gates.
+
+## Explicit recorded-result inspection candidate
+
+`node src/api-credit-cli.js --recorded-result-fd 3 --output-fd 6 --bootstrap-ms 1000`
+
+This source candidate accepts the same one-original recovery envelope and EOF
+as `--inspect-fd`, using two distinct exclusive owned FIFO ends. Independently
+retained original funding checkpoint bytes/pins and the existing service proof
+are required. It opens only the existing backend and V6 no-dispatch payer. It
+never selects a key pipe, wallet, signer, nonce search, PREPARE, new payment or
+service transport. Existing `--inspect-fd` output remains redacted.
+
+The new closed output includes a bounded backend cached result, if available.
+`responseJson` is the exact already-recorded local response only when it also
+matches the cache and original funding context. A backend-only cache leaves
+`responseJson: null`; an HTTP body is not fabricated. UNAUTHORIZED, absent or
+unknown outcomes return no cache payload. Client reconciliation remains set
+even when the backend claims cached success. No result clears a HELD/UNKNOWN
+reservation, confirms delivery, renews authority or permits another dispatch.
+
+The existing checkpoint is checked around the combined query; the V6 core also
+compares original/funding/intent/response observations before and after it. The
+payer's void close and fresh RELEASED view precede one backend close; any close
+uncertainty withholds the result and retains unknown ownership. The result is
+limited to 4096 bytes and is written only after store-owner close, within the
+same operator startup budget. This is cooperative observation, not atomic
+cross-store fencing, an OS deadline or a network sandbox.
+
+DATA reconstruction and declared SQL/proof/epoch/channel ports do not establish
+native proof verification, SQLite reopen, physical release or Linux acceptance.
+The native entry remains unexecuted and G1/G2 acceptance remains OPEN.

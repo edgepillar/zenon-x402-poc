@@ -69,3 +69,20 @@ limits, ownership checks and original-only behavior remain unchanged. DATA
 controls use declared memory history/native children and a reference grant;
 they do not establish native transport counts, SQLite durability or G1/Linux
 acceptance.
+
+## Original-only recorded-result query candidate
+
+The explicit `--recorded-result-fd` operator mode connects an existing V6
+no-dispatch query to a separate bounded product output. It preserves the
+original checkpoint/proof, same-connection before/after checks and ordered
+payer/backend close. The legacy inspection grammar still rejects payloads.
+
+`cachedResult` is a powerless backend assertion for the exact original.
+`responseJson` is present only for the exact local observed response matching
+that cache and funding context; backend-only success leaves it null. Neither
+form changes local uncertainty, grant counters or future authority. A cached
+backend success alongside `CLIENT_RECONCILIATION_REQUIRED` remains that state.
+No key, signing, funding, pricing, reservation, execution or resend is entered
+by this query. See [the operator contract](API_CREDIT_OPERATOR_CLI.md) for input,
+close and output bounds. Reconstructed reference DATA is not native restart or
+proof-verification evidence; those G1/G2 gates remain OPEN.
