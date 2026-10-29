@@ -1,0 +1,14 @@
+{
+  "qualification": "G2_FUNDING_WITNESS_PREPARATION_RECORD",
+  "status": "RETAINED_PREPARATION_UNKNOWN",
+  "rawPreparationSha256": "af4e84772e2c7a4f9acd835b20c1aeba8d639e5d16a2bfa6d26216890ab9329c",
+  "controllerSha256": "05811e5348e019f53da0f8175da91d1416eb87f604cccaddf4aca39d9f71faf3",
+  "actualDataCommands": 0,
+  "actualParserCommands": 0,
+  "ownedTaskCreated": false,
+  "nativeExecutions": 0,
+  "cause": "A static forbidden-call check matched the words rename/unlink in a source comment explaining their absence. It stopped before task creation or execution.",
+  "correction": "Match actual call expressions instead of bare comment words. Preserve the original preparation record; no completed test was repeated.",
+  "classification": "SOURCE_CONTROL_MATCHER_FALSE_POSITIVE",
+  "nativeAcceptance": "NOT_ESTABLISHED"
+}

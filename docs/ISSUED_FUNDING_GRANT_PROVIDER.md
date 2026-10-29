@@ -94,3 +94,12 @@ provider. It reserves the existing durable count before reading only the exact
 original journal entry; it never recreates an SDK continuation, publishes or
 auto-reopens the provider. See [the observation contract](ORIGINAL_FUNDING_JOURNAL_OBSERVATION.md).
 Native journal/SQL/HTTPS, process ownership, Linux and physical release remain OPEN.
+## Independent transition witness
+
+The separately named `restoreIssuedFundingGrantNativeWitnessedJournalRecovery`
+profile retains an original-only candidate intent outside the intake database
+before each journal-observation custody CAS. Its explicit history reader can
+compare the last proposed/before digest after a lost result without repairing
+HELD, retrying an observation or granting service authority. The original
+unwitnessed profile keeps its contract. See the [witness protocol and limits](ORIGINAL_FUNDING_TRANSITION_WITNESS.md).
+Native file/SQL/reopen and Linux acceptance remain OPEN.

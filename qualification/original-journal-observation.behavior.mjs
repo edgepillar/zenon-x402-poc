@@ -106,6 +106,7 @@ check('journal-observation-result-is-an-independent-pin-candidate-with-none-auth
 check('journal-observation-actual-restored-controller-closes-before-observation-and-needs-explicit-reopen',async()=>{const f=fixture(),root=await coreRoot(f),owner=create({...f.configuration,port:F({...f.port,closeProvider:root.close,inspectProvider:root.snapshot})});const r=await owner.observe();assert.equal(root.snapshot().phase,'CLOSED');assert.equal(root.snapshot().serviceAdmissionOpen,false);assert.equal(inspect(f.s.raw).phase,'SETTLED');const next=await coreRoot(f,r.recoveryExpectation);assert.equal(next.snapshot().binding.officialPhase,'SETTLED');assert.equal(next.snapshot().serviceAdmissionOpen,false);assert.equal(f.s.SDK+f.s.publish+f.s.activate,0);await next.close();await owner.close();});
 
 export const originalJournalObservationDataCases=F([...checks]);
+export const originalJournalObservationDataFixture=fixture;
 if(process.argv[1]===fileURLToPath(import.meta.url)){
  const cases=[];let current=null,reported=false;
  function report(){if(reported)return;reported=true;const failed=cases.filter(c=>c.status==='FAIL').length;console.log(JSON.stringify({qualification:'G2_ORIGINAL_FUNDING_JOURNAL_OBSERVATION_DATA',passed:cases.length-failed,failed,cases,
