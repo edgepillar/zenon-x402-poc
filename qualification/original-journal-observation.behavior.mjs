@@ -107,6 +107,8 @@ check('journal-observation-actual-restored-controller-closes-before-observation-
 
 export const originalJournalObservationDataCases=F([...checks]);
 export const originalJournalObservationDataFixture=fixture;
+export const originalJournalObservationDataProvider=coreRoot;
+export const originalJournalObservationDataFlush=flush;
 if(process.argv[1]===fileURLToPath(import.meta.url)){
  const cases=[];let current=null,reported=false;
  function report(){if(reported)return;reported=true;const failed=cases.filter(c=>c.status==='FAIL').length;console.log(JSON.stringify({qualification:'G2_ORIGINAL_FUNDING_JOURNAL_OBSERVATION_DATA',passed:cases.length-failed,failed,cases,

@@ -57,7 +57,7 @@ async function open(options,witnessed){
    ...(witnessed?{witness}:{}),port:F({closeProvider:root.close,inspectProvider:root.snapshot,
      loadBound,readOfficialOutcome:custody.read,compareAndSwap:custody.compareAndSwap,readJournal})}));}
  catch{try{await root.close();}catch{fail();}fail();}
- return F({...root,close:observation.close,reconcileOriginalFunding:observation.observe,
+ return F({...root,close:observation.close,reconcileOriginalFunding:observation.observe,recoverOriginalFundingFirstResult:observation.recoverFirstResult,
    ...(witnessed?{inspectOriginalFundingHistory:observation.inspectRecordedHistory}:{}),
    snapshot:F(function snapshot(){if(arguments.length!==0)fail();return F({...root.snapshot(),journalRecovery:observation.snapshot()});})});
 }

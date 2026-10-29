@@ -36,6 +36,10 @@ export function inspectOfficialFundingTransitionWitness(raw){
  integer(r.maximumPendingReconciliations,16);integer(r.beforeObservations,r.maximumPendingReconciliations);integer(r.afterObservations,r.maximumPendingReconciliations);
  if(r.beforePhase==='PENDING'){
   if(r.beforeObservations>=r.maximumPendingReconciliations||r.afterPhase!=='OBSERVATION_IN_FLIGHT'||r.afterObservations!==r.beforeObservations+1)fail();
+ }else if(r.beforePhase==='FIRST_IN_FLIGHT'){
+  // The original first attempt was already durably entered. Recovering its
+  // existing journal result consumes no continuation observation.
+  if(r.beforeObservations!==0||r.afterObservations!==0||!['PENDING','SETTLED'].includes(r.afterPhase))fail();
  }else if(r.beforePhase==='OBSERVATION_IN_FLIGHT'){
   if(r.beforeObservations<1||r.afterObservations!==r.beforeObservations||!['PENDING','SETTLED','EXHAUSTED'].includes(r.afterPhase)
       ||r.afterPhase==='PENDING'&&r.afterObservations>=r.maximumPendingReconciliations
@@ -57,7 +61,7 @@ export function createOfficialFundingTransitionWitness(expectation,expected,prop
 export function captureOfficialFundingTransitionWitnessChain(values,expectation){
  if(arguments.length!==2)fail();const anchor=captureIssuedFundingGrantRecoveryExpectation(expectation);
  if(values===null||typeof values!=='object'||types.isProxy(values)||Object.getPrototypeOf(values)!==Array.prototype)fail();
- const length=D(values,'length')?.value;if(!Number.isSafeInteger(length)||length<1||length>32||K(values).length!==length+1)fail();
+ const length=D(values,'length')?.value;if(!Number.isSafeInteger(length)||length<1||length>33||K(values).length!==length+1)fail();
  const pending=new Map();let original=null;
  for(let i=0;i<length;i++){const d=D(values,String(i));if(!d?.enumerable||!Object.hasOwn(d,'value'))fail();const r=inspectOfficialFundingTransitionWitness(d.value);
   if(r.boundRowDigest!==anchor.boundRowDigest||r.anchorOutcomeDigest!==anchor.outcomeRecordDigest||pending.has(r.expectedOutcomeDigest))fail();
@@ -105,6 +109,7 @@ export function createWitnessedOriginalFundingJournalObservation(options){
  const owner=createOriginalFundingJournalObservation(F({expectation:anchor,serviceSelection:selection,resourceUrl,maximumPendingReconciliations:c.maximumPendingReconciliations,
   port:F({...p,compareAndSwap})}));
  const observe=F(function observe(){if(arguments.length!==0||reading||closed||held||!invariant())return reject();return owner.observe();});
+ const recoverFirstResult=F(function recoverFirstResult(){if(arguments.length!==0||reading||closed||held||!invariant())return reject();return owner.recoverFirstResult();});
  const inspectRecordedHistory=F(function inspectRecordedHistory(){
   if(arguments.length!==0||reading||closed)fail();const before=owner.snapshot();if(before.active||!before.providerClosed)fail();reading=true;
   const scoped=fn=>F(()=>{if(closed)hold();const value=A(fn,undefined,[]);if(closed)hold(value);return value;});
@@ -116,7 +121,7 @@ export function createWitnessedOriginalFundingJournalObservation(options){
   const receipt=owner.close();if(held){safeDiscard(receipt);return reject();}return receipt;});
  const snapshot=F(function snapshot(){if(arguments.length!==0)fail();return F({...owner.snapshot(),transitionWitness:F({held,closed,reading,writes,witnessWrites,witnessReads,
   witnessRetained:lastWitness!==null,borrowedWitnessClosed:false,authority:'NONE'})});});
- return F({...owner,observe,close,snapshot,inspectRecordedHistory});
+ return F({...owner,observe,recoverFirstResult,close,snapshot,inspectRecordedHistory});
 }
 /** Synchronous read-only bridge. No provider opening, owner acquisition or CAS.
  * Full BOUND rows surround both outcome and witness reads. Caller owns lifetime. */

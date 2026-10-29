@@ -17,7 +17,7 @@ function fields(v,names){if(v===null||typeof v!=='object'||types.isProxy(v)||Obj
 function identity(s){return [s.dev,s.ino,s.uid,s.gid,s.mode,s.nlink,s.size,s.mtimeNs,s.ctimeNs].map(String).join(':');}
 function nameOf(raw){const r=inspectOfficialFundingTransitionWitness(raw);return 'funding-transition-'+r.expectedOutcomeDigest.slice(7)+'-'+r.proposedOutcomeDigest.slice(7)+'.json';}
 
-/** A separate private directory, 32 write-once intents and one fixed anchor.
+/** A separate private directory, 33 write-once intents and one fixed anchor.
  * CREATE_NEW requires an empty existing directory and never adopts old files.
  * READ_EXISTING refuses retain. No rename, unlink, migration, retry,
  * journal/SQL access, economic callback or automatic ownership handover. */
@@ -45,7 +45,7 @@ export function openNativeFundingTransitionWitness(configuration){
     if(rootIdentity!==null&&rootIdentity!==id)fail();rootIdentity??=id;}
    const parent=dirname(at);if(parent===at)break;at=parent;}}
  function regular(s){if(!s.isFile()||s.isSymbolicLink()||s.nlink!==1n||s.uid!==uid||(s.mode&0o7777n)!==0o600n||String(s.dev)!==c.expectedDevice||s.size<1n||s.size>4096n)fail();return identity(s);}
- function names(){root();const list=readdirSync(c.directory);if(list.length>33||!list.includes(ANCHOR)||list.some(n=>n!==ANCHOR&&!FILE.test(n)))fail();return list.sort();}
+ function names(){root();const list=readdirSync(c.directory);if(list.length>34||!list.includes(ANCHOR)||list.some(n=>n!==ANCHOR&&!FILE.test(n)))fail();return list.sort();}
  function closeHandle(fd){if(!handles.has(fd))fail();const returned=closeSync(fd);if(returned!==undefined)fail();handles.delete(fd);}
  function readFile(name){root();const path=join(c.directory,name),before=lstatSync(path,{bigint:true}),id=regular(before);
   if(pins.has(name)&&pins.get(name)!==id)fail();
@@ -76,7 +76,7 @@ export function openNativeFundingTransitionWitness(configuration){
  function operation(run){available();busy=true;attempts.length=0;try{return run();}catch{hold();}finally{busy=false;}}
  const state={anchor,
   retain(raw){if(c.mode!=='CREATE_NEW')fail();return operation(()=>{const r=inspectOfficialFundingTransitionWitness(raw),values=all();
-   if(values.length>=32||r.boundRowDigest!==anchor.boundRowDigest||r.anchorOutcomeDigest!==anchor.outcomeRecordDigest)fail();
+   if(values.length>=33||r.boundRowDigest!==anchor.boundRowDigest||r.anchorOutcomeDigest!==anchor.outcomeRecordDigest)fail();
    const expected=values.length?inspectOfficialFundingTransitionWitness(values.at(-1)).proposedOutcomeDigest:anchor.outcomeRecordDigest;
    if(r.expectedOutcomeDigest!==expected)fail();captureOfficialFundingTransitionWitnessChain([...values,raw],anchor);
    writeNew(nameOf(raw),raw);const seen=all();if(seen.length!==values.length+1||seen.at(-1)!==raw)fail();return raw;});},
@@ -84,7 +84,7 @@ export function openNativeFundingTransitionWitness(configuration){
    const values=all();if(!values.includes(raw))fail();return raw;});},
   readAll(){return operation(all);},
   close(){if(closed){if(held)fail();return;}closed=true;if(held||busy||handles.size!==0)hold();if(slot!==null){slot.phase='CLOSED';OWNERS.delete(rootIdentity);}return undefined;},
-  snapshot(){return F({version:1,mode:c.mode,closed,held,busy,openHandles:handles.size,maximumWitnesses:32,maximumFileBytes:4096,authority:'NONE',physicalRelease:'NOT_ESTABLISHED'});},
+  snapshot(){return F({version:1,mode:c.mode,closed,held,busy,openHandles:handles.size,maximumWitnesses:33,maximumFileBytes:4096,authority:'NONE',physicalRelease:'NOT_ESTABLISHED'});},
  };
  return new NativeFundingTransitionWitness(TOKEN,state);
 }

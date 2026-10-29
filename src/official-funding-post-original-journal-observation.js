@@ -82,7 +82,7 @@ export function createOriginalFundingJournalObservation(options){
  for(const fn of Object.values(p))if(typeof fn!=='function'||types.isProxy(fn)||!Object.isFrozen(fn))fail();
  if(!Number.isSafeInteger(c.maximumPendingReconciliations)||Object.is(c.maximumPendingReconciliations,-0)||c.maximumPendingReconciliations<0||c.maximumPendingReconciliations>16)fail();
  let closed=false,held=false,active=false,providerClose=null,closing=null,work=null,providerClosed=false,raw=null,record=null,row=null,proposed=null,readAttempts=[];
- let closeCalls=0,inspections=0,storeReads=0,writes=0,journalReads=0,operations=0;const opaque=[];
+ let closeCalls=0,inspections=0,storeReads=0,writes=0,journalReads=0,operations=0,firstResultEntries=0;const opaque=[];
  const retained=F(()=>[p,raw,record,row,proposed,opaque,readAttempts,providerClose,closing,work]);
  function hold(value){held=true;HELD.add(retained);if(value!==undefined){opaque.push(value);discard(value);}fail();}
  function check(){if(closed||held||!invariant())hold();}
@@ -124,15 +124,23 @@ export function createOriginalFundingJournalObservation(options){
   raw=next;record=requireOfficialFundingPostCustodyContext(raw,captureOfficialFundingPostCustodyContext({issuedFrame:row.issue.frame,resourceUrl,serviceSelection:selection,maximumPendingReconciliations:c.maximumPendingReconciliations}));
   proposed=null;current();return undefined;
  }
- async function run(closeReceipt,ticket){
+ async function run(closeReceipt,ticket,firstResult){
   let benign=false;try{
    await closeReceipt;check();inspectClosed();const binding=current();
-   if(record.phase!=='PENDING'||record.observations>=record.maximumPendingReconciliations){benign=true;fail();}
-   persist(createOfficialFundingPostObservationRecord(raw));check();inspectClosed();journalReads++;
+   if(firstResult){
+    if(record.phase!=='FIRST_IN_FLIGHT'){benign=true;fail();}
+    // FIRST_IN_FLIGHT already records the original SDK attempt. Do not reserve
+    // another observation, enter SDK or turn this read into a fresh attempt.
+    if(firstResultEntries!==0)fail();firstResultEntries++;
+   }else{
+    if(record.phase!=='PENDING'||record.observations>=record.maximumPendingReconciliations){benign=true;fail();}
+    persist(createOfficialFundingPostObservationRecord(raw));
+   }
+   check();inspectClosed();journalReads++;
    let value;try{value=A(p.readJournal,undefined,[binding.original]);}catch{hold();}
    const observed=(await observePromise(value,v=>{check();return captureJournal(v,binding);})).value;
    check();inspectClosed();current();
-   const phase=observed.success?'SETTLED':record.observations<record.maximumPendingReconciliations?'PENDING':'EXHAUSTED';
+   const phase=observed.success?'SETTLED':firstResult||record.observations<record.maximumPendingReconciliations?'PENDING':'EXHAUSTED';
    const bound=Object.create(null);for(const [k,v]of Object.entries(JSON.parse(record.boundJson)))Object.defineProperty(bound,k,{value:v,enumerable:true});
    const outcome=F({phase:'INTAKE_BOUND_OFFICIAL_'+phase,intake:F(bound),official:F({type:'observed-settlement',settlement:observed.response,
       headers:F({'PAYMENT-RESPONSE':observed.wireHeader}),observationSource:observed.source}),transactionHash:record.transactionHash,
@@ -146,7 +154,14 @@ export function createOriginalFundingJournalObservation(options){
  const observe=F(function observe(){
   if(arguments.length!==0||closed||held||active||operations>=32||!invariant())return rejected();
   const ticket=capability();work=ticket;active=true;operations++;
-  const receipt=requestProviderClose();A(THEN.value,run(receipt,ticket),[()=>{},()=>{}]);return ticket.promise;
+  const receipt=requestProviderClose();A(THEN.value,run(receipt,ticket,false),[()=>{},()=>{}]);return ticket.promise;
+ });
+ // Separate explicit operator entry. observe() retains its PENDING-only
+ // contract; paid replay and ordinary startup never call this method.
+ const recoverFirstResult=F(function recoverFirstResult(){
+  if(arguments.length!==0||closed||held||active||firstResultEntries!==0||operations>=32||!invariant())return rejected();
+  const ticket=capability();work=ticket;active=true;operations++;
+  const receipt=requestProviderClose();A(THEN.value,run(receipt,ticket,true),[()=>{},()=>{}]);return ticket.promise;
  });
  const close=F(function close(){
   if(arguments.length!==0)return rejected();if(closing!==null)return closing.promise;
@@ -154,8 +169,8 @@ export function createOriginalFundingJournalObservation(options){
   const receipt=requestProviderClose();A(THEN.value,receipt,[()=>{try{inspectClosed();if(active||held)fail();closing.resolve(undefined);}catch{held=true;HELD.add(retained);closing.reject(new TypeError('OBSERVATION_CLOSE_HELD'));}},()=>closing.reject(new TypeError('OBSERVATION_CLOSE_HELD'))]);
   return closing.promise;
  });
- const snapshotView=F(function snapshotView(){if(arguments.length!==0)fail();return F({originalJournalObservationVersion:1,closed,held,active,providerClosed,closeCalls,inspections,storeReads,writes,journalReads,operations,
+ const snapshotView=F(function snapshotView(){if(arguments.length!==0)fail();return F({originalJournalObservationVersion:1,closed,held,active,providerClosed,closeCalls,inspections,storeReads,writes,journalReads,operations,firstResultEntries,
    recordedPhase:record?.phase??null,observations:record?.observations??null,maximumPendingReconciliations:c.maximumPendingReconciliations,proposedWriteRetained:proposed!==null,
    SDKEntries:0,newFunding:0,grantActivations:0,serviceDispatches:0,providerReopened:false,borrowedStoresClosed:false,physicalRelease:'NOT_ESTABLISHED',authority:'NONE'});});
- return F({observe,close,snapshot:snapshotView});
+ return F({observe,recoverFirstResult,close,snapshot:snapshotView});
 }

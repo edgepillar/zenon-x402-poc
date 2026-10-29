@@ -72,3 +72,53 @@ SQLite/journal/HTTPS, real close/reopen cutpoints, Linux, live chain observation
 independent pin availability after lost results and complete G1/G2 acceptance
 remain OPEN. The unchanged hosted 108-control CI and 22 inputs are separate.
 No G0-G5 or economic/pilot gate is completed by this source change.
+
+## Explicit first-result recovery
+
+The SAME native journal wrapper also exposes the LOCAL no-argument
+`recoverOriginalFundingFirstResult()` operation. It is selected explicitly;
+normal `reconcileOriginalFunding()` remains PENDING-only. Ordinary HTTP replay,
+startup and grant admission never invoke this operation automatically.
+
+The first-result operation requires a separately pinned, existing
+FIRST_IN_FLIGHT record and the same known closed provider barrier. That record
+already represents the durably entered original SDK attempt. After checking the
+complete original context, the owner claims its one first-result read before
+calling the existing journal. It does not reserve another continuation, enter
+SDK, reconstruct a continuation, publish or sign. Only the exact original
+journal facts can supply the result. Missing, tombstoned, publication-unknown,
+foreign or malformed history leaves the original attempt in flight and HELD.
+
+ACK or inclusion below the original threshold produces PENDING with the
+original observation count of zero. Inclusion at the selected threshold can
+produce SETTLED historical DATA. The original maximum continuation budget is
+unchanged; even a zero continuation budget permits reading the already entered
+first attempt, but cannot authorize a subsequent observation. A first-result
+read never marks EXHAUSTED with a fabricated reservation. Later explicit
+PENDING observations use the existing durable increment and shared limit.
+
+There is at most one first-result journal entry per owner. Changed history,
+unknown write/readback, concurrent calls and close during a read never permit a
+second first-result operation or a late outcome write. A lost final receipt
+keeps the old owner HELD even when storage contains the proposed result.
+
+The independently witnessed profile retains/read-backs one bounded intent
+before the single outcome CAS. The witness accepts only FIRST_IN_FLIGHT at
+count zero to PENDING or SETTLED at count zero. Its chain can then continue
+through the existing observation transitions. History inspection can identify
+before/proposed bytes after a lost receipt; it does not repair the old operation
+or recover an acknowledgement. Both grant/service authority remain NONE.
+
+DATA uses declared memory ports and unauthenticated existing signature-shaped
+fields. An explicitly reconstructed controller is not a native process restart.
+No new chain observation, current canonicality, native journal durability,
+stale-owner fencing, physical release, Linux or full RL-FUNDING-ACK acceptance
+is established. Missing first-attempt intent and uncertain external publication
+remain unresolved; there is no fresh-funding fallback.
+
+The current source witness bound is 33 intents plus one anchor: one first-result
+outcome intent and two intents for each of the original maximum 16 continuation
+observations. The chain, file-owner admission, directory bound and reported
+maximum agree. Each file remains capped at 4096 bytes. Existing roots/files are
+not adopted or migrated, and no storage task quota is increased. This is a
+source capacity contract; native file I/O has not been exercised.

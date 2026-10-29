@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "status": "PRESERVED_PRIOR_CURRENT_TURN_FAILURE",
+  "rawQualificationSha256": "9e4b88a4a3e7017a08cf0d90a7e5df7f38b0e1ea9aacc0791f1a0dbeaabcb073",
+  "task": "CLOSED/FAILURE",
+  "qualificationStatus": "UNKNOWN",
+  "actualDataCommands": 3,
+  "actualParserCommands": 0,
+  "failedDataCommands": 1,
+  "failedGroupPassed": 25,
+  "failedGroupFailed": 2,
+  "failedCases": [
+    {
+      "id": "first-result-witness-lost-retain-receipt-leaves-inflight-before-state",
+      "status": "FAIL",
+      "error": "ORIGINAL_FUNDING_TRANSITION_WITNESS"
+    },
+    {
+      "id": "first-result-witness-lost-outcome-ack-allows-history-without-old-owner-repair",
+      "status": "FAIL",
+      "error": "ORIGINAL_FUNDING_TRANSITION_WITNESS"
+    }
+  ],
+  "currentVersionFailedCasesReexecutedAndPassed": true,
+  "correction": "Two DATA cases closed their witness owner before invoking history inspection; V2 inspects while HELD before explicit close.",
+  "sourceReviewCorrection": "One first-result intent plus two intents per 16 original observations requires 33 intents, 34 directory files including the anchor. Chain and native-file source bounds now agree. A new DATA control covers the complete 16-observation policy.",
+  "wholeTaskPassed": false,
+  "wholeTaskReused": false,
+  "onlyCompleteExitZeroGroupsEligible": true,
+  "completeGroups": [
+    {
+      "group": "r313_rerun_0",
+      "entry": "qualification/original-journal-observation.behavior.mjs",
+      "passed": 29,
+      "failed": 0
+    },
+    {
+      "group": "r313_rerun_1",
+      "entry": "qualification/funding-transition-witness.behavior.mjs",
+      "passed": 28,
+      "failed": 0
+    }
+  ],
+  "nativeExecutions": 0,
+  "currentSourceAcceptance": "DATA_AND_PARSER_ONLY"
+}
