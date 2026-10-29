@@ -4,12 +4,15 @@ import { types } from 'node:util';
 import { inspectOriginalFundingSpendingState, requireOriginalFundingSpendingStateTransition } from './original-funding-spending-reservations.js';
 import { captureOriginalFundingSpendingSqliteProfile, requireOriginalFundingSpendingSqliteOwnership,
   nextOriginalFundingSpendingSqliteOwnership } from './original-funding-spending-sqlite-profile.js';
+import { createOriginalFundingSignerIntent, inspectOriginalFundingSignerRecord, completeOriginalFundingSignerRecord,
+  requireOriginalFundingSignerRecordTransition } from './original-funding-signer-custody.js';
 
 const F = Object.freeze, EXEC = DatabaseSync.prototype.exec, PREPARE = DatabaseSync.prototype.prepare;
 const SCHEMA = new Map([
   ['original_spending_meta_v1', 'CREATE TABLE original_spending_meta_v1(singleton INTEGER PRIMARY KEY CHECK(singleton=1), version INTEGER NOT NULL CHECK(version=1), store_id TEXT NOT NULL CHECK(length(store_id) BETWEEN 1 AND 128), policy_json TEXT NOT NULL CHECK(length(CAST(policy_json AS BLOB)) BETWEEN 1 AND 8192), owner_id TEXT NOT NULL CHECK(length(owner_id) BETWEEN 1 AND 128), owner_epoch INTEGER NOT NULL CHECK(owner_epoch BETWEEN 1 AND 9007199254740990)) STRICT'],
   ['original_spending_state_v1', 'CREATE TABLE original_spending_state_v1(singleton INTEGER PRIMARY KEY CHECK(singleton=1), revision INTEGER NOT NULL CHECK(revision BETWEEN 0 AND 9007199254740990), state_json TEXT NOT NULL CHECK(length(CAST(state_json AS BLOB)) BETWEEN 1 AND 1048576)) STRICT'],
 ]);
+const SIGNER_SCHEMA = ['original_spending_signer_v1', 'CREATE TABLE original_spending_signer_v1(payment_id TEXT PRIMARY KEY CHECK(length(payment_id) BETWEEN 1 AND 128), record_json TEXT NOT NULL CHECK(length(CAST(record_json AS BLOB)) BETWEEN 1 AND 16384)) STRICT'];
 function fail(code) { const e = new TypeError('ORIGINAL_SPENDING_SQLITE_' + code); Object.defineProperty(e, 'stack', { value: e.message }); throw F(e); }
 function check(value) { if (!value) fail('CORRUPT'); }
 /** Borrow a dedicated, already configured connection. The caller owns physical
@@ -18,14 +21,26 @@ function check(value) { if (!value) fail('CORRUPT'); }
  * This is not independent authentication against an actor rewriting the file. */
 export function openOriginalFundingSpendingSqliteStore(database, profileInput) {
   if (arguments.length !== 2) fail('INPUT');
+  return openStore(database, profileInput, false);
+}
+/** Source-only application data profile: the original two budget tables plus
+ * one bounded signer-evidence table under the SAME epoch/transaction checks.
+ * No adoption/migration of a two-table file, signer call inside SQL, automatic
+ * recovery, replacement, intent reset or permission from a historical row. */
+export function openOriginalFundingSpendingSignerCustodySqliteStore(database, profileInput) {
+  if (arguments.length !== 2) fail('INPUT');
+  return openStore(database, profileInput, true);
+}
+function openStore(database, profileInput, signerCustodyEnabled) {
   const profile = captureOriginalFundingSpendingSqliteProfile(profileInput);
   if (database === null || typeof database !== 'object' || types.isProxy(database) || Object.getPrototypeOf(database) !== DatabaseSync.prototype) fail('DATABASE');
   const policy = profile.policy, token = profile.ownerToken, policyJson = JSON.stringify(policy), cache = new Map();
+  const schema = new Map(SCHEMA); if (signerCustodyEnabled) schema.set(...SIGNER_SCHEMA);
   let closed = false, busy = false, held = false, lastRevision = null, transactions = 0, transferred = false;
   const exec = sql => Reflect.apply(EXEC, database, [sql]);
   function statement(sql) { if (!cache.has(sql)) cache.set(sql, Reflect.apply(PREPARE, database, [sql])); return cache.get(sql); }
   const get = (sql, ...args) => statement(sql).get(...args);
-  const all = sql => statement(sql).all();
+  const all = (sql, ...args) => statement(sql).all(...args);
   const run = (sql, ...args) => statement(sql).run(...args);
   function retire() { if (!busy && closed) { cache.clear(); database = null; } }
   function usable() { if (closed || held || busy) fail(closed ? 'CLOSED' : held ? 'HELD' : 'BUSY'); }
@@ -42,7 +57,7 @@ export function openOriginalFundingSpendingSqliteStore(database, profileInput) {
   function validate() {
     settings();
     const tables = all("SELECT name,type,sql FROM main.sqlite_schema WHERE name NOT GLOB 'sqlite_*'");
-    check(tables.length === 2 && tables.every(r => r.type === 'table' && SCHEMA.get(r.name) === r.sql));
+    check(tables.length === schema.size && tables.every(r => r.type === 'table' && schema.get(r.name) === r.sql));
     const metadata = all('SELECT * FROM main.original_spending_meta_v1'), records = all('SELECT * FROM main.original_spending_state_v1');
     check(metadata.length === 1 && records.length === 1);
     const m = metadata[0], r = records[0];
@@ -53,7 +68,20 @@ export function openOriginalFundingSpendingSqliteStore(database, profileInput) {
     if (lastRevision !== null) check(state.revision >= lastRevision);
     requireOriginalFundingSpendingSqliteOwnership(token, { version: 1, storeId: m.store_id, accountId: policy.accountId,
       ownerId: m.owner_id, epoch: m.owner_epoch, minimumRevision: state.revision }, policy);
-    lastRevision = state.revision; return { raw, state };
+    const signerRecords = new Map();
+    if (signerCustodyEnabled) {
+      const reservations = new Map(state.reservations.map(r => [r.paymentId, r]));
+      const rows = all('SELECT payment_id,record_json FROM main.original_spending_signer_v1 ORDER BY payment_id LIMIT ?', policy.maxRecords + 1);
+      check(rows.length <= policy.maxRecords);
+      for (const row of rows) {
+        const reservation = reservations.get(row.payment_id); check(reservation !== undefined);
+        const captured = inspectOriginalFundingSignerRecord(row.record_json, reservation);
+        check(captured.paymentId === row.payment_id && captured.accountAddress === policy.accountId && !signerRecords.has(row.payment_id));
+        signerRecords.set(row.payment_id, { raw: row.record_json, captured });
+      }
+      for (const r of state.reservations) if (r.status === 'SPENT') check(signerRecords.get(r.paymentId)?.captured.phase === 'SIGNED');
+    }
+    lastRevision = state.revision; return { raw, state, signerRecords };
   }
   function transaction(work, creating = false) {
     usable(); busy = true; let began = false, committing = false;
@@ -61,7 +89,7 @@ export function openOriginalFundingSpendingSqliteStore(database, profileInput) {
       exec('BEGIN IMMEDIATE'); began = true;
       if (creating) {
         settings(); check(all("SELECT name FROM main.sqlite_schema WHERE name NOT GLOB 'sqlite_*'").length === 0);
-        for (const sql of SCHEMA.values()) exec(sql);
+        for (const sql of schema.values()) exec(sql);
         run('INSERT INTO main.original_spending_meta_v1 VALUES(1,1,?,?,?,?)', token.storeId, policyJson, token.ownerId, token.epoch);
         run("INSERT INTO main.original_spending_state_v1 VALUES(1,0,'null')");
       }
@@ -89,11 +117,42 @@ export function openOriginalFundingSpendingSqliteStore(database, profileInput) {
       return transaction(current => {
         if (current.raw !== expected) return null;
         if (proposed === expected) return proposed;
+        if (signerCustodyEnabled) for (const r of next.reservations) if (r.status === 'SPENT') check(current.signerRecords.get(r.paymentId)?.captured.phase === 'SIGNED');
         const changed = run('UPDATE main.original_spending_state_v1 SET revision=?,state_json=? WHERE singleton=1 AND revision=? AND state_json=?',
           next.revision, proposed, current.state.revision, expected === null ? 'null' : expected);
         check(changed.changes === 1); lastRevision = next.revision; return proposed;
       });
     },
+    ...(signerCustodyEnabled ? {
+      beginSignerAttempt(paymentId, unsignedBlock) {
+        if (arguments.length !== 2) fail('INPUT');
+        return transaction(current => {
+          const reservation = current.state.reservations.find(r => r.paymentId === paymentId);
+          check(reservation !== undefined && reservation.status === 'RESERVED' && !current.signerRecords.has(paymentId));
+          const raw = createOriginalFundingSignerIntent(reservation, unsignedBlock);
+          const captured = requireOriginalFundingSignerRecordTransition(null, raw, reservation); check(captured.accountAddress === policy.accountId);
+          const changed = run('INSERT INTO main.original_spending_signer_v1 VALUES(?,?)', paymentId, raw); check(changed.changes === 1);
+          check(get('SELECT record_json FROM main.original_spending_signer_v1 WHERE payment_id=?', paymentId).record_json === raw);
+          return raw;
+        });
+      },
+      retainSignerResult(paymentId, expected, signedBlock) {
+        if (arguments.length !== 3) fail('INPUT');
+        return transaction(current => {
+          const reservation = current.state.reservations.find(r => r.paymentId === paymentId), prior = current.signerRecords.get(paymentId);
+          check(reservation !== undefined && prior !== undefined && prior.raw === expected && prior.captured.phase === 'INTENT');
+          const raw = completeOriginalFundingSignerRecord(expected, signedBlock, reservation);
+          requireOriginalFundingSignerRecordTransition(expected, raw, reservation);
+          const changed = run('UPDATE main.original_spending_signer_v1 SET record_json=? WHERE payment_id=? AND record_json=?', raw, paymentId, expected); check(changed.changes === 1);
+          check(get('SELECT record_json FROM main.original_spending_signer_v1 WHERE payment_id=?', paymentId).record_json === raw);
+          return raw;
+        });
+      },
+      readSignerRecord(paymentId) {
+        if (arguments.length !== 1 || typeof paymentId !== 'string' || /^[A-Za-z0-9][A-Za-z0-9:._-]{0,127}$/.exec(paymentId)?.[0] !== paymentId) fail('INPUT');
+        return transaction(current => current.signerRecords.get(paymentId)?.raw ?? null);
+      },
+    } : {}),
     transferOwnership(nextOwnerId) {
       if (arguments.length !== 1) fail('INPUT');
       nextOriginalFundingSpendingSqliteOwnership(token, nextOwnerId, token.minimumRevision, policy);

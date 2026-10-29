@@ -1,6 +1,8 @@
 import { Buffer } from 'node:buffer';
 import { types as utilTypes } from 'node:util';
 import { createPreparedHashWalletAdapter } from './prepared-hash-wallet-adapter.js';
+import { canonicalJson } from '../canonical.js';
+import { decodeOriginalFundingSignerRecord } from '../original-funding-signer-custody.js';
 
 const ADAPTER = createPreparedHashWalletAdapter, F = Object.freeze;
 const APPLY = Reflect.apply, DESC = Object.getOwnPropertyDescriptor, PROTO = Object.getPrototypeOf;
@@ -28,6 +30,22 @@ const ALLOC = Buffer.alloc, TEXT = Buffer.prototype.toString, SHARED = utilTypes
  */
 export function createSdk105PreparedHashWalletOwner(configuration) {
   if (arguments.length !== 1 || !invariant()) fail('configuration_rejected');
+  return createOwner(configuration, null);
+}
+/** Fixed application lane. Real native bindings supply the original owned
+ * spending-store port; DATA controls declare it. Commit an intent before SDK
+ * entry, then exact returned signed bytes before candidate acknowledgement.
+ * Neither a record read nor an existing intent permits another sign attempt. */
+export function createSdk105CustodiedPreparedHashWalletOwner(configuration, custodyConfiguration) {
+  if (arguments.length !== 2 || !invariant()) fail('configuration_rejected');
+  const c = record(custodyConfiguration, ['paymentId', 'backend']);
+  if (typeof c.paymentId !== 'string' || /^[A-Za-z0-9][A-Za-z0-9:._-]{0,127}$/.exec(c.paymentId)?.[0] !== c.paymentId
+      || c.backend === null || typeof c.backend !== 'object' || PROXY(c.backend) || !Object.isFrozen(c.backend)) fail('configuration_rejected');
+  const begin = method(c.backend, 'beginSignerAttempt'), retain = method(c.backend, 'retainSignerResult');
+  for (const fn of [begin, retain]) if (!Object.isFrozen(fn)) fail('configuration_rejected');
+  return createOwner(configuration, { paymentId: c.paymentId, backend: c.backend, begin, retain });
+}
+function createOwner(configuration, custody) {
   const c = record(configuration, ['keyPair','expectedAddress','expectedPublicKey']);
   let receiver = c.keyPair;
   const ADDRESS = method(receiver,'getAddress'), PUBLIC = method(receiver,'getPublicKey');
@@ -37,6 +55,7 @@ export function createSdk105PreparedHashWalletOwner(configuration) {
   let signAttempted = false, sdkSignerEntered = false, sdkSignReturned = false;
   let signingOutcome = 'NOT_ENTERED', clearOutcome = 'NOT_REQUESTED', clearCalls = 0;
   let unobservableSdkResult = null, unboundSdkResult = null, closeTerminal = false;
+  const saved = { intent: null, intentEntered: false, intentReturned: false, resultEntered: false, resultReturned: false, transactionHash: null };
   function checkPublicKey() {
     if (closing !== null || receiver === null || !invariant()) fail('closed');
     const bytes = copyBytes(APPLY(PUBLIC,receiver,[]),32);
@@ -54,6 +73,20 @@ export function createSdk105PreparedHashWalletOwner(configuration) {
       try {
         checkPublicKey();
         const hashAtEntry = APPLY(TEXT,hashBytes,['hex']);
+        if (custody !== null) {
+          const unsigned = APPLY(CHILD_INSPECT, wallet, []).originalUnsignedBlock;
+          saved.intentEntered = true;
+          try {
+            const raw = APPLY(custody.begin, custody.backend, [custody.paymentId, unsigned]);
+            if (safePromise(raw)) { try { APPLY(THEN, raw, [discard, discard]); } catch {} }
+            const record = decodeOriginalFundingSignerRecord(raw);
+            if (record.phase !== 'INTENT' || record.paymentId !== custody.paymentId || record.transactionHash !== hashAtEntry
+                || record.publicKey !== expectedPublicKey || record.accountAddress !== c.expectedAddress
+                || record.unsignedBlockJson !== canonicalJson(unsigned)) fail('custody_unknown');
+            saved.intent = raw; saved.transactionHash = record.transactionHash; saved.intentReturned = true;
+          } catch { held = true; throw error('custody_unknown'); }
+          if (closing !== null || held || !invariant() || APPLY(TEXT, hashBytes, ['hex']) !== hashAtEntry) fail('closed');
+        }
         sdkSignerEntered = true; signingOutcome = 'PENDING';
         const value = APPLY(SIGN,receiver,[hashBytes]);
         sdkSignReturned = true;
@@ -116,6 +149,24 @@ export function createSdk105PreparedHashWalletOwner(configuration) {
         return out.promise; // Unobserved operation still owns its pending slot.
       }
       APPLY(THEN,child,[value => {
+        try {
+          if (kind === 'sign' && custody !== null) {
+            const intent = decodeOriginalFundingSignerRecord(saved.intent);
+            const expected = canonicalJson({ signerCustodyVersion: 1, paymentId: intent.paymentId, originalDigest: intent.originalDigest,
+              phase: 'SIGNED', unsignedBlockJson: intent.unsignedBlockJson, signedBlockJson: canonicalJson(value) });
+            // The signature is already copied into this original owner. No
+            // SQL transaction encloses SDK entry; this second commit only
+            // retains its exact public result, including during close.
+            saved.resultEntered = true;
+            const receipt = APPLY(custody.retain, custody.backend, [custody.paymentId, saved.intent, value]);
+            if (safePromise(receipt)) { try { APPLY(THEN, receipt, [discard, discard]); } catch {} }
+            decodeOriginalFundingSignerRecord(receipt);
+            if (receipt !== expected || !invariant()) fail('custody_unknown'); saved.resultReturned = true;
+          }
+        } catch {
+          held = true; signingOutcome = sdkSignerEntered ? 'UNKNOWN' : 'REFUSED_BEFORE_SDK_ENTRY'; pending = null;
+          out.reject(error('custody_unknown')); finishClose(); return;
+        }
         if (kind === 'sign') signingOutcome = 'RETURNED_DATA';
         pending = null;
         if (closing !== null) out.reject(error('closed_with_retained_result'));
@@ -123,6 +174,7 @@ export function createSdk105PreparedHashWalletOwner(configuration) {
         finishClose();
       },() => {
         if (kind === 'sign') signingOutcome = sdkSignerEntered ? 'UNKNOWN' : 'REFUSED_BEFORE_SDK_ENTRY';
+        if (kind === 'sign' && custody !== null && saved.intentEntered) held = true;
         pending = null; out.reject(error('operation_refused_or_unknown')); finishClose();
       }]);
     } catch {
@@ -142,6 +194,9 @@ export function createSdk105PreparedHashWalletOwner(configuration) {
       closeRequested:closing !== null,clearCalls,clearOutcome,signAttempted,sdkSignerEntered,sdkSignReturned,
       signingOutcome,unobservableSdkResultHeld:unobservableSdkResult !== null,
       unboundSdkResult:view.signedOriginal === null ? unboundSdkResult : null,wallet:view,
+      ...(custody === null ? {} : { signerCustody: F({ version: 1, intentEntered: saved.intentEntered, intentReturned: saved.intentReturned,
+        resultEntered: saved.resultEntered, resultReturned: saved.resultReturned, transactionHash: saved.transactionHash,
+        localCommitReceipt: saved.resultReturned ? 'SIGNED_RESULT_RETURNED' : saved.intentReturned ? 'INTENT_RETURNED' : 'NOT_ESTABLISHED', authority: 'NONE' }) }),
       signatureValidation:'NOT_PERFORMED',keyErasure:'NOT_ESTABLISHED',authority:'NONE' });
   });
   return F({ getAddress:F(function getAddress(){return start('address',arguments.length);}),

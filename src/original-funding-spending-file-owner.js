@@ -4,7 +4,7 @@ import { lstatSync, readdirSync, statfsSync, openSync, fstatSync, fsyncSync, clo
 import { basename, dirname, join } from 'node:path';
 import { getuid } from 'node:process';
 import { captureOriginalFundingSpendingFileProfile, requireOriginalFundingSpendingFileCapacity } from './original-funding-spending-file-profile.js';
-import { openOriginalFundingSpendingSqliteStore } from './original-funding-spending-sqlite-store.js';
+import { openOriginalFundingSpendingSqliteStore, openOriginalFundingSpendingSignerCustodySqliteStore } from './original-funding-spending-sqlite-store.js';
 
 const F = Object.freeze, APPLY = Reflect.apply, PROTO = DatabaseSync.prototype;
 const EXEC = PROTO.exec, PREPARE = PROTO.prepare, CLOSE = PROTO.close;
@@ -17,6 +17,15 @@ function identity(s) { return [s.dev, s.ino, s.uid, s.gid, s.mode, s.nlink].map(
  * unlink a journal, retry an unknown close or claim a filesystem/OS lease. */
 export function openOriginalFundingSpendingFileOwner(configuration) {
   if (arguments.length !== 1) fail('INPUT');
+  return openFile(configuration, false);
+}
+/** Same bounded physical owner with the explicit three-table application
+ * profile. Existing two-table files are refused, never migrated/adopted. */
+export function openOriginalFundingSpendingSignerCustodyFileOwner(configuration) {
+  if (arguments.length !== 1) fail('INPUT');
+  return openFile(configuration, true);
+}
+function openFile(configuration, signerCustodyEnabled) {
   const c = captureOriginalFundingSpendingFileProfile(configuration), p = c.storageProfile, path = p.databasePath;
   const key = path, file = basename(path), uid = BigInt(getuid());
   if (OWNERS.has(key) || OWNERS.size >= 16) fail('OWNER_UNAVAILABLE');
@@ -75,7 +84,7 @@ export function openOriginalFundingSpendingFileOwner(configuration) {
     if (query('PRAGMA page_size').page_size !== 4096) fail('PAGE_PROFILE');
     const cap = c.filePolicy.maxDatabaseBytes / 4096;
     if (query('PRAGMA page_count').page_count > cap || query('PRAGMA max_page_count=' + cap).max_page_count !== cap) fail('PAGE_PROFILE');
-    store = openOriginalFundingSpendingSqliteStore(db, p); slot.backend = store;
+    store = (signerCustodyEnabled ? openOriginalFundingSpendingSignerCustodySqliteStore : openOriginalFundingSpendingSqliteStore)(db, p); slot.backend = store;
     guard(); slot.phase = 'OPEN';
     if (p.mode === 'CREATE_NEW') {
       const fd = openSync(c.allowedRoot, constants.O_RDONLY | constants.O_NOFOLLOW);
@@ -133,5 +142,16 @@ export function openOriginalFundingSpendingFileOwner(configuration) {
       physicalRelease: physicalCloseReturned ? 'CLOSE_RETURNED' : held ? 'HELD' : 'NOT_ESTABLISHED',
       nativeResourceCleanup: 'NOT_QUALIFIED', authority: 'NONE' });
   }
-  return F({ backend, assertCurrent: F(assertCurrent), revoke: F(revoke), close: F(close), inspect: F(inspect) });
+  const signerCustody = signerCustodyEnabled ? F({
+    beginSignerAttempt: F(function beginSignerAttempt(paymentId, unsignedBlock) {
+      if (arguments.length !== 2) fail('INPUT'); return operation('beginSignerAttempt', [paymentId, unsignedBlock]);
+    }),
+    retainSignerResult: F(function retainSignerResult(paymentId, expected, signedBlock) {
+      if (arguments.length !== 3) fail('INPUT'); return operation('retainSignerResult', [paymentId, expected, signedBlock]);
+    }),
+    readSignerRecord: F(function readSignerRecord(paymentId) {
+      if (arguments.length !== 1) fail('INPUT'); return operation('readSignerRecord', [paymentId]);
+    }),
+  }) : null;
+  return F({ backend, ...(signerCustodyEnabled ? { signerCustody } : {}), assertCurrent: F(assertCurrent), revoke: F(revoke), close: F(close), inspect: F(inspect) });
 }
