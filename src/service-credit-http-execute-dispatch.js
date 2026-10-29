@@ -125,13 +125,23 @@ export function createServiceCreditHttpExecuteDispatchV2(options) {
   if (arguments.length !== 1) throw failure('INVALID_CONFIGURATION');
   return createDispatch(options, true);
 }
+/** Capture the existing request/auth grammar without retaining credentials or
+ * allocating a transport, callback, timer or dispatch capability. */
+export function captureServiceCreditHttpExecuteOriginalInput(options) {
+  if (arguments.length !== 1) throw failure('INVALID_CONFIGURATION');
+  const c = exact(options, ['resourceUrl', 'originalRequestJson', 'authorizationHeader']);
+  canonicalResource(c.resourceUrl);
+  const original = originalRequest(c.originalRequestJson);
+  validateAuthorization(c.authorizationHeader, original);
+  return FREEZE({ resourceUrl: c.resourceUrl, originalRequestJson: c.originalRequestJson,
+    grantId: original.grantId, requestId: original.requestId, maxCostUnits: original.maxCostUnits });
+}
 function createDispatch(options, responseObservationEnabled = false) {
   let config, original;
   try {
     config = exact(options, CONFIG_FIELDS);
-    canonicalResource(config.resourceUrl);
-    original = originalRequest(config.originalRequestJson);
-    validateAuthorization(config.authorizationHeader, original);
+    original = captureServiceCreditHttpExecuteOriginalInput({ resourceUrl: config.resourceUrl,
+      originalRequestJson: config.originalRequestJson, authorizationHeader: config.authorizationHeader });
     if (!IS_SAFE(config.deadlineMs) || config.deadlineMs < 1
         || config.deadlineMs > 60000 || IS(config.deadlineMs, -0)
         || typeof config.requestImpl !== 'function' || IS_PROXY(config.requestImpl)) {

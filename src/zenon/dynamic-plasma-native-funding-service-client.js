@@ -442,6 +442,12 @@ async function openClient(configuration, localReadOptions, localQualification, w
     submitOriginalFunding: F(function submitOriginalFunding(input) { return launch(submit, arguments.length, input); }),
     handoffToService: F(function handoffToService(input) { return launch(handoff, arguments.length, input); }),
     submitOriginal: F(function submitOriginal(input) { return launch(serviceWork, arguments.length, input); }),
+    ...(wireOwner !== null ? { readOriginalRecoveryState: F(function readOriginalRecoveryState(key) {
+      if (arguments.length !== 1 || !invariant() || phase !== 'SERVICE' || service === null
+          || held || pending !== null || closing !== null || inspectApiCreditWireOwnerGuard(wireOwner).held
+          || !fundingHandoffGuard()) fail('read_unavailable');
+      return service.readOriginalRecoveryState(key);
+    }) } : {}),
     inspect, close,
   });
 }

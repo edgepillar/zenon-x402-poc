@@ -3,12 +3,12 @@ import { types } from 'node:util';
 import { hrtime } from 'node:process';
 import { claimSdk105ApiCreditExistingKeyLease, bindSdk105ApiCreditExistingKeyLeaseOwner } from './sdk105-api-credit-existing-key-lease.js';
 import { consumeSdk105ApiCreditSelection } from './sdk105-api-credit-selection.js';
-import { consumeSdk105ApiCreditProductSelection, bindSdk105ApiCreditProductLifecycle } from './sdk105-api-credit-product-profile.js';
+import { consumeSdk105ApiCreditProductSelection, bindSdk105ApiCreditProductLifecycleWithRecordedResults } from './sdk105-api-credit-product-profile.js';
 import { captureSdk105FundingServiceConfiguration } from './sdk105-funding-service-lifecycle.js';
 import { createSdk105AgeBoundSignerContextWalletOwner } from './sdk105-prepared-hash-wallet-owner.js';
 import { openOriginalFundingSpendingSignerContextFileOwner } from '../original-funding-spending-file-owner.js';
 import { createSdk105ApiCreditApplicationLifecycle } from './sdk105-api-credit-application-lifecycle.js';
-import { createApiCreditWireOwnerGuard } from '../api-credit-wire-owner-guard.js';
+import { createApiCreditWireOwnerGuard, requireCurrentApiCreditWireOwner } from '../api-credit-wire-owner-guard.js';
 
 const F = Object.freeze, NP = Promise, THEN = NP.prototype.then, MONOTONIC = hrtime.bigint;
 // Fixed first-product admission profile, not a chain quote TTL or OS timeout.
@@ -63,7 +63,16 @@ async function openApplication(selection, requireCurrentOpening, productProfile)
     requireCurrentOpening();
     application = createSdk105ApiCreditApplicationLifecycle({ client, walletOwner: wallet, fileOwner: file,
       fundingResourceUrl: c.storeOptions.resourceUrl, spending: selected.spending });
-    const result = productProfile === null ? application : bindSdk105ApiCreditProductLifecycle(application, productProfile);
+    const readBudgetMs = Math.min(c.serviceOptions.deadlineMs, 1000);
+    const readState = F(function readCurrentOwnedServiceState(key) {
+      if (arguments.length !== 1) fail();
+      requireCurrentApiCreditWireOwner(wireOwner, readBudgetMs);
+      const observed = client.readOriginalRecoveryState(key);
+      requireCurrentApiCreditWireOwner(wireOwner, readBudgetMs);
+      return observed;
+    });
+    const result = productProfile === null ? application
+      : bindSdk105ApiCreditProductLifecycleWithRecordedResults(application, productProfile, readState);
     requireCurrentOpening(); return result;
   } catch {
     const retained = { file, wallet, client, application, wireOwner, clientStop: null, walletStop: null, applicationStop: null,

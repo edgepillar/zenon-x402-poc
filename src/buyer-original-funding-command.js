@@ -1,4 +1,5 @@
 import { Buffer } from 'node:buffer';
+import { captureApiCreditRecordedServiceResult } from './api-credit-recorded-service-result.js';
 import { types as utilTypes } from 'node:util';
 import { canonicalJson } from './canonical.js';
 
@@ -77,6 +78,15 @@ export function encodeBuyerOriginalFundingCommandResult(command, result, maximum
   const selected = captureCommand(command, maximumBytes);
   return wire({ version: 1, id: selected.id, operation: selected.operation,
     outcome: 'CALLBACK_RETURNED', result: project(selected.operation, result) }, maximumBytes) + '\n';
+}
+
+/** Product-only result projection; ordinary funding/recovery stays void-only. */
+export function encodeBuyerApiCreditCommandResult(command, result, maximumBytes = DEFAULTS.maxLineBytes) {
+  const selected = captureCommand(command, maximumBytes);
+  const output = selected.operation === 'submitService' && result !== undefined
+    ? captureApiCreditRecordedServiceResult(result) : project(selected.operation, result);
+  return wire({ version: 1, id: selected.id, operation: selected.operation,
+    outcome: 'CALLBACK_RETURNED', result: output }, maximumBytes) + '\n';
 }
 
 export function encodeBuyerOriginalRecoveryCommandResult(command, result, maximumBytes = DEFAULTS.maxLineBytes) {

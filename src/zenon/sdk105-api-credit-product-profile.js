@@ -1,4 +1,5 @@
 import { Buffer } from 'node:buffer';
+import { createApiCreditRecordedServiceResultApplication } from '../api-credit-recorded-service-result.js';
 import { types } from 'node:util';
 import { canonicalJson } from '../canonical.js';
 import { decodeB64Json, encodeB64Json, validateActiveUpfrontRequirement, validatePaymentRequiredForOfferSelection } from '../x402-wire.js';
@@ -143,4 +144,13 @@ export function bindSdk105ApiCreditProductLifecycle(application, profile) {
   out.inspect = F(function inspect() { if (arguments.length !== 0) fail(); return Reflect.apply(child.inspect, application, []); });
   out.close = F(function close() { if (arguments.length !== 0) return Promise.reject(new TypeError('SDK105_API_CREDIT_PRODUCT_INPUT')); return Reflect.apply(child.close, application, []); });
   return F(out);
+}
+
+/** The native product supplies only its same already-owned V6 history reader.
+ * The legacy product binding remains a void callback component selection. */
+export function bindSdk105ApiCreditProductLifecycleWithRecordedResults(application, profile, readState) {
+  if (arguments.length !== 3 || profile === null || typeof profile !== 'object' || types.isProxy(profile)
+      || !PROFILES.has(profile)) fail();
+  return createApiCreditRecordedServiceResultApplication({ application: bindSdk105ApiCreditProductLifecycle(application, profile),
+    readState, fundingResourceUrl: profile.fundingResourceUrl, serviceResourceUrl: profile.serviceResourceUrl, network: profile.network });
 }

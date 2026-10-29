@@ -2,7 +2,7 @@ import { types as utilTypes } from 'node:util';
 import { createServiceCreditBoundedCloseCompletion } from './service-credit-bounded-close-completion.js';
 import {
   captureBuyerOriginalFundingCommandLimits, captureBuyerApiCreditCommandLimits, decodeBuyerOriginalFundingCommand,
-  encodeBuyerOriginalFundingCommandResult,
+  encodeBuyerOriginalFundingCommandResult, encodeBuyerApiCreditCommandResult,
   decodeBuyerOriginalRecoveryCommand, encodeBuyerOriginalRecoveryCommandResult,
   decodeBuyerOriginalBackendRecoveryCommand, encodeBuyerOriginalBackendRecoveryCommandResult,
 } from './buyer-original-funding-command.js';
@@ -54,7 +54,8 @@ function createSession(configuration, recovery, apiCredit = false) {
   const operations = {};
   const methods = withBackend ? BACKEND_METHODS : recovery ? RECOVERY_METHODS : METHODS;
   const DECODE = withBackend ? decodeBuyerOriginalBackendRecoveryCommand : recovery ? decodeBuyerOriginalRecoveryCommand : decodeBuyerOriginalFundingCommand;
-  const ENCODE = withBackend ? encodeBuyerOriginalBackendRecoveryCommandResult : recovery ? encodeBuyerOriginalRecoveryCommandResult : encodeBuyerOriginalFundingCommandResult;
+  const ENCODE = withBackend ? encodeBuyerOriginalBackendRecoveryCommandResult : recovery ? encodeBuyerOriginalRecoveryCommandResult
+    : apiCredit ? encodeBuyerApiCreditCommandResult : encodeBuyerOriginalFundingCommandResult;
   for (const operation of Object.keys(methods)) operations[operation] = method(client, methods[operation]);
   const CLIENT_VIEW = method(client, 'inspect'), CLIENT_CLOSE = method(client, 'close');
   const READ = method(channel, 'readCommand'), WRITE = method(channel, 'writeResult');

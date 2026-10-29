@@ -1,5 +1,6 @@
 // Actual admission kernel and outer application; no native store/package entry.
 import assert from 'node:assert/strict';
+import { fileURLToPath } from 'node:url';
 import { apiCreditWireOwnerDataCases } from './api-credit-wire-owner.behavior.mjs';
 import { closeApiCreditOperatorDataFixtures } from './api-credit-operator.behavior.mjs';
 import { wireOwnerFileFixture as file,deferred } from './api-credit-wire-owner.fixture.mjs';
@@ -117,9 +118,12 @@ check('store-owner-baseline-brand-validation-alone-does-not-recheck-an-owner-aft
 check('store-owner-baseline-brand-validation-alone-does-not-fence-a-revoked-file',async()=>{
  const r=app({guarded:false}),run=r.run();await r.ready.promise;r.revoked=true;r.gate.resolve();await run;assert.equal(r.currentCalls,1);assert.equal(r.storeOpens,1);assert.equal(r.commits,1);assert.equal(r.facadesPublished,1);await r.close().catch(()=>{});
 });
+export const apiCreditStoreOwnerDataCases=checks;
+if(process.argv[1]===fileURLToPath(import.meta.url)){
 const cases=[];for(const {id,run}of checks){try{await run();cases.push({id,status:'PASS'});}catch(e){cases.push({id,status:'FAIL',error:String(e?.message??e)});}}
 await closeApiCreditOperatorDataFixtures();const failed=cases.filter(c=>c.status!=='PASS').length;
 console.log(JSON.stringify({qualification:'G2_STORE_OWNER_ADMISSION_DATA',passed:cases.length-failed,failed,cases,priorCases:apiCreditWireOwnerDataCases.length,
  actualOuterApplicationDataCompositions:8,baselineBrandOnlyDataControls:2,declaredStoreFileClockCasChildPortsOnly:true,nativeStoreAdaptersExecuted:false,
  nativeExecutions:0,SDK:0,SQLite:0,keys:0,signatures:0,sockets:0,nonceSearches:0,nodeChildren:0,actualPrepare:0,payouts:0,
  atomicExternalDispatchFencing:'NOT_ESTABLISHED',nativeAcquisitionTiming:'NOT_ESTABLISHED',nativeDurability:'NOT_ESTABLISHED',Linux:'NOT_ESTABLISHED',fullG2:'NOT_ESTABLISHED'}));if(failed)process.exitCode=1;
+}
