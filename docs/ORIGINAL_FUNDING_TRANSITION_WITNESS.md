@@ -42,7 +42,8 @@ retention. It cannot adopt writer authority.
 The source checks all path ancestors, private directory identity, owner/mode,
 device, regular-file identity, one link and NOFOLLOW opens. Writes use EXCL,
 bounded complete writes, file sync, known close, directory sync and readback.
-Uncertain handles/partial files stay HELD and retained. Directory identity omits
+Uncertain handles/partial files stay HELD and retained. At 16 retained unknown
+owners, new owner construction is refused before directory or file I/O. Directory identity omits
 mutable child-count/timestamp fields. Read-only reads are bounded and compare
 file identity before/after. There is no OS lease or power-loss guarantee.
 

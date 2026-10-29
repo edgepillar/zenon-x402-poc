@@ -32,7 +32,7 @@ export class NativeFundingTransitionWitness {
  snapshot(){if(arguments.length!==0)fail();return this.#s.snapshot();}
 }
 export function openNativeFundingTransitionWitness(configuration){
- if(arguments.length!==1)fail();const c=fields(configuration,['directory','expectedDevice','mode','expectation']);
+ if(arguments.length!==1||HELD.size>=16)fail();const c=fields(configuration,['directory','expectedDevice','mode','expectation']);
  if(typeof c.directory!=='string'||!isAbsolute(c.directory)||resolve(c.directory)!==c.directory||dirname(c.directory)===c.directory
     ||typeof c.expectedDevice!=='string'||!/^(0|[1-9][0-9]{0,19})$/.test(c.expectedDevice)||!['CREATE_NEW','READ_EXISTING'].includes(c.mode))fail();
  const anchor=captureIssuedFundingGrantRecoveryExpectation(c.expectation),anchorRaw=canonicalJson({version:1,...anchor,authority:'NONE'}),uid=BigInt(getuid());

@@ -10,5 +10,23 @@
   "cause": "A static forbidden-call check matched the words rename/unlink in a source comment explaining their absence. It stopped before task creation or execution.",
   "correction": "Match actual call expressions instead of bare comment words. Preserve the original preparation record; no completed test was repeated.",
   "classification": "SOURCE_CONTROL_MATCHER_FALSE_POSITIVE",
-  "nativeAcceptance": "NOT_ESTABLISHED"
+  "nativeAcceptance": "NOT_ESTABLISHED",
+  "sourceReviewCorrections": [
+    {
+      "classification": "SOURCE_REVIEW_UNKNOWN_OWNER_BOUND",
+      "cause": "Failed read-only file openings can retain unknown handles outside the writer registry limit.",
+      "correction": "Refuse new file-owner construction at 16 retained unknown owners, before directory/file I/O.",
+      "beforeSourceSha256": "8eba79c1598c3b6982508ada9e1d8783b9e8a1addcdf5a4542e09c25ec1cd679",
+      "afterSourceSha256": "101e0fa982fdbb529cb1a3d23ffc280eee6966e9cc094632c2ba8e141d5fe4d1",
+      "rawParserQualificationSha256": "37db156f55ff0f93f53d8f817be799d764fe8c3ff049d86cdbf2f72e71e24110",
+      "currentParserProof": {
+        "path": "src/native-funding-transition-witness.js",
+        "sourceSha256": "101e0fa982fdbb529cb1a3d23ffc280eee6966e9cc094632c2ba8e141d5fe4d1",
+        "parserReceiptSha256": "e36bbefe22b89965e2c5a55c9b2c15e24f4d9ba2cd99968f146237c2daf1547c"
+      },
+      "actualRepeatedDataCommands": 0,
+      "nativeExecutions": 0,
+      "nativeFaultInjection": "NOT_ESTABLISHED"
+    }
+  ]
 }

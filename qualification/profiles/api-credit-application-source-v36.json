@@ -231,9 +231,9 @@
     },
     {
       "path": "docs/ORIGINAL_FUNDING_TRANSITION_WITNESS.md",
-      "bytes": 4850,
-      "sha256": "d1acc940a2d4f871f0742121b35c9ab6242e0dc03ddb349f7fbcb810c1c0d50b",
-      "gitBlob": "686fe709008204c1781d83a24b772e6e3d8da833",
+      "bytes": 4945,
+      "sha256": "eb7d768802080c0ee4c9bb56749b31d90f07c734b37d6daea8ce8c383c439fb4",
+      "gitBlob": "93a3d8b42beeceaeeddefc10403a3f80e2052cc1",
       "lane": "SOURCE_ONLY"
     },
     {
@@ -840,9 +840,9 @@
     },
     {
       "path": "src/native-funding-transition-witness.js",
-      "bytes": 8358,
-      "sha256": "8eba79c1598c3b6982508ada9e1d8783b9e8a1addcdf5a4542e09c25ec1cd679",
-      "gitBlob": "1abb6e4109bd8ed5e276532b3ea152cc29160446",
+      "bytes": 8373,
+      "sha256": "101e0fa982fdbb529cb1a3d23ffc280eee6966e9cc094632c2ba8e141d5fe4d1",
+      "gitBlob": "be5c0235b147e79b4d28025cf714d1ad716aff4a",
       "lane": "PARSER_ONLY"
     },
     {
@@ -2559,8 +2559,8 @@
     },
     {
       "path": "src/native-funding-transition-witness.js",
-      "sourceSha256": "8eba79c1598c3b6982508ada9e1d8783b9e8a1addcdf5a4542e09c25ec1cd679",
-      "parserReceiptSha256": "3b430b4528a7ff93f29a8bbb91ad840b03446999fee113250ac57af5712b1dbb"
+      "sourceSha256": "101e0fa982fdbb529cb1a3d23ffc280eee6966e9cc094632c2ba8e141d5fe4d1",
+      "parserReceiptSha256": "e36bbefe22b89965e2c5a55c9b2c15e24f4d9ba2cd99968f146237c2daf1547c"
     },
     {
       "path": "src/x402-issued-funding-grant-native-witness-history.js",
@@ -3126,10 +3126,14 @@
     "retainedEarlierTurnExactControls": 1011,
     "aggregateVerifiedControls": 1068,
     "actualCurrentDataCommands": 2,
-    "actualCurrentParserCommands": 3,
+    "actualCurrentParserCommands": 4,
     "earlierCurrentTurnDataCommands": 0,
     "failedDataCommandsThisTurn": 0,
-    "scope": "ACTUAL_WITNESS_CODECS_OBSERVATION_OWNER_AND_HISTORY_READER;DECLARED_IO;NOT_NATIVE_FILE_OR_PROCESS_RECOVERY"
+    "scope": "ACTUAL_WITNESS_CODECS_OBSERVATION_OWNER_AND_HISTORY_READER;DECLARED_IO;NOT_NATIVE_FILE_OR_PROCESS_RECOVERY",
+    "earlierCandidateParserCommands": 3,
+    "supplementalChangedNativeParserCommands": 1,
+    "currentSourceParserProofs": 3,
+    "currentDataSourceScope": "EXACT_UNCHANGED_DATA_RUNTIME_INPUTS_ONLY;NOT_CORRECTED_NATIVE_SOURCE"
   },
   "historicalWholeSourceDataProof": {
     "sha256": "28a016a6b125a74642fba8b756065105eea6b23ff47f912dc48828ca6e57579d",
@@ -9882,7 +9886,8 @@
       "physicalRelease": "NOT_ESTABLISHED",
       "freshProcessAcceptance": "NOT_ESTABLISHED",
       "LinuxAcceptance": "NOT_ESTABLISHED",
-      "G1G2Acceptance": "OPEN"
+      "G1G2Acceptance": "OPEN",
+      "maximumRetainedUnknownOwners": 16
     }
   },
   "inheritedCurrentSourcePreparationCorrections": [
@@ -11337,7 +11342,8 @@
     "physicalRelease": "NOT_ESTABLISHED",
     "freshProcessAcceptance": "NOT_ESTABLISHED",
     "LinuxAcceptance": "NOT_ESTABLISHED",
-    "G1G2Acceptance": "OPEN"
+    "G1G2Acceptance": "OPEN",
+    "maximumRetainedUnknownOwners": 16
   },
   "additionalWitnessHistorySourceInputs": [
     "src/canonical.js",
@@ -11366,6 +11372,32 @@
       "actualCommands": 0,
       "ownedTaskCreated": false,
       "correctedCandidatePassed": true
+    }
+  ],
+  "supersededCurrentParserProofs": [
+    {
+      "path": "src/native-funding-transition-witness.js",
+      "sourceSha256": "8eba79c1598c3b6982508ada9e1d8783b9e8a1addcdf5a4542e09c25ec1cd679",
+      "parserReceiptSha256": "3b430b4528a7ff93f29a8bbb91ad840b03446999fee113250ac57af5712b1dbb"
+    }
+  ],
+  "sourceReviewCorrections": [
+    {
+      "record": "qualification/funding-transition-witness.preparation-inventory.json",
+      "classification": "SOURCE_REVIEW_UNKNOWN_OWNER_BOUND",
+      "cause": "Failed read-only file openings can retain unknown handles outside the writer registry limit.",
+      "correction": "Refuse new file-owner construction at 16 retained unknown owners, before directory/file I/O.",
+      "beforeSourceSha256": "8eba79c1598c3b6982508ada9e1d8783b9e8a1addcdf5a4542e09c25ec1cd679",
+      "afterSourceSha256": "101e0fa982fdbb529cb1a3d23ffc280eee6966e9cc094632c2ba8e141d5fe4d1",
+      "rawParserQualificationSha256": "37db156f55ff0f93f53d8f817be799d764fe8c3ff049d86cdbf2f72e71e24110",
+      "currentParserProof": {
+        "path": "src/native-funding-transition-witness.js",
+        "sourceSha256": "101e0fa982fdbb529cb1a3d23ffc280eee6966e9cc094632c2ba8e141d5fe4d1",
+        "parserReceiptSha256": "e36bbefe22b89965e2c5a55c9b2c15e24f4d9ba2cd99968f146237c2daf1547c"
+      },
+      "actualRepeatedDataCommands": 0,
+      "nativeExecutions": 0,
+      "nativeFaultInjection": "NOT_ESTABLISHED"
     }
   ]
 }

@@ -244,8 +244,8 @@
   "rawQualificationSha256": "4c1f4764b8d13ba927873fa0138c0b3e96f148a276406b6f8a4289f718cfe694",
   "sourceProfile": {
     "path": "qualification/profiles/api-credit-application-source-v36.json",
-    "bytes": 491310,
-    "sha256": "6ff520c4b22930ba444b4559eba8b9571ca8ac8a15596cdc33316d12fb64f2e0"
+    "bytes": 493044,
+    "sha256": "f9a6f6af1c27db0077375a86fde979d4217c97b60f184046a695fb94fb709e62"
   },
   "independentFundingTransitionWitness": {
     "version": 1,
@@ -299,7 +299,8 @@
     "physicalRelease": "NOT_ESTABLISHED",
     "freshProcessAcceptance": "NOT_ESTABLISHED",
     "LinuxAcceptance": "NOT_ESTABLISHED",
-    "G1G2Acceptance": "OPEN"
+    "G1G2Acceptance": "OPEN",
+    "maximumRetainedUnknownOwners": 16
   },
   "reusedDataProofs": [
     {
@@ -5253,8 +5254,8 @@
     },
     {
       "path": "src/native-funding-transition-witness.js",
-      "sourceSha256": "8eba79c1598c3b6982508ada9e1d8783b9e8a1addcdf5a4542e09c25ec1cd679",
-      "parserReceiptSha256": "3b430b4528a7ff93f29a8bbb91ad840b03446999fee113250ac57af5712b1dbb"
+      "sourceSha256": "101e0fa982fdbb529cb1a3d23ffc280eee6966e9cc094632c2ba8e141d5fe4d1",
+      "parserReceiptSha256": "e36bbefe22b89965e2c5a55c9b2c15e24f4d9ba2cd99968f146237c2daf1547c"
     },
     {
       "path": "src/x402-issued-funding-grant-native-witness-history.js",
@@ -5265,7 +5266,7 @@
   "providerStoreWitnessFileJournalListenerPorts": "DECLARED_MEMORY_ONLY",
   "signatureData": "UNAUTHENTICATED_EXISTING_FIELDS",
   "actualDataNodeCommands": 2,
-  "actualSyntaxNodeCommands": 3,
+  "actualSyntaxNodeCommands": 4,
   "earlierCurrentTurnDataCommands": 0,
   "retainedPreparation": {
     "path": "qualification/funding-transition-witness.preparation-inventory.json",
@@ -5327,7 +5328,10 @@
     "failedDataTasks": 0,
     "preTaskPreparationUnknowns": 1,
     "quotaExpanded": false,
-    "parserBatchAdmission": true
+    "parserBatchAdmission": true,
+    "supplementalParserTasks": 1,
+    "supplementalParserPlanBytes": 1398356,
+    "actualParserCommandsThisTurn": 4
   },
   "nativeWitnessIO": "NOT_ESTABLISHED",
   "nativeDurability": "NOT_ESTABLISHED",
@@ -5336,5 +5340,36 @@
   "nativeAcceptance": "NOT_ESTABLISHED",
   "LinuxAcceptance": "NOT_ESTABLISHED",
   "current108CISeparate": true,
-  "newControlsIncludedIn108CI": false
+  "newControlsIncludedIn108CI": false,
+  "supersededCurrentParserProofs": [
+    {
+      "path": "src/native-funding-transition-witness.js",
+      "sourceSha256": "8eba79c1598c3b6982508ada9e1d8783b9e8a1addcdf5a4542e09c25ec1cd679",
+      "parserReceiptSha256": "3b430b4528a7ff93f29a8bbb91ad840b03446999fee113250ac57af5712b1dbb"
+    }
+  ],
+  "sourceReviewCorrection": {
+    "record": {
+      "path": "qualification/funding-transition-witness.preparation-inventory.json",
+      "bytes": 1863,
+      "sha256": "a2223365741be522d005c86ae652624d8e4d9082384ea1a7fe9ca4b8ad31d1f4"
+    },
+    "classification": "SOURCE_REVIEW_UNKNOWN_OWNER_BOUND",
+    "cause": "Failed read-only file openings can retain unknown handles outside the writer registry limit.",
+    "correction": "Refuse new file-owner construction at 16 retained unknown owners, before directory/file I/O.",
+    "beforeSourceSha256": "8eba79c1598c3b6982508ada9e1d8783b9e8a1addcdf5a4542e09c25ec1cd679",
+    "afterSourceSha256": "101e0fa982fdbb529cb1a3d23ffc280eee6966e9cc094632c2ba8e141d5fe4d1",
+    "rawParserQualificationSha256": "37db156f55ff0f93f53d8f817be799d764fe8c3ff049d86cdbf2f72e71e24110",
+    "currentParserProof": {
+      "path": "src/native-funding-transition-witness.js",
+      "sourceSha256": "101e0fa982fdbb529cb1a3d23ffc280eee6966e9cc094632c2ba8e141d5fe4d1",
+      "parserReceiptSha256": "e36bbefe22b89965e2c5a55c9b2c15e24f4d9ba2cd99968f146237c2daf1547c"
+    },
+    "actualRepeatedDataCommands": 0,
+    "nativeExecutions": 0,
+    "nativeFaultInjection": "NOT_ESTABLISHED"
+  },
+  "earlierCandidateParserCommands": 3,
+  "supplementalParserCommands": 1,
+  "rawQualificationScope": "EXACT_UNCHANGED_DATA_RUNTIME_INPUTS_ONLY;NOT_CORRECTED_NATIVE_SOURCE"
 }
