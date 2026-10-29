@@ -1,5 +1,5 @@
 import { types as utilTypes } from 'node:util';
-import { bindWalletOriginalFundingPreSignContext } from './original-funding-signer-context-bridge.js';
+import { bindWalletOriginalFundingPreSignContext, beginWalletOriginalFundingPreSignObservation } from './original-funding-signer-context-bridge.js';
 import { Buffer } from 'node:buffer';
 import { setTimeout as nativeSetTimeout, clearTimeout as nativeClearTimeout } from 'node:timers';
 import { createObservedBalanceDynamicPlasmaUserSendAttempt } from './dynamic-plasma-observed-balance-user-send-attempt.js';
@@ -352,6 +352,9 @@ function createPlanner(options, checkpointEnabled, deadlineEnabled = false,
       if (!invariant() || !captured.accepted) fail('operation_rejected');
       const assembly = await apply(steps.assemble, undefined,
         checkpointEnabled ? [input, originalPlan, captured.material] : [input, captured.material]);
+      // A selected bounded wallet starts its one local window before this
+      // actual last read cycle, not after its network/validation latency.
+      if (walletCandidateEnabled) beginWalletOriginalFundingPreSignObservation(WALLET);
       const final = await apply(steps.validate, undefined,
         checkpointEnabled ? [input, originalPlan, assembly.accountBlock] : [input]);
       if (!invariant()) fail('operation_rejected');

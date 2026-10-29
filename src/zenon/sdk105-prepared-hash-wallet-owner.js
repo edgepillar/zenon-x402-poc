@@ -40,6 +40,19 @@ export function createSdk105PreparedHashWalletOwner(configuration) {
  * Neither a record read nor an existing intent permits another sign attempt. */
 export function createSdk105CustodiedPreparedHashWalletOwner(configuration, custodyConfiguration) {
   if (arguments.length !== 2 || !invariant()) fail('configuration_rejected');
+  return createOwner(configuration, captureCustody(custodyConfiguration));
+}
+/** Fixed application lane with an explicit monotonic read-to-SDK admission
+ * budget. Begin before the last pre-sign read, then recheck after intent I/O.
+ * This is local elapsed time, not current chain/price or signature authority. */
+export function createSdk105AgeBoundSignerContextWalletOwner(configuration, custodyConfiguration, entryConfiguration) {
+  if (arguments.length !== 3 || !invariant()) fail('configuration_rejected');
+  const custody = captureCustody(custodyConfiguration), entry = record(entryConfiguration, ['clock', 'maxReadToSignerMs']);
+  if (!custody.contextRequired || typeof entry.clock !== 'function' || PROXY(entry.clock) || !Object.isFrozen(entry.clock)
+      || !Number.isSafeInteger(entry.maxReadToSignerMs) || entry.maxReadToSignerMs < 1 || entry.maxReadToSignerMs > 60000) fail('configuration_rejected');
+  return createOwner(configuration, custody, entry);
+}
+function captureCustody(custodyConfiguration) {
   const c = record(custodyConfiguration, ['paymentId', 'backend']);
   if (typeof c.paymentId !== 'string' || /^[A-Za-z0-9][A-Za-z0-9:._-]{0,127}$/.exec(c.paymentId)?.[0] !== c.paymentId
       || c.backend === null || typeof c.backend !== 'object' || PROXY(c.backend) || !Object.isFrozen(c.backend)) fail('configuration_rejected');
@@ -47,9 +60,9 @@ export function createSdk105CustodiedPreparedHashWalletOwner(configuration, cust
   for (const fn of [begin, retain]) if (!Object.isFrozen(fn)) fail('configuration_rejected');
   const context = DESC(c.backend, 'requirePreparationContext');
   if (context !== undefined && (!OWN(context, 'value') || !context.enumerable || context.value !== true)) fail('configuration_rejected');
-  return createOwner(configuration, { paymentId: c.paymentId, backend: c.backend, begin, retain, contextRequired: context !== undefined });
+  return { paymentId: c.paymentId, backend: c.backend, begin, retain, contextRequired: context !== undefined };
 }
-function createOwner(configuration, custody) {
+function createOwner(configuration, custody, entry = null) {
   const c = record(configuration, ['keyPair','expectedAddress','expectedPublicKey']);
   let receiver = c.keyPair;
   const ADDRESS = method(receiver,'getAddress'), PUBLIC = method(receiver,'getPublicKey');
@@ -62,6 +75,27 @@ function createOwner(configuration, custody) {
   const saved = { intent: null, intentEntered: false, intentReturned: false, resultEntered: false, resultReturned: false, transactionHash: null };
   const contextRequired = custody !== null && custody.contextRequired, DECODE = contextRequired ? decodeOriginalFundingSignerContextRecord : decodeOriginalFundingSignerRecord;
   let preparedContext = null, preSignContext = null, preparationBindEntered = false, preSignBindEntered = false;
+  const window = { entered: false, started: false, refused: false, last: null, deadline: null, checks: 0 };
+  function clock() {
+    const now = APPLY(entry.clock, undefined, []);
+    if (safePromise(now)) { try { APPLY(THEN, now, [discard, discard]); } catch {} }
+    if (typeof now !== 'bigint' || now < 0n || window.last !== null && now < window.last) fail('signer_entry_age_refused');
+    window.last = now; return now;
+  }
+  function requireSignerEntryAge() {
+    if (entry === null) return;
+    try {
+      if (!window.started || window.refused || !invariant()) fail('signer_entry_age_refused');
+      window.checks += 1; if (clock() >= window.deadline) fail('signer_entry_age_refused');
+    } catch { window.refused = true; fail('signer_entry_age_refused'); }
+  }
+  function beginPreSignObservation() {
+    if (arguments.length !== 0 || entry === null || !contextRequired || preparedContext === null || closing !== null || held
+        || pending !== null || signAttempted || window.entered || !invariant()) fail('signer_entry_age_unavailable');
+    window.entered = true;
+    try { window.deadline = clock() + BigInt(entry.maxReadToSignerMs) * 1000000n; window.started = true; }
+    catch { window.refused = true; fail('signer_entry_age_refused'); }
+  }
   function bindOriginalPreparation(input, resourceUrl) {
     if (arguments.length !== 2 || !contextRequired || closing !== null || held || pending !== null || signAttempted || preparationBindEntered || !invariant()) fail('context_unavailable');
     preparationBindEntered = true;
@@ -70,7 +104,8 @@ function createOwner(configuration, custody) {
   function bindOriginalPreSignContext(input) {
     if (arguments.length !== 1 || !contextRequired || preparedContext === null || closing !== null || held || pending !== null || signAttempted || preSignBindEntered || !invariant()) fail('context_unavailable');
     preSignBindEntered = true;
-    try { preSignContext = captureOriginalFundingSignerPreSignContext(preparedContext, input); } catch { held = true; fail('context_unknown'); }
+    try { requireSignerEntryAge(); preSignContext = captureOriginalFundingSignerPreSignContext(preparedContext, input); requireSignerEntryAge(); }
+    catch { held = true; fail('context_unknown'); }
   }
   function checkPublicKey() {
     if (closing !== null || receiver === null || !invariant()) fail('closed');
@@ -94,7 +129,7 @@ function createOwner(configuration, custody) {
           if (contextRequired && (preSignContext === null || canonicalJson(JSON.parse(preSignContext.preSignContextJson).originalUnsignedBlock) !== canonicalJson(unsigned))) {
             held = true; throw error('context_unknown');
           }
-          saved.intentEntered = true;
+          requireSignerEntryAge(); saved.intentEntered = true;
           try {
             const raw = APPLY(custody.begin, custody.backend, contextRequired ? [custody.paymentId, unsigned, preSignContext] : [custody.paymentId, unsigned]);
             if (safePromise(raw)) { try { APPLY(THEN, raw, [discard, discard]); } catch {} }
@@ -108,7 +143,9 @@ function createOwner(configuration, custody) {
           } catch { held = true; throw error('custody_unknown'); }
           if (closing !== null || held || !invariant() || APPLY(TEXT, hashBytes, ['hex']) !== hashAtEntry) fail('closed');
         }
-        sdkSignerEntered = true; signingOutcome = 'PENDING';
+        // No await, key/DB callback or renewal occurs between this final
+        // monotonic check and the captured synchronous SDK signer entry.
+        requireSignerEntryAge(); sdkSignerEntered = true; signingOutcome = 'PENDING';
         const value = APPLY(SIGN,receiver,[hashBytes]);
         sdkSignReturned = true;
         let bytes;
@@ -218,12 +255,15 @@ function createOwner(configuration, custody) {
       ...(custody === null ? {} : { signerCustody: F({ version: 1, intentEntered: saved.intentEntered, intentReturned: saved.intentReturned,
         resultEntered: saved.resultEntered, resultReturned: saved.resultReturned, transactionHash: saved.transactionHash,
         ...(contextRequired ? { contextRequired: true, preparationBound: preparedContext !== null, preSignContextBound: preSignContext !== null } : {}),
+        ...(entry === null ? {} : { signerEntryAge: F({ version: 1, maxReadToSignerMs: entry.maxReadToSignerMs, observationEntered: window.entered,
+          started: window.started, refused: window.refused, checks: window.checks, authority: 'NONE', chainFreshness: 'NOT_ESTABLISHED' }) }),
         localCommitReceipt: saved.resultReturned ? 'SIGNED_RESULT_RETURNED' : saved.intentReturned ? 'INTENT_RETURNED' : 'NOT_ESTABLISHED', authority: 'NONE' }) }),
       signatureValidation:'NOT_PERFORMED',keyErasure:'NOT_ESTABLISHED',authority:'NONE' });
   });
   return F({ getAddress:F(function getAddress(){return start('address',arguments.length);}),
     sign:F(function sign(block){return start('sign',arguments.length,block);}),inspect,close,
-    ...(contextRequired ? { bindOriginalPreparation: F(bindOriginalPreparation), bindOriginalPreSignContext: F(bindOriginalPreSignContext) } : {}) });
+    ...(contextRequired ? { bindOriginalPreparation: F(bindOriginalPreparation), bindOriginalPreSignContext: F(bindOriginalPreSignContext) } : {}),
+    ...(entry === null ? {} : { beginPreSignObservation: F(beginPreSignObservation) }) });
 }
 
 function copyBytes(value,size) {

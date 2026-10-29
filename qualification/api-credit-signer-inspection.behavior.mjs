@@ -1,5 +1,6 @@
 // Declared file/clock/pipe method ports; no native file, SQLite, key or signer.
 import assert from 'node:assert/strict';
+import { fileURLToPath } from 'node:url';
 import { apiCreditSignerContextDataCases, signerContextDataFixture } from './api-credit-signer-context.behavior.mjs';
 import { closeApiCreditOperatorDataFixtures } from './api-credit-operator.behavior.mjs';
 import { canonicalJson } from '../src/canonical.js';
@@ -172,6 +173,8 @@ check('signer-inspection-declared-stale-token-is-not-discovered-or-rebound', () 
   const r = owner({ staleEpoch: true }); assert.throws(r.run); assert.equal(r.calls.open, 1); assert.equal(r.calls.read, 0); assert.equal(r.calls.close, 0);
 });
 
+export const apiCreditSignerInspectionDataCases = F([...checks]);
+if (process.argv[1] !== undefined && fileURLToPath(import.meta.url) === process.argv[1]) {
 const cases = [];
 for (const { id, run } of checks) { try { await run(); cases.push({ id, status: 'PASS' }); } catch (e) { cases.push({ id, status: 'FAIL', error: String(e?.message ?? e) }); } }
 await closeApiCreditOperatorDataFixtures(); const failed = cases.filter(c => c.status !== 'PASS').length;
@@ -179,3 +182,4 @@ console.log(JSON.stringify({ qualification: 'G2_KEYLESS_SIGNER_INSPECTION_DATA',
   declaredFileClockAndPipePortsOnly: true, nativeExecutions: 0, SDK: 0, SQLite: 0, keys: 0, signatures: 0, sockets: 0, nonceSearches: 0, nodeChildren: 0, actualPrepare: 0, payouts: 0,
   nativeReopen: 'NOT_ESTABLISHED', physicalRelease: 'NOT_ESTABLISHED', actualSignerLoss: 'NOT_ESTABLISHED', Linux: 'NOT_ESTABLISHED', fullG2: 'NOT_ESTABLISHED' }));
 if (failed) process.exitCode = 1;
+}

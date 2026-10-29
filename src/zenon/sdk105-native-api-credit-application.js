@@ -1,14 +1,17 @@
 // SOURCE ONLY; this complete native binding has not been executed.
 import { types } from 'node:util';
+import { hrtime } from 'node:process';
 import { claimSdk105ApiCreditExistingKeyLease, bindSdk105ApiCreditExistingKeyLeaseOwner } from './sdk105-api-credit-existing-key-lease.js';
 import { consumeSdk105ApiCreditSelection } from './sdk105-api-credit-selection.js';
 import { consumeSdk105ApiCreditProductSelection, bindSdk105ApiCreditProductLifecycle } from './sdk105-api-credit-product-profile.js';
 import { captureSdk105FundingServiceConfiguration } from './sdk105-funding-service-lifecycle.js';
-import { createSdk105CustodiedPreparedHashWalletOwner } from './sdk105-prepared-hash-wallet-owner.js';
+import { createSdk105AgeBoundSignerContextWalletOwner } from './sdk105-prepared-hash-wallet-owner.js';
 import { openOriginalFundingSpendingSignerContextFileOwner } from '../original-funding-spending-file-owner.js';
 import { createSdk105ApiCreditApplicationLifecycle } from './sdk105-api-credit-application-lifecycle.js';
 
-const F = Object.freeze, NP = Promise, THEN = NP.prototype.then;
+const F = Object.freeze, NP = Promise, THEN = NP.prototype.then, MONOTONIC = hrtime.bigint;
+// Fixed first-product admission profile, not a chain quote TTL or OS timeout.
+const SIGNER_ENTRY = F({ clock: F(() => Reflect.apply(MONOTONIC, hrtime, [])), maxReadToSignerMs: 1000 });
 let failedApplication = null;
 function fail() { throw new TypeError('SDK105_NATIVE_API_CREDIT_OPEN_HELD'); }
 function consume(promise, yes = () => {}, no = () => {}) {
@@ -48,7 +51,7 @@ async function openApplication(selection, requireCurrentOpening, productProfile)
     // No new key capability is entered after an expired module-loading budget.
     requireCurrentOpening();
     claimSdk105ApiCreditExistingKeyLease(c.walletOptions.keyPair);
-    wallet = createSdk105CustodiedPreparedHashWalletOwner(c.walletOptions, { paymentId: selected.spending.paymentId, backend: file.signerCustody });
+    wallet = createSdk105AgeBoundSignerContextWalletOwner(c.walletOptions, { paymentId: selected.spending.paymentId, backend: file.signerCustody }, SIGNER_ENTRY);
     bindSdk105ApiCreditExistingKeyLeaseOwner(c.walletOptions.keyPair, wallet);
     requireCurrentOpening();
     client = await openZenonDynamicPlasmaNativeFundingServiceClient({ storeOptions: c.storeOptions,

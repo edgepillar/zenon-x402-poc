@@ -38,3 +38,7 @@ export function bindWalletOriginalFundingPreSignContext(wallet, handoff) {
   voidReceipt(Reflect.apply(bind, wallet, [F({ originalUnsignedBlock: data(handoff, 'originalUnsignedBlock'), originalPlan: data(snapshot, 'originalPlan'),
     preSignCheckpointJson: data(snapshot, 'preSignCheckpointJson') })]));
 }
+export function beginWalletOriginalFundingPreSignObservation(wallet) {
+  if (arguments.length !== 1) fail(); const begin = method(wallet, 'beginPreSignObservation', true);
+  if (begin !== null) voidReceipt(Reflect.apply(begin, wallet, []));
+}
