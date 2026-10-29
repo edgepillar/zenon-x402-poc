@@ -12,7 +12,20 @@ Do not use this command with a real key or payment until those gates pass.
 The command has not been executed as part of its source/DATA qualification.
 The existing `buyer-cli.js` modes retain their separate admission contracts.
 
-The operator supplies four distinct POSIX FIFO ends with exclusive ownership:
+The same source candidate also has an explicit original-funding grant-history
+query mode, with two distinct owned FIFO ends and no key or database descriptor:
+
+```sh
+node src/api-credit-cli.js --funding-grant-query-fd 3 --output-fd 6 --bootstrap-ms 1000
+```
+
+Its canonical input retains the original checkpoint/pins, exact grant selection,
+ready read proof and selected provider CA. One query and its own CLOSED receipt
+precede result output; UNKNOWN retains uncertainty and spending reservations.
+It is source/DATA-qualified only; the native CLI has not been executed. See the
+[query contract](ORIGINAL_FUNDING_GRANT_QUERY_CLI.md).
+
+For RUN, the operator supplies four distinct POSIX FIFO ends with exclusive ownership:
 
 | Descriptor | Input or output | Contract |
 | --- | --- | --- |
@@ -33,7 +46,7 @@ Neither helper creates the FIFO objects or discovers a credential source.
 
 The fixed operator entry requires Node.js `24.19.0`, the `node` release name,
 and a Linux/macOS `x64` or `arm64` process. The same predicate applies to RUN
-and the three keyless inspection modes. Valid operational arguments on another
+and the explicit history and query modes. Valid operational arguments on another
 runtime produce `API_CREDIT_OPERATOR_RUNTIME_REFUSED` and exit status 1 before
 any native launcher import, descriptor adoption, profile/credential read or
 key/store acquisition. Static help and invalid-argument behavior are preserved.

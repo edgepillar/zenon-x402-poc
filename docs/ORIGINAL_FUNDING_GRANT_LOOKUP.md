@@ -42,13 +42,15 @@ captured original and cannot carry payment, activation or dispatch authority.
 
 ## Integration and evidence boundary
 
-This is an application-internal read API, not a new x402 wire scheme. No HTTP
-route or buyer CLI command is added, and the current fresh-intake provider root
-is not silently reopened or replaced. The next integration must connect this
-exact API to the selected provider/holder channel and preserve the separate
-funding and delivery-liability records. The original client handoff still
-requires its explicit admission; a returned historical grant ID does not supply
-that admission. Funding ACK and full G1/G2 acceptance remain OPEN.
+This is an application-internal read API, not a new x402 wire scheme. The
+[closed HTTPS channel](ORIGINAL_FUNDING_GRANT_HTTP.md) and explicit
+[holder CLI query](ORIGINAL_FUNDING_GRANT_QUERY_CLI.md) connect it in source.
+The query uses retained original bytes and selection with an existing read
+proof; it does not silently reopen or replace the fresh-intake provider root.
+Separate funding and delivery-liability records are still required. The
+original client handoff keeps its explicit admission; a returned historical
+grant ID does not supply it. Native funding ACK and full G1/G2 acceptance
+remain OPEN.
 
 Qualification exercises the actual in-memory model and reader core, declared
 trusted activation metadata, declared verifier callbacks and in-memory state

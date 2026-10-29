@@ -2433,8 +2433,8 @@
     },
     {
       "path": "src/api-credit-cli-arguments.js",
-      "bytes": 2384,
-      "sha256": "01ffc5c478b7d76f4c737b41e07a42cf67f0e54c59a199c408ac8e0a808ab760",
+      "bytes": 2580,
+      "sha256": "86a69f720c568f719df3ba49475b726acb56b544b1cd8f72b57ea7e8fe89933e",
       "format": "module"
     },
     {
@@ -2451,8 +2451,8 @@
     },
     {
       "path": "src/api-credit-cli.js",
-      "bytes": 5623,
-      "sha256": "a71ec9ebb8c756cb56bab0634da3935c67bb28c689bcedee587c8c33ca1c6d47",
+      "bytes": 6122,
+      "sha256": "480c8e7e2c8d8f05d95c8996cb90b1fe67df9b30cd59d3a3622253f9c3cdaa33",
       "format": "module"
     },
     {
@@ -2498,6 +2498,18 @@
       "format": "module"
     },
     {
+      "path": "src/api-credit-original-grant-query-owner.js",
+      "bytes": 10687,
+      "sha256": "fb1d0d26828b8e8c40b7170dd3ca0f68652b53ba1113f4d80f200ce1d5d3b19c",
+      "format": "module"
+    },
+    {
+      "path": "src/api-credit-original-grant-query-profile.js",
+      "bytes": 7250,
+      "sha256": "b278fc9c6c1588aa7d8198213b7835319aec82551f1c84070f8819416d97809e",
+      "format": "module"
+    },
+    {
       "path": "src/api-credit-recorded-result-inspection.js",
       "bytes": 7316,
       "sha256": "66793b690a90816fb9242f9b3cc5eea59ffdb0e0382b4e2c6d4f54397c625b3a",
@@ -2511,8 +2523,8 @@
     },
     {
       "path": "src/api-credit-recovery-inspection-coordinator.js",
-      "bytes": 9721,
-      "sha256": "b34ba856ce4dbccd80b3fe3d53a83ae5d7885fe1c8f3c07e03954f4ad046f511",
+      "bytes": 10536,
+      "sha256": "cf95f1056db125f25b57e4c7979afffa19efbd04f82a7abcbff8862762f8dda4",
       "format": "module"
     },
     {
@@ -3224,9 +3236,15 @@
       "format": "module"
     },
     {
+      "path": "src/zenon/native-api-credit-original-grant-query.js",
+      "bytes": 2215,
+      "sha256": "75f9b61c3cb4c93773a72365a32955c09471678d6b6c4249ec625b3a0017de6a",
+      "format": "module"
+    },
+    {
       "path": "src/zenon/native-api-credit-recovery-inspection-launcher.js",
-      "bytes": 4875,
-      "sha256": "c2fa519d3b21fcc88f1141d98bebdddf0a6a17a1b9cf81d8a371554f93fc8694",
+      "bytes": 5545,
+      "sha256": "62a6a9b2fa38b01c8168550c29d7c8d278a061bfb1cb73f702533ac2fcb6a03b",
       "format": "module"
     },
     {

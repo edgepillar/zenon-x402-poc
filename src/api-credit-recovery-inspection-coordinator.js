@@ -3,6 +3,8 @@ import { types } from 'node:util';
 import { createHash } from 'node:crypto';
 import { decodeApiCreditFundingInspectionProfile } from './api-credit-funding-inspection-profile.js';
 import { captureApiCreditFundingInspectionOutput } from './api-credit-funding-inspection-owner.js';
+import { decodeApiCreditOriginalGrantQueryProfile } from './api-credit-original-grant-query-profile.js';
+import { captureApiCreditOriginalGrantQueryOutput } from './api-credit-original-grant-query-owner.js';
 import { canonicalJson } from './canonical.js';
 import { decodeApiCreditRecoveryInspectionProfile } from './api-credit-recovery-inspection-profile.js';
 import { captureServiceCreditRecoveryInspectionOutput } from './service-credit-recovery-inspection-owner.js';
@@ -41,14 +43,17 @@ export async function runApiCreditRecordedResultInspectionCoordinator(configurat
 export async function runApiCreditFundingInspectionCoordinator(configuration) {
   if (arguments.length !== 1) fail(); return coordinate(configuration, false, false, true);
 }
-async function coordinate(configuration, signer, recorded = false, funding = false) {
+export async function runApiCreditOriginalGrantQueryCoordinator(configuration) {
+  if (arguments.length !== 1) fail(); return coordinate(configuration, false, false, false, true);
+}
+async function coordinate(configuration, signer, recorded = false, funding = false, grantQuery = false) {
   if (FAILED.size >= 16) fail();
-  const fd = funding ? 'fundingInspectionFd' : signer ? 'signerInspectionFd' : recorded ? 'recordedResultFd' : 'inspectionFd', mode = funding ? 'FUNDING_INSPECT' : signer ? 'SIGNER_INSPECT' : recorded ? 'RECORDED_RESULT' : 'INSPECT';
+  const fd = grantQuery ? 'originalGrantQueryFd' : funding ? 'fundingInspectionFd' : signer ? 'signerInspectionFd' : recorded ? 'recordedResultFd' : 'inspectionFd', mode = grantQuery ? 'ORIGINAL_GRANT_QUERY' : funding ? 'FUNDING_INSPECT' : signer ? 'SIGNER_INSPECT' : recorded ? 'RECORDED_RESULT' : 'INSPECT';
   const c = fields(configuration, ['arguments', 'ports']), a = fields(c.arguments, ['mode', fd, 'outputFd', 'bootstrapMs']);
   if (a.mode !== mode || !Number.isSafeInteger(a.bootstrapMs) || a.bootstrapMs < 1 || a.bootstrapMs > 60000
       || [a[fd], a.outputFd].some(n => !Number.isSafeInteger(n) || n < 3 || n > 1023) || a[fd] === a.outputFd) fail();
-  const decodeProfile = funding ? decodeApiCreditFundingInspectionProfile : signer ? decodeApiCreditSignerInspectionProfile : decodeApiCreditRecoveryInspectionProfile;
-  const captureOutput = funding ? captureApiCreditFundingInspectionOutput : signer ? captureApiCreditSignerInspectionOutput : recorded ? captureApiCreditRecordedResultInspectionOutput : captureServiceCreditRecoveryInspectionOutput;
+  const decodeProfile = grantQuery ? decodeApiCreditOriginalGrantQueryProfile : funding ? decodeApiCreditFundingInspectionProfile : signer ? decodeApiCreditSignerInspectionProfile : decodeApiCreditRecoveryInspectionProfile;
+  const captureOutput = grantQuery ? captureApiCreditOriginalGrantQueryOutput : funding ? captureApiCreditFundingInspectionOutput : signer ? captureApiCreditSignerInspectionOutput : recorded ? captureApiCreditRecordedResultInspectionOutput : captureServiceCreditRecoveryInspectionOutput;
   const p = fields(c.ports, ['readProfile', 'inspectOriginal', 'writeResult', 'close', 'inspect', 'clock', 'armTimer', 'cancelTimer']);
   for (const fn of Object.values(p)) if (typeof fn !== 'function' || types.isProxy(fn) || !Object.isFrozen(fn)) fail();
   const frame = { stage: 'PROFILE', prepared: null, inspectionEntered: false, outputWritten: false, opening: true, unknown: false,
@@ -100,6 +105,7 @@ async function coordinate(configuration, signer, recorded = false, funding = fal
     frame.prepared = decodeProfile(text); guard(); frame.stage = 'INSPECTION';
     await stage(g => { frame.inspectionEntered = true; return p.inspectOriginal(frame.prepared, g); });
     const result = captureOutput(frame.value); frame.value = null;
+    if (grantQuery && ['fundingResourceUrl', 'paymentHash', 'requestId', 'checkpointDigest', 'queryDigest'].some(k => result[k] !== frame.prepared[k])) fail();
     if (funding && (result.fundingResourceUrl !== frame.prepared.fundingResourceUrl || result.paymentHash !== frame.prepared.paymentHash
       || result.recordPresent && createHash('sha256').update(result.serializedCheckpoint).digest('hex') !== frame.prepared.checkpointDigest)) fail();
     if (signer && (result.paymentId !== frame.prepared.paymentId || result.originalDigest !== frame.prepared.originalDigest || result.fundingResourceUrl !== frame.prepared.fundingResourceUrl)) fail();
@@ -116,7 +122,7 @@ async function coordinate(configuration, signer, recorded = false, funding = fal
   }
   const clean = frame.closed && !frame.unknown, success = clean && frame.outputWritten;
   if (!clean) FAILED.add(frame);
-  return F({ ...(funding ? { apiCreditFundingInspectionVersion: 1 } : signer ? { apiCreditSignerInspectionVersion: 1 } : recorded ? { apiCreditRecordedResultInspectionVersion: 1 } : { apiCreditRecoveryInspectionVersion: 1 }), status: success ? 'CLOSED' : clean ? 'BOOTSTRAP_REFUSED' : 'CLOSE_UNKNOWN',
+  return F({ ...(grantQuery ? { apiCreditOriginalGrantQueryVersion: 1 } : funding ? { apiCreditFundingInspectionVersion: 1 } : signer ? { apiCreditSignerInspectionVersion: 1 } : recorded ? { apiCreditRecordedResultInspectionVersion: 1 } : { apiCreditRecoveryInspectionVersion: 1 }), status: success ? 'CLOSED' : clean ? 'BOOTSTRAP_REFUSED' : 'CLOSE_UNKNOWN',
     exitCode: success ? 0 : clean ? 1 : 4, stage: frame.stage, inspectionEntered: frame.inspectionEntered,
     outputWriteObserved: frame.outputWritten, channelClosedObserved: frame.closed, historicalObservation: true,
     authority: 'NONE', mayDispatchService: false, mayStartPayment: false, maySignPayment: false,

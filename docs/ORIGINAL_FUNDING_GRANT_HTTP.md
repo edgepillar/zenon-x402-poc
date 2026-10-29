@@ -47,9 +47,14 @@ custody. They perform no cryptographic proof verification, SQL, TLS, socket,
 SDK, key generation, signature, nonce search, payment or native application
 execution. Native modules receive source review and parser-only checks.
 
-This channel is not yet mounted in the buyer CLI or the issued-funding
-application. Provider restart/ownership admission, holder proof custody and the
-single Linux product entry still need composition and native acceptance.
-Funding ACK loss, fresh-process reopen, release and G1's 100-call scenario are
-not established by these DATA results. Existing historical native records
-remain bound to their own source/runtime versions. G0-G5 remain open.
+The holder query is mounted in the explicit source-only
+[`--funding-grant-query-fd` CLI mode](ORIGINAL_FUNDING_GRANT_QUERY_CLI.md).
+It requires the original checkpoint/independent pins, retained selection and an
+existing read proof; it creates no key or signature. The single owner requires
+the transport's actual CLOSED receipt and fresh zero-count snapshots before
+result output. The issued-funding root is not replaced, and provider listener
+startup remains an explicit separate composition. Native proof/TLS composition,
+restart/ownership admission and the single Linux product entry still need
+acceptance. Funding ACK loss, fresh-process reopen, release and G1's 100-call
+scenario are not established by these DATA results. Existing historical native
+records remain bound to their own source/runtime versions. G0-G5 remain open.

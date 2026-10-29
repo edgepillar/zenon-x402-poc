@@ -4,7 +4,7 @@ import { Buffer } from 'node:buffer';
 import { setTimeout, clearTimeout } from 'node:timers';
 import { createBuyerOwnedPipeStreams } from '../buyer-owned-pipe-streams.js';
 import { createBuyerCommandLineChannel } from '../buyer-command-line-channel.js';
-import { runApiCreditRecoveryInspectionCoordinator, runApiCreditSignerInspectionCoordinator, runApiCreditRecordedResultInspectionCoordinator, runApiCreditFundingInspectionCoordinator } from '../api-credit-recovery-inspection-coordinator.js';
+import { runApiCreditRecoveryInspectionCoordinator, runApiCreditSignerInspectionCoordinator, runApiCreditRecordedResultInspectionCoordinator, runApiCreditFundingInspectionCoordinator, runApiCreditOriginalGrantQueryCoordinator } from '../api-credit-recovery-inspection-coordinator.js';
 
 const F = Object.freeze, CLOCK = hrtime.bigint, FAILED = new Set();
 let entered = false;
@@ -23,11 +23,14 @@ export async function runNativeApiCreditRecordedResultInspection(args) {
 export async function runNativeApiCreditFundingInspection(args) {
   if (arguments.length !== 1) fail(); return runInspection(args, false, false, true);
 }
-async function runInspection(args, signer, recorded = false, funding = false) {
-  if (entered || FAILED.size !== 0 || args.mode !== (funding ? 'FUNDING_INSPECT' : signer ? 'SIGNER_INSPECT' : recorded ? 'RECORDED_RESULT' : 'INSPECT')) fail(); entered = true;
+export async function runNativeApiCreditOriginalGrantQuery(args) {
+  if (arguments.length !== 1) fail(); return runInspection(args, false, false, false, true);
+}
+async function runInspection(args, signer, recorded = false, funding = false, grantQuery = false) {
+  if (entered || FAILED.size !== 0 || args.mode !== (grantQuery ? 'ORIGINAL_GRANT_QUERY' : funding ? 'FUNDING_INSPECT' : signer ? 'SIGNER_INSPECT' : recorded ? 'RECORDED_RESULT' : 'INSPECT')) fail(); entered = true;
   const frame = { streams: null, channel: null, inspectionEntered: false };
   try {
-    frame.streams = createBuyerOwnedPipeStreams({ inputFd: funding ? args.fundingInspectionFd : signer ? args.signerInspectionFd : recorded ? args.recordedResultFd : args.inspectionFd, outputFd: args.outputFd });
+    frame.streams = createBuyerOwnedPipeStreams({ inputFd: grantQuery ? args.originalGrantQueryFd : funding ? args.fundingInspectionFd : signer ? args.signerInspectionFd : recorded ? args.recordedResultFd : args.inspectionFd, outputFd: args.outputFd });
     frame.channel = createBuyerCommandLineChannel({ ...frame.streams, limits: signer
       ? { maxCommands: 2, maxLineBytes: 16384, maxInputBytes: 16385, maxOutputBytes: 131072, closeWaitMs: 1000 }
       : { maxCommands: 2, maxLineBytes: 65536, maxInputBytes: 65537, maxOutputBytes: 65536, closeWaitMs: 1000 } });
@@ -38,6 +41,10 @@ async function runInspection(args, signer, recorded = false, funding = false) {
       }),
       inspectOriginal: F(async (profile, guard) => {
         try {
+          if (grantQuery) {
+            guard(); const { inspectNativeApiCreditOriginalGrant } = await import('./native-api-credit-original-grant-query.js');
+            guard(); frame.inspectionEntered = true; return await inspectNativeApiCreditOriginalGrant(profile, guard);
+          }
           if (funding) {
             guard(); const { inspectNativeApiCreditFundingOriginal } = await import('./native-api-credit-funding-inspection.js');
             guard(); frame.inspectionEntered = true; return await inspectNativeApiCreditFundingOriginal(profile, guard);
@@ -54,12 +61,12 @@ async function runInspection(args, signer, recorded = false, funding = false) {
           guard(); frame.inspectionEntered = true; return await inspectServiceCreditCapturedOriginal(profile, guard);
         } finally { if (!frame.inspectionEntered) profile.release(); }
       }),
-      writeResult: F((line, guard) => { guard(); if (typeof line !== 'string' || Buffer.byteLength(line) > (signer ? 131072 : funding ? 65536 : recorded ? 4096 : 2048)) fail(); return frame.channel.writeResult(line); }),
+      writeResult: F((line, guard) => { guard(); if (typeof line !== 'string' || Buffer.byteLength(line) > (grantQuery ? 8192 : signer ? 131072 : funding ? 65536 : recorded ? 4096 : 2048)) fail(); return frame.channel.writeResult(line); }),
       close: F(() => frame.channel.close()), inspect: F(() => frame.channel.inspect()),
       clock: F(() => Reflect.apply(CLOCK, hrtime, [])), armTimer: F((budget, callback) => setTimeout(callback, budget)),
       cancelTimer: F(token => { clearTimeout(token); })
     });
-    return await (funding ? runApiCreditFundingInspectionCoordinator : signer ? runApiCreditSignerInspectionCoordinator : recorded ? runApiCreditRecordedResultInspectionCoordinator : runApiCreditRecoveryInspectionCoordinator)({ arguments: args, ports });
+    return await (grantQuery ? runApiCreditOriginalGrantQueryCoordinator : funding ? runApiCreditFundingInspectionCoordinator : signer ? runApiCreditSignerInspectionCoordinator : recorded ? runApiCreditRecordedResultInspectionCoordinator : runApiCreditRecoveryInspectionCoordinator)({ arguments: args, ports });
   } catch { FAILED.add(frame); fail(); }
   // A constructor that returned no channel retains its own quarantine. Never
   // compete with an entered constructor by raw-closing/reusing its descriptors.

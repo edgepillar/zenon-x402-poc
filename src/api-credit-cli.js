@@ -17,6 +17,8 @@ const HELP = 'API credit operator source candidate (native acceptance is OPEN).\
   + 'Same original/proof envelope; returns bounded cache DATA without dispatch authority.\n'
   + 'Funding history before a grant: node src/api-credit-cli.js --funding-inspect-fd 3 --output-fd 6 --bootstrap-ms 1000\n'
   + 'Funding input: same independent original checkpoint/pins; no grant, service proof or resend.\n'
+  + 'Provider grant history: node src/api-credit-cli.js --funding-grant-query-fd 3 --output-fd 6 --bootstrap-ms 1000\n'
+  + 'Query input: exact retained funding/checkpoint pins, ready read proof and selected TLS CA; no key, store open or resend.\n'
   + 'Signer history: node src/api-credit-cli.js --signer-inspect-fd 3 --output-fd 6 --bootstrap-ms 1000\n'
   + 'Signer output contains private existing signed-payment DATA; history grants no dispatch.\n'
   + 'No stdin, environment secret, mnemonic, generated key or default profile.\n';
@@ -46,7 +48,10 @@ export async function runApiCreditCli(argv) {
   }
   let result;
   try {
-    if (args.mode === 'FUNDING_INSPECT') {
+    if (args.mode === 'ORIGINAL_GRANT_QUERY') {
+      const { runNativeApiCreditOriginalGrantQuery } = await import('./zenon/native-api-credit-recovery-inspection-launcher.js');
+      result = await runNativeApiCreditOriginalGrantQuery(args);
+    } else if (args.mode === 'FUNDING_INSPECT') {
       const { runNativeApiCreditFundingInspection } = await import('./zenon/native-api-credit-recovery-inspection-launcher.js');
       result = await runNativeApiCreditFundingInspection(args);
     } else if (args.mode === 'RECORDED_RESULT') {
