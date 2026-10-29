@@ -6,6 +6,7 @@ const HELP = 'API credit operator source candidate (native acceptance is OPEN).\
   + 'node src/api-credit-cli.js --profile-fd 3 --key-fd 4 --input-fd 5 --output-fd 6 --bootstrap-ms 1000\n'
   + 'Candidate runtime: Node.js 24.19.0; Linux/macOS x64 or arm64 compatibility only.\n'
   + 'Candidate context: no Node flags; unset NODE_OPTIONS, NODE_PATH and NODE_PRESERVE_SYMLINKS.\n'
+  + 'RUN also requires the reviewed ordinary package byte catalog before pipe adoption.\n'
   + 'Supply four distinct, exclusive POSIX FIFO ends owned by the operator.\n'
   + 'Profile: canonical public bootstrap JSON terminated by EOF.\n'
   + 'Key: exactly 32 existing private-key bytes terminated by EOF.\n'
@@ -27,6 +28,20 @@ export async function runApiCreditCli(argv) {
   if (args.mode === 'HELP') { process.stdout.write(HELP); return 0; }
   if (args.mode === 'RUNTIME_REFUSED') { process.stderr.write('API_CREDIT_OPERATOR_RUNTIME_REFUSED\n'); return 1; }
   if (args.mode === 'EXECUTION_CONTEXT_REFUSED') { process.stderr.write('API_CREDIT_OPERATOR_CONTEXT_REFUSED\n'); return 1; }
+  let packageState = null;
+  if (args.mode === 'RUN') {
+    try {
+      const admission = await import('./api-credit-native-package-admission.js');
+      const state = admission.admitNativeApiCreditPackages();
+      if (state === 'REFUSED') { process.stderr.write('API_CREDIT_OPERATOR_PACKAGES_REFUSED\n'); return 1; }
+      if (state !== 'READY') { process.stderr.write('API_CREDIT_OPERATOR_PACKAGES_UNKNOWN\n'); return 4; }
+      await import('./api-credit-native-package-entries.js');
+      if (admission.readNativeApiCreditPackageAdmissionState() !== 'READY') {
+        process.stderr.write('API_CREDIT_OPERATOR_PACKAGES_UNKNOWN\n'); return 4;
+      }
+      packageState = admission.readNativeApiCreditPackageAdmissionState;
+    } catch { process.stderr.write('API_CREDIT_OPERATOR_PACKAGES_UNKNOWN\n'); return 4; }
+  }
   let result;
   try {
     if (args.mode === 'RECORDED_RESULT') {
@@ -40,6 +55,11 @@ export async function runApiCreditCli(argv) {
       result = await runNativeApiCreditRecoveryInspection(args);
     } else {
       const { runNativeApiCreditOperator } = await import('./zenon/native-api-credit-operator-launcher.js');
+      // Package code may catch a refused optional resolution. Check sticky
+      // admission again before any launcher function can adopt the pipes/key.
+      if (packageState === null || packageState() !== 'READY') {
+        process.stderr.write('API_CREDIT_OPERATOR_PACKAGES_UNKNOWN\n'); return 4;
+      }
       result = await runNativeApiCreditOperator(args);
     }
   } catch {

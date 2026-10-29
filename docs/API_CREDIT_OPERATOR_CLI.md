@@ -67,6 +67,23 @@ process metadata or establish a closed installed namespace. Default search
 paths, binary/package identity and native acceptance still need their own
 qualification. Historical fixed-resolver records are not normal-install proof.
 
+## RUN package source admission candidate
+
+After the runtime/context gates, RUN enters the fixed
+[package source admission](API_CREDIT_MODULE_ADMISSION.md) before importing the
+operator launcher or adopting any FIFO. It eagerly checks the reviewed source
+and package catalog, installs synchronous pass-through resolve/load guards,
+and checks their sticky state again after launcher import and before calling
+it. Known preflight refusal exits 1 as API_CREDIT_OPERATOR_PACKAGES_REFUSED;
+uncertain admission/import exits 4 with a sanitized status. No package path,
+source bytes or exception is printed. The three keyless inspection modes keep
+their SDK-free graph and do not require this RUN-only package catalog.
+
+The catalog is source policy, not proof of an installed namespace. No installer,
+cache fallback, old qualification resolver, bare-import override, transformation
+or new authority is selected. The actual native reader/hooks/CLI and ordinary
+installed SDK namespace have not run under this source/DATA qualification.
+
 ## Bootstrap DATA
 
 The exact top-level fields are `operatorBootstrapVersion: 1`,
