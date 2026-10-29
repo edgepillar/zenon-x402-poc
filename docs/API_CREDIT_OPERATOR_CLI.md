@@ -130,3 +130,24 @@ cross-store fencing, an OS deadline or a network sandbox.
 DATA reconstruction and declared SQL/proof/epoch/channel ports do not establish
 native proof verification, SQLite reopen, physical release or Linux acceptance.
 The native entry remains unexecuted and G1/G2 acceptance remains OPEN.
+
+## Same-core exact checkpoint reads
+
+The recorded-result owner supplies independently retained serialized checkpoint
+bytes to a module-branded V6 no-dispatch read. The same combined core checks
+them before querying the backend and checks the identical checkpoint after it,
+alongside its original/funding/intent/response fences. The outer product owner
+no longer repeats those two reads. Legacy redacted inspection and the existing
+three-argument core method stay unchanged; no method is added to the frozen
+client facade. A copied, dispatch-enabled or closed connection cannot revive
+this exact-read capability. The DATA call-chain checkpoint read count drops
+from four to two; native latency and I/O improvement are not established.
+Output and ordered-close bounds stay unchanged.
+
+The current payer source configures and rechecks EXCLUSIVE locking and starts
+its write transaction before incrementing owner_epoch.
+[SQLite documents](https://www.sqlite.org/pragma.html#pragma_locking_mode) that
+acquired EXCLUSIVE-mode locks persist across transactions until the connection
+releases them. This supports a conditional source argument, not an executed
+contention, physical-release or restart proof. No new takeover, lease or
+cleanup protocol is inferred from the epoch counter.

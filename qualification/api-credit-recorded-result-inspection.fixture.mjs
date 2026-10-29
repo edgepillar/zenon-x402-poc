@@ -44,7 +44,7 @@ export async function resultInspectionFixture(options={}){
     readOriginalRecoveryState:F(given=>{assert.deepEqual(given,key);r.localReads++;if(!r.epochCurrent||r.localClosed)throw Error('declared stale owner');return options.absentOriginal?null:r.local;}),
     readOriginal:F(()=>r.local.original),readOriginalRecoveryKeys:F(()=>F([key])),
     readOriginalPaymentCheckpoint:F(pins=>{r.checkpointReads++;assert.deepEqual(pins,packet.expectedPins);
-     if(options.changedCheckpoint&&r.checkpointReads>=3)return F({...checkpoint,authorization:'changed'});return checkpoint;}),
+     if(options.changedCheckpoint&&r.checkpointReads>=2)return F({...checkpoint,authorization:'changed'});return checkpoint;}),
     close:F(()=>{r.payerCloseCalls++;r.trace.push('payer-close');if(options.closeThrow)throw Error('declared payer close refused');
      if(options.closePromise)return options.closePromise;r.localClosed=true;return Promise.resolve(options.nonvoidClose?true:undefined);}),
     snapshot:F(()=>F({resource:F({phase:r.localClosed?'RELEASED':'OPEN',slotHeld:!r.localClosed,admissionClosed:r.localClosed,
@@ -57,6 +57,7 @@ export async function resultInspectionFixture(options={}){
     if(options.changeOriginalDuringRead)r.local=F({...r.local,uncertainty:F({...r.local.uncertainty,custody:true})});
     return options.outcome?options.outcome(r.outcome(),r):r.outcome();
    }),close:F(()=>{r.readerClosed=true;})});
+   r.localClient=localClient;r.backendReader=backendReader;
    r.payer=createServiceCreditCustodiedBackendRecoveryCore(localClient,backendReader,key.grantId,'PAYER_OWNED_BACKEND_BORROWED',false,true,true);
    if(options.openPromise)return options.openPromise;return Promise.resolve(r.payer);
   }),

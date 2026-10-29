@@ -1,3 +1,4 @@
+import { readServiceCreditExactOriginalBackendRecoveryState } from './service-credit-custodied-backend-recovery-core.js';
 import { captureApiCreditRecordedResultInspection } from './api-credit-recorded-result-inspection.js';
 import { types } from 'node:util';
 import { encodeOriginalPaymentCheckpoint } from './service-credit-pilot-original-payment-checkpoint.js';
@@ -96,10 +97,12 @@ async function runInspection(configuration, recorded) {
       const current = Reflect.apply(method(frame.payer, 'readOriginalPaymentCheckpoint'), frame.payer, [c.manifest.expectedCheckpointPins]);
       if (encodeOriginalPaymentCheckpoint(current) !== c.serializedCheckpoint) fail('CHECKPOINT');
     };
-    c.requireOpening(); checkpoint(); frame.stage = 'ORIGINAL_READ';
-    const observed = Reflect.apply(method(frame.payer, 'readOriginalBackendRecoveryState'), frame.payer,
-      [c.manifest.requestKey, c.authorizationHeader, c.manifest.expectedCheckpointPins]);
-    c.requireOpening(); checkpoint(); frame.stage = recorded ? 'RECORDED_RESULT' : 'REDACTED_RESULT';
+    c.requireOpening(); if (!recorded) checkpoint(); frame.stage = 'ORIGINAL_READ';
+    const observed = recorded
+      ? readServiceCreditExactOriginalBackendRecoveryState(frame.payer, c.manifest.requestKey, c.authorizationHeader, c.manifest.expectedCheckpointPins, c.serializedCheckpoint)
+      : Reflect.apply(method(frame.payer, 'readOriginalBackendRecoveryState'), frame.payer,
+        [c.manifest.requestKey, c.authorizationHeader, c.manifest.expectedCheckpointPins]);
+    c.requireOpening(); if (!recorded) checkpoint(); frame.stage = recorded ? 'RECORDED_RESULT' : 'REDACTED_RESULT';
     result = recorded ? captureApiCreditRecordedResultInspection(observed, c.manifest) : captureServiceCreditRecoveryInspectionResult(observed);
   } catch { bad = true; reason = frame.stage; }
   finally {

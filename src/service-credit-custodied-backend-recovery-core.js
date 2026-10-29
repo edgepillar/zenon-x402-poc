@@ -17,6 +17,7 @@ const KEY = snapshotOriginalServiceRequestCustodyKey;
 const SERIALIZE = serializeOriginalServiceRequestCustody;
 const SERIALIZE_INTENT = serializeOriginalServiceDispatchIntent;
 const CHECKPOINT_TEXT = encodeOriginalPaymentCheckpoint;
+const EXACT_CHECKPOINT_READERS = new WeakMap();
 
 /**
  * Internal connection for already captured private child capabilities.
@@ -57,6 +58,16 @@ function view(status, local = null, backend = null) {
   });
 }
 
+/** Independently retained bytes join the SAME two checkpoint reads in a
+ * branded V6 no-dispatch connection. The frozen facade is unchanged. */
+export function readServiceCreditExactOriginalBackendRecoveryState(connection, key, authorizationHeader, expectedPins, serializedCheckpoint) {
+  if (arguments.length !== 5 || typeof serializedCheckpoint !== 'string' || serializedCheckpoint.length === 0
+      || APPLY(BYTE_LENGTH, Buffer, [serializedCheckpoint, 'utf8']) > 32768) throw failure('INVALID_INPUT');
+  const read = EXACT_CHECKPOINT_READERS.get(connection);
+  if (read === undefined) throw failure('EXACT_CHECKPOINT_CONNECTION_REQUIRED');
+  return read(key, authorizationHeader, expectedPins, serializedCheckpoint);
+}
+
 export function createServiceCreditCustodiedBackendRecoveryCore(client, backend, selectedGrantId, storeOwnership, serviceDispatchEnabled = false,
   responseObservationEnabled = false, originalPaymentCheckpointEnabled = false) {
   const LOCAL_READ = client.readOriginalRecoveryState;
@@ -72,7 +83,7 @@ export function createServiceCreditCustodiedBackendRecoveryCore(client, backend,
   backend = null;
   let closed = false, reading = false, unavailable = false;
 
-  const readOriginalBackendRecoveryState = FREEZE(function readOriginalBackendRecoveryState(keyValue, authorizationHeader) {
+  function readBackendRecoveryState(keyValue, authorizationHeader, expectedPins, exactCheckpoint, actualArity) {
     if (closed) throw failure('CLOSED');
     if (reading) throw failure('BUSY');
     if (unavailable) throw failure('UNAVAILABLE');
@@ -84,8 +95,8 @@ export function createServiceCreditCustodiedBackendRecoveryCore(client, backend,
       if (active === true) throw failure('BUSY');
       if (active !== false) { unavailable = true; throw failure('UNAVAILABLE'); }
     }
-    if (arguments.length !== (originalPaymentCheckpointEnabled ? 3 : 2)
-        || (originalPaymentCheckpointEnabled && arguments[2] === undefined)
+    if (actualArity !== (originalPaymentCheckpointEnabled ? 3 : 2)
+        || (originalPaymentCheckpointEnabled && expectedPins === undefined)
         || typeof authorizationHeader !== 'string'
         || authorizationHeader.length === 0 || authorizationHeader.length > 1024
         || APPLY(BYTE_LENGTH, Buffer, [authorizationHeader, 'utf8']) > 1024) {
@@ -98,11 +109,12 @@ export function createServiceCreditCustodiedBackendRecoveryCore(client, backend,
     let checkpoint = null, checkpointText = null, checkpointPins = null;
     try {
       if (originalPaymentCheckpointEnabled) {
-        checkpoint = LOCAL_CHECKPOINT(arguments[2]);
+        checkpoint = LOCAL_CHECKPOINT(expectedPins);
         // Child reads can synchronously close this connection.
         if (closed) throw failure('CLOSED');
         if (checkpoint === null) throw failure('ORIGINAL_PAYMENT_CHECKPOINT_UNAVAILABLE');
         checkpointText = CHECKPOINT_TEXT(checkpoint);
+        if (exactCheckpoint !== null && checkpointText !== exactCheckpoint) throw failure('ORIGINAL_PAYMENT_CHECKPOINT_CHANGED');
         // The first read matched the caller's independent pins. Its frozen
         // binding/digests are now this query's fixed witness, not mutable pins
         // borrowed from the backend callback or a new trust root from the DB.
@@ -111,7 +123,19 @@ export function createServiceCreditCustodiedBackendRecoveryCore(client, backend,
       }
       before = LOCAL_READ(key);
       if (closed) throw failure('CLOSED');
-      if (before === null) return view('CLIENT_ORIGINAL_NOT_RECORDED');
+      if (before === null) {
+        // The exact-byte product lane still closes its witness around an
+        // absent-original observation, even though no backend query is made.
+        if (exactCheckpoint !== null) {
+          checkpoint = LOCAL_CHECKPOINT(checkpointPins);
+          if (closed) throw failure('CLOSED');
+          if (checkpoint === null || CHECKPOINT_TEXT(checkpoint) !== checkpointText) {
+            throw failure('ORIGINAL_PAYMENT_CHECKPOINT_CHANGED');
+          }
+          checkpoint = null;
+        }
+        return view('CLIENT_ORIGINAL_NOT_RECORDED');
+      }
       const originalText = SERIALIZE(before.original);
       const fundingText = STRINGIFY(before.funding);
       const uncertaintyText = STRINGIFY(before.uncertainty);
@@ -164,6 +188,9 @@ export function createServiceCreditCustodiedBackendRecoveryCore(client, backend,
       checkpointText = null;
       checkpointPins = null;
     }
+  }
+  const readOriginalBackendRecoveryState = FREEZE(function readOriginalBackendRecoveryState(keyValue, authorizationHeader) {
+    return readBackendRecoveryState(keyValue, authorizationHeader, arguments[2], null, arguments.length);
   });
   const readOriginalPaymentCheckpoint = LOCAL_CHECKPOINT === null ? null
     : FREEZE(function readOriginalPaymentCheckpoint(expectedPins) {
@@ -202,7 +229,7 @@ export function createServiceCreditCustodiedBackendRecoveryCore(client, backend,
       storeOwnership, authority: 'NONE', serviceDelivery: 'NOT_ESTABLISHED',
       ...(LOCAL_SUBMIT === null ? {} : { serviceDispatchCapability: 'EXPLICIT_CALLER_TRANSPORT_ONLY' }) });
   });
-  return FREEZE({
+  const consumer = FREEZE({
     ...(LOCAL_SUBMIT === null ? {} : { submitOriginal }),
     readOriginal: LOCAL_ORIGINAL,
     readOriginalRecoveryState: LOCAL_READ,
@@ -212,4 +239,10 @@ export function createServiceCreditCustodiedBackendRecoveryCore(client, backend,
     snapshot,
     close,
   });
+  if (LOCAL_CHECKPOINT !== null && LOCAL_SUBMIT === null) {
+    EXACT_CHECKPOINT_READERS.set(consumer, FREEZE(function exactCheckpointRead(key, proof, pins, bytes) {
+      return readBackendRecoveryState(key, proof, pins, bytes, 3);
+    }));
+  }
+  return consumer;
 }

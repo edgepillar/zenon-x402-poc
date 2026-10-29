@@ -28,7 +28,7 @@ check('recorded-inspection-actual-combined-read-core-checks-pins-around-one-quer
  const r=await fixture(),before=JSON.stringify(r.model.exportState()),v=await r.run();powerless(v);
  assert.equal(v.grantId,r.key.grantId);assert.equal(v.requestId,r.key.requestId);assert.equal(v.responseJson,r.local.responseObservation.responseJson);
  assert.equal(v.cachedResult.resultCode,r.model.getRequest(r.key).cachedResult.resultCode);assert.equal(v.source,'LOCAL_RESPONSE_AND_BACKEND_CACHE');
- assert.deepEqual(r.trace,['backend-open','payer-open','backend-read','payer-close','backend-close']);assert.equal(r.backendReads,1);assert.equal(r.localReads,2);assert.equal(r.checkpointReads,4);
+ assert.deepEqual(r.trace,['backend-open','payer-open','backend-read','payer-close','backend-close']);assert.equal(r.backendReads,1);assert.equal(r.localReads,2);assert.equal(r.checkpointReads,2);
  assert.equal(r.payerCloseCalls,1);assert.equal(r.backendCloseCalls,1);assert.equal(r.readerClosed,true);unchanged(r,before);
 });
 check('recorded-inspection-exhausted-100-request-reference-reconstruction-returns-one-cache-with-no-new-debit',async()=>{
