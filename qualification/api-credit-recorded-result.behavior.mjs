@@ -62,6 +62,11 @@ check('recorded-result-api-credit-codec-accepts-bounded-recorded-data-while-lega
  const r=await ready(),input=r.request(),v=await r.root.submitOriginal(input),c=command('service','submitService',input);
  assert.throws(()=>legacy(c,v));const out=JSON.parse(encode(c,v));assert.equal(out.result.responseJson,v.responseJson);assert.equal(out.result.authority,'NONE');await r.cleanup();
 });
+check('recorded-result-command-output-must-match-the-command-grant-and-request-key',async()=>{
+ const r=await ready(),v=await r.root.submitOriginal(r.request());
+ for(const input of [r.request('other'),r.request('request.1',{grantId:'grant.foreign'})])assert.throws(()=>encode(command('foreign-result','submitService',input),v));
+ assert.equal(JSON.parse(encode(command('same-result','submitService',r.request()),v)).result.responseJson,v.responseJson);assert.equal(r.submissions,1);await r.cleanup();
+});
 check('recorded-result-a-foreign-grant-never-enters-the-submission-callback',async()=>{
  const r=await ready();await assert.rejects(r.root.submitOriginal(r.request('foreign',{grantId:'grant.foreign'})));assert.equal(r.submissions,0);await r.cleanup();
 });

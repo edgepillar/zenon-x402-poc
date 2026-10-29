@@ -30,7 +30,8 @@ weakened. No second journal, grant, payment, signature or retry authority exists
 
 The API-credit command codec projects a closed versioned result with grant and
 request IDs, exact response JSON/result code, replay status and local-observation
-labels. Ordinary funding/recovery codecs remain void-only for service calls.
+labels. Result grant/request IDs must match the explicit command. Ordinary
+funding/recovery codecs remain void-only for service calls.
 The original Authorization string is not returned or stored by the result gate;
 secure erasure of strings or caller/native copies is not promised. Request/auth
 metadata parsing is not cryptographic proof verification. The command transport

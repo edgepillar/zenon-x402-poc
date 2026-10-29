@@ -1,14 +1,14 @@
 {
   "qualification": "G1_RECORDED_SERVICE_RESULT_DATA",
   "status": "PASS",
-  "recordedAtUTC": "2026-10-29T05:39:37.446936+00:00",
+  "recordedAtUTC": "2026-10-29T05:55:03.245957+00:00",
   "nodeVersion": "24.19.0",
   "platform": "darwin-arm64",
   "nodeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25",
-  "passed": 468,
+  "passed": 469,
   "failed": 0,
   "priorCases": 440,
-  "newCases": 28,
+  "newCases": 29,
   "cases": [
     {
       "id": "legacy-default-16-and-maximum-64-are-preserved",
@@ -1811,6 +1811,10 @@
       "status": "PASS"
     },
     {
+      "id": "recorded-result-command-output-must-match-the-command-grant-and-request-key",
+      "status": "PASS"
+    },
+    {
       "id": "recorded-result-a-foreign-grant-never-enters-the-submission-callback",
       "status": "PASS"
     },
@@ -1884,10 +1888,11 @@
     }
   ],
   "actualDataNodeCommands": 1,
-  "actualSyntaxNodeCommands": 2,
+  "actualSyntaxNodeCommands": 0,
   "reusedParserProofs": {
-    "predecessorPublicResult": "qualification/api-credit-store-owner.actual-local-result.json",
-    "rawQualificationSha256": "c69498a35a35002ec6b74b647f6a847db70b9967b5e3a366edb83500674e6f1c",
+    "predecessorPublicResult": "qualification/api-credit-recorded-result.actual-local-result.json",
+    "predecessorPublicCommit": "3fac9439cc2acb4cddd2a5bff0b4b78b13b58fe2",
+    "rawQualificationSha256": "f096fbfa980c97b8dd2088c87e0fc14064936f3a7642acf22fe62ff1ae2350b6",
     "runtimeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25",
     "platform": "darwin-arm64",
     "checks": [
@@ -1975,33 +1980,32 @@
         "path": "src/x402-native-v6-funding-post-client.js",
         "sourceSha256": "c52992598439e3648650a6742e801f90efa61779ef5353ef7c5c8b01c992e396",
         "priorParserReceiptSha256": "54c19b951e718b1dc5b2b881b28d64471d91ae991f6471a57de90fd5b00567e3"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-native-funding-service-client.js",
+        "sourceSha256": "7bc4816019c63cf69d9703bf5473eedee16565682d8c21c40afa6b0d8613e4ed",
+        "priorParserReceiptSha256": "b4d81dd823d22358fc067f3f7451a422a349f0d6816bdd6d84acb8dce9b8bd1f"
+      },
+      {
+        "path": "src/zenon/sdk105-native-api-credit-application.js",
+        "sourceSha256": "e566631bb1765cedaf667c508fa183dc6d65864e4e818bf47ceb6c3814b1c4ab",
+        "priorParserReceiptSha256": "417b36d83407309633b31f9b8e063480c7340477ca677ef53c568dfb78938a0b"
       }
     ],
     "actualNewParserCommands": 0,
     "scope": "EXACT_UNCHANGED_SOURCE_AND_RUNTIME_ONLY"
   },
-  "currentParserProofs": [
-    {
-      "path": "src/zenon/dynamic-plasma-native-funding-service-client.js",
-      "sourceSha256": "7bc4816019c63cf69d9703bf5473eedee16565682d8c21c40afa6b0d8613e4ed",
-      "parserReceiptSha256": "b4d81dd823d22358fc067f3f7451a422a349f0d6816bdd6d84acb8dce9b8bd1f"
-    },
-    {
-      "path": "src/zenon/sdk105-native-api-credit-application.js",
-      "sourceSha256": "e566631bb1765cedaf667c508fa183dc6d65864e4e818bf47ceb6c3814b1c4ab",
-      "parserReceiptSha256": "417b36d83407309633b31f9b8e063480c7340477ca677ef53c568dfb78938a0b"
-    }
-  ],
+  "currentParserProofs": [],
   "sourceProfile": {
     "path": "qualification/profiles/api-credit-application-source-v15.json",
-    "bytes": 96366,
-    "sha256": "d2f7b77a390b54b4c9453513c8ac6e9e2bb1c13f2464e0301fbe9fa4a4beeac3"
+    "bytes": 96597,
+    "sha256": "676eebd5975795e387c40eb3c82ec18e4c863887b17d0ca8c986a33f968a6cc5"
   },
-  "rawQualificationSha256": "f096fbfa980c97b8dd2088c87e0fc14064936f3a7642acf22fe62ff1ae2350b6",
+  "rawQualificationSha256": "fec94849169cb52b9ae7acec9d1f90a4bafa66d31e6edef3730ee1a8d0ff0983",
   "currentMainRecordedResultBaseline": {
     "status": "PASS",
     "sourceMain": "b31142e874b99acdd80d2261f418d3cf5f4cb209",
-    "rawQualificationSha256": "f096fbfa980c97b8dd2088c87e0fc14064936f3a7642acf22fe62ff1ae2350b6",
+    "rawQualificationSha256": "fec94849169cb52b9ae7acec9d1f90a4bafa66d31e6edef3730ee1a8d0ff0983",
     "passed": 1,
     "actualLegacyCommandCodec": true,
     "finding": "VOID_CALLBACK_OUTPUT_HAS_NO_STORED_API_RESPONSE",
@@ -2020,6 +2024,7 @@
     "noExistingOriginalRedispatch": true,
     "noLostCallbackUpgrade": true,
     "APIcreditOnlyResultCodec": true,
+    "commandResultKeyMatchesExplicitCommand": true,
     "legacyVoidCodecPreserved": true,
     "oneJoinedOriginalClose": true,
     "noNewJournalOrGrant": true,
@@ -2111,19 +2116,19 @@
     "LinuxAcceptance": "NOT_ESTABLISHED"
   },
   "current108CISeparate": true,
-  "new468DataCasesIncludedIn108CI": false,
+  "new469DataCasesIncludedIn108CI": false,
   "resources": {
     "taskQuotaBytes": 4194304,
-    "plannedExecutionPeakBytes": 3493386,
+    "plannedExecutionPeakBytes": 3413606,
     "sourceInputs": 173,
     "dataRuntimeInputs": 101,
     "nativeSourceInputs": 145,
-    "parserInputs": 2,
-    "reusedParserInputs": 17,
-    "materializedInputs": 103,
-    "sourceOnlyAliasesAvoided": 70,
-    "CASVerifiedReuse": 171,
-    "CASNewImports": 2,
+    "parserInputs": 0,
+    "reusedParserInputs": 19,
+    "materializedInputs": 101,
+    "sourceOnlyAliasesAvoided": 72,
+    "CASVerifiedReuse": 170,
+    "CASNewImports": 3,
     "sourceTextArchives": 0,
     "sourceOnlyObjectsRetention": "CURRENT_IMPORT_OR_PRIOR_OWNED_SNAPSHOT",
     "unchangedAuthoredSourceCopiesAfterCorrection": 0,
@@ -2140,7 +2145,10 @@
       "case": "recorded-result-baseline-void-command-output-cannot-deliver-a-stored-api-response",
       "correction": "SUPPLY_A_VALID_EXPLICIT_SERVICE_COMMAND_TO_THE_LEGACY_BASELINE",
       "productionChangeForHarnessCorrection": false,
-      "separateNativeSourceReviewChange": "SHARED_OWNER_GUARD_BEFORE_AND_AFTER_HISTORY_READ",
+      "separateSourceReviewChanges": [
+        "SHARED_OWNER_GUARD_BEFORE_AND_AFTER_HISTORY_READ",
+        "COMMAND_RESULT_KEY_MATCHES_EXPLICIT_COMMAND"
+      ],
       "originalEvidenceRetained": true,
       "nativeExecutions": 0
     }

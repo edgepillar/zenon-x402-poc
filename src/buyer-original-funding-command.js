@@ -85,6 +85,8 @@ export function encodeBuyerApiCreditCommandResult(command, result, maximumBytes 
   const selected = captureCommand(command, maximumBytes);
   const output = selected.operation === 'submitService' && result !== undefined
     ? captureApiCreditRecordedServiceResult(result) : project(selected.operation, result);
+  if (selected.operation === 'submitService' && result !== undefined
+      && (output.grantId !== data(selected.input, 'grantId') || output.requestId !== data(selected.input, 'requestId'))) fail('result_rejected');
   return wire({ version: 1, id: selected.id, operation: selected.operation,
     outcome: 'CALLBACK_RETURNED', result: output }, maximumBytes) + '\n';
 }
