@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { validateApiCreditStoreOwnerAdmission, requireApiCreditStoreOwnerStage } from './api-credit-wire-owner-guard.js';
 import {
   closeSync,
   constants as fsConstants,
@@ -73,6 +74,21 @@ const TERMINAL_STATUSES = Object.freeze([
   ZENON_FUNDING_PAYER_RECOVERY_STATUS.PAYMENT_CONFLICT,
 ]);
 const OPEN_DATABASE_PATHS = new Set();
+// At most one hidden guarded acquisition is retained. A stale budget-owner
+// observation after native entry never launches competing rollback/close.
+// Only a separate reviewed recovery may resolve this held physical owner.
+const API_CREDIT_HELD_DATABASES = new Map();
+function apiCreditStoreStage(admission, stage, config, database) {
+  if (admission === null) return;
+  try { requireApiCreditStoreOwnerStage(admission, stage); }
+  catch {
+    if (database !== undefined && database !== null) {
+      API_CREDIT_HELD_DATABASES.set(config.databasePath, database);
+      fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_API_CREDIT_OWNER_HELD');
+    }
+    fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_API_CREDIT_OWNER_REFUSED');
+  }
+}
 const TABLE_META = 'CREATE TABLE payer_recovery_meta(singleton INTEGER PRIMARY KEY CHECK(singleton = 1), resource_url TEXT NOT NULL, owner_epoch INTEGER NOT NULL CHECK(owner_epoch >= 0)) STRICT';
 const TABLE_STATE = 'CREATE TABLE payer_recovery_state(singleton INTEGER PRIMARY KEY CHECK(singleton = 1), revision INTEGER NOT NULL CHECK(revision >= 1), status TEXT NOT NULL CHECK(status IN (\'PREPARED\',\'ATTEMPT_FENCED\',\'OUTCOME_UNKNOWN\',\'BOUND\',\'PAYMENT_REJECTED\',\'PAYMENT_CONFLICT\')), ambiguity_latched INTEGER NOT NULL CHECK(ambiguity_latched IN (0,1)), challenge_digest TEXT NOT NULL, payment_digest TEXT NOT NULL, envelope TEXT NOT NULL) STRICT';
 const STORE_CLOSE_FAILED = 'ZENON_FUNDING_PAYER_RECOVERY_STORE_CLOSE_FAILED';
@@ -1056,12 +1072,13 @@ function validateConnection(database) {
   ) fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_SCHEMA_UNSUPPORTED');
 }
 
-function openDatabase(config, identity, creating) {
+function openDatabase(config, identity, creating, storeAdmission = null) {
   if (!creating) assertVersionHeader(config, identity);
   let database;
   let transaction = false;
   let lockAttempted = false;
   try {
+    apiCreditStoreStage(storeAdmission, 'DATABASE_ENTRY', config, database);
     database = new DatabaseSync(config.databasePath, {
       allowExtension: false,
       enableDoubleQuotedStringLiterals: false,
@@ -1101,12 +1118,14 @@ function openDatabase(config, identity, creating) {
     } else {
       validateDatabase(database, config);
     }
+    apiCreditStoreStage(storeAdmission, 'EPOCH_ENTRY', config, database);
     const advanced = database.prepare(
       'UPDATE payer_recovery_meta SET owner_epoch = owner_epoch + 1 WHERE singleton = 1 AND owner_epoch < 9007199254740991',
     ).run();
     if (advanced.changes !== 1) {
       fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_SCHEMA_UNSUPPORTED');
     }
+    apiCreditStoreStage(storeAdmission, 'COMMIT_ENTRY', config, database);
     database.exec('COMMIT');
     transaction = false;
     validateConnection(database);
@@ -1114,6 +1133,9 @@ function openDatabase(config, identity, creating) {
     inspectFile(config, identity);
     return database;
   } catch (error) {
+    if (API_CREDIT_HELD_DATABASES.has(config.databasePath)) {
+      throw failure('ZENON_FUNDING_PAYER_RECOVERY_STORE_API_CREDIT_OWNER_HELD');
+    }
     if (transaction) {
       try { database?.exec('ROLLBACK'); } catch {}
     }
@@ -1896,7 +1918,7 @@ export class ZenonFundingPayerRecoverySqliteStore {
   }
 }
 
-function openStore(options, creating, custody = false, dispatchIntent = false, custodyQuarantine = false, responseObservation = false, originalPaymentCheckpoint = false) {
+function openStore(options, creating, custody = false, dispatchIntent = false, custodyQuarantine = false, responseObservation = false, originalPaymentCheckpoint = false, storeAdmission = null) {
   const code = 'ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_CONFIGURATION';
   if (
     options === null
@@ -1944,11 +1966,12 @@ function openStore(options, creating, custody = false, dispatchIntent = false, c
   let database = null;
   try {
     const identity = creating ? createFile(config) : inspectFile(config);
-    database = openDatabase(config, identity, creating);
+    database = openDatabase(config, identity, creating, storeAdmission);
     if (creating) {
       syncParentDirectory(config.allowedRoot);
     }
     const verifiedIdentity = inspectFile(config, identity);
+    apiCreditStoreStage(storeAdmission, 'STORE_RETURN', config, database);
     return new ZenonFundingPayerRecoverySqliteStore(
       config,
       database,
@@ -1956,6 +1979,9 @@ function openStore(options, creating, custody = false, dispatchIntent = false, c
       hooks,
     );
   } catch (error) {
+    if (API_CREDIT_HELD_DATABASES.has(config.databasePath)) {
+      throw failure('ZENON_FUNDING_PAYER_RECOVERY_STORE_API_CREDIT_OWNER_HELD');
+    }
     let closed = knownCode(error) !== STORE_CLOSE_FAILED;
     if (database?.isOpen === true) {
       try { database.close(); }
@@ -2039,4 +2065,13 @@ export function createZenonFundingPayerRecoveryOriginalPaymentSqliteStoreV6(opti
 export function openZenonFundingPayerRecoveryOriginalPaymentSqliteStoreV6(options) {
   if (arguments.length !== 1) fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_CONFIGURATION');
   return openStore(options, false, true, true, true, true, true);
+}
+
+/** SOURCE ONLY: the selected private owner reaches native open and the actual
+ * epoch transaction. Existing V6 only; no caller hook or cleanup authority. */
+export function openZenonFundingPayerRecoveryOriginalPaymentSqliteStoreV6WithApiCreditStoreOwner(options, storeAdmission) {
+  if (arguments.length !== 2) fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_CONFIGURATION');
+  validateApiCreditStoreOwnerAdmission(storeAdmission);
+  if (API_CREDIT_HELD_DATABASES.size !== 0) fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_API_CREDIT_OWNER_HELD');
+  return openStore(options, false, true, true, true, true, true, storeAdmission);
 }

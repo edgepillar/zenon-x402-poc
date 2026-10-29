@@ -1,7 +1,7 @@
 import { types as utilTypes } from 'node:util';
 import { createServiceCreditNativeHttpsClientTransport, createServiceCreditNativeHttpsClientTransportWithApiCreditWireOwner } from './service-credit-native-https-client-transport.js';
-import { validateApiCreditWireOwnerGuard } from './api-credit-wire-owner-guard.js';
-import { openOfficialV6GuardedFundingPostOriginalPaymentClient } from './x402-official-v6-original-payment-client.js';
+import { validateApiCreditWireOwnerGuard, inspectApiCreditWireOwnerGuard, createApiCreditStoreOwnerAdmission, requireApiCreditStoreOwnerStage, inspectApiCreditStoreOwnerAdmission } from './api-credit-wire-owner-guard.js';
+import { openOfficialV6GuardedFundingPostOriginalPaymentClient, openOfficialV6GuardedFundingPostOriginalPaymentClientWithApiCreditStoreOwner } from './x402-official-v6-original-payment-client.js';
 import { captureFundingPostCheckpointRoute } from './x402-funding-post-checkpoint-route.js';
 import { snapshotOriginalServiceRequestCustodyPolicy } from './service-credit-original-request-custody-contract.js';
 import { createOriginalFundingBoundedReadCloseCoordinator } from './zenon/dynamic-plasma-original-funding-bounded-read-close.js';
@@ -9,6 +9,7 @@ import { createOriginalFundingBoundedReadCloseCoordinator } from './zenon/dynami
 const TRANSPORT = createServiceCreditNativeHttpsClientTransport;
 const OWNED_TRANSPORT = createServiceCreditNativeHttpsClientTransportWithApiCreditWireOwner;
 const OPEN = openOfficialV6GuardedFundingPostOriginalPaymentClient;
+const OWNED_OPEN = openOfficialV6GuardedFundingPostOriginalPaymentClientWithApiCreditStoreOwner;
 const ROUTE = captureFundingPostCheckpointRoute, POLICY = snapshotOriginalServiceRequestCustodyPolicy;
 const JOIN = createOriginalFundingBoundedReadCloseCoordinator;
 const F = Object.freeze, DESC = Object.getOwnPropertyDescriptor, PROTO = Object.getPrototypeOf;
@@ -63,7 +64,7 @@ export async function openNativeOfficialV6FundingPostOriginalPaymentClientWithFu
 }
 
 async function openNativeClient(configuration, handoffEnabled, wireOwner = null) {
-  let native = null, client = null, joined = null, constructing = true;
+  let native = null, client = null, joined = null, constructing = true, storeAdmission = null;
   let payerOptions, originalPayment, official, transportOptions, policy, budget;
   let handoffGuard = null, handoffHeld = false, checkingHandoff = false;
   let lifecycle = 'OPEN', pending = null, closing = null, historicalClose = 'NOT_REQUESTED';
@@ -94,7 +95,7 @@ async function openNativeClient(configuration, handoffEnabled, wireOwner = null)
   }
   // This capability is never accepted from caller DATA or exposed publicly.
   const actualStoreCloseGuard = F(function actualStoreCloseGuard() {
-    if (!invariant() || !handoffLive()) return false;
+    if (!invariant() || !handoffLive() || wireOwner !== null && inspectApiCreditWireOwnerGuard(wireOwner).held) return false;
     if (constructing) return unusedNative(); // No request has been exposed.
     return joined !== null && joined.canCloseFunding() && cleanNative() && handoffLive() && joined.canCloseFunding();
   });
@@ -164,10 +165,13 @@ async function openNativeClient(configuration, handoffEnabled, wireOwner = null)
         || transportOptions.maxRequestStarts > policy.maxRequests
         || transportOptions.requestDeadlineMs > payerOptions.deadlineMs) fail('configuration_rejected');
     if (!handoffLive()) fail('configuration_rejected');
+    if (wireOwner !== null) storeAdmission = createApiCreditStoreOwnerAdmission(wireOwner, Math.min(payerOptions.deadlineMs, 1000));
     native = wireOwner === null ? TRANSPORT(transportOptions) : OWNED_TRANSPORT(transportOptions, wireOwner);
     NATIVE_CLOSE = native.close; NATIVE_SNAPSHOT = native.snapshot;
-    client = await OPEN({ payerOptions: { ...payerOptions, custodyPolicy: policy,
-      requestImpl: native.requestImpl, nativeResourceCloseGuard: actualStoreCloseGuard }, originalPayment, official });
+    const originalClientConfiguration = { payerOptions: { ...payerOptions, custodyPolicy: policy,
+      requestImpl: native.requestImpl, nativeResourceCloseGuard: actualStoreCloseGuard }, originalPayment, official };
+    client = await (storeAdmission === null ? OPEN(originalClientConfiguration)
+      : OWNED_OPEN(originalClientConfiguration, storeAdmission));
     CLIENT_CLOSE = client.close; CLIENT_SNAPSHOT = client.snapshot;
     joined = JOIN(F({
       startReadClose: F(function startReadClose() { return normalizedNativeClose(); }),
@@ -176,6 +180,7 @@ async function openNativeClient(configuration, handoffEnabled, wireOwner = null)
       canCloseFunding: F(function canCloseFunding() { return cleanNative(); }),
     }), budget);
     if (!invariant() || !unusedNative() || !handoffLive()) fail('construction_close_unknown');
+    if (storeAdmission !== null) requireApiCreditStoreOwnerStage(storeAdmission, 'CLIENT_RETURN');
   } catch (caught) {
     let unknown = constructionHeld(caught) || handoffEnabled && handoffHeld && client !== null;
     // Keep the guard in construction mode while cleaning only unpublished
@@ -193,7 +198,8 @@ async function openNativeClient(configuration, handoffEnabled, wireOwner = null)
   }
 
   function live() {
-    if (!invariant() || lifecycle !== 'OPEN' || closing !== null || !handoffLive()) return false;
+    if (!invariant() || lifecycle !== 'OPEN' || closing !== null || !handoffLive()
+        || wireOwner !== null && inspectApiCreditWireOwnerGuard(wireOwner).held) return false;
     try {
       const s = nativeView();
       return data(s, 'phase') === 'OPEN' && data(s, 'unknown') === false;
@@ -244,12 +250,13 @@ async function openNativeClient(configuration, handoffEnabled, wireOwner = null)
   const snapshot = F(function snapshot() {
     if (arguments.length !== 0 || !invariant()) fail('input_rejected');
     const n = nativeView();
-    if (handoffEnabled && !handoffLive()) lifecycle = 'CLOSE_UNKNOWN';
+    if (handoffEnabled && !handoffLive() || wireOwner !== null && inspectApiCreditWireOwnerGuard(wireOwner).held) lifecycle = 'CLOSE_UNKNOWN';
     // Only downgrade the current view. No second close or replacement Promise.
     if (lifecycle === 'CLOSED' && !closedNativeView(n)) lifecycle = 'CLOSE_UNKNOWN';
     return F({ profile: 'NATIVE_OFFICIAL_X402_FUNDING_POST_ORIGINAL_V6_CLIENT',
       lifecycle, historicalClose, operationActive: pending !== null,
       native: n, client: APPLY(CLIENT_SNAPSHOT, client, []), closeJoin: joined.inspect(),
+      ...(storeAdmission !== null ? { apiCreditStoreOwner: inspectApiCreditStoreOwnerAdmission(storeAdmission) } : {}),
       ...(handoffEnabled ? { fundingHandoff: F({ held: handoffHeld, checking: checkingHandoff,
         currentSourceGuardRequired: true, authority: 'NONE' }) } : {}),
       defaultEnabled: false, fundingPostTransport: 'NOT_PROVIDED', authority: 'NONE',

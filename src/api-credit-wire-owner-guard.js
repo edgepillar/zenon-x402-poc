@@ -40,7 +40,7 @@ function clock(s){const n=Reflect.apply(s.clock,undefined,[]);discardPromise(n);
  * request-count state after this callback. This is not atomic wire fencing. */
 export function requireCurrentApiCreditWireOwner(guard,requestDeadlineMs){
  if(arguments.length!==2||!Number.isSafeInteger(requestDeadlineMs)||requestDeadlineMs<1||requestDeadlineMs>60000)fail();
- const s=state(guard);if(s.held||s.checking){s.held=true;fail();}s.checking=true;s.checks++;s.lastBudgetMs=requestDeadlineMs;s.lastRemainingMs=null;
+ const s=state(guard);if(s.held||s.checking||s.activeAcquisition){s.held=true;fail();}s.checking=true;s.checks++;s.lastBudgetMs=requestDeadlineMs;s.lastRemainingMs=null;
  try{
   if(!invariant())fail();const deadline=clock(s)+BigInt(requestDeadlineMs)*1000000n;open(s);
   const receipt=Reflect.apply(s.current,s.owner,[]);discardPromise(receipt);if(receipt!==undefined||s.held||!invariant())fail();open(s);
@@ -53,4 +53,48 @@ export function requireCurrentApiCreditWireOwner(guard,requestDeadlineMs){
 export function inspectApiCreditWireOwnerGuard(guard){
  if(arguments.length!==1)fail();const s=state(guard);return F({apiCreditWireOwnerVersion:1,checking:s.checking,held:s.held,checks:s.checks,admitted:s.admitted,
   lastBudgetMs:s.lastBudgetMs,lastRemainingMs:s.lastRemainingMs,historicalObservation:true,authority:'NONE',atomicExternalDispatchFencing:'NOT_ESTABLISHED'});
+}
+
+// A separate, single-use admission borrows this SAME owner and clock. Its
+// ordered observations span one existing-store acquisition and the caller's
+// async return. No native resource, timer, reopening or authority is created.
+const STORE_ADMISSIONS=new WeakMap();
+const STORE_STAGES=F(['DATABASE_ENTRY','EPOCH_ENTRY','COMMIT_ENTRY','STORE_RETURN','CLIENT_RETURN']);
+function acquisition(value){
+ if(value===null||typeof value!=='object'||types.isProxy(value))fail();
+ const a=STORE_ADMISSIONS.get(value);if(!a)fail();return a;
+}
+export function createApiCreditStoreOwnerAdmission(guard,maxDurationMs){
+ if(arguments.length!==2||!Number.isSafeInteger(maxDurationMs)||maxDurationMs<1||maxDurationMs>60000)fail();
+ const s=state(guard);
+ if(s.held||s.checking||s.activeAcquisition){s.held=true;fail();}
+ const token=F({apiCreditStoreOwnerAdmissionVersion:1});
+ STORE_ADMISSIONS.set(token,{owner:s,budgetMs:maxDurationMs,deadline:null,index:0,held:false,checking:false});
+ s.activeAcquisition=token;return token;
+}
+export function validateApiCreditStoreOwnerAdmission(token){if(arguments.length!==1)fail();acquisition(token);}
+/** Before each irreversible stage, require a current selected owner within the
+ * SAME absolute window. Stages name source call sites, not native evidence. */
+export function requireApiCreditStoreOwnerStage(token,stage){
+ if(arguments.length!==2)fail();const a=acquisition(token),s=a.owner;
+ if(a.held||a.checking||s.held||s.checking||s.activeAcquisition!==token
+  ||a.index>=STORE_STAGES.length||stage!==STORE_STAGES[a.index]){a.held=true;s.held=true;fail();}
+ a.checking=true;s.checking=true;s.checks++;
+ try{
+  if(!invariant())fail();const before=clock(s);
+  if(a.deadline===null)a.deadline=before+BigInt(a.budgetMs)*1000000n;
+  if(before>=a.deadline)fail();open(s);
+  const receipt=Reflect.apply(s.current,s.owner,[]);discardPromise(receipt);
+  if(receipt!==undefined||s.held||a.held||!invariant())fail();open(s);
+  const after=clock(s);if(after>=a.deadline||s.held||a.held||!invariant())fail();
+  a.index++;s.admitted++;if(a.index===STORE_STAGES.length)s.activeAcquisition=null;
+ }catch{a.held=true;s.held=true;fail();}finally{a.checking=false;s.checking=false;}
+}
+export function inspectApiCreditStoreOwnerAdmission(token){
+ if(arguments.length!==1)fail();const a=acquisition(token);
+ return F({apiCreditStoreOwnerAdmissionVersion:1,checksPassed:a.index,
+  nextStage:a.index===STORE_STAGES.length?'NONE':STORE_STAGES[a.index],
+  complete:a.index===STORE_STAGES.length,held:a.held||a.owner.held,checking:a.checking,
+  budgetMs:a.budgetMs,historicalObservation:true,nativeExecutionEvidence:false,
+  authority:'NONE',atomicExternalDispatchFencing:'NOT_ESTABLISHED'});
 }

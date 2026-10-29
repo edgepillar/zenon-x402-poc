@@ -1,5 +1,6 @@
 // Guard + actual outer application source; declared file/clock/CAS/child/wire.
 import assert from 'node:assert/strict';
+import { fileURLToPath } from 'node:url';
 import { apiCreditSignerCurrentOwnerDataCases } from './api-credit-signer-current-owner.behavior.mjs';
 import { closeApiCreditOperatorDataFixtures } from './api-credit-operator.behavior.mjs';
 import { wireOwnerFileFixture as file,wireOwnerApplicationFixture as app,deferred } from './api-credit-wire-owner.fixture.mjs';
@@ -110,9 +111,12 @@ check('wire-owner-outer-child-nonvoid-check-refuses-without-sending',async()=>{
 check('wire-owner-late-owner-recovery-cannot-grant-an-automatic-second-attempt',async()=>{
  const r=composition(),run=r.run();await r.ready.promise;r.current=false;r.gate.resolve();await assert.rejects(run);const raw=r.raw();r.current=true;await assert.rejects(r.run());assert.equal(r.raw(),raw);assert.equal(r.wireCalls,0);assert.equal(inspect(r.guard).held,true);await r.close().catch(()=>{});
 });
+export const apiCreditWireOwnerDataCases=checks;
+if(process.argv[1]===fileURLToPath(import.meta.url)){
 const cases=[];for(const {id,run}of checks){try{await run();cases.push({id,status:'PASS'});}catch(e){cases.push({id,status:'FAIL',error:String(e?.message??e)});}}
 await closeApiCreditOperatorDataFixtures();const failed=cases.filter(c=>c.status!=='PASS').length;
 console.log(JSON.stringify({qualification:'G2_WIRE_OWNER_GUARD_DATA',passed:cases.length-failed,failed,cases,priorCases:apiCreditSignerCurrentOwnerDataCases.length,
  declaredFileClockCasChildAndWirePortsOnly:true,actualOuterApplicationDataCompositions:8,nativeHttpAdaptersExecuted:false,
  nativeExecutions:0,SDK:0,SQLite:0,keys:0,signatures:0,sockets:0,nonceSearches:0,nodeChildren:0,actualPrepare:0,payouts:0,
  atomicExternalDispatchFencing:'NOT_ESTABLISHED',nativeRequestEndTiming:'NOT_ESTABLISHED',nativeDurability:'NOT_ESTABLISHED',Linux:'NOT_ESTABLISHED',fullG2:'NOT_ESTABLISHED'}));if(failed)process.exitCode=1;
+}

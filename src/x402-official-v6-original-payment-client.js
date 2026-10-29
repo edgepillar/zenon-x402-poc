@@ -1,15 +1,18 @@
 import { types as utilTypes } from 'node:util';
+import { validateApiCreditStoreOwnerAdmission } from './api-credit-wire-owner-guard.js';
 import { createOriginalPaymentCheckpointClient,
   createFundingPostOriginalPaymentCheckpointClient } from './x402-original-payment-checkpoint-client.js';
 import { createOfficialSelectedPaymentClient } from './x402-official-selected-payment-client.js';
 import { openServiceCreditCustodiedSqliteHttpClientV6,
-  openServiceCreditCustodiedSqliteHttpClientV6WithNativeCloseGuard } from './service-credit-custodied-sqlite-http-client.js';
+  openServiceCreditCustodiedSqliteHttpClientV6WithNativeCloseGuard,
+  openServiceCreditCustodiedSqliteHttpClientV6WithNativeCloseAndApiCreditStoreOwner } from './service-credit-custodied-sqlite-http-client.js';
 import { snapshotOriginalServiceRequestCustodyPolicy } from './service-credit-original-request-custody-contract.js';
 
 const CORE = createOriginalPaymentCheckpointClient, OFFICIAL = createOfficialSelectedPaymentClient;
 const FUNDING_POST_CORE = createFundingPostOriginalPaymentCheckpointClient;
 const OPEN_V6 = openServiceCreditCustodiedSqliteHttpClientV6;
 const OPEN_GUARDED_V6 = openServiceCreditCustodiedSqliteHttpClientV6WithNativeCloseGuard;
+const OPEN_OWNED_V6 = openServiceCreditCustodiedSqliteHttpClientV6WithNativeCloseAndApiCreditStoreOwner;
 const POLICY = snapshotOriginalServiceRequestCustodyPolicy;
 const FREEZE = Object.freeze, DESC = Object.getOwnPropertyDescriptor, PROTO = Object.getPrototypeOf;
 const OWN = Object.hasOwn, KEYS = Reflect.ownKeys, APPLY = Reflect.apply;
@@ -71,7 +74,12 @@ export async function openOfficialV6GuardedFundingPostOriginalPaymentClient(conf
   return openOriginalPaymentClient(configuration, true, true);
 }
 
-async function openOriginalPaymentClient(configuration, fundingPost, nativeGuarded = false) {
+export async function openOfficialV6GuardedFundingPostOriginalPaymentClientWithApiCreditStoreOwner(configuration, storeAdmission) {
+  if (arguments.length !== 2) fail('configuration_rejected');
+  validateApiCreditStoreOwnerAdmission(storeAdmission);
+  return openOriginalPaymentClient(configuration, true, true, storeAdmission);
+}
+async function openOriginalPaymentClient(configuration, fundingPost, nativeGuarded = false, storeAdmission = null) {
   let payer = null, originals = null, official = null;
   let payerConfig, officialConfig, originalConfig, policy, selection;
   try {
@@ -99,7 +107,9 @@ async function openOriginalPaymentClient(configuration, fundingPost, nativeGuard
     official = OFFICIAL({ requirement: selection.requirement, localClient: originals.localClient,
       ...officialConfig });
     // No arbitrary root/factory, missing-DB fallback or server-side payer.
-    payer = (nativeGuarded ? OPEN_GUARDED_V6 : OPEN_V6)({ ...payerConfig, custodyPolicy: policy });
+    const payerOptions = { ...payerConfig, custodyPolicy: policy };
+    payer = storeAdmission === null ? (nativeGuarded ? OPEN_GUARDED_V6 : OPEN_V6)(payerOptions)
+      : OPEN_OWNED_V6(payerOptions, storeAdmission);
   } catch (caught) {
     if (originals !== null) originals.close();
     if (payer !== null) {

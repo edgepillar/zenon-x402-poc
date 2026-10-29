@@ -2,9 +2,10 @@ import { lstatSync } from 'node:fs';
 import { Buffer } from 'node:buffer';
 import { types as utilTypes } from 'node:util';
 import { openZenonFundingPayerRecoveryOriginalPaymentSqliteStoreV6,
+  openZenonFundingPayerRecoveryOriginalPaymentSqliteStoreV6WithApiCreditStoreOwner,
   ZenonFundingPayerRecoverySqliteStore } from '../service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js';
 import { createFundingPostNativeHttpsTransport, createFundingPostNativeHttpsTransportWithApiCreditWireOwner } from '../service-credit-funding-post-native-https-transport.js';
-import { validateApiCreditWireOwnerGuard } from '../api-credit-wire-owner-guard.js';
+import { validateApiCreditWireOwnerGuard, inspectApiCreditWireOwnerGuard, createApiCreditStoreOwnerAdmission, requireApiCreditStoreOwnerStage, inspectApiCreditStoreOwnerAdmission } from '../api-credit-wire-owner-guard.js';
 import { createRetainedDynamicPlasmaHttpsReadSessionV2,
   createRetainedDynamicPlasmaHttpsReadSessionForLocalQualification } from './dynamic-plasma-retained-https-read-session.js';
 import { captureNativeFundingServiceLoopbackReadSelection } from './native-funding-service-loopback-read-selection.js';
@@ -20,6 +21,7 @@ import { captureNativeFundingServiceOperationalConfiguration } from './native-fu
 import { bindWalletOriginalFundingPreparation } from './original-funding-signer-context-bridge.js';
 
 const OPEN_STORE = openZenonFundingPayerRecoveryOriginalPaymentSqliteStoreV6;
+const OWNED_OPEN_STORE = openZenonFundingPayerRecoveryOriginalPaymentSqliteStoreV6WithApiCreditStoreOwner;
 const FUNDING = createFundingPostNativeHttpsTransport, READS = createRetainedDynamicPlasmaHttpsReadSessionV2;
 const OWNED_FUNDING = createFundingPostNativeHttpsTransportWithApiCreditWireOwner;
 const LOCAL_READS = createRetainedDynamicPlasmaHttpsReadSessionForLocalQualification;
@@ -71,7 +73,16 @@ export async function openZenonDynamicPlasmaNativeFundingServiceClient(configura
 }
 export async function openZenonDynamicPlasmaNativeFundingServiceClientWithApiCreditWireOwner(configuration, wireOwner) {
   if (arguments.length !== 2) fail('configuration_or_owner_unavailable'); validateApiCreditWireOwnerGuard(wireOwner);
-  return openClient(configuration, null, false, wireOwner);
+  const storeAdmission = createApiCreditStoreOwnerAdmission(wireOwner, 1000);
+  try {
+    const client = await openClient(configuration, null, false, wireOwner, storeAdmission);
+    requireApiCreditStoreOwnerStage(storeAdmission, 'CLIENT_RETURN');
+    return client;
+  } catch (caught) {
+    if (applicationSlot !== null && applicationSlot.storeAdmission === storeAdmission
+        && inspectApiCreditWireOwnerGuard(wireOwner).held) applicationSlot.holdApiCreditOwner();
+    throw caught;
+  }
 }
 
 /**
@@ -87,7 +98,7 @@ export async function openZenonDynamicPlasmaNativeFundingServiceClientForLocalQu
   return openClient(configuration, localReadOptions, true);
 }
 
-async function openClient(configuration, localReadOptions, localQualification, wireOwner = null) {
+async function openClient(configuration, localReadOptions, localQualification, wireOwner = null, storeAdmission = null) {
   if (!invariant() || applicationSlot !== null) fail('configuration_or_owner_unavailable');
   let storeOptions, fundingOptions, serviceOptions, policy, materialOptions, fundingTransportOptions;
   let reads = null, post = null, session = null, funder = null, service = null, store = null;
@@ -99,7 +110,8 @@ async function openClient(configuration, localReadOptions, localQualification, w
   let closeCompletion = null, closeCompletionOutcome = 'NOT_REQUESTED';
   let privateCa = null, localReadSelection = null;
   const slot = { phase: 'STARTING', store: null, funder: null, service: null,
-    reads: null, post: null, session: null };
+    reads: null, post: null, session: null, storeAdmission };
+  slot.holdApiCreditOwner = F(() => hold('API_CREDIT_STORE_OWNER_HELD'));
   function hold(reason) {
     held = true; if (closeError === null) closeError = reason;
     slot.phase = 'HELD'; lifecycle = 'CLOSE_UNKNOWN';
@@ -115,7 +127,8 @@ async function openClient(configuration, localReadOptions, localQualification, w
     if (localReadSelection !== null) { APPLY(FILL, localReadSelection.ca, [0]); localReadSelection = null; }
   }
   function fundingNativeClean() {
-    try { return !held && invariant() && session !== null && session.canCloseFunding() === true; }
+    try { return !held && invariant() && (wireOwner === null || !inspectApiCreditWireOwnerGuard(wireOwner).held)
+      && session !== null && session.canCloseFunding() === true; }
     catch { return false; }
   }
   function fundingClosedFresh() {
@@ -179,7 +192,7 @@ async function openClient(configuration, localReadOptions, localQualification, w
     session = SESSION(reads, post); slot.session = session;
     fileIdentity = identity(storeOptions.databasePath);
     openingStore = true;
-    store = OPEN_STORE(storeOptions); slot.store = store;
+    store = storeAdmission === null ? OPEN_STORE(storeOptions) : OWNED_OPEN_STORE(storeOptions, storeAdmission); slot.store = store;
     if (!sameFile() || APPLY(STORE_LOAD, store, []) !== null) fail('existing_empty_v6_required');
     // The genuine payer can consume a store-object claim even on construction
     // failure. After this boundary only that actual owner may close/quarantine it.
@@ -207,7 +220,8 @@ async function openClient(configuration, localReadOptions, localQualification, w
         try { await boundedSettlement(stop, 1000, false); } catch { hold('CONSTRUCTION_NATIVE_CLOSE_UNKNOWN'); }
       }
     }
-    if (store !== null && !transferred && !held && sameFile()) {
+    if (store !== null && !transferred && !held && sameFile()
+        && (wireOwner === null || !inspectApiCreditWireOwnerGuard(wireOwner).held)) {
       try {
         if (APPLY(STORE_CLOSE, store, []) !== undefined) throw error('close_unknown');
         unpublishedStoreCloseReturned = true; store = null; slot.store = null;
@@ -417,6 +431,7 @@ async function openClient(configuration, localReadOptions, localQualification, w
       fundingCloseOutcome, serviceCloseOutcome, operationDrain, historicalClose,
       closeCompletionOutcome, closeCompletion: closeCompletion.inspect(),
       funding: funder.inspectOriginalFunding(), service: serviceView,
+      ...(storeAdmission !== null ? { apiCreditStoreOwner: inspectApiCreditStoreOwnerAdmission(storeAdmission) } : {}),
       defaultEnabled: false, automaticReplay: false, sameFileIsAtomicLease: false,
       nativeResourceCleanup: 'NOT_QUALIFIED', grantActivation: 'NOT_ESTABLISHED',
       serviceDelivery: 'NOT_ESTABLISHED', fullP1: 'NOT_ESTABLISHED', authority: 'NONE' });

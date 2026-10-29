@@ -2,12 +2,14 @@ import { Buffer } from 'node:buffer';
 import { dirname, isAbsolute, resolve } from 'node:path';
 import { types as utilTypes } from 'node:util';
 import { createNativeGuardedStoreCloseBoundary } from './service-credit-native-guarded-store-close.js';
+import { validateApiCreditStoreOwnerAdmission } from './api-credit-wire-owner-guard.js';
 import {
   openZenonFundingPayerRecoveryCustodySqliteStoreV2,
   openZenonFundingPayerRecoveryDispatchIntentSqliteStoreV3,
   openZenonFundingPayerRecoveryCustodyQuarantineSqliteStoreV4,
   openZenonFundingPayerRecoveryResponseObservationSqliteStoreV5,
   openZenonFundingPayerRecoveryOriginalPaymentSqliteStoreV6,
+  openZenonFundingPayerRecoveryOriginalPaymentSqliteStoreV6WithApiCreditStoreOwner,
   ZenonFundingPayerRecoverySqliteStore,
   ZenonFundingPayerRecoverySqliteStoreError,
 } from './service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js';
@@ -50,6 +52,7 @@ const OPEN_V3 = openZenonFundingPayerRecoveryDispatchIntentSqliteStoreV3;
 const OPEN_V4 = openZenonFundingPayerRecoveryCustodyQuarantineSqliteStoreV4;
 const OPEN_V5 = openZenonFundingPayerRecoveryResponseObservationSqliteStoreV5;
 const OPEN_V6 = openZenonFundingPayerRecoveryOriginalPaymentSqliteStoreV6;
+const OPEN_OWNED_V6 = openZenonFundingPayerRecoveryOriginalPaymentSqliteStoreV6WithApiCreditStoreOwner;
 const CREATE_CLIENT = createServiceCreditCustodiedHttpClient;
 const CREATE_CLIENT_V3 = createServiceCreditCustodiedHttpClientV3;
 const CREATE_CLIENT_V4 = createServiceCreditCustodiedHttpClientV4;
@@ -171,8 +174,14 @@ export function openServiceCreditCustodiedSqliteHttpClientV6WithNativeCloseGuard
   if (arguments.length !== 1) throw failure('INVALID_CONFIGURATION');
   return openOwnedClient(configuration, true, true, true, true, true);
 }
+/** Source-owned token is separate from public payer configuration. */
+export function openServiceCreditCustodiedSqliteHttpClientV6WithNativeCloseAndApiCreditStoreOwner(configuration, storeAdmission) {
+  if (arguments.length !== 2) throw failure('INVALID_CONFIGURATION');
+  validateApiCreditStoreOwnerAdmission(storeAdmission);
+  return openOwnedClient(configuration, true, true, true, true, true, storeAdmission);
+}
 function openOwnedClient(configuration, dispatchIntentEnabled, persistentCustody = false,
-  responseObservationEnabled = false, originalPaymentCheckpointEnabled = false, nativeGuardEnabled = false) {
+  responseObservationEnabled = false, originalPaymentCheckpointEnabled = false, nativeGuardEnabled = false, storeAdmission = null) {
 
   let input, policy, selected;
   try {
@@ -231,14 +240,15 @@ function openOwnedClient(configuration, dispatchIntentEnabled, persistentCustody
   resourceSlot = slot;
 
   try {
-    slot.store = (originalPaymentCheckpointEnabled ? OPEN_V6
-      : responseObservationEnabled ? OPEN_V5 : persistentCustody ? OPEN_V4
-      : dispatchIntentEnabled ? OPEN_V3 : OPEN_V2)({
-      databasePath: input.databasePath,
-      allowedRoot: input.allowedRoot,
-      resourceUrl: input.fundingResourceUrl,
-      custodyPolicy: policy,
-    });
+    const storeOptions = {
+      databasePath: input.databasePath, allowedRoot: input.allowedRoot,
+      resourceUrl: input.fundingResourceUrl, custodyPolicy: policy,
+    };
+    slot.store = storeAdmission === null
+      ? (originalPaymentCheckpointEnabled ? OPEN_V6
+        : responseObservationEnabled ? OPEN_V5 : persistentCustody ? OPEN_V4
+        : dispatchIntentEnabled ? OPEN_V3 : OPEN_V2)(storeOptions)
+      : OPEN_OWNED_V6(storeOptions, storeAdmission);
     slot.storeAcquired = true;
     if (typeof slot.store !== 'object' || slot.store === null
         || IS_PROXY(slot.store) || PROTOTYPE(slot.store) !== STORE_PROTOTYPE) {
