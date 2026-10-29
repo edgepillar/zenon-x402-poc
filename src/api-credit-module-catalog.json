@@ -2462,6 +2462,12 @@
       "format": "module"
     },
     {
+      "path": "src/api-credit-opening-failure-custody.js",
+      "bytes": 8072,
+      "sha256": "576130ad22d64d399723efcfdc2727a5fd4d62e13a7d3c2a3ded2d9ee91cbbbe",
+      "format": "module"
+    },
+    {
       "path": "src/api-credit-operator-bootstrap.js",
       "bytes": 5886,
       "sha256": "d17cc21c197a2f49b6e7ff6dccd9cb4500f38d1e1d74fc595704907757247f90",
@@ -3297,8 +3303,8 @@
     },
     {
       "path": "src/zenon/sdk105-native-api-credit-application.js",
-      "bytes": 7572,
-      "sha256": "e566631bb1765cedaf667c508fa183dc6d65864e4e818bf47ceb6c3814b1c4ab",
+      "bytes": 8049,
+      "sha256": "61a9f48770d3b830a4c176efee626458237d3e7c6a916e38c10a3c91ccc774ce",
       "format": "module"
     },
     {

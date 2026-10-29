@@ -1,5 +1,6 @@
 // SOURCE ONLY; this complete native binding has not been executed.
 import { types } from 'node:util';
+import { createApiCreditOpeningFailureCustody } from '../api-credit-opening-failure-custody.js';
 import { hrtime } from 'node:process';
 import { claimSdk105ApiCreditExistingKeyLease, bindSdk105ApiCreditExistingKeyLeaseOwner } from './sdk105-api-credit-existing-key-lease.js';
 import { consumeSdk105ApiCreditSelection } from './sdk105-api-credit-selection.js';
@@ -42,6 +43,7 @@ async function openApplication(selection, requireCurrentOpening, productProfile)
       || types.isProxy(requireCurrentOpening) || !Object.isFrozen(requireCurrentOpening)) fail();
   const selected = consumeSdk105ApiCreditSelection(selection);
   let c, file = null, wallet = null, client = null, application = null, wireOwner = null;
+  let walletOpeningEntered = false, clientOpeningEntered = false;
   try {
     c = captureSdk105FundingServiceConfiguration(selected.configuration);
     requireCurrentOpening();
@@ -53,9 +55,11 @@ async function openApplication(selection, requireCurrentOpening, productProfile)
     // No new key capability is entered after an expired module-loading budget.
     requireCurrentOpening();
     claimSdk105ApiCreditExistingKeyLease(c.walletOptions.keyPair);
+    walletOpeningEntered = true;
     wallet = createSdk105AgeBoundSignerContextWalletOwner(c.walletOptions, { paymentId: selected.spending.paymentId, backend: file.signerCustody }, SIGNER_ENTRY);
     bindSdk105ApiCreditExistingKeyLeaseOwner(c.walletOptions.keyPair, wallet);
     requireCurrentOpening();
+    clientOpeningEntered = true;
     client = await openZenonDynamicPlasmaNativeFundingServiceClientWithApiCreditWireOwner({ storeOptions: c.storeOptions,
       fundingOptions: { ...c.fundingOptions, wallet }, serviceOptions: c.serviceOptions }, wireOwner);
     // Ownership of the returned native client/key is now known. A refusal
@@ -76,7 +80,8 @@ async function openApplication(selection, requireCurrentOpening, productProfile)
     requireCurrentOpening(); return result;
   } catch {
     const retained = { file, wallet, client, application, wireOwner, clientStop: null, walletStop: null, applicationStop: null,
-      clientClosed: false, walletClosed: false, fileCloseEntered: false, fileCloseReturned: false };
+      clientClosed: false, walletClosed: false, fileCloseEntered: false, fileCloseReturned: false,
+      walletOpeningEntered, clientOpeningEntered, openingCustody: null, openingCustodyUnknown: false };
     failedApplication = retained;
     if (application !== null) {
       // The application already owns all three stops. Never compete with it.
@@ -95,10 +100,12 @@ async function openApplication(selection, requireCurrentOpening, productProfile)
         try { const v = wallet.inspect(); retained.walletClosed = value === undefined && v.lifecycle === 'CLOSED' && !v.held && v.clearOutcome === 'CLEAR_RETURNED'; } catch {} closeFile();
       }); } catch {}
     } else if (file !== null) {
-      // No budget capability escaped into the still-unreturned native client.
-      // An unreturned key remains the original caller's cleanup duty.
-      retained.fileCloseEntered = true;
-      try { file.revoke(); file.close(); retained.fileCloseReturned = file.inspect().physicalCloseReturned === true; } catch {}
+      // A rejected opener can retain a borrower without returning its facade.
+      // Revoke new admission, but do not raw-close its still-borrowed file.
+      // Before client entry, a known wallet must stop before physical close.
+      try { retained.openingCustody = createApiCreditOpeningFailureCustody(F({ fileOwner: file, walletOwner: wallet,
+        walletOpeningEntered, clientOpeningEntered })); }
+      catch { retained.openingCustodyUnknown = true; }
     }
     fail();
   } finally { selected.release(); }

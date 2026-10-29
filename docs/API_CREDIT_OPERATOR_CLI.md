@@ -141,6 +141,14 @@ proof. Sanitized status goes to stderr, never to the command-result pipe after
 ownership/close. The process uses `exitCode`, not forced process termination.
 No automatic reopen, payment retry, re-signing, grant or request is generated.
 
+Failed application opening preserves the budget owner when a wallet constructor
+or native client opener was entered without returning its owner. The outer
+layer revokes new admission and retains the physical budget file; it cannot
+infer release from a rejected opener. Before native client entry, a returned
+wallet must complete its cached void stop and fresh clean view before physical
+file close. [Opening-failure custody](API_CREDIT_OPENING_FAILURE_CUSTODY.md)
+describes the source/DATA contract; actual native failure/release remains OPEN.
+
 ## Qualification boundary
 
 The DATA suite uses declared byte/method/clock/timer ports and the actual pure
