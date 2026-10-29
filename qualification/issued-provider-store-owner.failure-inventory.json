@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "status": "PRESERVED_PRIOR_CURRENT_TURN_FAILURE",
+  "rawQualificationSha256": "55de0b111f6b17840b39c212b4f54f291db49006bfd85fb1be3b068eb5c24f22",
+  "task": "CLOSED/FAILURE",
+  "qualificationStatus": "UNKNOWN",
+  "actualDataCommands": 1,
+  "actualParserCommands": 0,
+  "failedDataCommands": 1,
+  "failedGroupPassed": 32,
+  "failedGroupFailed": 1,
+  "failedCases": [
+    {
+      "id": "owned-provider-actual-recorded-controller-and-reference-ledger-preserve-100-calls-and-replay-before-store-close",
+      "status": "FAIL",
+      "error": "ISSUED_PROVIDER_STORES_CLOSE_HELD"
+    }
+  ],
+  "currentVersionFailedCasesReexecutedAndPassed": true,
+  "correction": "The earlier recorded-controller fixture supplied only an ingress phase label. V2 declares the complete model LISTENING/close metrics and adds a negative incomplete-metrics control. Operational owner checks are unchanged.",
+  "applicationSourceChangedForCorrection": false,
+  "wholeTaskPassed": false,
+  "wholeTaskReused": false,
+  "completeExitZeroGroupsReused": 0,
+  "nativeExecutions": 0,
+  "currentSourceAcceptance": "DATA_AND_PARSER_ONLY"
+}

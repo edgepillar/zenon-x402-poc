@@ -1,0 +1,302 @@
+{
+  "qualification": "G1_ISSUED_PROVIDER_STORE_OWNER_DATA",
+  "status": "PASS",
+  "recordedAtUTC": "2026-10-29T22:07:02.552990+00:00",
+  "passed": 34,
+  "failed": 0,
+  "newControls": 34,
+  "reexecutedRelevantDataControls": 0,
+  "retainedEarlierTurnExactControls": 1147,
+  "retainedCurrentTurnSelectedGroupControls": 0,
+  "aggregateVerifiedControls": 1181,
+  "cases": [
+    {
+      "id": "owned-provider-configuration-and-owner-creation-have-no-operational-callbacks",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-configuration-captures-paths-offer-and-bounds-before-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-recorded-mode-is-explicit-existing-only-with-independent-pins",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-configuration-getters-never-run",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-tls-byte-copies-are-independent-and-release-clears-only-the-copies",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-claims-before-stores-and-starts-one-actual-selected-root",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-clean-close-orders-root-intake-service-and-lease-release",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-close-before-start-acquires-no-store-or-provider",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-known-lease-refusal-has-no-store-opening-or-fallback",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-promised-service-opening-is-not-adopted-and-rejection-is-observed",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-intake-opening-loss-retains-first-store-without-force-close",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-aliased-store-handles-never-reach-provider-opening",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-opaque-opening-result-does-not-invoke-then-getters",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-close-during-opening-rejects-and-closes-late-root-once-with-stores-held",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-returned-root-accessors-are-not-invoked",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-listen-result-must-match-real-listening-contract",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-listen-rejection-never-closes-borrowed-or-unknown-opening-resources",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-root-close-must-be-a-genuine-promise",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-nonvoid-root-close-is-held-before-sql-close",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-live-native-metrics-prevent-sql-close-despite-closed-label",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-close-view-getters-never-run",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-intake-close-loss-prevents-service-close-and-lease-release",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-asynchronous-intake-close-is-observed-but-never-a-sync-ack",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-service-close-nonvoid-result-keeps-lease-held",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-unknown-release-is-not-retried-or-reported-released",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-reentrant-start-during-sql-close-is-fenced",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-rejected-operator-result-is-held-and-active-count-is-not-negative",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-close-during-operator-work-fences-late-success-and-keeps-stores",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-sync-operator-close-reentry-cannot-release-stores",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-method-arity-refusal-has-no-operator-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-successful-operator-result-preserves-captured-method-contract",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-operator-admission-is-bounded-without-reentering-target",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-actual-recorded-controller-and-reference-ledger-preserve-100-calls-and-replay-before-store-close",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-partial-ingress-metrics-never-substitute-for-release-proof",
+      "status": "PASS"
+    }
+  ],
+  "nodeVersion": "24.19.0",
+  "platform": "darwin-arm64",
+  "nodeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25",
+  "rawQualificationSha256": "bbf8c8c694d3baa80ff3194519659897c9994ee3d9f72f4e0c954f7a8163b8c5",
+  "sourceProfile": {
+    "path": "qualification/profiles/api-credit-application-source-v40.json",
+    "bytes": 298382,
+    "sha256": "f260bc8b7e7b480cbe7e2a678c6d5f78e7c788b7061a68364f00d1bd7fa9723e"
+  },
+  "ownedProviderStartup": {
+    "version": 1,
+    "scope": "OWNED_STORE_PAIR_AROUND_SAME_ISSUED_PROVIDER",
+    "owner": "src/issued-provider-store-owner.js",
+    "configuration": "src/issued-provider-owned-configuration.js",
+    "nativeEntry": "src/x402-issued-funding-grant-owned-native-application.js",
+    "factory": "createOwnedIssuedFundingGrantNativeApplication",
+    "inertCreation": true,
+    "explicitOneShotStart": true,
+    "structuralCaptureBeforeFileCallbacks": true,
+    "structuralCaptureIsAuthentication": false,
+    "independentTLSByteCopies": true,
+    "maximumTLSBytesPerBuffer": 65536,
+    "explicitFreshNewOrRecordedExistingOnly": true,
+    "oneOfferOneGrantProfile": true,
+    "minimumRequestSlots": 100,
+    "maximumRequestSlots": 10000,
+    "originalStoreAndProviderContractsPreserved": true,
+    "selectedOfferRegisteredOnlyForNewStore": true,
+    "existingOfferComparedWithoutWrite": true,
+    "exactActualStoresBoundToSameProvider": true,
+    "canonicalPathLeaseBeforeOpen": true,
+    "maximumNativeOwnerFrames": 16,
+    "oneServiceIntakeAndProviderOpening": true,
+    "realListeningReceiptAndViewRequired": true,
+    "providerCloseBeforeSQL": true,
+    "allChildCloseAndZeroIngressWorkRequired": true,
+    "intakeThenServiceThenLeaseRelease": true,
+    "synchronousVoidStoreCloseAcksRequired": true,
+    "unknownDoesNotReleaseOrRetry": true,
+    "lateProviderClosedOnceAndStoresHeld": true,
+    "maximumOperatorCalls": 128,
+    "maximumActiveOperatorOperations": 64,
+    "noNewHTTPRoutes": true,
+    "noAutomaticFundingGrantOrReopen": true,
+    "borrowedJournalWitnessObserverFacilitatorPreserved": true,
+    "sourceOwnedProviderInputs": 67,
+    "sourceProviderInputs": 57,
+    "sourceRecoveryInputs": 36,
+    "sourceJournalRecoveryInputs": 43,
+    "sourceWitnessHistoryInputs": 18,
+    "sourceBuyerInputs": 165,
+    "moduleCatalogRows": 568,
+    "packageRows": 404,
+    "directBareEdges": 9,
+    "nativeExecution": false,
+    "nativeStoreLifetime": "NOT_ESTABLISHED",
+    "native100Calls": "NOT_ESTABLISHED",
+    "externalOwnerFencing": "NOT_ESTABLISHED",
+    "physicalRelease": "NOT_ESTABLISHED",
+    "freshProcessAcceptance": "NOT_ESTABLISHED",
+    "LinuxCommand": "NOT_ESTABLISHED",
+    "LinuxAcceptance": "NOT_ESTABLISHED",
+    "G1G2Acceptance": "OPEN"
+  },
+  "proofManifest": {
+    "path": "qualification/issued-provider-store-owner.proof-manifest.json",
+    "bytes": 291913,
+    "sha256": "2945cbbcfc31a1faaf815f1204d2ff45a7a883a5f3c3847c2a2a0bad80e37044"
+  },
+  "storeRootListenerReleaseAndLeasePorts": "DECLARED_MEMORY_ONLY",
+  "signatureData": "UNAUTHENTICATED_EXISTING_FIELDS",
+  "modelStateReconstruction": true,
+  "model100CallsAndExactReplayBeforeStoreClose": true,
+  "actualDataNodeCommands": 1,
+  "actualSyntaxNodeCommands": 1,
+  "earlierCurrentTurnDataCommands": 1,
+  "failedDataCommandsThisTurn": 1,
+  "failureInventory": {
+    "path": "qualification/issued-provider-store-owner.failure-inventory.json",
+    "bytes": 1122,
+    "sha256": "11065cf1898027da0839dab22bc9386ebe6d3742d09bdb27bfca3f6d9b8c1559"
+  },
+  "sourceContract": {
+    "path": "qualification/issued-provider-store-owner.source-contract.json",
+    "bytes": 3614,
+    "sha256": "c5b81f8fa62323b46a16289d70267cb1e5fd2c57117b5be02256b4b1dd8ce24e"
+  },
+  "nativeExecutions": 0,
+  "SDK": 0,
+  "SQLite": 0,
+  "keys": 0,
+  "signatures": 0,
+  "sockets": 0,
+  "nonceSearches": 0,
+  "nodeChildren": 0,
+  "actualPrepare": 0,
+  "payouts": 0,
+  "task": "CLOSED/SUCCESS",
+  "resources": {
+    "taskQuotaBytes": 4194304,
+    "plannedExecutionPeakBytes": 2703209,
+    "sourceInputs": 267,
+    "ownedProviderSourceInputs": 67,
+    "dataRuntimeInputs": 57,
+    "nativeBuyerSourceInputs": 165,
+    "additionalProviderSourceInputs": 57,
+    "additionalRecoverySourceInputs": 36,
+    "additionalJournalRecoverySourceInputs": 43,
+    "additionalWitnessHistorySourceInputs": 18,
+    "parserInputs": 1,
+    "reusedParserInputs": 36,
+    "invalidatedParserInputs": 0,
+    "retainedExactRuntimeDataControls": 1147,
+    "reexecutedRelevantDataControls": 0,
+    "sourceOnlyCASLookupsAvoided": 209,
+    "materializedInputs": 58,
+    "sourceOnlyAliasesAvoided": 209,
+    "CASVerifiedReuse": 57,
+    "CASNewImports": 1,
+    "sourceTextArchives": 0,
+    "minimumFreeFloorBytes": 10737418240,
+    "streamAllocationPlan": {
+      "serialCommands": true,
+      "maximumRetainedSuccessfulDataStdoutBytes": 19761,
+      "requiredSuccessfulStderrBytes": 0,
+      "maximumOnePendingStderrBytes": 1048576,
+      "unchangedParserReceiptsReused": 36,
+      "newParserCommands": 1,
+      "sourceAliasBytes": 653596,
+      "newSourceCASBytes": 21824,
+      "allReferencedSourceCASBytes": 653596,
+      "metadataMarginBytes": 262144,
+      "allReferencedCASChargedPerTask": true,
+      "preexistingCASAlsoCharged": true,
+      "serialDataCommands": 1
+    },
+    "serialDataCommands": 1,
+    "earlierDataCommands": 1,
+    "earlierFailedDataCommands": 1,
+    "failedDataTasks": 1,
+    "quotaExpanded": false,
+    "parserBatchAdmission": true,
+    "proofManifestDeduplicated": true
+  },
+  "nativeProviderRestartVerified": false,
+  "nativePersistence": "NOT_ESTABLISHED",
+  "nativeAcceptance": "NOT_ESTABLISHED",
+  "externalOwnerFencing": "NOT_ESTABLISHED",
+  "physicalRelease": "NOT_ESTABLISHED",
+  "LinuxAcceptance": "NOT_ESTABLISHED",
+  "current108CISeparate": true,
+  "newControlsIncludedIn108CI": false
+}
