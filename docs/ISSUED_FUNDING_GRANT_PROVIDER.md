@@ -87,3 +87,10 @@ intake, SDK server, observer or continuation. It retains the same explicit
 committed-grant admission and scoped service gate. Fresh startup still refuses
 BOUND rows. See [recorded provider recovery](ISSUED_PROVIDER_RECORDED_RECOVERY.md).
 Actual process restart, SQL/HTTPS, owner fencing and Linux remain OPEN.
+
+The separate `restoreIssuedFundingGrantNativeJournalRecovery` source wrapper
+adds one explicit local original-journal observation after closing that same
+provider. It reserves the existing durable count before reading only the exact
+original journal entry; it never recreates an SDK continuation, publishes or
+auto-reopens the provider. See [the observation contract](ORIGINAL_FUNDING_JOURNAL_OBSERVATION.md).
+Native journal/SQL/HTTPS, process ownership, Linux and physical release remain OPEN.
