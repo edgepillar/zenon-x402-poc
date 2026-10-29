@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "profileId": "p0-current-p2-capacity-node24-v3",
-  "sourceBase": "a21b35ba9662ce322b56dee86aac2bbc797e91f5",
+  "sourceBase": "b31142e874b99acdd80d2261f418d3cf5f4cb209",
   "runtime": {
     "node": "24.19.0",
     "platforms": [
@@ -245,9 +245,9 @@
     },
     {
       "path": "src/service-credit-http-execute-dispatch.js",
-      "bytes": 29328,
-      "LF": 815,
-      "sha256": "e07470a9fde311c806beb09b1c4369b4724213682bcbcacc228ece0e0e36f5ef"
+      "bytes": 30091,
+      "LF": 825,
+      "sha256": "5800c082cc9f5311cc5a70aa67fb44eafe50fec85a39cc9736848420acd51601"
     },
     {
       "path": "src/service-credit-custodied-sequential-runner.js",
