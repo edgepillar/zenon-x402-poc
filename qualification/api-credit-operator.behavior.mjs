@@ -1,6 +1,8 @@
 // Declared DATA/method ports only. Native CLI, pipes, SDK and keys are not loaded.
 import assert from 'node:assert/strict';
 import { Buffer } from 'node:buffer';
+import { fileURLToPath } from 'node:url';
+import process from 'node:process';
 import { apiCreditKeyLeaseDataCases } from './api-credit-key-lease.behavior.mjs';
 import { apiCreditApplicationDataFixtures as fixtures } from './api-credit-application.behavior.mjs';
 import { canonicalJson } from '../src/canonical.js';
@@ -219,12 +221,17 @@ check('operator-close-expiry-does-not-repeat-stop-or-upgrade-after-late-completi
   assert.equal(result.status, 'CLOSE_UNKNOWN'); assert.equal(r.calls.keyStop, 1); assert.equal(r.calls.sessionStop, 1);
 });
 
+export const closeApiCreditOperatorDataFixtures = F(async function closeFixtures() { for (const root of roots) { try { await root.close(); } catch {} } });
+export const apiCreditOperatorDataCases = F(checks.map(c => F(c)));
+if (typeof process.argv[1] === 'string' && fileURLToPath(import.meta.url) === process.argv[1]) {
 const cases = [];
 for (const { id, run: execute } of checks) { try { await execute(); cases.push({ id, status: 'PASS' }); } catch (e) { cases.push({ id, status: 'FAIL', error: String(e?.message ?? e) }); } }
-for (const root of roots) { try { await root.close(); } catch {} }
+await closeApiCreditOperatorDataFixtures();
 const failed = cases.filter(c => c.status !== 'PASS').length;
 console.log(JSON.stringify({ qualification: 'G0_G1_OPERATOR_BOOTSTRAP_DATA', passed: cases.length - failed, failed, cases,
   priorKeyLeaseCases: apiCreditKeyLeaseDataCases.length, declaredMethodPorts: true, nativeExecutions: 0, SDK: 0, SQLite: 0, keys: 0,
   signatures: 0, sockets: 0, nonceSearches: 0, nodeChildren: 0, actualPrepare: 0, payouts: 0,
   nativeProductAcceptance: 'NOT_ESTABLISHED', operatorNativeLaunch: 'NOT_ESTABLISHED', LinuxAcceptance: 'NOT_ESTABLISHED' }));
 if (failed) process.exitCode = 1;
+
+}

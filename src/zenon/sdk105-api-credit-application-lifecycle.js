@@ -1,5 +1,5 @@
 import { types } from 'node:util';
-import { createSpendingBoundedSdk105FundingServiceLifecycle } from './sdk105-funding-service-lifecycle.js';
+import { createSingleOriginalSpendingBoundedSdk105FundingServiceLifecycle } from './sdk105-funding-service-lifecycle.js';
 import { captureSdk105OriginalFundingSpendingConfiguration } from './sdk105-spending-bounded-client.js';
 
 const F = Object.freeze, NP = Promise, PP = NP.prototype, THEN = PP.then;
@@ -35,7 +35,7 @@ export function createSdk105ApiCreditApplicationLifecycle(configuration) {
   const first = Reflect.apply(VIEW, owner, []);
   if (data(first, 'spendingFileOwnerVersion') !== 1 || data(first, 'lifecycle') !== 'OPEN' || data(first, 'held')
       || data(first, 'busy') || data(first, 'backendClosed') || data(first, 'databaseOpen') !== true || data(first, 'physicalCloseEntered')) fail('FILE_OWNER');
-  const client = createSpendingBoundedSdk105FundingServiceLifecycle({ client: c.client, walletOwner: c.walletOwner,
+  const client = createSingleOriginalSpendingBoundedSdk105FundingServiceLifecycle({ client: c.client, walletOwner: c.walletOwner,
     fundingResourceUrl: c.fundingResourceUrl, spending: selected });
   let closing = null, held = false, clientClose = null, fileCloseEntered = false, closeReturned = false;
   function fileView() { const v = Reflect.apply(VIEW, owner, []); if (data(v, 'spendingFileOwnerVersion') !== 1) fail('FILE_OWNER'); return v; }

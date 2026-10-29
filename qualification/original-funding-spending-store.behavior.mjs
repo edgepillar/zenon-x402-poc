@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import { fileURLToPath } from 'node:url';
+import process from 'node:process';
 import { originalFundingSpendingDataCases, originalFundingSpendingDataFixtures as f } from './original-funding-spending.behavior.mjs';
 import { createOriginalFundingSpendingReservations as create, inspectOriginalFundingSpendingState as inspect,
   requireOriginalFundingSpendingStateTransition as transition } from '../src/original-funding-spending-reservations.js';
@@ -117,6 +119,8 @@ check('lost-spent-ack-retains-the-actual-bound-budget-and-refuses-repreparation'
   h.db.mode = 'normal'; const reopened = f.application({ db: h.db }); await assert.rejects(reopened.root.prepareOriginalFunding(reopened.f.input));
   assert.equal(reopened.counts().prepares, 0); await reopened.root.close();
 });
+export const originalFundingSpendingStoreDataCases = F(checks.map(c => F(c)));
+if (typeof process.argv[1] === 'string' && fileURLToPath(import.meta.url) === process.argv[1]) {
 const cases = [];
 for (const { id, run } of checks) { try { await run(); cases.push({ id, status: 'PASS' }); } catch (e) { cases.push({ id, status: 'FAIL', error: String(e?.message ?? e) }); } }
 const failed = cases.filter(c => c.status !== 'PASS').length;
@@ -124,3 +128,5 @@ console.log(JSON.stringify({ qualification: 'G1_SPENDING_STORE_CONTRACT_DATA', p
   priorSpendingCases: originalFundingSpendingDataCases.length, nativeExecutions: 0, SDK: 0, SQLite: 0, keys: 0, signatures: 0,
   sockets: 0, nonceSearches: 0, nodeChildren: 0, actualPrepare: 0, payouts: 0, nativeStoreExecution: 'NOT_ESTABLISHED', nativeDurability: 'NOT_ESTABLISHED' }));
 if (failed) process.exitCode = 1;
+
+}

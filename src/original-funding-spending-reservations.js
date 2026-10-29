@@ -113,12 +113,16 @@ export function createOriginalFundingSpendingReservations(policyInput, backend) 
     } finally { busy = false; }
   }
   function selectedDay(value) { day(value); if (value < state.lastDay) fail('CLOCK_ROLLBACK'); return value; }
-  return F({
-    reserve(input, nowDay) {
-      if (arguments.length !== 2) fail('INPUT');
+  function reserve(input, nowDay, singleOriginal) {
       let selected;
       change(s => {
         const d = selectedDay(nowDay); selected = reservation(input, policy, d);
+        // A different payment/context cannot bypass the unresolved account
+        // original. This check and the new reservation share one exact CAS.
+        // A stale reader still loses that CAS before preparation can enter.
+        if (singleOriginal && s.reservations.some(r => r.status !== 'SPENT')) {
+          held = true; fail('UNRESOLVED_ORIGINAL');
+        }
         if (s.reservations.some(r => r.paymentId === selected.paymentId || r.originalDigest === selected.originalDigest)) fail('ORIGINAL_ALREADY_RESERVED');
         if (s.reservations.length >= policy.maxRecords) fail('RECORD_LIMIT');
         const rows = [...s.reservations, selected], exposure = totals(rows, d);
@@ -129,6 +133,15 @@ export function createOriginalFundingSpendingReservations(policyInput, backend) 
       // Only this successful live reserve call may precede one preparation.
       // The receipt is not persisted authority and is never accepted on reopen.
       return F({ paymentId: selected.paymentId, originalDigest: selected.originalDigest, status: 'RESERVED' });
+  }
+  return F({
+    reserve(input, nowDay) {
+      if (arguments.length !== 2) fail('INPUT'); return reserve(input, nowDay, false);
+    },
+    /** Product admission: one unresolved original per account. No expiry,
+     * replacement, reset or inferred signature/settlement is provided. */
+    reserveSingleOriginal(input, nowDay) {
+      if (arguments.length !== 2) fail('INPUT'); return reserve(input, nowDay, true);
     },
     observe(paymentId, originalDigest, status, nowDay) {
       if (arguments.length !== 4) fail('INPUT'); text(paymentId); hash(originalDigest);

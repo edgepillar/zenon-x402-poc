@@ -35,6 +35,16 @@ export function captureSdk105OriginalFundingSpendingConfiguration(input) {
  * Existing reservations cannot authorize preparation after reopen. */
 export function bindSdk105OriginalFundingSpending(client, fundingResourceUrl, configuration) {
   if (arguments.length !== 3) fail('INPUT');
+  return bindSpending(client, fundingResourceUrl, configuration, false);
+}
+/** Fixed single-original product lane. A prior RESERVED/UNKNOWN account row
+ * prevents a second preparation even with a new id and different input bytes.
+ * This does not recover a missing signature or authorize a funding replay. */
+export function bindSdk105SingleOriginalFundingSpending(client, fundingResourceUrl, configuration) {
+  if (arguments.length !== 3) fail('INPUT');
+  return bindSpending(client, fundingResourceUrl, configuration, true);
+}
+function bindSpending(client, fundingResourceUrl, configuration, singleOriginal) {
   const c = captureSdk105OriginalFundingSpendingConfiguration(configuration);
   const methods = fields(client, METHODS);
   if (!Object.isFrozen(client) || METHODS.some(k => typeof methods[k] !== 'function' || types.isProxy(methods[k]))) fail('CLIENT');
@@ -63,8 +73,15 @@ export function bindSdk105OriginalFundingSpending(client, fundingResourceUrl, co
         if (accepts.length !== 1) fail('OFFER');
         const accepted = accepts[0];
         const digest = 'sha256:' + createHash('sha256').update(JSON.stringify(selected)).digest('hex');
-        const receipt = journal.reserve({ paymentId: c.paymentId, originalDigest: digest,
-          network: accepted.network, asset: accepted.asset, recipient: accepted.payTo, amount: accepted.amount }, now());
+        let receipt;
+        try {
+          const reserve = singleOriginal ? journal.reserveSingleOriginal : journal.reserve;
+          receipt = Reflect.apply(reserve, journal, [{ paymentId: c.paymentId, originalDigest: digest,
+            network: accepted.network, asset: accepted.asset, recipient: accepted.payTo, amount: accepted.amount }, now()]);
+        } catch (error) {
+          if (!singleOriginal) throw error;
+          if (journal.snapshot().held) held = true; fail('RESERVATION_REFUSED');
+        }
         if (closed || held) fail('UNAVAILABLE');
         originalDigest = receipt.originalDigest; started = true;
       } else if (!started) fail('RESERVATION_REQUIRED');
@@ -102,7 +119,8 @@ export function bindSdk105OriginalFundingSpending(client, fundingResourceUrl, co
     const journalHeld = journal.snapshot().held;
     Object.defineProperty(snapshot, 'held', { value: held || journalHeld || own(view, 'held'), enumerable: true });
     if (held || journalHeld) Object.defineProperty(snapshot, 'lifecycle', { value: 'HELD', enumerable: true });
-    Object.defineProperty(snapshot, 'spending', { value: F({ ...journal.snapshot(), originalReserved: started, active }), enumerable: true });
+    Object.defineProperty(snapshot, 'spending', { value: F({ ...journal.snapshot(), originalReserved: started, active,
+      ...(singleOriginal ? { singleOriginalAdmission: true } : {}) }), enumerable: true });
     return F(snapshot);
   });
   out.close = F(function close() {

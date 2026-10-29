@@ -1,4 +1,5 @@
-import { captureSdk105OriginalFundingSpendingConfiguration, bindSdk105OriginalFundingSpending } from './sdk105-spending-bounded-client.js';
+import { captureSdk105OriginalFundingSpendingConfiguration, bindSdk105OriginalFundingSpending,
+  bindSdk105SingleOriginalFundingSpending } from './sdk105-spending-bounded-client.js';
 import { types as utilTypes } from 'node:util';
 import { captureOriginalFundingServiceHandoffRequest } from './dynamic-plasma-original-funding-service-handoff-request.js';
 import { captureFundingPostCheckpointRoute } from '../x402-funding-post-checkpoint-route.js';
@@ -235,9 +236,19 @@ function fail(kind){throw error(kind);}function discard(){}
  * construction refusal. No native opening or default-buyer cutover is added. */
 export function createSpendingBoundedSdk105FundingServiceLifecycle(configuration) {
   if (arguments.length !== 1 || !invariant()) fail('configuration_rejected');
+  return spendingLifecycle(configuration, false);
+}
+/** The API-credit application hardwires this lane; configuration/command DATA
+ * cannot choose legacy carry-forward admission for an unresolved original. */
+export function createSingleOriginalSpendingBoundedSdk105FundingServiceLifecycle(configuration) {
+  if (arguments.length !== 1 || !invariant()) fail('configuration_rejected');
+  return spendingLifecycle(configuration, true);
+}
+function spendingLifecycle(configuration, singleOriginal) {
   const c = record(configuration, ['client', 'walletOwner', 'fundingResourceUrl', 'spending']);
   const spending = captureSdk105OriginalFundingSpendingConfiguration(c.spending);
   const lifecycle = createSdk105FundingServiceLifecycle({ client: c.client, walletOwner: c.walletOwner,
     fundingResourceUrl: c.fundingResourceUrl });
-  return bindSdk105OriginalFundingSpending(lifecycle, c.fundingResourceUrl, spending);
+  const bind = singleOriginal ? bindSdk105SingleOriginalFundingSpending : bindSdk105OriginalFundingSpending;
+  return bind(lifecycle, c.fundingResourceUrl, spending);
 }
