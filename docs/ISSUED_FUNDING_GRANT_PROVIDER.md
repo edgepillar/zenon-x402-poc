@@ -33,8 +33,13 @@ select test factories, timers, a verifier or a store implementation. TLS
 material is copied by the real server factory only when the owned start enters
 server construction; a refused controller constructor acquires no TLS copy.
 
-The funding challenge is durably issued by the existing native intake
-composition. Its exact resource selects the query route and resource digest.
+The funding challenge is durably issued by the selected durable native intake
+composition. The fixed native factory now requires the explicit three-table
+official-outcome store profile. Intent precedes SDK entry; exact outcome
+acknowledgement and readback precede cached responses. Legacy standalone
+composition and two-table store entrypoints retain their contracts. See
+[official outcome custody](OFFICIAL_FUNDING_OUTCOME_CUSTODY.md). This prerequisite
+does not add a provider restore constructor. Its exact resource selects the query route and resource digest.
 The query borrows the same service store and verifies the existing read proof
 before the exact original-funding lookup. It never opens, migrates, closes,
 activates or debits that store. Query requests are refused while funding,

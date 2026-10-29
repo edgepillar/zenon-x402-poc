@@ -20,6 +20,7 @@ import {
   validatePaymentRequired,
 } from './x402-wire.js';
 import { deriveZenonFundingObserverSqliteRecordKey } from './service-credit-zenon-funding-observer-sqlite-store.js';
+import { inspectOfficialFundingPostCustodyRecord, requireOfficialFundingPostCustodyTransition } from './official-funding-post-custody-record.js';
 
 // Physical table grammar; database user_version is a separate store-wide marker.
 export const ZENON_FUNDING_INTAKE_SQLITE_STORE_SCHEMA_VERSION = 1;
@@ -30,6 +31,8 @@ export const ZENON_FUNDING_INTAKE_STATUS = Object.freeze({
 });
 
 const APPLICATION_ID = 0x5a464953;
+const OFFICIAL_CUSTODY_APPLICATION_ID = 0x5a464952;
+const OFFICIAL_CUSTODY_MAX_PAGES = 1024;
 const INITIAL_DATABASE_USER_VERSION = 1;
 const RETAINED_PAYMENT_DATABASE_USER_VERSION = 2;
 const MAX_CHALLENGES = 16;
@@ -50,6 +53,7 @@ const PUBLICATION_FIELDS = Object.freeze([
 ]);
 const TABLE_META = 'CREATE TABLE intake_meta(singleton INTEGER PRIMARY KEY CHECK(singleton = 1), ledger_domain TEXT NOT NULL) STRICT';
 const TABLE_CHALLENGES = 'CREATE TABLE intake_challenges(selection_key TEXT PRIMARY KEY, funding_commitment TEXT NOT NULL UNIQUE, intent_digest TEXT NOT NULL UNIQUE, status TEXT NOT NULL CHECK(status IN (\'ISSUED\',\'BOUND\')), transaction_hash TEXT UNIQUE, authorization_key TEXT UNIQUE, payload_digest TEXT, observer_record_key TEXT UNIQUE, observer_file_name TEXT UNIQUE, envelope TEXT NOT NULL, CHECK((status = \'ISSUED\' AND transaction_hash IS NULL AND authorization_key IS NULL AND payload_digest IS NULL AND observer_record_key IS NULL AND observer_file_name IS NULL) OR (status = \'BOUND\' AND transaction_hash IS NOT NULL AND authorization_key IS NOT NULL AND payload_digest IS NOT NULL AND observer_record_key IS NOT NULL AND observer_file_name IS NOT NULL))) STRICT';
+const TABLE_OFFICIAL = 'CREATE TABLE intake_official_outcomes(selection_key TEXT PRIMARY KEY REFERENCES intake_challenges(selection_key), record_json TEXT NOT NULL CHECK(length(record_json) <= 65536)) STRICT';
 
 export class ZenonFundingIntakeSqliteStoreError extends Error {
   constructor(code) {
@@ -464,7 +468,7 @@ function pragmaValue(database, sql, field) {
   return database.prepare(sql).get()?.[field];
 }
 
-function openDatabase(config, identity, creating) {
+function openDatabase(config, identity, creating, officialCustody = false) {
   let database;
   try {
     database = new DatabaseSync(config.databasePath, {
@@ -493,16 +497,19 @@ function openDatabase(config, identity, creating) {
       || (process.platform === 'darwin'
         && pragmaValue(database, 'PRAGMA fullfsync', 'fullfsync') !== 1)
     ) fail('ZENON_FUNDING_INTAKE_STORE_SCHEMA_UNSUPPORTED');
+    if (officialCustody && creating) database.exec('PRAGMA page_size = 4096');
+    const selectedApplicationId = officialCustody ? OFFICIAL_CUSTODY_APPLICATION_ID : APPLICATION_ID;
     if (creating) {
-      database.exec(`PRAGMA application_id = ${APPLICATION_ID}`);
+      database.exec(`PRAGMA application_id = ${selectedApplicationId}`);
       database.exec(`PRAGMA user_version = ${INITIAL_DATABASE_USER_VERSION}`);
       database.exec(TABLE_META);
       database.exec(TABLE_CHALLENGES);
+      if (officialCustody) database.exec(TABLE_OFFICIAL);
       database.prepare('INSERT INTO intake_meta(singleton,ledger_domain) VALUES(1,?)').run(config.ledgerDomain);
     }
     const databaseUserVersion = database.prepare('PRAGMA user_version').get()?.user_version;
     if (
-      database.prepare('PRAGMA application_id').get()?.application_id !== APPLICATION_ID
+      database.prepare('PRAGMA application_id').get()?.application_id !== selectedApplicationId
       || ![
         INITIAL_DATABASE_USER_VERSION,
         RETAINED_PAYMENT_DATABASE_USER_VERSION,
@@ -512,13 +519,15 @@ function openDatabase(config, identity, creating) {
     ) fail('ZENON_FUNDING_INTAKE_STORE_SCHEMA_UNSUPPORTED');
     const definitions = database.prepare('SELECT type,name,sql FROM sqlite_master WHERE name NOT LIKE \'sqlite_%\' ORDER BY name').all();
     if (
-      definitions.length !== 2
+      definitions.length !== (officialCustody ? 3 : 2)
       || definitions[0].type !== 'table'
       || definitions[0].name !== 'intake_challenges'
       || definitions[0].sql !== TABLE_CHALLENGES
       || definitions[1].type !== 'table'
       || definitions[1].name !== 'intake_meta'
       || definitions[1].sql !== TABLE_META
+      || (officialCustody && (definitions[2].type !== 'table'
+        || definitions[2].name !== 'intake_official_outcomes' || definitions[2].sql !== TABLE_OFFICIAL))
     ) fail('ZENON_FUNDING_INTAKE_STORE_SCHEMA_UNSUPPORTED');
     let hasRetainedPayment = false;
     const rows = database.prepare('SELECT * FROM intake_challenges ORDER BY selection_key').all();
@@ -533,6 +542,22 @@ function openDatabase(config, identity, creating) {
       ? RETAINED_PAYMENT_DATABASE_USER_VERSION
       : INITIAL_DATABASE_USER_VERSION)) {
       fail('ZENON_FUNDING_INTAKE_STORE_SCHEMA_UNSUPPORTED');
+    }
+    if (officialCustody) {
+      const officialRows = database.prepare('SELECT selection_key,record_json FROM intake_official_outcomes ORDER BY selection_key').all();
+      if (officialRows.length > config.maxChallenges) fail('ZENON_FUNDING_INTAKE_STORE_CORRUPT');
+      for (const row of officialRows) {
+        const source = database.prepare('SELECT * FROM intake_challenges WHERE selection_key = ?').get(row.selection_key);
+        if (!source) fail('ZENON_FUNDING_INTAKE_STORE_CORRUPT');
+        validateOfficialRecord(row.record_json, parseRow(source, config.ledgerDomain));
+      }
+      // Establish the connection cap only AFTER identifying the selected
+      // three-table profile. A refused legacy/foreign file is never rebound.
+      if (pragmaValue(database, 'PRAGMA page_size', 'page_size') !== 4096
+          || pragmaValue(database, 'PRAGMA page_count', 'page_count') > OFFICIAL_CUSTODY_MAX_PAGES
+          || pragmaValue(database, `PRAGMA max_page_count = ${OFFICIAL_CUSTODY_MAX_PAGES}`, 'max_page_count') !== OFFICIAL_CUSTODY_MAX_PAGES) {
+        fail('ZENON_FUNDING_INTAKE_STORE_SCHEMA_UNSUPPORTED');
+      }
     }
     inspectFile(config, identity);
     return database;
@@ -585,6 +610,20 @@ function parseRow(row, ledgerDomain) {
   }
 }
 
+function validateOfficialRecord(raw, source) {
+  try {
+    const r = inspectOfficialFundingPostCustodyRecord(raw), b = source.binding;
+    if (source.status !== 'BOUND' || b === null || !Object.hasOwn(b, 'publication')
+        || r.resourceUrl !== source.issue.resourceUrl || r.issuedFrameJson !== canonicalJson(source.issue.frame)
+        || r.serviceSelectionJson !== canonicalJson(source.issue.selection) || r.transactionHash !== b.transactionHash
+        || r.boundJson !== canonicalJson({ status: 'BOUND', transactionHash: b.transactionHash,
+          observerRecordKey: b.observerRecordKey, observerFileName: b.observerFileName })) fail('ZENON_FUNDING_INTAKE_STORE_CORRUPT');
+    const decoded = JSON.parse(Buffer.from(r.originalHeader, 'base64').toString('utf8'));
+    if (canonicalJson(decoded) !== canonicalJson(b.publication.paymentPayload)) fail('ZENON_FUNDING_INTAKE_STORE_CORRUPT');
+    return r;
+  } catch { fail('ZENON_FUNDING_INTAKE_STORE_CORRUPT'); }
+}
+
 export class ZenonFundingIntakeSqliteStore {
   #configuration;
   #database;
@@ -592,12 +631,14 @@ export class ZenonFundingIntakeSqliteStore {
   #closed = false;
   #quarantined = false;
   #testHooks;
+  #officialCustody;
 
-  constructor(config, database, identity, testHooks) {
+  constructor(config, database, identity, testHooks, officialCustody = false) {
     this.#configuration = config;
     this.#database = database;
     this.#identity = identity;
     this.#testHooks = testHooks;
+    this.#officialCustody = officialCustody === true;
   }
 
   get ledgerDomain() {
@@ -646,6 +687,47 @@ export class ZenonFundingIntakeSqliteStore {
       this.#quarantined = true;
       fail('ZENON_FUNDING_INTAKE_STORE_CORRUPT');
     }
+  }
+
+  /** New explicit three-table profile only. The returned capabilities borrow
+   * this same connection and never authenticate, enter SDK or close it. */
+  officialOutcomeCustody(selection) {
+    this.#assertUsable();
+    if (!this.#officialCustody) fail('ZENON_FUNDING_INTAKE_STORE_OFFICIAL_PROFILE_REQUIRED');
+    const key = deriveZenonFundingIntakeSelectionKey({ ledgerDomain: this.#configuration.ledgerDomain, selection });
+    const owner = this;
+    return Object.freeze({
+      read: Object.freeze(function read() {
+        if (arguments.length !== 0) fail('ZENON_FUNDING_INTAKE_STORE_INVALID_INPUT');
+        return owner.#write(() => {
+          const source = owner.#database.prepare('SELECT * FROM intake_challenges WHERE selection_key = ?').get(key);
+          if (!source) fail('ZENON_FUNDING_INTAKE_STORE_MISSING');
+          const row = owner.#database.prepare('SELECT record_json FROM intake_official_outcomes WHERE selection_key = ?').get(key);
+          if (!row) return null;
+          validateOfficialRecord(row.record_json, parseRow(source, owner.#configuration.ledgerDomain)); return row.record_json;
+        });
+      }),
+      compareAndSwap: Object.freeze(function compareAndSwap(expected, proposed) {
+        if (arguments.length !== 2) fail('ZENON_FUNDING_INTAKE_STORE_INVALID_INPUT');
+        requireOfficialFundingPostCustodyTransition(expected, proposed);
+        return owner.#write(() => {
+          const source = owner.#database.prepare('SELECT * FROM intake_challenges WHERE selection_key = ?').get(key);
+          if (!source) fail('ZENON_FUNDING_INTAKE_STORE_MISSING');
+          const row = owner.#database.prepare('SELECT record_json FROM intake_official_outcomes WHERE selection_key = ?').get(key);
+          const current = row?.record_json ?? null;
+          // Strict old-value comparison. A second writer proposing identical
+          // bytes has NOT acquired the first SDK/observation claim.
+          if (current !== expected) fail('ZENON_FUNDING_INTAKE_STORE_CONFLICT');
+          validateOfficialRecord(proposed, parseRow(source, owner.#configuration.ledgerDomain));
+          if (current === null) owner.#database.prepare('INSERT INTO intake_official_outcomes(selection_key,record_json) VALUES(?,?)').run(key, proposed);
+          else {
+            const changed = owner.#database.prepare('UPDATE intake_official_outcomes SET record_json = ? WHERE selection_key = ? AND record_json = ?').run(proposed, key, expected);
+            if (changed.changes !== 1) fail('ZENON_FUNDING_INTAKE_STORE_OUTCOME_UNKNOWN');
+          }
+          return proposed;
+        });
+      }),
+    });
   }
 
   #write(operation) {
@@ -766,7 +848,7 @@ export class ZenonFundingIntakeSqliteStore {
   }
 }
 
-function open(options, creating) {
+function open(options, creating, officialCustody = false) {
   if (options === null || typeof options !== 'object' || utilTypes.isProxy(options)) {
     fail('ZENON_FUNDING_INTAKE_STORE_INVALID_CONFIGURATION');
   }
@@ -799,14 +881,14 @@ function open(options, creating) {
   )) fail('ZENON_FUNDING_INTAKE_STORE_INVALID_CONFIGURATION');
   const config = configuration(configurationInput);
   const identity = creating ? createFile(config) : inspectFile(config);
-  const database = openDatabase(config, identity, creating);
+  const database = openDatabase(config, identity, creating, officialCustody);
   if (creating) {
     try { syncParentDirectory(config.allowedRoot); } catch (error) {
       try { database.close(); } catch {}
       throw error;
     }
   }
-  return new ZenonFundingIntakeSqliteStore(config, database, identity, testHooks);
+  return new ZenonFundingIntakeSqliteStore(config, database, identity, testHooks, officialCustody);
 }
 
 export function createZenonFundingIntakeSqliteStore(options) {
@@ -815,4 +897,12 @@ export function createZenonFundingIntakeSqliteStore(options) {
 
 export function openZenonFundingIntakeSqliteStore(options) {
   return open(options, false);
+}
+
+/** New files only; no legacy adoption, migration or profile fallback. */
+export function createZenonFundingIntakeOfficialCustodySqliteStore(options) {
+  return open(options, true, true);
+}
+export function openZenonFundingIntakeOfficialCustodySqliteStore(options) {
+  return open(options, false, true);
 }

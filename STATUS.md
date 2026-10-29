@@ -1,6 +1,6 @@
 # Current API-credit application status
 
-Baseline [44a8c0f1](https://github.com/edgepillar/zenon-x402-poc/commit/44a8c0f1853429bf35d5af84b196d519addbffd4),
+Baseline [50060eb8](https://github.com/edgepillar/zenon-x402-poc/commit/50060eb8caaaa16f5b940a75553fd1f4bc43abcb),
 29 October 2026. [Current roadmap](docs/ROADMAP.md).
 
 Target: one Zenon funding -> one grant -> many metered API requests, with exact
@@ -8,7 +8,8 @@ original replay/recovery. No production or economic pilot acceptance is claimed.
 
 | Area | Evidence and remaining work |
 | --- | --- |
-| Current CI | [Baseline 108 selected DATA/component controls passed](https://github.com/edgepillar/zenon-x402-poc/actions/runs/40916854022). The required workflow, manifest and 22 closed inputs are unchanged. Recovery-channel DATA and current-source regressions are separate local evidence; native SQL/TLS, SDK/core, FIFO and proof authentication remain excluded. |
+| Current CI | [Baseline 108 selected DATA/component controls passed](https://github.com/edgepillar/zenon-x402-poc/actions/runs/40923458635). The required workflow, manifest and 22 closed inputs are unchanged. Recovery-channel DATA and current-source regressions are separate local evidence; native SQL/TLS, SDK/core, FIFO and proof authentication remain excluded. |
+| Official funding outcome custody | [Source prerequisite](docs/OFFICIAL_FUNDING_OUTCOME_CUSTODY.md): same borrowed intake connection retains strict first-entry intent, consumed observation reservations and complete exact official outcomes before cached success. The fixed native provider selects an explicit three-table profile; BOUND alone never creates SETTLED. Provider restore, actual SDK/SQL/TLS, contention, process cutpoints/reopen and native release remain OPEN. |
 | Paired funding/liability | [26 DATA cases passed](qualification/service-purchase-order-application.actual-local-result.json). Both records precede funded HTTP success; lost acknowledgements and replay are covered with synthetic I/O. This is not funding->grant->100-call native acceptance. |
 | Spending reservations | [27 DATA cases passed](qualification/original-funding-spending.actual-local-result.json): exact payer/accepted-term binding, per-payment/total/daily exposure, unresolved carry, CAS conflict/lost ACK, reopen refusal and late BOUND. Opt-in actual lifecycle binding; SQLite durability and the native product entry remain unqualified. |
 | Spending store candidate | [43 DATA controls and two parser checks passed](qualification/original-funding-spending-store.actual-local-result.json). The native SQLite port/assembly is source-only. Epoch/profile/state-history contracts and pending/malformed/lost-ACK composition are DATA covered; actual SQL, restart, contention and physical release are unqualified. |

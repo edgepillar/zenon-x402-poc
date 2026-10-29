@@ -5,6 +5,8 @@ import { createIssuedFundingPostSdkResourceBinding } from './x402-issued-funding
 import { captureOfficialFundingPostHttpsRoute, captureOfficialFundingPostHttpsRequest } from './x402-official-funding-post-https-request-binding.js';
 import { decodeB64Json, validatePaymentPayloadEnvelope, sameResource, sameRequirements } from './x402-wire.js';
 import { observeServiceCreditOperationDrain } from './service-credit-bounded-operation-drain.js';
+import { ZenonFundingIntakeSqliteStore } from './service-credit-zenon-funding-intake-sqlite-store.js';
+import { createOfficialFundingPostOutcomeCustody } from './official-funding-post-outcome-custody.js';
 
 const INTAKE = createZenonFundingIntake, SERVER = createOfficialIssuedFundingPostSelectedSettlementServer;
 const BINDING = createIssuedFundingPostSdkResourceBinding, ROUTE = captureOfficialFundingPostHttpsRoute;
@@ -14,6 +16,7 @@ const KEYS = Reflect.ownKeys, OWN = Object.hasOwn, APPLY = Reflect.apply;
 const IS_PROXY = utilTypes.isProxy, IS_PROMISE = utilTypes.isPromise;
 const NativePromise = Promise, PROMISE = NativePromise.prototype, THEN = DESC(PROMISE,'then');
 const CTOR = DESC(PROMISE,'constructor'), SPECIES = DESC(NativePromise,Symbol.species);
+const STORE = ZenonFundingIntakeSqliteStore.prototype, CUSTODY_PORT = DESC(STORE,'officialOutcomeCustody').value;
 
 /**
  * SOURCE ONLY listenerless funding backend. Construct the ACTUAL intake with
@@ -39,8 +42,18 @@ const CTOR = DESC(PROMISE,'constructor'), SPECIES = DESC(NativePromise,Symbol.sp
  * No actual SDK/SQL/native run or full P1/production qualification is established.
  */
 export async function createOfficialFundingPostIntakeComposition(options) {
-  if (arguments.length !== 1 || !invariant()) fail('configuration_rejected');
-  let intake = null, official = null, fixed, maxAttempts, budget, route;
+  if (arguments.length !== 1) fail('configuration_rejected');
+  return createComposition(options, false);
+}
+/** Explicit durable profile. Legacy callers keep their original constructor;
+ * this named source entry requires the new selected three-table store. */
+export async function createDurableOfficialFundingPostIntakeComposition(options) {
+  if (arguments.length !== 1) fail('configuration_rejected');
+  return createComposition(options, true);
+}
+async function createComposition(options, durable) {
+  if (!invariant()) fail('configuration_rejected');
+  let intake = null, official = null, custody = null, fixed, maxAttempts, budget, route;
   try {
     const c = exact(options,['intake','official','maxIntakeAttempts','closeBudgetMs']);
     const i = exact(c.intake,['store','serviceCreditStore','authorityRecord','deriveFundingTerms','now',
@@ -49,22 +62,33 @@ export async function createOfficialFundingPostIntakeComposition(options) {
     const sdk = exact(c.official,['localFacilitator','validateChallenge','reconcilePendingSettlement','maxPendingReconciliations']);
     integer(c.maxIntakeAttempts,1,16); integer(c.closeBudgetMs,1,1000);
     maxAttempts = c.maxIntakeAttempts; budget = c.closeBudgetMs; route = ROUTE(i.resourceUrl);
+    let custodyPort = null;
+    if (durable) {
+      if (i.store === null || typeof i.store !== 'object' || IS_PROXY(i.store) || PROTO(i.store) !== STORE
+          || OWN(i.store,'officialOutcomeCustody') || DESC(STORE,'officialOutcomeCustody')?.value !== CUSTODY_PORT) fail('configuration_rejected');
+      // Profile refusal precedes intake construction/issuance and SDK loading.
+      custodyPort = APPLY(CUSTODY_PORT,i.store,[selection]);
+    }
     intake = INTAKE({ store:i.store, serviceCreditStore:i.serviceCreditStore, authorityRecord:i.authorityRecord,
       deriveFundingTerms:i.deriveFundingTerms, now:i.now, observerRoot:i.observerRoot, observerCatchUp:i.observerCatchUp });
     const issuedFrame = intake.issue({ selection, resourceUrl:i.resourceUrl });
     const selected = BINDING(issuedFrame,i.resourceUrl).selection(); fixed = selected;
+    if (durable) custody = createOfficialFundingPostOutcomeCustody(F({ context:F({ issuedFrame:selected.frame,
+      resourceUrl:i.resourceUrl,serviceSelection:selection,maximumPendingReconciliations:sdk.maxPendingReconciliations }),port:custodyPort }));
     official = await SERVER({ ...sdk, issuedFrame:selected.frame, resourceUrl:i.resourceUrl, contextLimit:1 });
   } catch {
+    if (custody !== null) { try { if (custody.close() !== undefined) fail('construction_close_unknown'); } catch { fail('construction_close_unknown'); } }
     if (intake !== null) {
       try { if (intake.close() !== undefined) fail('construction_close_unknown'); }
       catch { fail('construction_close_unknown'); }
     }
     fail('configuration_rejected');
   } finally { options = null; }
-  const IN = intake, SDK = official, FIXED = fixed, ROUTED = route;
-  intake = null; official = null; fixed = null; route = null;
+  const IN = intake, SDK = official, FIXED = fixed, ROUTED = route, CUSTODY = custody;
+  intake = null; official = null; custody = null; fixed = null; route = null;
   let phase = 'OPEN', held = false, active = null, attempts = 0, sdkEntered = false;
   let originalHeader = null, originalHash = null, bound = null, cached = null, pending = null;
+  let custodyCandidate = null;
   let closing = null, closeCapability = null, progress = null, closeOutcome = 'NOT_REQUESTED';
   let intakeClosed = false, pendingClose = null, pendingCloseRequested = false, pendingCloseDone = false;
   function hold() { held = true; phase = 'HELD'; }
@@ -109,6 +133,7 @@ export async function createOfficialFundingPostIntakeComposition(options) {
   async function process(captured) {
     if (originalHeader !== null) {
       if (captured.paymentSignature !== originalHeader || cached === null) fail('original_unavailable');
+      if (CUSTODY !== null) { try { CUSTODY.assertCurrent(); } catch { hold(); fail('custody_unknown'); } }
       return cached; // No intake, verifier, first settle or observer on replay.
     }
     if (attempts >= maxAttempts || captured.paymentSignature === null) fail('original_unavailable');
@@ -130,16 +155,22 @@ export async function createOfficialFundingPostIntakeComposition(options) {
         fail('intake_outcome_unknown');
       bound = actualBound; originalHash = payload.payload.transaction.hash; originalHeader = captured.paymentSignature;
       if (!live()) fail('closed_before_official');
+      if (CUSTODY !== null) { CUSTODY.enter(originalHeader,bound); CUSTODY.assertCurrent(); }
+      if (!live()) fail('closed_before_official');
       sdkEntered = true; // Before a facilitator/schema callback can reenter.
       const returned = await SDK.processRequest(originalHeader);
       const type = data(returned,'type'), continuation = data(returned,'pending');
       if (continuation !== null) pending = continuation; // Retain before any refusal/serialization.
+      let candidate;
       if (type === 'settled' && data(data(returned,'settlement'),'success') === true && pending === null) {
-        cached = result(publicOfficial(returned),'INTAKE_BOUND_OFFICIAL_SETTLED');
+        candidate = result(publicOfficial(returned),'INTAKE_BOUND_OFFICIAL_SETTLED');
       } else if (type === 'payment-error' && pending !== null && data(pending.getSnapshot(),'phase') === 'PENDING') {
-        cached = result(publicOfficial(returned),'INTAKE_BOUND_OFFICIAL_PENDING');
+        candidate = result(publicOfficial(returned),'INTAKE_BOUND_OFFICIAL_PENDING');
       } else { fail('official_outcome_unknown'); }
+      if (CUSTODY === null) cached = candidate;
+      else { custodyCandidate = candidate; CUSTODY.record(candidate); }
       if (!live()) fail('closed_after_official');
+      cached = candidate; custodyCandidate = null;
       phase = 'ORIGINAL_RETAINED'; return cached;
     } catch { hold(); fail('official_outcome_unknown'); }
     finally { if (closing !== null) closePending(); }
@@ -158,14 +189,19 @@ export async function createOfficialFundingPostIntakeComposition(options) {
     return launch(async () => {
       if (pending === null || cached === null || cached.phase !== 'INTAKE_BOUND_OFFICIAL_PENDING') fail('pending_unavailable');
       try {
+        if (CUSTODY !== null) { CUSTODY.beginObservation(); CUSTODY.assertCurrent(); }
+        if (!live()) fail('closed_before_observation');
         const observed = await pending.resume();
         const settlement = data(observed,'settlement'), headers = data(observed,'headers');
         const success = data(settlement,'success');
         const view = pending.getSnapshot();
-        cached = result(F({ type:'observed-settlement', settlement, headers }), success
+        const candidate = result(F({ type:'observed-settlement', settlement, headers }), success
           ? 'INTAKE_BOUND_OFFICIAL_SETTLED' : data(view,'phase') === 'PENDING'
             ? 'INTAKE_BOUND_OFFICIAL_PENDING' : 'INTAKE_BOUND_OFFICIAL_EXHAUSTED');
+        if (CUSTODY === null) cached = candidate;
+        else { custodyCandidate = candidate; CUSTODY.record(candidate); }
         if (!live()) fail('closed_after_observation');
+        cached = candidate; custodyCandidate = null;
         return cached;
       } catch { hold(); fail('official_outcome_unknown'); }
     });
@@ -175,6 +211,9 @@ export async function createOfficialFundingPostIntakeComposition(options) {
     if (closing !== null) return closing;
     closeCapability = capability(); closing = closeCapability.promise; progress = capability();
     phase = 'CLOSING'; closeOutcome = 'PENDING';
+    if (CUSTODY !== null) {
+      try { if (CUSTODY.close() !== undefined || CUSTODY.snapshot().held) hold(); } catch { hold(); }
+    }
     // Independent admission/continuation closes; borrowed stores stay owned by host.
     try { if (IN.close() !== undefined) hold(); else intakeClosed = true; } catch { hold(); }
     closePending(); releaseProgress();
@@ -194,11 +233,15 @@ export async function createOfficialFundingPostIntakeComposition(options) {
       intakeBound:bound!==null,officialOutcome:cached===null?null:cached.phase,closeOutcome,intakeClosed,
       pendingRetained:pending!==null,pendingCloseRequested,pendingCloseDone,official:SDK.getSnapshot(),stores:'BORROWED_NOT_CLOSED',
       automaticReplay:false,recovery:'EXTERNAL_EXPLICIT_OPERATION',nativeIoQualified:false,
+      ...(CUSTODY===null?{}:{officialCustody:CUSTODY.snapshot(),officialCandidateRetained:custodyCandidate!==null}),
       grantActivation:'NOT_ESTABLISHED',serviceDelivery:'NOT_ESTABLISHED',authority:'NONE' });
   });
   return F({ getIssuedChallenge:F(function getIssuedChallenge() {
     if (arguments.length !== 0 || !live()) fail('input_rejected');return FIXED.frame;
-  }),processHttpRequest,resumeOriginalSettlement,close,snapshot });
+  }),processHttpRequest,resumeOriginalSettlement,close,snapshot,
+    ...(CUSTODY===null?{}:{exportOfficialOutcomeRecord:F(function exportOfficialOutcomeRecord(){
+      if(arguments.length!==0||!live())fail('input_rejected');return CUSTODY.exportRecordedState();
+    })}) });
 }
 function knownRejected(value) {
   if (value === null || typeof value !== 'object' || IS_PROXY(value)
