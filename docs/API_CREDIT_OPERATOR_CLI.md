@@ -29,6 +29,23 @@ stdin, shell key interpolation, environment secret, secret-file path, module
 selector or default product. `--help` only parses argv and prints static help.
 Neither helper creates the FIFO objects or discovers a credential source.
 
+## Runtime compatibility admission
+
+The fixed operator entry requires Node.js `24.19.0`, the `node` release name,
+and a Linux/macOS `x64` or `arm64` process. The same predicate applies to RUN
+and the three keyless inspection modes. Valid operational arguments on another
+runtime produce `API_CREDIT_OPERATOR_RUNTIME_REFUSED` and exit status 1 before
+any native launcher import, descriptor adoption, profile/credential read or
+key/store acquisition. Static help and invalid-argument behavior are preserved.
+The runtime policy is fixed source, not selected by argv, JSON or environment.
+
+This is a compatibility gate for the recorded candidate profile. Matching
+process metadata does not authenticate the Node binary, installed package
+bytes or module resolution, and does not qualify native execution on any host.
+The repository-wide `>=24` engine and other CLI modes keep their own contracts.
+Installed dependency admission, the complete native application and Linux/G1/G2
+acceptance remain OPEN; the four process combinations are not a support claim.
+
 ## Bootstrap DATA
 
 The exact top-level fields are `operatorBootstrapVersion: 1`,
