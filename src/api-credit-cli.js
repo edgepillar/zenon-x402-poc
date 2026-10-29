@@ -1,10 +1,11 @@
 import process from 'node:process';
 import { pathToFileURL } from 'node:url';
-import { captureApiCreditCliInvocation } from './api-credit-cli-invocation.js';
+import { captureApiCreditCliExecutionContext } from './api-credit-cli-execution-context.js';
 
 const HELP = 'API credit operator source candidate (native acceptance is OPEN).\n'
   + 'node src/api-credit-cli.js --profile-fd 3 --key-fd 4 --input-fd 5 --output-fd 6 --bootstrap-ms 1000\n'
   + 'Candidate runtime: Node.js 24.19.0; Linux/macOS x64 or arm64 compatibility only.\n'
+  + 'Candidate context: no Node flags; unset NODE_OPTIONS, NODE_PATH and NODE_PRESERVE_SYMLINKS.\n'
   + 'Supply four distinct, exclusive POSIX FIFO ends owned by the operator.\n'
   + 'Profile: canonical public bootstrap JSON terminated by EOF.\n'
   + 'Key: exactly 32 existing private-key bytes terminated by EOF.\n'
@@ -20,9 +21,12 @@ const HELP = 'API credit operator source candidate (native acceptance is OPEN).\
 /** Single documented candidate entry. Parsing/help never import the native
  * launcher or load an SDK/key. Operational bytes use only explicit pipes. */
 export async function runApiCreditCli(argv) {
-  const args = captureApiCreditCliInvocation(argv, process.versions?.node, process.release?.name, process.platform, process.arch);
+  const args = captureApiCreditCliExecutionContext(argv, process.versions?.node, process.release?.name, process.platform, process.arch, {
+    execArgv: process.execArgv, nodeOptions: process.env.NODE_OPTIONS, nodePath: process.env.NODE_PATH, preserveSymlinks: process.env.NODE_PRESERVE_SYMLINKS,
+  });
   if (args.mode === 'HELP') { process.stdout.write(HELP); return 0; }
   if (args.mode === 'RUNTIME_REFUSED') { process.stderr.write('API_CREDIT_OPERATOR_RUNTIME_REFUSED\n'); return 1; }
+  if (args.mode === 'EXECUTION_CONTEXT_REFUSED') { process.stderr.write('API_CREDIT_OPERATOR_CONTEXT_REFUSED\n'); return 1; }
   let result;
   try {
     if (args.mode === 'RECORDED_RESULT') {

@@ -46,6 +46,27 @@ The repository-wide `>=24` engine and other CLI modes keep their own contracts.
 Installed dependency admission, the complete native application and Linux/G1/G2
 acceptance remain OPEN; the four process combinations are not a support claim.
 
+## Plain process context admission
+
+The candidate uses the documented plain `node src/api-credit-cli.js ...`
+process: no Node flags in `process.execArgv`, and `NODE_OPTIONS`, `NODE_PATH`
+and `NODE_PRESERVE_SYMLINKS` unset. Empty strings and zero-like values are not
+part of this fixed profile. Valid operational argv with another context produce
+`API_CREDIT_OPERATOR_CONTEXT_REFUSED` and exit 1 before this entry imports a
+native launcher or adopts a descriptor. The rule also applies to the three
+keyless inspection modes. Help remains available; no environment value is
+printed, parsed as a loader policy, changed or cleared by the gate.
+
+[Node 24.19 CLI documentation](https://nodejs.org/download/release/v24.19.0/docs/api/cli.html#node_optionsoptions)
+describes preloading through NODE_OPTIONS and additional export conditions
+through Node flags. [CommonJS lookup](https://nodejs.org/download/release/v24.19.0/docs/api/modules.html#loading-from-the-global-folders)
+can use NODE_PATH; [ES import resolution](https://nodejs.org/download/release/v24.19.0/docs/api/esm.html#no-node_path)
+does not. The gate checks only the visible declared execution inputs. It cannot
+undo code Node already preloaded, detect hidden loader state, authenticate its
+process metadata or establish a closed installed namespace. Default search
+paths, binary/package identity and native acceptance still need their own
+qualification. Historical fixed-resolver records are not normal-install proof.
+
 ## Bootstrap DATA
 
 The exact top-level fields are `operatorBootstrapVersion: 1`,
