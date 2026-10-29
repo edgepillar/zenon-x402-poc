@@ -1,7 +1,7 @@
 import { types as utilTypes } from 'node:util';
 import { createServiceCreditBoundedCloseCompletion } from './service-credit-bounded-close-completion.js';
 import {
-  captureBuyerOriginalFundingCommandLimits, captureBuyerApiCreditCommandLimits, decodeBuyerOriginalFundingCommand,
+  captureBuyerOriginalFundingCommandLimits, captureBuyerApiCreditCommandLimits, decodeBuyerOriginalFundingCommand, decodeBuyerApiCreditCommand,
   encodeBuyerOriginalFundingCommandResult, encodeBuyerApiCreditCommandResult,
   decodeBuyerOriginalRecoveryCommand, encodeBuyerOriginalRecoveryCommandResult,
   decodeBuyerOriginalBackendRecoveryCommand, encodeBuyerOriginalBackendRecoveryCommandResult,
@@ -53,7 +53,7 @@ function createSession(configuration, recovery, apiCredit = false) {
   const client = c.client, channel = c.channel;
   const operations = {};
   const methods = withBackend ? BACKEND_METHODS : recovery ? RECOVERY_METHODS : METHODS;
-  const DECODE = withBackend ? decodeBuyerOriginalBackendRecoveryCommand : recovery ? decodeBuyerOriginalRecoveryCommand : decodeBuyerOriginalFundingCommand;
+  const DECODE = withBackend ? decodeBuyerOriginalBackendRecoveryCommand : recovery ? decodeBuyerOriginalRecoveryCommand : apiCredit ? decodeBuyerApiCreditCommand : decodeBuyerOriginalFundingCommand;
   const ENCODE = withBackend ? encodeBuyerOriginalBackendRecoveryCommandResult : recovery ? encodeBuyerOriginalRecoveryCommandResult
     : apiCredit ? encodeBuyerApiCreditCommandResult : encodeBuyerOriginalFundingCommandResult;
   for (const operation of Object.keys(methods)) operations[operation] = method(client, methods[operation]);

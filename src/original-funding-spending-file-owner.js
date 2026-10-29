@@ -4,7 +4,7 @@ import { lstatSync, readdirSync, statfsSync, openSync, fstatSync, fsyncSync, clo
 import { basename, dirname, join } from 'node:path';
 import { getuid } from 'node:process';
 import { captureOriginalFundingSpendingFileProfile, requireOriginalFundingSpendingFileCapacity } from './original-funding-spending-file-profile.js';
-import { openOriginalFundingSpendingSqliteStore, openOriginalFundingSpendingSignerCustodySqliteStore, openOriginalFundingSpendingSignerContextSqliteStore } from './original-funding-spending-sqlite-store.js';
+import { openOriginalFundingSpendingSqliteStore, openOriginalFundingSpendingSignerCustodySqliteStore, openOriginalFundingSpendingSignerContextSqliteStore, openOriginalFundingSpendingGrantRecoverySqliteStore } from './original-funding-spending-sqlite-store.js';
 
 const F = Object.freeze, APPLY = Reflect.apply, PROTO = DatabaseSync.prototype;
 const EXEC = PROTO.exec, PREPARE = PROTO.prepare, CLOSE = PROTO.close;
@@ -28,7 +28,11 @@ export function openOriginalFundingSpendingSignerCustodyFileOwner(configuration)
 export function openOriginalFundingSpendingSignerContextFileOwner(configuration) {
   if (arguments.length !== 1) fail('INPUT'); return openFile(configuration, true, true);
 }
-function openFile(configuration, signerCustodyEnabled, signerContextEnabled = false) {
+/** Same owned connection, with write-once original grant-query custody. */
+export function openOriginalFundingSpendingGrantRecoveryFileOwner(configuration) {
+  if (arguments.length !== 1) fail('INPUT'); return openFile(configuration, true, true, true);
+}
+function openFile(configuration, signerCustodyEnabled, signerContextEnabled = false, grantRecoveryEnabled = false) {
   const c = captureOriginalFundingSpendingFileProfile(configuration), p = c.storageProfile, path = p.databasePath;
   const key = path, file = basename(path), uid = BigInt(getuid());
   if (OWNERS.has(key) || OWNERS.size >= 16) fail('OWNER_UNAVAILABLE');
@@ -87,7 +91,7 @@ function openFile(configuration, signerCustodyEnabled, signerContextEnabled = fa
     if (query('PRAGMA page_size').page_size !== 4096) fail('PAGE_PROFILE');
     const cap = c.filePolicy.maxDatabaseBytes / 4096;
     if (query('PRAGMA page_count').page_count > cap || query('PRAGMA max_page_count=' + cap).max_page_count !== cap) fail('PAGE_PROFILE');
-    store = (signerContextEnabled ? openOriginalFundingSpendingSignerContextSqliteStore : signerCustodyEnabled ? openOriginalFundingSpendingSignerCustodySqliteStore : openOriginalFundingSpendingSqliteStore)(db, p); slot.backend = store;
+    store = (grantRecoveryEnabled ? openOriginalFundingSpendingGrantRecoverySqliteStore : signerContextEnabled ? openOriginalFundingSpendingSignerContextSqliteStore : signerCustodyEnabled ? openOriginalFundingSpendingSignerCustodySqliteStore : openOriginalFundingSpendingSqliteStore)(db, p); slot.backend = store;
     guard(); slot.phase = 'OPEN';
     if (p.mode === 'CREATE_NEW') {
       const fd = openSync(c.allowedRoot, constants.O_RDONLY | constants.O_NOFOLLOW);
@@ -160,5 +164,10 @@ function openFile(configuration, signerCustodyEnabled, signerContextEnabled = fa
       if (arguments.length !== 1) fail('INPUT'); return operation('readSignerRecord', [paymentId]);
     }),
   }) : null;
-  return F({ backend, ...(signerCustodyEnabled ? { signerCustody } : {}), assertCurrent: F(assertCurrent), revoke: F(revoke), close: F(close), inspect: F(inspect) });
+  const grantQueryCustody = grantRecoveryEnabled ? F({
+    retain: F(function retain(paymentId, profileJson) { if (arguments.length !== 2) fail('INPUT'); return operation('retainGrantQuery', [paymentId, profileJson]); }),
+    read: F(function read(paymentId) { if (arguments.length !== 1) fail('INPUT'); return operation('readGrantQuery', [paymentId]); }),
+    assertCurrent: F(assertCurrent),
+  }) : null;
+  return F({ backend, ...(signerCustodyEnabled ? { signerCustody } : {}), ...(grantRecoveryEnabled ? { grantQueryCustody } : {}), assertCurrent: F(assertCurrent), revoke: F(revoke), close: F(close), inspect: F(inspect) });
 }

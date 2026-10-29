@@ -1,4 +1,5 @@
 // SOURCE ONLY; this complete native binding has not been executed.
+import { createApiCreditFundingGrantRecoveryApplication } from '../api-credit-funding-grant-recovery-application.js';
 import { types } from 'node:util';
 import { createApiCreditOpeningFailureCustody } from '../api-credit-opening-failure-custody.js';
 import { createApiCreditReturnedOpeningCustody } from '../api-credit-returned-opening-custody.js';
@@ -8,7 +9,7 @@ import { consumeSdk105ApiCreditSelection } from './sdk105-api-credit-selection.j
 import { consumeSdk105ApiCreditProductSelection, bindSdk105ApiCreditProductLifecycleWithRecordedResults } from './sdk105-api-credit-product-profile.js';
 import { captureSdk105FundingServiceConfiguration } from './sdk105-funding-service-lifecycle.js';
 import { createSdk105AgeBoundSignerContextWalletOwner } from './sdk105-prepared-hash-wallet-owner.js';
-import { openOriginalFundingSpendingSignerContextFileOwner } from '../original-funding-spending-file-owner.js';
+import { openOriginalFundingSpendingSignerContextFileOwner, openOriginalFundingSpendingGrantRecoveryFileOwner } from '../original-funding-spending-file-owner.js';
 import { createSdk105ApiCreditApplicationLifecycle } from './sdk105-api-credit-application-lifecycle.js';
 import { createApiCreditWireOwnerGuard, requireCurrentApiCreditWireOwner } from '../api-credit-wire-owner-guard.js';
 
@@ -48,7 +49,7 @@ async function openApplication(selection, requireCurrentOpening, productProfile)
   try {
     c = captureSdk105FundingServiceConfiguration(selected.configuration);
     requireCurrentOpening();
-    file = openOriginalFundingSpendingSignerContextFileOwner({ storageProfile: selected.spendingFile.storageProfile,
+    file = (productProfile === null ? openOriginalFundingSpendingSignerContextFileOwner : openOriginalFundingSpendingGrantRecoveryFileOwner)({ storageProfile: selected.spendingFile.storageProfile,
       allowedRoot: selected.spendingFile.allowedRoot, filePolicy: selected.spendingFile.filePolicy });
     requireCurrentOpening();
     wireOwner = createApiCreditWireOwnerGuard({ fileOwner: file, clock: SIGNER_ENTRY.clock });
@@ -76,9 +77,12 @@ async function openApplication(selection, requireCurrentOpening, productProfile)
       requireCurrentApiCreditWireOwner(wireOwner, readBudgetMs);
       return observed;
     });
-    const result = productProfile === null ? application
-      : bindSdk105ApiCreditProductLifecycleWithRecordedResults(application, productProfile, readState);
-    requireCurrentOpening(); return result;
+    if (productProfile !== null) {
+      const product = bindSdk105ApiCreditProductLifecycleWithRecordedResults(application, productProfile, readState);
+      application = createApiCreditFundingGrantRecoveryApplication(F({ application: product,
+        custody: file.grantQueryCustody, paymentId: selected.spending.paymentId, fundingResourceUrl: c.storeOptions.resourceUrl }));
+    }
+    requireCurrentOpening(); return application;
   } catch {
     const retained = { file, wallet, client, application, wireOwner, clientStop: null, walletStop: null, applicationStop: null,
       clientClosed: false, walletClosed: false, fileCloseEntered: false, fileCloseReturned: false,

@@ -1,4 +1,5 @@
 // Native source candidate. Parser checks do not execute or qualify SQLite.
+import { createApiCreditFundingGrantRecoveryRecord, inspectApiCreditFundingGrantRecoveryRecord } from './api-credit-funding-grant-recovery-record.js';
 import { DatabaseSync } from 'node:sqlite';
 import { types } from 'node:util';
 import { inspectOriginalFundingSpendingState, requireOriginalFundingSpendingStateTransition } from './original-funding-spending-reservations.js';
@@ -16,6 +17,7 @@ const SCHEMA = new Map([
 ]);
 const SIGNER_SCHEMA = ['original_spending_signer_v1', 'CREATE TABLE original_spending_signer_v1(payment_id TEXT PRIMARY KEY CHECK(length(payment_id) BETWEEN 1 AND 128), record_json TEXT NOT NULL CHECK(length(CAST(record_json AS BLOB)) BETWEEN 1 AND 16384)) STRICT'];
 const SIGNER_CONTEXT_SCHEMA = ['original_spending_signer_v2', 'CREATE TABLE original_spending_signer_v2(payment_id TEXT PRIMARY KEY CHECK(length(payment_id) BETWEEN 1 AND 128), record_json TEXT NOT NULL CHECK(length(CAST(record_json AS BLOB)) BETWEEN 1 AND 196608)) STRICT'];
+const GRANT_QUERY_SCHEMA = ['original_spending_grant_query_v1', 'CREATE TABLE original_spending_grant_query_v1(payment_id TEXT PRIMARY KEY CHECK(length(payment_id) BETWEEN 1 AND 128), record_json TEXT NOT NULL CHECK(length(CAST(record_json AS BLOB)) BETWEEN 1 AND 131072)) STRICT'];
 function fail(code) { const e = new TypeError('ORIGINAL_SPENDING_SQLITE_' + code); Object.defineProperty(e, 'stack', { value: e.message }); throw F(e); }
 function check(value) { if (!value) fail('CORRUPT'); }
 /** Borrow a dedicated, already configured connection. The caller owns physical
@@ -38,12 +40,17 @@ export function openOriginalFundingSpendingSignerCustodySqliteStore(database, pr
 export function openOriginalFundingSpendingSignerContextSqliteStore(database, profileInput) {
   if (arguments.length !== 2) fail('INPUT'); return openStore(database, profileInput, true, true);
 }
-function openStore(database, profileInput, signerCustodyEnabled, signerContextEnabled = false) {
+/** Four-table first-product profile. Old budget/signer files remain unchanged
+ * and are refused rather than migrated. No external callback is run in SQL. */
+export function openOriginalFundingSpendingGrantRecoverySqliteStore(database, profileInput) {
+  if (arguments.length !== 2) fail('INPUT'); return openStore(database, profileInput, true, true, true);
+}
+function openStore(database, profileInput, signerCustodyEnabled, signerContextEnabled = false, grantRecoveryEnabled = false) {
   const profile = captureOriginalFundingSpendingSqliteProfile(profileInput);
   if (database === null || typeof database !== 'object' || types.isProxy(database) || Object.getPrototypeOf(database) !== DatabaseSync.prototype) fail('DATABASE');
   const policy = profile.policy, token = profile.ownerToken, policyJson = JSON.stringify(policy), cache = new Map();
   const selectedSignerSchema = signerContextEnabled ? SIGNER_CONTEXT_SCHEMA : SIGNER_SCHEMA;
-  const schema = new Map(SCHEMA); if (signerCustodyEnabled) schema.set(...selectedSignerSchema);
+  const schema = new Map(SCHEMA); if (signerCustodyEnabled) schema.set(...selectedSignerSchema); if (grantRecoveryEnabled) schema.set(...GRANT_QUERY_SCHEMA);
   const signerTable = selectedSignerSchema[0], inspectSigner = signerContextEnabled ? inspectOriginalFundingSignerContextRecord : inspectOriginalFundingSignerRecord;
   let closed = false, busy = false, held = false, lastRevision = null, transactions = 0, transferred = false;
   const exec = sql => Reflect.apply(EXEC, database, [sql]);
@@ -90,7 +97,20 @@ function openStore(database, profileInput, signerCustodyEnabled, signerContextEn
       }
       for (const r of state.reservations) if (r.status === 'SPENT') check(signerRecords.get(r.paymentId)?.captured.phase === 'SIGNED');
     }
-    lastRevision = state.revision; return { raw, state, signerRecords };
+    const grantRecords = new Map();
+    if (grantRecoveryEnabled) {
+      const reservations = new Map(state.reservations.map(r => [r.paymentId, r]));
+      const rows = all('SELECT payment_id,record_json FROM main.original_spending_grant_query_v1 ORDER BY payment_id LIMIT ?', policy.maxRecords + 1);
+      check(rows.length <= policy.maxRecords);
+      for (const row of rows) {
+        const reservation = reservations.get(row.payment_id), signer = signerRecords.get(row.payment_id);
+        check(reservation !== undefined && signer !== undefined && !grantRecords.has(row.payment_id));
+        const captured = inspectApiCreditFundingGrantRecoveryRecord(row.record_json, reservation, signer.raw);
+        check(captured.paymentId === row.payment_id); grantRecords.set(row.payment_id, { raw: row.record_json, captured });
+      }
+      for (const r of state.reservations) if (r.status === 'SPENT') check(grantRecords.has(r.paymentId));
+    }
+    lastRevision = state.revision; return { raw, state, signerRecords, grantRecords };
   }
   function transaction(work, creating = false) {
     usable(); busy = true; let began = false, committing = false;
@@ -127,6 +147,7 @@ function openStore(database, profileInput, signerCustodyEnabled, signerContextEn
         if (current.raw !== expected) return null;
         if (proposed === expected) return proposed;
         if (signerCustodyEnabled) for (const r of next.reservations) if (r.status === 'SPENT') check(current.signerRecords.get(r.paymentId)?.captured.phase === 'SIGNED');
+        if (grantRecoveryEnabled) for (const r of next.reservations) if (r.status === 'SPENT') check(current.grantRecords.has(r.paymentId));
         const changed = run('UPDATE main.original_spending_state_v1 SET revision=?,state_json=? WHERE singleton=1 AND revision=? AND state_json=?',
           next.revision, proposed, current.state.revision, expected === null ? 'null' : expected);
         check(changed.changes === 1); lastRevision = next.revision; return proposed;
@@ -160,6 +181,23 @@ function openStore(database, profileInput, signerCustodyEnabled, signerContextEn
       readSignerRecord(paymentId) {
         if (arguments.length !== 1 || typeof paymentId !== 'string' || /^[A-Za-z0-9][A-Za-z0-9:._-]{0,127}$/.exec(paymentId)?.[0] !== paymentId) fail('INPUT');
         return transaction(current => current.signerRecords.get(paymentId)?.raw ?? null);
+      },
+    } : {}),
+    ...(grantRecoveryEnabled ? {
+      retainGrantQuery(paymentId, profileJson) {
+        if (arguments.length !== 2) fail('INPUT');
+        return transaction(current => {
+          const reservation = current.state.reservations.find(r => r.paymentId === paymentId), signer = current.signerRecords.get(paymentId);
+          check(reservation !== undefined && signer !== undefined && !current.grantRecords.has(paymentId));
+          const raw = createApiCreditFundingGrantRecoveryRecord(reservation, signer.raw, profileJson);
+          check(run('INSERT INTO main.original_spending_grant_query_v1 VALUES(?,?)', paymentId, raw).changes === 1);
+          check(get('SELECT record_json FROM main.original_spending_grant_query_v1 WHERE payment_id=?', paymentId).record_json === raw);
+          return raw;
+        });
+      },
+      readGrantQuery(paymentId) {
+        if (arguments.length !== 1 || typeof paymentId !== 'string' || /^[A-Za-z0-9][A-Za-z0-9:._-]{0,127}$/.exec(paymentId)?.[0] !== paymentId) fail('INPUT');
+        return transaction(current => current.grantRecords.get(paymentId)?.raw ?? null);
       },
     } : {}),
     transferOwnership(nextOwnerId) {

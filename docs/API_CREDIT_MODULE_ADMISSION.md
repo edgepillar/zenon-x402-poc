@@ -15,7 +15,7 @@ environment, package lock, old cache or operator JSON. Missing ordinary
 `node_modules` is a refusal, never an instruction to install or use a cache.
 Keyless inspection keeps its separate SDK-free graph.
 
-The catalog contains 564 rows: 159 application files, root `package.json` and
+The catalog contains 566 rows: 161 application files, root `package.json` and
 404 retained package-source files. The package rows span 69 package roots,
 including nested versions, and match the current lock's corresponding versions.
 This is a reviewed selection; the lock, version labels and an old reachable

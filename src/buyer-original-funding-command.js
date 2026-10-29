@@ -45,6 +45,16 @@ export function decodeBuyerOriginalFundingCommand(line, maximumBytes = DEFAULTS.
   return decode(line, maximumBytes, OPERATIONS);
 }
 
+/** API-credit commit may carry one existing original-grant query profile.
+ * The fixed product application requires and persists it; this codec creates
+ * no proof, signature, store operation or dispatch authority. */
+export function encodeBuyerApiCreditCommand(input, maximumBytes = DEFAULTS.maxLineBytes) {
+  return wire(captureCommand(input, maximumBytes, OPERATIONS, true), maximumBytes) + '\n';
+}
+export function decodeBuyerApiCreditCommand(line, maximumBytes = DEFAULTS.maxLineBytes) {
+  return decode(line, maximumBytes, OPERATIONS, true);
+}
+
 /** Separate closed protocol: no preparation, funding commit or funding send. */
 export function encodeBuyerOriginalRecoveryCommand(input, maximumBytes = DEFAULTS.maxLineBytes) {
   return wire(captureCommand(input, maximumBytes, RECOVERY_OPERATIONS), maximumBytes) + '\n';
@@ -62,11 +72,11 @@ export function decodeBuyerOriginalBackendRecoveryCommand(line, maximumBytes = D
   return decode(line, maximumBytes, BACKEND_RECOVERY_OPERATIONS);
 }
 
-function decode(line, maximumBytes, operations) {
+function decode(line, maximumBytes, operations, apiCredit = false) {
   boundedString(line, maximumBytes);
   let parsed;
   try { parsed = JSON.parse(line); } catch { fail('input_rejected'); }
-  const command = captureCommand(parsed, maximumBytes, operations);
+  const command = captureCommand(parsed, maximumBytes, operations, apiCredit);
   // Also refuses duplicate keys, alternate number spellings and ambiguous wire
   // forms. The encoder supplies the required canonical JSON object plus LF.
   if (canonicalJson(command) !== line) fail('noncanonical_input');
@@ -82,7 +92,7 @@ export function encodeBuyerOriginalFundingCommandResult(command, result, maximum
 
 /** Product-only result projection; ordinary funding/recovery stays void-only. */
 export function encodeBuyerApiCreditCommandResult(command, result, maximumBytes = DEFAULTS.maxLineBytes) {
-  const selected = captureCommand(command, maximumBytes);
+  const selected = captureCommand(command, maximumBytes, OPERATIONS, true);
   const output = selected.operation === 'submitService' && result !== undefined
     ? captureApiCreditRecordedServiceResult(result) : project(selected.operation, result);
   if (selected.operation === 'submitService' && result !== undefined
@@ -103,14 +113,16 @@ export function encodeBuyerOriginalBackendRecoveryCommandResult(command, result,
     outcome: 'CALLBACK_RETURNED', result: project(selected.operation, result) }, maximumBytes) + '\n';
 }
 
-function captureCommand(input, maximumBytes, operations = OPERATIONS) {
+function captureCommand(input, maximumBytes, operations = OPERATIONS, apiCredit = false) {
   byteLimit(maximumBytes);
   const c = fields(input, ['version', 'id', 'operation', 'input']);
   if (c.version !== 1 || typeof c.id !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$/.test(c.id)
       || !operations.includes(c.operation)) fail('input_rejected');
   const value = snapshot(c.input, maximumBytes);
   fields(value, [], false, true);
-  if (c.operation === 'commit' || c.operation === 'submitFunding') fields(value, ['expectedPins']);
+  if (c.operation === 'commit' && apiCredit && OWN(value, 'originalGrantQueryProfile')) {
+    fields(value, ['expectedPins', 'originalGrantQueryProfile']); boundedString(value.originalGrantQueryProfile, 65536);
+  } else if (c.operation === 'commit' || c.operation === 'submitFunding') fields(value, ['expectedPins']);
   if (c.operation === 'handoff') fields(value, ['originalPayment', 'selectedGrantId', 'paymentRequiredHeader']);
   if (c.operation === 'restoreOriginal') fields(value, ['paymentRequiredHeader', 'expectedPins']);
   if (c.operation === 'readRecoveryState') fields(value, ['key', 'expectedPins']);
