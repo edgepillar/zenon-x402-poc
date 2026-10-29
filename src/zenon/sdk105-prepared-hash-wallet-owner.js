@@ -3,6 +3,8 @@ import { types as utilTypes } from 'node:util';
 import { createPreparedHashWalletAdapter } from './prepared-hash-wallet-adapter.js';
 import { canonicalJson } from '../canonical.js';
 import { decodeOriginalFundingSignerRecord } from '../original-funding-signer-custody.js';
+import { captureOriginalFundingSignerPreparation, captureOriginalFundingSignerPreSignContext, decodeOriginalFundingSignerContextRecord,
+  createOriginalFundingSignerContextResult } from '../original-funding-signer-context-custody.js';
 
 const ADAPTER = createPreparedHashWalletAdapter, F = Object.freeze;
 const APPLY = Reflect.apply, DESC = Object.getOwnPropertyDescriptor, PROTO = Object.getPrototypeOf;
@@ -43,7 +45,9 @@ export function createSdk105CustodiedPreparedHashWalletOwner(configuration, cust
       || c.backend === null || typeof c.backend !== 'object' || PROXY(c.backend) || !Object.isFrozen(c.backend)) fail('configuration_rejected');
   const begin = method(c.backend, 'beginSignerAttempt'), retain = method(c.backend, 'retainSignerResult');
   for (const fn of [begin, retain]) if (!Object.isFrozen(fn)) fail('configuration_rejected');
-  return createOwner(configuration, { paymentId: c.paymentId, backend: c.backend, begin, retain });
+  const context = DESC(c.backend, 'requirePreparationContext');
+  if (context !== undefined && (!OWN(context, 'value') || !context.enumerable || context.value !== true)) fail('configuration_rejected');
+  return createOwner(configuration, { paymentId: c.paymentId, backend: c.backend, begin, retain, contextRequired: context !== undefined });
 }
 function createOwner(configuration, custody) {
   const c = record(configuration, ['keyPair','expectedAddress','expectedPublicKey']);
@@ -56,6 +60,18 @@ function createOwner(configuration, custody) {
   let signingOutcome = 'NOT_ENTERED', clearOutcome = 'NOT_REQUESTED', clearCalls = 0;
   let unobservableSdkResult = null, unboundSdkResult = null, closeTerminal = false;
   const saved = { intent: null, intentEntered: false, intentReturned: false, resultEntered: false, resultReturned: false, transactionHash: null };
+  const contextRequired = custody !== null && custody.contextRequired, DECODE = contextRequired ? decodeOriginalFundingSignerContextRecord : decodeOriginalFundingSignerRecord;
+  let preparedContext = null, preSignContext = null, preparationBindEntered = false, preSignBindEntered = false;
+  function bindOriginalPreparation(input, resourceUrl) {
+    if (arguments.length !== 2 || !contextRequired || closing !== null || held || pending !== null || signAttempted || preparationBindEntered || !invariant()) fail('context_unavailable');
+    preparationBindEntered = true;
+    try { preparedContext = captureOriginalFundingSignerPreparation(input, resourceUrl); } catch { held = true; fail('context_unknown'); }
+  }
+  function bindOriginalPreSignContext(input) {
+    if (arguments.length !== 1 || !contextRequired || preparedContext === null || closing !== null || held || pending !== null || signAttempted || preSignBindEntered || !invariant()) fail('context_unavailable');
+    preSignBindEntered = true;
+    try { preSignContext = captureOriginalFundingSignerPreSignContext(preparedContext, input); } catch { held = true; fail('context_unknown'); }
+  }
   function checkPublicKey() {
     if (closing !== null || receiver === null || !invariant()) fail('closed');
     const bytes = copyBytes(APPLY(PUBLIC,receiver,[]),32);
@@ -75,14 +91,19 @@ function createOwner(configuration, custody) {
         const hashAtEntry = APPLY(TEXT,hashBytes,['hex']);
         if (custody !== null) {
           const unsigned = APPLY(CHILD_INSPECT, wallet, []).originalUnsignedBlock;
+          if (contextRequired && (preSignContext === null || canonicalJson(JSON.parse(preSignContext.preSignContextJson).originalUnsignedBlock) !== canonicalJson(unsigned))) {
+            held = true; throw error('context_unknown');
+          }
           saved.intentEntered = true;
           try {
-            const raw = APPLY(custody.begin, custody.backend, [custody.paymentId, unsigned]);
+            const raw = APPLY(custody.begin, custody.backend, contextRequired ? [custody.paymentId, unsigned, preSignContext] : [custody.paymentId, unsigned]);
             if (safePromise(raw)) { try { APPLY(THEN, raw, [discard, discard]); } catch {} }
-            const record = decodeOriginalFundingSignerRecord(raw);
+            const record = DECODE(raw);
             if (record.phase !== 'INTENT' || record.paymentId !== custody.paymentId || record.transactionHash !== hashAtEntry
                 || record.publicKey !== expectedPublicKey || record.accountAddress !== c.expectedAddress
                 || record.unsignedBlockJson !== canonicalJson(unsigned)) fail('custody_unknown');
+            if (contextRequired && (record.fundingResourceUrl !== preSignContext.fundingResourceUrl || record.preparationInputJson !== preSignContext.preparationInputJson
+                || record.preSignContextJson !== preSignContext.preSignContextJson || record.originalDigest !== preparedContext.originalDigest)) fail('custody_unknown');
             saved.intent = raw; saved.transactionHash = record.transactionHash; saved.intentReturned = true;
           } catch { held = true; throw error('custody_unknown'); }
           if (closing !== null || held || !invariant() || APPLY(TEXT, hashBytes, ['hex']) !== hashAtEntry) fail('closed');
@@ -151,8 +172,8 @@ function createOwner(configuration, custody) {
       APPLY(THEN,child,[value => {
         try {
           if (kind === 'sign' && custody !== null) {
-            const intent = decodeOriginalFundingSignerRecord(saved.intent);
-            const expected = canonicalJson({ signerCustodyVersion: 1, paymentId: intent.paymentId, originalDigest: intent.originalDigest,
+            const intent = DECODE(saved.intent);
+            const expected = contextRequired ? createOriginalFundingSignerContextResult(saved.intent, value) : canonicalJson({ signerCustodyVersion: 1, paymentId: intent.paymentId, originalDigest: intent.originalDigest,
               phase: 'SIGNED', unsignedBlockJson: intent.unsignedBlockJson, signedBlockJson: canonicalJson(value) });
             // The signature is already copied into this original owner. No
             // SQL transaction encloses SDK entry; this second commit only
@@ -160,7 +181,7 @@ function createOwner(configuration, custody) {
             saved.resultEntered = true;
             const receipt = APPLY(custody.retain, custody.backend, [custody.paymentId, saved.intent, value]);
             if (safePromise(receipt)) { try { APPLY(THEN, receipt, [discard, discard]); } catch {} }
-            decodeOriginalFundingSignerRecord(receipt);
+            DECODE(receipt);
             if (receipt !== expected || !invariant()) fail('custody_unknown'); saved.resultReturned = true;
           }
         } catch {
@@ -196,11 +217,13 @@ function createOwner(configuration, custody) {
       unboundSdkResult:view.signedOriginal === null ? unboundSdkResult : null,wallet:view,
       ...(custody === null ? {} : { signerCustody: F({ version: 1, intentEntered: saved.intentEntered, intentReturned: saved.intentReturned,
         resultEntered: saved.resultEntered, resultReturned: saved.resultReturned, transactionHash: saved.transactionHash,
+        ...(contextRequired ? { contextRequired: true, preparationBound: preparedContext !== null, preSignContextBound: preSignContext !== null } : {}),
         localCommitReceipt: saved.resultReturned ? 'SIGNED_RESULT_RETURNED' : saved.intentReturned ? 'INTENT_RETURNED' : 'NOT_ESTABLISHED', authority: 'NONE' }) }),
       signatureValidation:'NOT_PERFORMED',keyErasure:'NOT_ESTABLISHED',authority:'NONE' });
   });
   return F({ getAddress:F(function getAddress(){return start('address',arguments.length);}),
-    sign:F(function sign(block){return start('sign',arguments.length,block);}),inspect,close });
+    sign:F(function sign(block){return start('sign',arguments.length,block);}),inspect,close,
+    ...(contextRequired ? { bindOriginalPreparation: F(bindOriginalPreparation), bindOriginalPreSignContext: F(bindOriginalPreSignContext) } : {}) });
 }
 
 function copyBytes(value,size) {

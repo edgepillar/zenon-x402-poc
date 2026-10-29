@@ -5,7 +5,7 @@ import { consumeSdk105ApiCreditSelection } from './sdk105-api-credit-selection.j
 import { consumeSdk105ApiCreditProductSelection, bindSdk105ApiCreditProductLifecycle } from './sdk105-api-credit-product-profile.js';
 import { captureSdk105FundingServiceConfiguration } from './sdk105-funding-service-lifecycle.js';
 import { createSdk105CustodiedPreparedHashWalletOwner } from './sdk105-prepared-hash-wallet-owner.js';
-import { openOriginalFundingSpendingSignerCustodyFileOwner } from '../original-funding-spending-file-owner.js';
+import { openOriginalFundingSpendingSignerContextFileOwner } from '../original-funding-spending-file-owner.js';
 import { createSdk105ApiCreditApplicationLifecycle } from './sdk105-api-credit-application-lifecycle.js';
 
 const F = Object.freeze, NP = Promise, THEN = NP.prototype.then;
@@ -41,7 +41,7 @@ async function openApplication(selection, requireCurrentOpening, productProfile)
   try {
     c = captureSdk105FundingServiceConfiguration(selected.configuration);
     requireCurrentOpening();
-    file = openOriginalFundingSpendingSignerCustodyFileOwner({ storageProfile: selected.spendingFile.storageProfile,
+    file = openOriginalFundingSpendingSignerContextFileOwner({ storageProfile: selected.spendingFile.storageProfile,
       allowedRoot: selected.spendingFile.allowedRoot, filePolicy: selected.spendingFile.filePolicy });
     requireCurrentOpening();
     const { openZenonDynamicPlasmaNativeFundingServiceClient } = await import('./dynamic-plasma-native-funding-service-client.js');

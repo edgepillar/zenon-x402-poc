@@ -1,4 +1,5 @@
 import { types as utilTypes } from 'node:util';
+import { bindWalletOriginalFundingPreSignContext } from './original-funding-signer-context-bridge.js';
 import { Buffer } from 'node:buffer';
 import { setTimeout as nativeSetTimeout, clearTimeout as nativeClearTimeout } from 'node:timers';
 import { createObservedBalanceDynamicPlasmaUserSendAttempt } from './dynamic-plasma-observed-balance-user-send-attempt.js';
@@ -356,6 +357,7 @@ function createPlanner(options, checkpointEnabled, deadlineEnabled = false,
       if (!invariant()) fail('operation_rejected');
       if (walletCandidateEnabled) {
         walletHandoff = final;
+        bindWalletOriginalFundingPreSignContext(WALLET, final);
         walletSignAttempts += 1;
         const signed = await observeWallet(WALLET_SIGN, [final.originalUnsignedBlock], true);
         walletResultObserved = true;

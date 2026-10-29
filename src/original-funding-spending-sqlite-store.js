@@ -6,6 +6,8 @@ import { captureOriginalFundingSpendingSqliteProfile, requireOriginalFundingSpen
   nextOriginalFundingSpendingSqliteOwnership } from './original-funding-spending-sqlite-profile.js';
 import { createOriginalFundingSignerIntent, inspectOriginalFundingSignerRecord, completeOriginalFundingSignerRecord,
   requireOriginalFundingSignerRecordTransition } from './original-funding-signer-custody.js';
+import { createOriginalFundingSignerContextIntent, inspectOriginalFundingSignerContextRecord,
+  completeOriginalFundingSignerContextRecord } from './original-funding-signer-context-custody.js';
 
 const F = Object.freeze, EXEC = DatabaseSync.prototype.exec, PREPARE = DatabaseSync.prototype.prepare;
 const SCHEMA = new Map([
@@ -13,6 +15,7 @@ const SCHEMA = new Map([
   ['original_spending_state_v1', 'CREATE TABLE original_spending_state_v1(singleton INTEGER PRIMARY KEY CHECK(singleton=1), revision INTEGER NOT NULL CHECK(revision BETWEEN 0 AND 9007199254740990), state_json TEXT NOT NULL CHECK(length(CAST(state_json AS BLOB)) BETWEEN 1 AND 1048576)) STRICT'],
 ]);
 const SIGNER_SCHEMA = ['original_spending_signer_v1', 'CREATE TABLE original_spending_signer_v1(payment_id TEXT PRIMARY KEY CHECK(length(payment_id) BETWEEN 1 AND 128), record_json TEXT NOT NULL CHECK(length(CAST(record_json AS BLOB)) BETWEEN 1 AND 16384)) STRICT'];
+const SIGNER_CONTEXT_SCHEMA = ['original_spending_signer_v2', 'CREATE TABLE original_spending_signer_v2(payment_id TEXT PRIMARY KEY CHECK(length(payment_id) BETWEEN 1 AND 128), record_json TEXT NOT NULL CHECK(length(CAST(record_json AS BLOB)) BETWEEN 1 AND 196608)) STRICT'];
 function fail(code) { const e = new TypeError('ORIGINAL_SPENDING_SQLITE_' + code); Object.defineProperty(e, 'stack', { value: e.message }); throw F(e); }
 function check(value) { if (!value) fail('CORRUPT'); }
 /** Borrow a dedicated, already configured connection. The caller owns physical
@@ -31,11 +34,17 @@ export function openOriginalFundingSpendingSignerCustodySqliteStore(database, pr
   if (arguments.length !== 2) fail('INPUT');
   return openStore(database, profileInput, true);
 }
-function openStore(database, profileInput, signerCustodyEnabled) {
+/** Current application profile; v1 signer files are retained/refused, not migrated. */
+export function openOriginalFundingSpendingSignerContextSqliteStore(database, profileInput) {
+  if (arguments.length !== 2) fail('INPUT'); return openStore(database, profileInput, true, true);
+}
+function openStore(database, profileInput, signerCustodyEnabled, signerContextEnabled = false) {
   const profile = captureOriginalFundingSpendingSqliteProfile(profileInput);
   if (database === null || typeof database !== 'object' || types.isProxy(database) || Object.getPrototypeOf(database) !== DatabaseSync.prototype) fail('DATABASE');
   const policy = profile.policy, token = profile.ownerToken, policyJson = JSON.stringify(policy), cache = new Map();
-  const schema = new Map(SCHEMA); if (signerCustodyEnabled) schema.set(...SIGNER_SCHEMA);
+  const selectedSignerSchema = signerContextEnabled ? SIGNER_CONTEXT_SCHEMA : SIGNER_SCHEMA;
+  const schema = new Map(SCHEMA); if (signerCustodyEnabled) schema.set(...selectedSignerSchema);
+  const signerTable = selectedSignerSchema[0], inspectSigner = signerContextEnabled ? inspectOriginalFundingSignerContextRecord : inspectOriginalFundingSignerRecord;
   let closed = false, busy = false, held = false, lastRevision = null, transactions = 0, transferred = false;
   const exec = sql => Reflect.apply(EXEC, database, [sql]);
   function statement(sql) { if (!cache.has(sql)) cache.set(sql, Reflect.apply(PREPARE, database, [sql])); return cache.get(sql); }
@@ -71,11 +80,11 @@ function openStore(database, profileInput, signerCustodyEnabled) {
     const signerRecords = new Map();
     if (signerCustodyEnabled) {
       const reservations = new Map(state.reservations.map(r => [r.paymentId, r]));
-      const rows = all('SELECT payment_id,record_json FROM main.original_spending_signer_v1 ORDER BY payment_id LIMIT ?', policy.maxRecords + 1);
+      const rows = all('SELECT payment_id,record_json FROM main.' + signerTable + ' ORDER BY payment_id LIMIT ?', policy.maxRecords + 1);
       check(rows.length <= policy.maxRecords);
       for (const row of rows) {
         const reservation = reservations.get(row.payment_id); check(reservation !== undefined);
-        const captured = inspectOriginalFundingSignerRecord(row.record_json, reservation);
+        const captured = inspectSigner(row.record_json, reservation);
         check(captured.paymentId === row.payment_id && captured.accountAddress === policy.accountId && !signerRecords.has(row.payment_id));
         signerRecords.set(row.payment_id, { raw: row.record_json, captured });
       }
@@ -124,15 +133,15 @@ function openStore(database, profileInput, signerCustodyEnabled) {
       });
     },
     ...(signerCustodyEnabled ? {
-      beginSignerAttempt(paymentId, unsignedBlock) {
-        if (arguments.length !== 2) fail('INPUT');
+      beginSignerAttempt(paymentId, unsignedBlock, context) {
+        if (arguments.length !== (signerContextEnabled ? 3 : 2)) fail('INPUT');
         return transaction(current => {
           const reservation = current.state.reservations.find(r => r.paymentId === paymentId);
           check(reservation !== undefined && reservation.status === 'RESERVED' && !current.signerRecords.has(paymentId));
-          const raw = createOriginalFundingSignerIntent(reservation, unsignedBlock);
-          const captured = requireOriginalFundingSignerRecordTransition(null, raw, reservation); check(captured.accountAddress === policy.accountId);
-          const changed = run('INSERT INTO main.original_spending_signer_v1 VALUES(?,?)', paymentId, raw); check(changed.changes === 1);
-          check(get('SELECT record_json FROM main.original_spending_signer_v1 WHERE payment_id=?', paymentId).record_json === raw);
+          const raw = signerContextEnabled ? createOriginalFundingSignerContextIntent(reservation, unsignedBlock, context) : createOriginalFundingSignerIntent(reservation, unsignedBlock);
+          const captured = signerContextEnabled ? inspectSigner(raw, reservation) : requireOriginalFundingSignerRecordTransition(null, raw, reservation); check(captured.accountAddress === policy.accountId);
+          const changed = run('INSERT INTO main.' + signerTable + ' VALUES(?,?)', paymentId, raw); check(changed.changes === 1);
+          check(get('SELECT record_json FROM main.' + signerTable + ' WHERE payment_id=?', paymentId).record_json === raw);
           return raw;
         });
       },
@@ -141,10 +150,10 @@ function openStore(database, profileInput, signerCustodyEnabled) {
         return transaction(current => {
           const reservation = current.state.reservations.find(r => r.paymentId === paymentId), prior = current.signerRecords.get(paymentId);
           check(reservation !== undefined && prior !== undefined && prior.raw === expected && prior.captured.phase === 'INTENT');
-          const raw = completeOriginalFundingSignerRecord(expected, signedBlock, reservation);
-          requireOriginalFundingSignerRecordTransition(expected, raw, reservation);
-          const changed = run('UPDATE main.original_spending_signer_v1 SET record_json=? WHERE payment_id=? AND record_json=?', raw, paymentId, expected); check(changed.changes === 1);
-          check(get('SELECT record_json FROM main.original_spending_signer_v1 WHERE payment_id=?', paymentId).record_json === raw);
+          const raw = (signerContextEnabled ? completeOriginalFundingSignerContextRecord : completeOriginalFundingSignerRecord)(expected, signedBlock, reservation);
+          if (!signerContextEnabled) requireOriginalFundingSignerRecordTransition(expected, raw, reservation);
+          const changed = run('UPDATE main.' + signerTable + ' SET record_json=? WHERE payment_id=? AND record_json=?', raw, paymentId, expected); check(changed.changes === 1);
+          check(get('SELECT record_json FROM main.' + signerTable + ' WHERE payment_id=?', paymentId).record_json === raw);
           return raw;
         });
       },

@@ -16,6 +16,7 @@ import { openNativeOfficialV6FundingPostOriginalPaymentClientWithFundingHandoffG
 import { observeServiceCreditOperationDrain } from '../service-credit-bounded-operation-drain.js';
 import { createServiceCreditBoundedCloseCompletion } from '../service-credit-bounded-close-completion.js';
 import { captureNativeFundingServiceOperationalConfiguration } from './native-funding-service-configuration.js';
+import { bindWalletOriginalFundingPreparation } from './original-funding-signer-context-bridge.js';
 
 const OPEN_STORE = openZenonFundingPayerRecoveryOriginalPaymentSqliteStoreV6;
 const FUNDING = createFundingPostNativeHttpsTransport, READS = createRetainedDynamicPlasmaHttpsReadSessionV2;
@@ -244,6 +245,7 @@ async function openClient(configuration, localReadOptions, localQualification) {
     // This DATA capture is not another current read or a renewed work budget.
     if (original.challenge.paymentRequired.accepts[0].asset !== serviceOptions.official.assetInfo.asset)
       fail('funding_unavailable');
+    bindWalletOriginalFundingPreparation(fundingOptions.wallet, original, storeOptions.resourceUrl);
     const value = await operation('prepareOriginalFunding', original);
     if (data(value, 'phase') !== 'AWAITING_INDEPENDENT_PINS') fail('funding_unavailable');
     packet = data(value, 'packet');

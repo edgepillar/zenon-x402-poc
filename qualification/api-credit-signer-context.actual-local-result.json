@@ -1,0 +1,1328 @@
+{
+  "qualification": "G2_ORIGINAL_SIGNER_CONTEXT_DATA",
+  "status": "PASS",
+  "recordedAtUTC": "2026-10-29T01:52:47.537089+00:00",
+  "nodeVersion": "24.19.0",
+  "platform": "darwin-arm64",
+  "nodeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25",
+  "passed": 284,
+  "failed": 0,
+  "priorCases": 252,
+  "newCases": 32,
+  "cases": [
+    {
+      "id": "legacy-default-16-and-maximum-64-are-preserved",
+      "status": "PASS"
+    },
+    {
+      "id": "explicit-api-profile-has-128-commands-with-the-same-byte-and-close-limits",
+      "status": "PASS"
+    },
+    {
+      "id": "api-limit-capture-does-not-enter-accessors-or-proxies",
+      "status": "PASS"
+    },
+    {
+      "id": "funding-and-both-recovery-factories-refuse-api-limits-before-child-capture",
+      "status": "PASS"
+    },
+    {
+      "id": "legacy-channel-refuses-api-limits-without-reserving-the-streams",
+      "status": "PASS"
+    },
+    {
+      "id": "invalid-api-opening-budget-refuses-before-the-client-opener",
+      "status": "PASS"
+    },
+    {
+      "id": "api-opening-reserves-the-same-streams-before-the-fixed-client-opener",
+      "status": "PASS"
+    },
+    {
+      "id": "one-funding-one-grant-and-100-distinct-requests-plus-exact-replay-cross-the-64-command-boundary",
+      "status": "PASS"
+    },
+    {
+      "id": "model-state-rehydration-preserves-100-debits-and-refuses-another-execution-for-the-exact-request",
+      "status": "PASS"
+    },
+    {
+      "id": "unknown-funding-stops-before-handoff-and-retains-the-spending-reservation",
+      "status": "PASS"
+    },
+    {
+      "id": "foreign-grant-refuses-without-service-debit-or-execution",
+      "status": "PASS"
+    },
+    {
+      "id": "changed-body-under-the-same-request-id-cannot-produce-a-second-debit",
+      "status": "PASS"
+    },
+    {
+      "id": "maximum-128-commands-including-close-remains-bounded-at-the-session-and-host",
+      "status": "PASS"
+    },
+    {
+      "id": "command-129-is-refused-before-admission-and-retains-the-last-returned-result",
+      "status": "PASS"
+    },
+    {
+      "id": "legacy-owned-opening-still-uses-the-original-mode-and-16-command-default",
+      "status": "PASS"
+    },
+    {
+      "id": "duplicate-command-id-does-not-reenter-preparation",
+      "status": "PASS"
+    },
+    {
+      "id": "output-loss-retains-the-original-without-committing-or-submitting-funding",
+      "status": "PASS"
+    },
+    {
+      "id": "file-profile-keeps-create-and-existing-ownership-selections-round-trippable",
+      "status": "PASS"
+    },
+    {
+      "id": "file-capacity-includes-10-GiB-floor-all-declared-reserves-and-main-plus-journal-allocation",
+      "status": "PASS"
+    },
+    {
+      "id": "file-profile-rejects-relative-roots-alternate-devices-and-unbounded-file-caps",
+      "status": "PASS"
+    },
+    {
+      "id": "selection-captures-existing-key-identity-policy-and-trust-without-calling-the-key-or-clock",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-mutation-after-selection-cannot-replace-the-captured-recipient-asset-or-transport",
+      "status": "PASS"
+    },
+    {
+      "id": "selection-release-clears-only-owned-trust-copies-and-cannot-refund-consumption",
+      "status": "PASS"
+    },
+    {
+      "id": "selection-rejects-account-asset-and-overlapping-store-roots-before-any-key-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "selection-rejects-nested-accessors-and-unselected-function-capabilities-without-invoking-them",
+      "status": "PASS"
+    },
+    {
+      "id": "unconsumed-released-or-forged-selection-cannot-enter-the-fixed-native-binding",
+      "status": "PASS"
+    },
+    {
+      "id": "application-close-revokes-the-budget-before-physical-close-and-caches-the-same-stop",
+      "status": "PASS"
+    },
+    {
+      "id": "a-pending-wallet-stop-prevents-physical-close-without-marking-a-normal-close-as-held",
+      "status": "PASS"
+    },
+    {
+      "id": "active-preparation-close-retains-unknown-budget-and-never-forces-the-physical-file-closed",
+      "status": "PASS"
+    },
+    {
+      "id": "physical-close-exception-is-held-and-is-not-retried",
+      "status": "PASS"
+    },
+    {
+      "id": "a-nonvoid-physical-close-or-still-open-database-cannot-become-clean-close",
+      "status": "PASS"
+    },
+    {
+      "id": "logical-revoke-refusal-still-stops-the-existing-client-and-holds-physical-close",
+      "status": "PASS"
+    },
+    {
+      "id": "fresh-view-loss-after-close-latches-held-and-never-reopens-or-retries",
+      "status": "PASS"
+    },
+    {
+      "id": "unknown-funding-retains-its-original-budget-and-open-file-under-application-close",
+      "status": "PASS"
+    },
+    {
+      "id": "one-grant-100-request-and-exact-replay-command-flow-joins-the-spending-file-close-owner",
+      "status": "PASS"
+    },
+    {
+      "id": "stale-file-owner-is-refused-before-preparation-or-reserving-another-original",
+      "status": "PASS"
+    },
+    {
+      "id": "owner-epoch-is-rechecked-before-service-even-after-the-budget-is-spent",
+      "status": "PASS"
+    },
+    {
+      "id": "a-nonvoid-current-owner-check-cannot-authorize-an-operation",
+      "status": "PASS"
+    },
+    {
+      "id": "the-complete-operational-capture-is-inert-and-retains-the-exact-policy-and-one-post-budget",
+      "status": "PASS"
+    },
+    {
+      "id": "missing-or-changed-custody-policy-is-refused-before-selection-can-escape",
+      "status": "PASS"
+    },
+    {
+      "id": "relative-traversing-and-nondirect-checkpoint-paths-refuse-before-any-key-call",
+      "status": "PASS"
+    },
+    {
+      "id": "funding-cannot-select-a-second-post-or-another-resource",
+      "status": "PASS"
+    },
+    {
+      "id": "service-origin-count-concurrency-and-aggregate-deadline-are-bound-before-opening",
+      "status": "PASS"
+    },
+    {
+      "id": "noninteger-negative-zero-and-overlong-budgets-cannot-reach-native-opening",
+      "status": "PASS"
+    },
+    {
+      "id": "official-asset-context-and-challenge-capabilities-are-validated-without-calling-them",
+      "status": "PASS"
+    },
+    {
+      "id": "material-cursor-public-bytes-and-attempt-limits-are-validated-without-a-work-search",
+      "status": "PASS"
+    },
+    {
+      "id": "funding-and-service-ca-bytes-must-match-before-selection-is-registered",
+      "status": "PASS"
+    },
+    {
+      "id": "shared-and-extended-ca-buffers-are-refused-without-clearing-borrowed-input",
+      "status": "PASS"
+    },
+    {
+      "id": "duplicate-read-peers-cannot-be-admitted-as-two-independent-endpoint-owners",
+      "status": "PASS"
+    },
+    {
+      "id": "read-owner-budgets-use-the-same-native-timing-grammar",
+      "status": "PASS"
+    },
+    {
+      "id": "public-read-selection-rejects-localhost-private-and-documentation-addresses",
+      "status": "PASS"
+    },
+    {
+      "id": "the-public-route-predicate-preserves-canonical-host-path-and-ipv4-rejection",
+      "status": "PASS"
+    },
+    {
+      "id": "local-qualification-is-a-separate-explicit-grammar-and-never-a-public-fallback",
+      "status": "PASS"
+    },
+    {
+      "id": "read-route-and-key-proxies-are-refused-without-entering-proxy-traps",
+      "status": "PASS"
+    },
+    {
+      "id": "accessor-key-methods-and-missing-sdk-methods-are-refused-without-key-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "a-proxy-day-capability-is-rejected-before-isFrozen-can-enter-its-traps",
+      "status": "PASS"
+    },
+    {
+      "id": "matching-mutation-of-both-owned-ca-buffers-cannot-change-admitted-trust",
+      "status": "PASS"
+    },
+    {
+      "id": "one-sided-ca-mutation-is-rechecked-before-a-consumed-selection-can-open-the-file",
+      "status": "PASS"
+    },
+    {
+      "id": "key-method-shape-is-rechecked-at-consumption-without-constructing-an-owner",
+      "status": "PASS"
+    },
+    {
+      "id": "trailing-newlines-cannot-pass-path-or-symbol-full-byte-admission",
+      "status": "PASS"
+    },
+    {
+      "id": "fixed-product-capture-binds-one-origin-network-asset-recipient-and-offer-without-key-or-clock-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "product-version-and-closed-input-shape-are-required",
+      "status": "PASS"
+    },
+    {
+      "id": "a-product-caller-cannot-supply-its-own-challenge-validator-or-loader",
+      "status": "PASS"
+    },
+    {
+      "id": "the-fixed-offer-must-match-the-spending-network-and-asset",
+      "status": "PASS"
+    },
+    {
+      "id": "the-first-product-has-exactly-one-spending-recipient",
+      "status": "PASS"
+    },
+    {
+      "id": "offer-amount-cannot-exceed-the-existing-payment-budget",
+      "status": "PASS"
+    },
+    {
+      "id": "a-foreign-funding-resource-cannot-select-the-fixed-product",
+      "status": "PASS"
+    },
+    {
+      "id": "multiple-offers-are-not-an-implicit-product-selection",
+      "status": "PASS"
+    },
+    {
+      "id": "the-selected-product-budgets-support-100-distinct-requests-and-an-exact-replay",
+      "status": "PASS"
+    },
+    {
+      "id": "malformed-oversized-and-noncanonical-wire-headers-refuse-before-acquisition",
+      "status": "PASS"
+    },
+    {
+      "id": "the-fixed-challenge-validator-accepts-only-the-captured-semantic-challenge",
+      "status": "PASS"
+    },
+    {
+      "id": "the-fixed-validator-refuses-accessors-and-proxies-without-entering-them",
+      "status": "PASS"
+    },
+    {
+      "id": "product-selection-consumption-is-one-use-and-lookalikes-have-no-brand",
+      "status": "PASS"
+    },
+    {
+      "id": "released-product-selection-cannot-be-consumed-and-clears-only-owned-ca-copies",
+      "status": "PASS"
+    },
+    {
+      "id": "the-existing-native-selection-still-rechecks-ca-and-key-shape-at-its-acquisition-boundary",
+      "status": "PASS"
+    },
+    {
+      "id": "a-forged-product-profile-cannot-bind-an-application",
+      "status": "PASS"
+    },
+    {
+      "id": "a-coherent-cheaper-offer-is-rejected-before-the-real-spending-gate-and-child-preparation",
+      "status": "PASS"
+    },
+    {
+      "id": "coherent-resource-metadata-drift-cannot-change-the-captured-offer",
+      "status": "PASS"
+    },
+    {
+      "id": "one-fixed-product-funding-grant-100-model-debits-and-exact-replay-use-the-actual-application-gate",
+      "status": "PASS"
+    },
+    {
+      "id": "fixed-product-pending-funding-keeps-unknown-budget-and-does-not-handoff-or-execute",
+      "status": "PASS"
+    },
+    {
+      "id": "changed-handoff-challenge-is-rejected-before-wallet-close-or-child-handoff",
+      "status": "PASS"
+    },
+    {
+      "id": "a-product-handoff-accessor-is-not-entered",
+      "status": "PASS"
+    },
+    {
+      "id": "the-product-wrapper-preserves-the-original-close-promise-and-ordered-file-release",
+      "status": "PASS"
+    },
+    {
+      "id": "late-preparation-after-product-close-cannot-start-a-second-offer-or-release-an-unknown-file",
+      "status": "PASS"
+    },
+    {
+      "id": "key-lease-construction-is-descriptor-only-and-the-handle-is-frozen",
+      "status": "PASS"
+    },
+    {
+      "id": "unclaimed-close-clears-once-and-returns-one-cached-receipt",
+      "status": "PASS"
+    },
+    {
+      "id": "revocation-precedes-unclaimed-clear-callbacks-and-blocks-a-late-native-claim",
+      "status": "PASS"
+    },
+    {
+      "id": "key-methods-cannot-enter-before-both-native-claim-and-wallet-binding",
+      "status": "PASS"
+    },
+    {
+      "id": "bound-key-methods-preserve-receiver-input-and-returned-data",
+      "status": "PASS"
+    },
+    {
+      "id": "a-raw-key-cannot-be-leased-again-even-after-its-first-close",
+      "status": "PASS"
+    },
+    {
+      "id": "copied-key-methods-do-not-forge-the-native-claim-brand",
+      "status": "PASS"
+    },
+    {
+      "id": "bare-legacy-keys-do-not-enter-the-lease-protocol-or-wallet-view",
+      "status": "PASS"
+    },
+    {
+      "id": "raw-key-accessors-and-prototype-proxies-are-rejected-without-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "sdk-prototype-method-lookup-retains-the-original-receiver",
+      "status": "PASS"
+    },
+    {
+      "id": "a-second-native-claim-and-a-second-wallet-binding-are-refused",
+      "status": "PASS"
+    },
+    {
+      "id": "claimed-close-delegates-to-the-original-wallet-stop-before-clearing",
+      "status": "PASS"
+    },
+    {
+      "id": "a-key-cleared-by-the-original-wallet-is-not-cleared-again-by-launcher-close",
+      "status": "PASS"
+    },
+    {
+      "id": "reentrant-launcher-close-joins-the-original-active-wallet-operation",
+      "status": "PASS"
+    },
+    {
+      "id": "claimed-without-returned-wallet-remains-held-and-never-direct-clears",
+      "status": "PASS"
+    },
+    {
+      "id": "a-late-wallet-is-stopped-once-without-upgrading-the-first-held-close",
+      "status": "PASS"
+    },
+    {
+      "id": "an-owner-close-exception-is-held-without-retrying-or-direct-clear",
+      "status": "PASS"
+    },
+    {
+      "id": "an-owner-thenable-is-not-assimilated",
+      "status": "PASS"
+    },
+    {
+      "id": "an-owner-close-promise-constructor-accessor-is-not-entered",
+      "status": "PASS"
+    },
+    {
+      "id": "a-clean-looking-owner-view-cannot-substitute-for-the-actual-clear-receipt",
+      "status": "PASS"
+    },
+    {
+      "id": "a-malformed-current-owner-view-preserves-unknown-after-one-returned-clear",
+      "status": "PASS"
+    },
+    {
+      "id": "raw-clear-throw-never-gets-another-clear-attempt",
+      "status": "PASS"
+    },
+    {
+      "id": "a-nonvoid-clear-return-is-not-a-clear-completion",
+      "status": "PASS"
+    },
+    {
+      "id": "an-unsupported-clear-promise-is-observed-only-to-suppress-its-native-rejection",
+      "status": "PASS"
+    },
+    {
+      "id": "a-clear-thenable-getter-is-never-entered",
+      "status": "PASS"
+    },
+    {
+      "id": "lease-inspection-exposes-no-key-material-and-closed-handles-cannot-reenter",
+      "status": "PASS"
+    },
+    {
+      "id": "a-previously-held-key-close-rejects-before-a-pending-wallet-stop-can-settle",
+      "status": "PASS"
+    },
+    {
+      "id": "held-during-wallet-stop-rejects-even-if-that-wallet-claims-a-clean-return",
+      "status": "PASS"
+    },
+    {
+      "id": "unknown-key-leases-have-a-finite-retained-owner-limit",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-argv-is-explicit-bounded-distinct-and-has-no-secret-default",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-argv-refuses-proxies-accessors-and-extra-properties-without-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-clock-uses-utc-day-numbers-required-by-the-durable-budget",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-bootstrap-is-canonical-keyless-data-without-an-sdk-or-key-placeholder",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-bootstrap-rejects-noncanonical-json-duplicate-properties-and-version-drift",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-bootstrap-rejects-secret-loader-clock-validator-and-module-fields",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-bootstrap-rejects-overlapping-roots-and-foreign-network-before-key-read",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-bootstrap-must-carry-a-bounded-public-ca-before-credential-acquisition",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-bootstrap-attaches-existing-key-once-and-detaches-owned-trust-copies",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-bootstrap-binding-rejects-replacement-prepared-data-and-released-selection",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-data-launch-orders-profile-credential-key-session-and-explicit-host",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-stage-guards-cannot-be-replayed-after-that-stage-or-session-admission",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-short-or-long-credential-is-wiped-without-entering-key-or-session",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-malformed-profile-bytes-never-start-credential-or-key-acquisition",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-profile-rejection-returns-only-sanitized-status-data",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-shared-credential-view-is-refused-before-the-key-port",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-native-factory-refusal-is-unknown-with-no-host-or-retry",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-foreign-thenable-is-not-assimilated-or-executed",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-expired-profile-is-wiped-when-it-arrives-and-never-opens-key-input",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-deadline-observed-after-synchronous-key-work-stops-the-known-late-owner",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-late-key-owner-is-stopped-once-without-opening-a-session-or-upgrading-unknown",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-session-entry-transfers-trust-release-to-that-opener-until-late-settlement",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-nonvoid-session-close-cannot-report-a-clean-cli-exit",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-input-stop-failure-remains-unknown-after-other-known-stops",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-host-ambiguity-does-not-authorize-another-host-session-or-key",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-closed-text-without-the-real-host-owner-observations-is-insufficient",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-close-expiry-does-not-repeat-stop-or-upgrade-after-late-completion",
+      "status": "PASS"
+    },
+    {
+      "id": "missing-policy-and-empty-allowlists-fail-before-backend-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "amounts-use-exact-canonical-decimal-integers",
+      "status": "PASS"
+    },
+    {
+      "id": "per-payment-and-recipient-network-asset-limits-precede-writes",
+      "status": "PASS"
+    },
+    {
+      "id": "total-cap-includes-spent-and-outstanding-originals",
+      "status": "PASS"
+    },
+    {
+      "id": "daily-cap-carries-unknown-and-reserved-exposure-across-days",
+      "status": "PASS"
+    },
+    {
+      "id": "late-bound-observation-charges-its-day-without-freeing-total-budget",
+      "status": "PASS"
+    },
+    {
+      "id": "reopen-retains-counters-and-cannot-authorize-the-original-again",
+      "status": "PASS"
+    },
+    {
+      "id": "same-id-with-changed-original-is-never-a-new-reservation",
+      "status": "PASS"
+    },
+    {
+      "id": "a-new-payment-label-cannot-reserve-the-same-retained-original",
+      "status": "PASS"
+    },
+    {
+      "id": "two-live-workers-cannot-both-reserve-a-stale-account-snapshot",
+      "status": "PASS"
+    },
+    {
+      "id": "lost-reservation-ack-keeps-the-committed-original-and-latches-held",
+      "status": "PASS"
+    },
+    {
+      "id": "invalid-ack-and-promise-shaped-ack-cannot-escape-as-reservation-success",
+      "status": "PASS"
+    },
+    {
+      "id": "reentrant-close-after-cas-write-refuses-the-local-receipt",
+      "status": "PASS"
+    },
+    {
+      "id": "clock-rollback-and-terminal-downgrade-are-refused",
+      "status": "PASS"
+    },
+    {
+      "id": "changed-policy-corrupt-record-and-noncanonical-state-refuse-reopen",
+      "status": "PASS"
+    },
+    {
+      "id": "bounded-record-exhaustion-retains-all-originals",
+      "status": "PASS"
+    },
+    {
+      "id": "accessor-and-proxy-policy-values-are-refused-without-getter-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "actual-lifecycle-preparation-sees-the-reservation-before-child-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "actual-lifecycle-funding-bound-keeps-the-same-spend-and-original",
+      "status": "PASS"
+    },
+    {
+      "id": "actual-accepted-terms-are-not-replaced-by-a-cheaper-caller-claim",
+      "status": "PASS"
+    },
+    {
+      "id": "actual-payer-account-must-match-the-durable-budget-key",
+      "status": "PASS"
+    },
+    {
+      "id": "lost-reservation-ack-blocks-the-actual-lifecycle-before-preparation",
+      "status": "PASS"
+    },
+    {
+      "id": "existing-reservation-blocks-a-second-actual-preparation-after-reopen",
+      "status": "PASS"
+    },
+    {
+      "id": "a-new-label-cannot-reenter-actual-preparation-for-the-same-input",
+      "status": "PASS"
+    },
+    {
+      "id": "child-preparation-rejection-retains-unknown-exposure",
+      "status": "PASS"
+    },
+    {
+      "id": "close-during-funding-prevents-late-bound-from-upgrading-unknown",
+      "status": "PASS"
+    },
+    {
+      "id": "close-reentry-uses-one-owned-stop-promise",
+      "status": "PASS"
+    },
+    {
+      "id": "canonical-state-inspection-detaches-and-freezes-all-exposed-history",
+      "status": "PASS"
+    },
+    {
+      "id": "strict-transition-port-accepts-the-actual-reservation-owner-write-sequence",
+      "status": "PASS"
+    },
+    {
+      "id": "backend-transition-denies-removal-reordering-original-replacement-and-batches",
+      "status": "PASS"
+    },
+    {
+      "id": "backend-transition-cannot-reset-to-null-or-change-the-budget-policy",
+      "status": "PASS"
+    },
+    {
+      "id": "backend-transition-requires-the-next-revision-and-a-nondecreasing-day",
+      "status": "PASS"
+    },
+    {
+      "id": "spent-history-is-terminal-and-unknown-cannot-be-downgraded-to-reserved",
+      "status": "PASS"
+    },
+    {
+      "id": "new-reservations-must-start-reserved-on-the-current-record-day",
+      "status": "PASS"
+    },
+    {
+      "id": "create-and-open-selections-are-explicit-and-never-fall-back-to-create",
+      "status": "PASS"
+    },
+    {
+      "id": "ownership-capture-is-detached-and-account-bound",
+      "status": "PASS"
+    },
+    {
+      "id": "explicit-owner-handoff-fences-the-prior-worker-and-preserves-the-revision-floor",
+      "status": "PASS"
+    },
+    {
+      "id": "same-owner-label-still-requires-a-new-epoch-and-cannot-cross-store-scope",
+      "status": "PASS"
+    },
+    {
+      "id": "ownership-version-exhaustion-never-wraps-or-reduces-the-floor",
+      "status": "PASS"
+    },
+    {
+      "id": "hostile-profile-and-token-accessors-do-not-enter-a-callback",
+      "status": "PASS"
+    },
+    {
+      "id": "pending-funding-keeps-unknown-exposure-and-revokes-further-admission",
+      "status": "PASS"
+    },
+    {
+      "id": "malformed-bound-result-cannot-mark-the-budget-spent-or-grant-new-authority",
+      "status": "PASS"
+    },
+    {
+      "id": "lost-spent-ack-retains-the-actual-bound-budget-and-refuses-repreparation",
+      "status": "PASS"
+    },
+    {
+      "id": "single-original-admission-is-a-live-reservation-not-a-reopened-permit",
+      "status": "PASS"
+    },
+    {
+      "id": "single-original-refuses-both-reserved-and-unknown-with-new-id-and-digest",
+      "status": "PASS"
+    },
+    {
+      "id": "single-original-does-not-expire-unresolved-exposure-at-a-later-day",
+      "status": "PASS"
+    },
+    {
+      "id": "single-original-held-instance-cannot-switch-to-legacy-admission-or-observe-a-clear",
+      "status": "PASS"
+    },
+    {
+      "id": "single-original-retains-the-existing-generic-carry-forward-contract",
+      "status": "PASS"
+    },
+    {
+      "id": "single-original-spent-history-does-not-release-total-or-daily-limits",
+      "status": "PASS"
+    },
+    {
+      "id": "single-original-spent-history-keeps-id-and-original-digest-idempotence",
+      "status": "PASS"
+    },
+    {
+      "id": "single-original-cas-conflict-stops-a-second-live-reader-before-admission",
+      "status": "PASS"
+    },
+    {
+      "id": "single-original-lost-reservation-ack-is-not-a-new-preparation-on-reopen",
+      "status": "PASS"
+    },
+    {
+      "id": "single-original-reentrant-close-after-write-cannot-return-live-authority",
+      "status": "PASS"
+    },
+    {
+      "id": "single-original-keeps-the-existing-canonical-transition-and-storage-schema",
+      "status": "PASS"
+    },
+    {
+      "id": "single-original-missing-policy-arity-and-foreign-recipient-do-not-write",
+      "status": "PASS"
+    },
+    {
+      "id": "single-original-blocks-only-the-selected-account-policy-ledger",
+      "status": "PASS"
+    },
+    {
+      "id": "actual-api-credit-application-hardwires-single-original-admission",
+      "status": "PASS"
+    },
+    {
+      "id": "actual-application-refuses-preexisting-uncertainty-before-any-child-preparation",
+      "status": "PASS"
+    },
+    {
+      "id": "declared-preparation-result-loss-keeps-account-blocked-for-a-new-application",
+      "status": "PASS"
+    },
+    {
+      "id": "actual-application-lost-cas-ack-never-enters-preparation-before-or-after-reopen",
+      "status": "PASS"
+    },
+    {
+      "id": "two-actual-application-instances-share-one-cas-admission-before-child-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "close-and-late-preparation-do-not-release-the-record-or-admit-a-replacement",
+      "status": "PASS"
+    },
+    {
+      "id": "reopened-spent-history-alone-never-authorizes-commit-or-funding-dispatch",
+      "status": "PASS"
+    },
+    {
+      "id": "command-data-cannot-disable-single-original-admission-with-an-extra-flag",
+      "status": "PASS"
+    },
+    {
+      "id": "inspection-argv-has-two-explicit-distinct-pipes-and-no-wallet-key-slot",
+      "status": "PASS"
+    },
+    {
+      "id": "inspection-profile-captures-independent-exact-original-before-native-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "inspection-profile-has-no-key-loader-transport-module-or-dispatch-selector",
+      "status": "PASS"
+    },
+    {
+      "id": "inspection-profile-rejects-noncanonical-wire-altered-pins-and-foreign-grant",
+      "status": "PASS"
+    },
+    {
+      "id": "inspection-profile-rejects-path-sidecar-aliases-and-oversized-or-missing-proof",
+      "status": "PASS"
+    },
+    {
+      "id": "inspection-profile-release-and-lookalikes-cannot-restore-native-authority",
+      "status": "PASS"
+    },
+    {
+      "id": "inspection-owner-reuses-exact-checkpoint-and-closes-payer-before-backend-once",
+      "status": "PASS"
+    },
+    {
+      "id": "inspection-redaction-keeps-cache-and-absence-powerless-and-excludes-extra-payloads",
+      "status": "PASS"
+    },
+    {
+      "id": "inspection-owner-read-failure-still-closes-proven-quiescent-owners-without-output",
+      "status": "PASS"
+    },
+    {
+      "id": "inspection-owner-different-checkpoint-after-query-refuses-history-result",
+      "status": "PASS"
+    },
+    {
+      "id": "inspection-owner-unreturned-payer-does-not-close-its-borrowed-backend",
+      "status": "PASS"
+    },
+    {
+      "id": "inspection-owner-invalid-opening-promise-does-not-assimilate-a-foreign-thenable",
+      "status": "PASS"
+    },
+    {
+      "id": "inspection-owner-failed-or-nonvoid-payer-close-retains-the-backend",
+      "status": "PASS"
+    },
+    {
+      "id": "inspection-owner-backend-close-failure-is-never-retried",
+      "status": "PASS"
+    },
+    {
+      "id": "inspection-owner-late-known-payer-is-cleaned-but-expired-scope-never-emits-history",
+      "status": "PASS"
+    },
+    {
+      "id": "inspection-coordinator-decodes-before-native-and-writes-one-redacted-record",
+      "status": "PASS"
+    },
+    {
+      "id": "inspection-coordinator-invalid-profile-closes-input-without-native-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "inspection-coordinator-read-deadline-cannot-later-open-a-store",
+      "status": "PASS"
+    },
+    {
+      "id": "inspection-coordinator-late-native-result-never-writes-or-upgrades-unknown",
+      "status": "PASS"
+    },
+    {
+      "id": "inspection-coordinator-rejects-result-authority-and-does-not-write-partial-history",
+      "status": "PASS"
+    },
+    {
+      "id": "inspection-coordinator-write-loss-or-close-failure-never-retries-the-read",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-custody-intent-binds-the-actual-original-reservation-and-exact-unsigned-hash",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-custody-new-intent-is-refused-after-unknown-or-spent-reservation",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-custody-transfer-amount-recipient-and-asset-must-match-the-reservation",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-custody-records-reject-noncanonical-or-expanded-wire-shapes",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-custody-result-preserves-the-exact-original-public-signed-bytes",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-custody-changed-signed-fields-cannot-be-repaired-or-substituted",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-custody-signature-encoding-is-closed-without-claiming-authenticity",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-custody-transition-cannot-reset-replace-delete-or-repeat-a-result",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-custody-history-remains-powerless-under-unknown-and-spent",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-custody-input-accessors-and-proxies-are-refused-before-user-code",
+      "status": "PASS"
+    },
+    {
+      "id": "custodied-wallet-construction-enters-no-key-or-custody-method",
+      "status": "PASS"
+    },
+    {
+      "id": "custodied-wallet-commits-intent-before-sdk-and-result-before-acknowledgement",
+      "status": "PASS"
+    },
+    {
+      "id": "custodied-wallet-lost-intent-acknowledgement-never-enters-the-sdk",
+      "status": "PASS"
+    },
+    {
+      "id": "custodied-wallet-recreated-owner-cannot-sign-an-existing-intent",
+      "status": "PASS"
+    },
+    {
+      "id": "custodied-wallet-result-commit-with-lost-ack-keeps-exact-signed-bytes",
+      "status": "PASS"
+    },
+    {
+      "id": "custodied-wallet-discarded-caller-reply-does-not-lose-or-reauthorize-the-record",
+      "status": "PASS"
+    },
+    {
+      "id": "custodied-wallet-result-refused-before-commit-retains-intent-and-volatile-original",
+      "status": "PASS"
+    },
+    {
+      "id": "custodied-wallet-async-intent-receipt-cannot-enter-sdk-or-upgrade-on-late-settlement",
+      "status": "PASS"
+    },
+    {
+      "id": "custodied-wallet-wrong-intent-identity-is-refused-before-sdk-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "custodied-wallet-different-returned-signed-receipt-cannot-escape-as-candidate",
+      "status": "PASS"
+    },
+    {
+      "id": "custodied-wallet-sdk-method-throw-retains-intent-and-unknown-key-ownership",
+      "status": "PASS"
+    },
+    {
+      "id": "custodied-wallet-unsupported-async-sdk-result-never-becomes-a-retained-signature",
+      "status": "PASS"
+    },
+    {
+      "id": "custodied-wallet-close-during-intent-port-blocks-a-not-yet-entered-sdk",
+      "status": "PASS"
+    },
+    {
+      "id": "custodied-wallet-close-after-sdk-retains-exact-bytes-but-rejects-the-candidate",
+      "status": "PASS"
+    },
+    {
+      "id": "custodied-wallet-declared-stale-owner-loses-before-sign-or-result-write",
+      "status": "PASS"
+    },
+    {
+      "id": "custodied-wallet-two-declared-live-owners-share-one-intent-admission",
+      "status": "PASS"
+    },
+    {
+      "id": "legacy-wallet-owner-retains-its-original-noncustodied-contract",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-preparation-retains-exact-detached-input-and-reservation-digest",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-preparation-refuses-foreign-route-body-and-extra-fields",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-captures-exact-plan-checkpoint-and-unsigned-block-before-sign",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-checkpoint-quote-cannot-diverge-from-the-original-plan",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-checkpoint-refuses-noncanonical-or-different-block-bytes",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-original-subject-remains-bound-to-selected-funding-terms",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-never-feeds-a-signed-block-into-pre-sign-capture",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-intent-atomically-carries-the-full-input-and-pre-sign-text",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-current-profile-cannot-adopt-the-older-incomplete-record",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-input-digest-must-match-the-durable-reservation",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-result-cannot-replace-the-captured-plan-or-checkpoint",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-projects-the-exact-original-funding-wire-data-without-signing",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-projection-requires-independent-id-digest-and-signed-history",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-projection-exposes-no-store-wallet-or-transport-operation",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-plan-getters-and-proxies-are-not-entered",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-legacy-wallet-bridge-does-not-observe-a-handoff",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-bridge-captures-one-actual-snapshot-before-sdk-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-nonvoid-or-async-binding-receipts-are-never-awaited",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-foreign-snapshot-then-getter-is-never-entered",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-wallet-refuses-sdk-entry-until-both-context-bindings-exist",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-wallet-never-rebinds-or-uses-history-for-a-second-attempt",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-wallet-success-retains-all-original-capsule-bytes",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-lost-intent-reply-retains-full-context-without-sdk-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-lost-result-reply-still-projects-the-same-original-packet",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-result-write-refusal-keeps-intent-and-original-volatile-signature",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-recreated-owner-cannot-resign-existing-signed-history",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-close-after-sdk-keeps-context-and-rejects-new-candidate",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-wallet-never-falls-back-to-an-older-port-reply",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-wallet-refuses-coherent-but-different-pre-sign-context",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-inspection-exposes-only-binding-and-custody-facts",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-capability-marker-cannot-be-a-getter-or-false-downgrade",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-input-digest-matches-the-actual-application-reservation-codec",
+      "status": "PASS"
+    }
+  ],
+  "actualDataNodeCommands": 1,
+  "actualSyntaxNodeCommands": 5,
+  "reusedParserProofs": {
+    "predecessorPublicResults": [
+      "qualification/api-credit-operator.actual-local-result.json",
+      "qualification/api-credit-recovery-inspection.actual-local-result.json"
+    ],
+    "rawQualificationSha256": "79004194c206b92c8812c3b66ae6c5333b5f957c220a4e06ae67ac6c0438e182",
+    "additionalProofSha256": "716c896e1ccd365e10dc300b224995ea5e173510589db9cab051f3345f100f8e",
+    "runtimeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25",
+    "platform": "darwin-arm64",
+    "checks": [
+      {
+        "path": "src/zenon/native-api-credit-operator-launcher.js",
+        "sourceSha256": "6b3b0ea62a231549837230f882ce0fd8cd155b29caa55a8f22aa57c638b8ef31",
+        "priorParserReceiptSha256": "2fb6420cff521a7deb4968be1874a1c556ec56a2bb509777e63e399b5c90a32f"
+      },
+      {
+        "path": "src/zenon/native-api-credit-operator-key.js",
+        "sourceSha256": "e1f744465e917a71690d6821607a215291ddefde0888d2928ff8e79a970026c9",
+        "priorParserReceiptSha256": "f88146ca9c5853d92cb33d51d336dc5fc65eae60927cd43ed02f0eab817d49d1"
+      },
+      {
+        "path": "src/zenon/native-api-credit-operator-pipes.js",
+        "sourceSha256": "c6e68f3234aee9d4c9275f3b2e5a1b0be7200751aa3e06a308a07a6b736a4618",
+        "priorParserReceiptSha256": "a080c5de89f23210865af70e8d70fc20664e5e539b976d41ea3393f1a8443ed7"
+      },
+      {
+        "path": "src/zenon/sdk105-native-api-credit-command-session.js",
+        "sourceSha256": "9e487fff48de4dfdf2e9e2b1317f1aad221bbc1dd1f30c46370614c9482c788c",
+        "priorParserReceiptSha256": "3705481e4f34b780995ca7379b1b093eef15d87d7afb1a41ff19d90209e1f30d"
+      },
+      {
+        "path": "src/buyer-cli.js",
+        "sourceSha256": "1472e920578c3d0391ae29e93a9d82566eb0de4b405cfe3fdac893ce35238fd9",
+        "priorParserReceiptSha256": "8c30f883f0ed300cb87b444570169a6e508249ed4372d33d8954cd7071ea76ea"
+      },
+      {
+        "path": "src/api-credit-cli.js",
+        "sourceSha256": "dfda77b426eb2e02e65a213199fb4204dd92a9f2294f0413c71b6206114e36fe",
+        "priorParserReceiptSha256": "99e3049df13d8dc494c2084ccb141bf12c2dbd9153c9fea0df54861fda26ff8b"
+      },
+      {
+        "path": "src/service-credit-recovery-inspect-cli.js",
+        "sourceSha256": "4daebdb2d19b3768f7e98e8c3be8d34ccff014db87095064461fa9807313564e",
+        "priorParserReceiptSha256": "a89df8f26704ccfb1a1800b00ce1e682697af14c153ea7cdd2ac897ced029bb7"
+      },
+      {
+        "path": "src/zenon/native-api-credit-recovery-inspection-launcher.js",
+        "sourceSha256": "46d91c4d52a8e0c3828a80af6c2ab47796cc1d25f5a3ea33545ec1a071447279",
+        "priorParserReceiptSha256": "6eb2c1120bdac16c7525c6ec2a6224fc2492a30954331f4bab3c18471bfdfd25"
+      }
+    ],
+    "actualNewParserCommands": 0,
+    "scope": "EXACT_UNCHANGED_SOURCE_AND_RUNTIME_ONLY"
+  },
+  "currentParserProofs": [
+    {
+      "path": "src/original-funding-spending-sqlite-store.js",
+      "sourceSha256": "58b69c37e63b1c1675582f4ef33329357bc87992a625db51f9debe9822fc7c97",
+      "parserReceiptSha256": "43c021186c33b7dad4d076cb886934eeb61b211bcc425b70a4e236a44af6de43"
+    },
+    {
+      "path": "src/original-funding-spending-file-owner.js",
+      "sourceSha256": "ed52619d640c3e0f0228c68a63ea8ba16ab58abc3b70d7b740af21a960b285cf",
+      "parserReceiptSha256": "e904465482762a894a4e65973c6a4e7394638ccbea6386b1b674046b3cafc5f9"
+    },
+    {
+      "path": "src/zenon/sdk105-native-api-credit-application.js",
+      "sourceSha256": "937a985154de963cbe5697f88702a3c5f42ee7c9ebdb794b625bbcc8866ccd3a",
+      "parserReceiptSha256": "ff47c3b43de914e7ecead648b327a2127224046ea2131e1b78b688a4dbbbf57b"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-native-funding-service-client.js",
+      "sourceSha256": "7be410aedb14c8cb256d2b67ca735e31344b8f57146b00632628703844aae8d0",
+      "parserReceiptSha256": "e835fef58ac60670fc22896577ef97af6a3083d5b60cc48e1c8c52bef802db91"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-observed-balance-deferred-material-planner.js",
+      "sourceSha256": "e001ddb436d3f767f66db42e424c4aab8b507c32db5495c9c4967f27804ca67d",
+      "parserReceiptSha256": "3ae72347d7b48ecf57d82cd2744af58394f16dcbb7ba0fe16d62bcf32a7103a2"
+    }
+  ],
+  "sourceProfile": {
+    "path": "qualification/profiles/api-credit-application-source-v9.json",
+    "bytes": 73756,
+    "sha256": "545cec3711fbcb3898cdec40b73c3aa1c2612297897f1ae850d10afb7e017bb1"
+  },
+  "rawQualificationSha256": "7c9be21e3c1be5c64290ce12601fd38cb5dc06f60b8ecfc48aac5fd7116ec071",
+  "sourceTransforms": false,
+  "task": "CLOSED/SUCCESS",
+  "sourceOrdering": {
+    "lane": "STATIC_SOURCE_AND_DECLARED_METHOD_MEMORY_PORTS",
+    "actualApplicationSelectsContextRequiredFile": true,
+    "fullOriginalInputBoundBeforeRealPreparation": true,
+    "originalPlanAndCheckpointBoundBeforeWalletSign": true,
+    "oneExistingHandoffSnapshotNoExtraCurrentRead": true,
+    "exactOriginalInputDigestMatchesActualReservationCodec": true,
+    "contextAndUnsignedBlockCommittedTogetherBeforeSdkEntry": true,
+    "exactSignedResultBeforeCandidateAck": true,
+    "SDKOutsideDatabaseTransaction": true,
+    "noFallbackToV1OrDifferentContext": true,
+    "noSecondSigningFromHistory": true,
+    "pureOriginalPacketProjectionRequiresIndependentIdAndDigest": true,
+    "signedHistoryNeverEntersPreSignCheckpointReader": true,
+    "noQuoteRefreshOrAuthorityFromProjection": true,
+    "legacyBudgetAndSignerV1SchemasPreserved": true,
+    "existingFilesNotMigratedOrExposureReset": true,
+    "nativeExecution": false,
+    "nativeReopen": false,
+    "actualSignatureValidated": false
+  },
+  "declaredMethodAndMemoryPortsOnly": true,
+  "nativeExecutions": 0,
+  "SDK": 0,
+  "SQLite": 0,
+  "keys": 0,
+  "signatures": 0,
+  "sockets": 0,
+  "nonceSearches": 0,
+  "nodeChildren": 0,
+  "actualPrepare": 0,
+  "payouts": 0,
+  "nativeProductAcceptance": "NOT_ESTABLISHED",
+  "nativeHundredCallAcceptance": "NOT_ESTABLISHED",
+  "nativeDurability": "NOT_ESTABLISHED",
+  "freshProcessAcceptance": "NOT_ESTABLISHED",
+  "signerResponseLossAcceptance": "NOT_ESTABLISHED",
+  "nativeRelease": "NOT_ESTABLISHED",
+  "atomicExternalDispatchFencing": "NOT_ESTABLISHED",
+  "supportedProductLaunchCommand": "NOT_ESTABLISHED",
+  "signerCustody": {
+    "version": 2,
+    "application": "src/zenon/sdk105-native-api-credit-application.js",
+    "wallet": "src/zenon/sdk105-prepared-hash-wallet-owner.js#createSdk105CustodiedPreparedHashWalletOwner",
+    "fileOwner": "src/original-funding-spending-file-owner.js#openOriginalFundingSpendingSignerContextFileOwner",
+    "store": "src/original-funding-spending-sqlite-store.js#openOriginalFundingSpendingSignerContextSqliteStore",
+    "codec": "src/original-funding-signer-context-custody.js",
+    "bridge": "src/zenon/original-funding-signer-context-bridge.js",
+    "dataProfile": "EXISTING_TWO_BUDGET_TABLES_PLUS_original_spending_signer_v2",
+    "oldTwoTableOrSignerV1Open": "REFUSED_NO_MIGRATION_OR_EXPOSURE_RESET",
+    "intent": "ORIGINAL_INPUT_DIGEST_FULL_INPUT_PLAN_CHECKPOINT_AND_UNSIGNED_BLOCK",
+    "result": "SAME_CONTEXT_AND_EXACT_SIGNED_BLOCK",
+    "maxRecordBytes": 196608,
+    "maxPreparationInputBytes": 65536,
+    "maxPreSignContextBytes": 65536,
+    "maxUnsignedCheckpointBytes": 32768,
+    "countLimit": "EXISTING_POLICY_MAX_RECORDS",
+    "contextCapture": "DATA_CORRESPONDENCE_NOT_CURRENT_PRICE_OR_SIGNATURE_VALIDATION",
+    "SDKCallInsideSqlTransaction": false,
+    "ownerEpoch": "SAME_EXISTING_STORE_TOKEN_EVERY_TRANSACTION",
+    "originalPacketProjection": "PURE_DATA_REQUIRES_INDEPENDENT_ID_DIGEST_NO_STORE_WRITE_OR_DISPATCH",
+    "keylessOperatorConsumer": "OPEN_NOT_SELECTED",
+    "history": "DATA_ONLY_NO_SIGN_OR_DISPATCH_AUTHORITY",
+    "unknown": "RETAIN_ORIGINALS_AND_RESERVATION_NO_SECOND_SIGN",
+    "actualSignatureValidation": "NOT_PERFORMED_BY_CUSTODY_CODEC",
+    "nativeDurability": "NOT_ESTABLISHED",
+    "actualSignerResponseLoss": "NOT_ESTABLISHED",
+    "freshProcessAcceptance": "NOT_ESTABLISHED",
+    "LinuxAcceptance": "NOT_ESTABLISHED"
+  },
+  "current108CISeparate": true,
+  "new284DataCasesIncludedIn108CI": false,
+  "resources": {
+    "taskQuotaBytes": 4194304,
+    "plannedExecutionPeakBytes": 2889578,
+    "sourceInputs": 158,
+    "dataRuntimeInputs": 72,
+    "nativeSourceInputs": 140,
+    "parserInputs": 5,
+    "reusedParserInputs": 8,
+    "materializedInputs": 77,
+    "sourceOnlyAliasesAvoided": 81,
+    "CASVerifiedReuse": 147,
+    "CASNewImports": 11,
+    "sourceTextArchives": 0,
+    "sourceOnlyObjectsRetention": "CURRENT_IMPORT_OR_PRIOR_OWNED_SNAPSHOT"
+  }
+}
