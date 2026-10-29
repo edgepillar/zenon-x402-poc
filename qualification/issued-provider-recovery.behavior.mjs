@@ -127,6 +127,8 @@ check('provider-recovery-startup-row-change-after-factory-await-refuses-listener
 check('provider-recovery-inflight-refusal-uses-one-snapshot-before-settling-completion',async()=>{let armed=false,views=0;const f=await app({phase:'FIRST_IN_FLIGHT',fundingView(owner){return F({...owner,snapshot:F(()=>{if(armed&&++views>1)throw Error('declared second view');return owner.snapshot();})});}});armed=true;const r=f.send(request(f.f.x.d));await flush();assert.equal(r.res.statusCode,503);assert.equal(r.done.counts.success,1);assert.equal(views,1);armed=false;assert.equal(f.root.snapshot().activeOperations,0);await f.root.close();});
 
 export const issuedProviderRecoveryDataCases=F([...checks]);
+export const issuedProviderRecoveryDataFixture=app;
+export const issuedProviderRecoveryDataFlush=flush;
 if(process.argv[1]===fileURLToPath(import.meta.url)){
  const cases=[];let current=null,reported=false;
  function report(){if(reported)return;reported=true;const failed=cases.filter(c=>c.status==='FAIL').length;console.log(JSON.stringify({qualification:'G2_ISSUED_PROVIDER_RECORDED_RECOVERY_DATA',passed:cases.length-failed,failed,cases,

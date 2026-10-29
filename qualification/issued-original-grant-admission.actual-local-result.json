@@ -1,0 +1,405 @@
+{
+  "qualification": "G2_ISSUED_ORIGINAL_GRANT_ADMISSION_DATA",
+  "status": "PASS",
+  "recordedAtUTC": "2026-10-29T21:04:32.052206+00:00",
+  "passed": 64,
+  "failed": 0,
+  "newControls": 26,
+  "reexecutedRelevantDataControls": 38,
+  "retainedEarlierTurnExactControls": 1055,
+  "aggregateVerifiedControls": 1119,
+  "cases": [
+    {
+      "id": "provider-recovery-independent-expectation-is-closed-and-descriptor-safe",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-requires-one-exact-selected-bound-row",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-foreign-selection-origin-or-row-pin-is-refused",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-row-getters-and-json-hooks-never-run",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-outcome-digest-precedes-parsing-the-record",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-full-original-publication-is-compared",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-settled-replay-is-the-full-exact-original-outcome",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-pending-keeps-consumed-observations-and-has-no-continuation",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-exhausted-budget-is-never-renewed",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-first-inflight-remains-outcome-unknown",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-observation-inflight-does-not-publish-the-previous-pending-outcome",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-zero-observer-budget-remains-zero",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-policy-change-is-not-a-budget-reset",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-changed-frame-is-not-a-new-issued-context",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-missing-record-never-falls-back-to-fresh-funding",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-foreign-original-header-is-rejected-before-store-read",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-wrong-method-or-host-is-rejected-before-store-read",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-changed-record-latches-held-without-repair",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-row-change-across-read-is-held",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-lost-read-receipt-is-not-retried",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-rejected-promise-read-is-observed-with-no-late-repair",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-opaque-thenable-is-retained-without-invoking-hooks",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-reentrant-close-during-read-prevents-a-reply",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-close-is-logical-idempotent-and-never-closes-borrowed-store",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-actual-controller-starts-with-history-and-no-service-session",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-unpaid-request-cannot-issue-another-challenge",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-original-paid-replay-returns-bound-with-no-sdk-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-pending-controller-never-creates-grant-or-observes-again",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-inflight-http-remains-503-with-controlled-history",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-service-needs-the-external-committed-original-grant",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-foreign-committed-grant-is-refused-before-session",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-outcome-change-during-grant-read-prevents-session",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-grant-read-reentrant-close-prevents-session",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-model-100-requests-and-exact-replay-use-one-original-grant",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-second-controller-preserves-model-counters-and-exact-replay",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-model-unknown-execution-stays-reserved-after-state-reconstruction",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-startup-row-change-after-factory-await-refuses-listener",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-inflight-refusal-uses-one-snapshot-before-settling-completion",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-admission-capture-is-inert-and-refuses-extra-or-aliased-ports",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-admission-takes-no-caller-grant-or-payment-argument",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-admission-derives-all-original-identity-pins-from-retained-header",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-admission-not-recorded-keeps-funding-and-ledger-unchanged",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-admission-known-absence-is-bounded-and-never-activates",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-admission-pending-exhausted-and-inflight-never-enter-lookup",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-admission-independent-outcome-pin-precedes-lookup",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-admission-independent-bound-pin-precedes-lookup",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-admission-budget-policy-is-not-renewed-from-store",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-admission-bound-change-during-lookup-stops-before-admission",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-admission-outcome-change-during-lookup-stops-before-admission",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-admission-foreign-or-authoritative-history-is-rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-admission-revoked-history-is-not-refreshed-or-admitted",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-admission-history-getters-are-never-invoked",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-admission-promise-lookup-is-observed-and-never-admitted",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-admission-reentrant-second-lookup-is-refused",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-admission-manual-grant-method-is-fenced-during-lookup",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-admission-close-reentry-stops-with-no-service-session",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-admission-lost-admission-result-does-not-repeat",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-admission-changed-row-after-session-creation-closes-provider",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-admission-second-call-cannot-create-another-session",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-admission-manual-ID-path-keeps-its-contract-when-idle",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-admission-normal-close-caches-receipt-and-preserves-borrowed-stores",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-admission-state-reconstruction-finds-grant-after-lost-local-ID-without-activation",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-admission-preserves-consumption-across-controller-reconstruction-and-exact-replay",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-admission-exhausted-100-unit-grant-still-replays-without-unit-reset",
+      "status": "PASS"
+    }
+  ],
+  "nodeVersion": "24.19.0",
+  "platform": "darwin-arm64",
+  "nodeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25",
+  "rawQualificationSha256": "a7989ac44b8ab24012a3dcd46920b3fdab5e866a1b640ab3380ef6e9e155f6bf",
+  "sourceProfile": {
+    "path": "qualification/profiles/api-credit-application-source-v38.json",
+    "bytes": 283083,
+    "sha256": "69f98b3b09bca05d20587d338e55d83be5ebac5927e273e59eadad95e45726e7"
+  },
+  "issuedOriginalGrantAdmission": {
+    "version": 1,
+    "scope": "EXPLICIT_LOCAL_EXISTING_ORIGINAL_GRANT_ADMISSION",
+    "owner": "src/issued-original-grant-admission-owner.js",
+    "nativeEntry": "src/x402-issued-funding-grant-native-recovery-application.js",
+    "factory": "restoreIssuedFundingGrantNativeApplication",
+    "method": "admitOriginalCommittedServiceGrant",
+    "methodArguments": 0,
+    "sameExistingRecordedProviderEntry": true,
+    "explicitLocalOperatorOnly": true,
+    "newHTTPRoutes": 0,
+    "independentBoundAndOutcomePins": true,
+    "settledBoundBeforeLookup": true,
+    "originalIdentityFields": 14,
+    "signedTransactionContextCrosschecked": true,
+    "originalHistoryAuthority": "NONE",
+    "sameServiceStorePrototypeReader": true,
+    "actualCoreCommittedGrantAdmissionRequired": true,
+    "historyRecheckedAroundLookupAndAdmission": true,
+    "maximumExplicitAttempts": 16,
+    "maximumActualAdmissionEntries": 1,
+    "existingActiveGrantRequired": true,
+    "exhaustedGrantExactReplayPreserved": true,
+    "unitReset": false,
+    "grantActivation": false,
+    "SDKSettlement": false,
+    "newFunding": false,
+    "unknownRequestsSameProviderCloseOnce": true,
+    "oldFailedActivationRepaired": false,
+    "manualAdmissionFencedDuringLookup": true,
+    "storesClosedByOwner": false,
+    "sourceProviderInputs": 57,
+    "sourceRecoveryInputs": 36,
+    "sourceJournalRecoveryInputs": 43,
+    "sourceWitnessHistoryInputs": 18,
+    "sourceBuyerInputs": 165,
+    "moduleCatalogRows": 568,
+    "packageRows": 404,
+    "directBareEdges": 9,
+    "nativeExecution": false,
+    "nativePersistence": "NOT_ESTABLISHED",
+    "externalOwnerFencing": "NOT_ESTABLISHED",
+    "physicalRelease": "NOT_ESTABLISHED",
+    "freshProcessAcceptance": "NOT_ESTABLISHED",
+    "LinuxAcceptance": "NOT_ESTABLISHED",
+    "G1G2Acceptance": "OPEN"
+  },
+  "proofManifest": {
+    "path": "qualification/issued-original-grant-admission.proof-manifest.json",
+    "bytes": 245389,
+    "sha256": "a045592169d2b0ab19abb1a1e00b4ab94f107d55e9b24b25c288a5c60bc03701"
+  },
+  "storeSessionListenerAndProofPorts": "DECLARED_DATA_ONLY",
+  "activationMetadata": "UNAUTHENTICATED_TRUSTED_RECORD_DATA",
+  "modelStateReconstruction": true,
+  "exhausted100UnitExactReplay": true,
+  "actualDataNodeCommands": 2,
+  "actualSyntaxNodeCommands": 1,
+  "sourceContract": {
+    "path": "qualification/issued-original-grant-admission.source-contract.json",
+    "bytes": 2938,
+    "sha256": "36f201a1ceca64d52f688ea96f11cfe0bd30c24b40cd51da697a02cccc49b0ff"
+  },
+  "nativeExecutions": 0,
+  "SDK": 0,
+  "SQLite": 0,
+  "keys": 0,
+  "signatures": 0,
+  "sockets": 0,
+  "nonceSearches": 0,
+  "nodeChildren": 0,
+  "actualPrepare": 0,
+  "payouts": 0,
+  "task": "CLOSED/SUCCESS",
+  "resources": {
+    "taskQuotaBytes": 4194304,
+    "plannedExecutionPeakBytes": 2685992,
+    "sourceInputs": 263,
+    "dataRuntimeInputs": 56,
+    "nativeBuyerSourceInputs": 165,
+    "additionalProviderSourceInputs": 57,
+    "additionalRecoverySourceInputs": 36,
+    "additionalJournalRecoverySourceInputs": 43,
+    "additionalWitnessHistorySourceInputs": 18,
+    "parserInputs": 1,
+    "reusedParserInputs": 35,
+    "invalidatedParserInputs": 1,
+    "retainedExactRuntimeDataControls": 1055,
+    "reexecutedRelevantDataControls": 38,
+    "sourceOnlyCASLookupsAvoided": 206,
+    "materializedInputs": 57,
+    "sourceOnlyAliasesAvoided": 206,
+    "CASVerifiedReuse": 53,
+    "CASNewImports": 4,
+    "sourceTextArchives": 0,
+    "minimumFreeFloorBytes": 10737418240,
+    "streamAllocationPlan": {
+      "serialCommands": true,
+      "maximumRetainedSuccessfulDataStdoutBytes": 27170,
+      "requiredSuccessfulStderrBytes": 0,
+      "maximumOnePendingStderrBytes": 1048576,
+      "unchangedParserReceiptsReused": 35,
+      "newParserCommands": 1,
+      "sourceAliasBytes": 641283,
+      "newSourceCASBytes": 57944,
+      "allReferencedSourceCASBytes": 641283,
+      "metadataMarginBytes": 262144,
+      "allReferencedCASChargedPerTask": true,
+      "preexistingCASAlsoCharged": true,
+      "serialDataCommands": 2
+    },
+    "serialDataCommands": 2,
+    "earlierDataCommands": 0,
+    "earlierFailedDataCommands": 0,
+    "failedDataTasks": 0,
+    "quotaExpanded": false,
+    "parserBatchAdmission": true,
+    "proofManifestDeduplicated": true
+  },
+  "nativeProviderRestartVerified": false,
+  "nativePersistence": "NOT_ESTABLISHED",
+  "nativeAcceptance": "NOT_ESTABLISHED",
+  "externalOwnerFencing": "NOT_ESTABLISHED",
+  "physicalRelease": "NOT_ESTABLISHED",
+  "LinuxAcceptance": "NOT_ESTABLISHED",
+  "current108CISeparate": true,
+  "newControlsIncludedIn108CI": false
+}

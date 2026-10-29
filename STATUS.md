@@ -1,6 +1,6 @@
 # Current API-credit application status
 
-Baseline [a554077e](https://github.com/edgepillar/zenon-x402-poc/commit/a554077ef6d03a25934010bb2af894316f5eba76),
+Baseline [72ec8bad](https://github.com/edgepillar/zenon-x402-poc/commit/72ec8bad00240b7e56fd7729f5b195d967ad8348),
 29 October 2026. [Current roadmap](docs/ROADMAP.md).
 
 Target: one Zenon funding -> one grant -> many metered API requests, with exact
@@ -8,7 +8,8 @@ original replay/recovery. No production or economic pilot acceptance is claimed.
 
 | Area | Evidence and remaining work |
 | --- | --- |
-| Current CI | [Baseline 108 selected DATA/component controls passed](https://github.com/edgepillar/zenon-x402-poc/actions/runs/40946325920). The required workflow, manifest and 22 closed inputs are unchanged. Recovery-channel DATA and current-source regressions are separate local evidence; native SQL/TLS, SDK/core, FIFO and proof authentication remain excluded. |
+| Current CI | [Baseline 108 selected DATA/component controls passed](https://github.com/edgepillar/zenon-x402-poc/actions/runs/40951658666). The required workflow, manifest and 22 closed inputs are unchanged. Recovery-channel DATA and current-source regressions are separate local evidence; native SQL/TLS, SDK/core, FIFO and proof authentication remain excluded. |
+| Existing original grant after local result loss | [Recorded source entry](docs/ISSUED_ORIGINAL_GRANT_ADMISSION.md) adds one explicit local operator method without a supplied grant ID. It derives the exact original identity from independent BOUND/outcome pins, reads the same real store index, then uses actual committed-grant admission. The NONE-authority history stays separate; no activation, counter reset, new funding or SDK call occurs. Native process/index durability, stale ownership, release, Linux and full G1/G2 acceptance remain OPEN. |
 | Original funding to local grant activation | [Same provider source entry](docs/ISSUED_ORIGINAL_FUNDING_ACTIVATION.md) adds one explicit local operator method for the original READY observer. The existing actual evidence composition authenticates funding before grant activation, then the existing controller reads/admit the actual committed grant and opens its scoped session. No HTTP route, replay, BOUND or SETTLED flag activates a grant. Unknown/close is HELD without another activation or service admission. Native authentication/SQL/SDK/HTTPS, spending/restart, Linux and full G1/G2 acceptance remain OPEN. |
 | Original outcome witness | [Explicit source profile](docs/ORIGINAL_FUNDING_TRANSITION_WITNESS.md) retains a bounded separate intent before each observation custody CAS. A lost response can be inspected against the latest BEFORE/PROPOSED digest without repairing HELD, refunding an observation or constructing SDK/grant/service authority. The actual fixed file owner and native history reader are source-only. Native filesystem/SQL durability, fresh-process recovery, ownership handover, Linux and physical release remain OPEN. |
 | Original journal observation | [Explicit source wrapper](docs/ORIGINAL_FUNDING_JOURNAL_OBSERVATION.md) closes the same provider, reserves a persisted original-only observation and reads the existing journal before committing/readback of history. The original threshold and remaining count are preserved; uncertainty stays HELD, with no SDK reentry, publication, grant activation or auto-reopen. New chain observation, native journal/SQL/HTTPS, owner transfer, Linux and physical release remain OPEN. |

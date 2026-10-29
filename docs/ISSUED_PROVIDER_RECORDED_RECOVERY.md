@@ -66,3 +66,13 @@ post-BOUND intent, independently obtaining pins after a lost result, and explici
 resolution of in-flight/pending outcomes remain recovery work. This entry does
 not silently add a new observation or settlement policy. The approved hosted
 108-control profile and 22 inputs remain unchanged and separate. G0-G5 stay OPEN.
+## Local admission without a retained grant ID
+
+The same recorded native source entry adds the explicit local
+`admitOriginalCommittedServiceGrant()` method. It derives the exact original
+identity from the independently pinned BOUND/outcome, uses the actual existing
+store index and then the controller's full committed-grant admission. Historical
+NONE-authority lookup does not itself authorize service. No activation, counter
+reset, SDK call or automatic startup admission is added. See the [original-grant
+admission contract](ISSUED_ORIGINAL_GRANT_ADMISSION.md). Native fresh-process,
+store/index durability, fencing, release and Linux acceptance remain OPEN.
