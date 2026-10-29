@@ -18,7 +18,7 @@ const HELP = 'API credit operator source candidate (native acceptance is OPEN).\
   + 'Funding history before a grant: node src/api-credit-cli.js --funding-inspect-fd 3 --output-fd 6 --bootstrap-ms 1000\n'
   + 'Funding input: same independent original checkpoint/pins; no grant, service proof or resend.\n'
   + 'Provider grant history: node src/api-credit-cli.js --funding-grant-query-fd 3 --output-fd 6 --bootstrap-ms 1000\n'
-  + 'Query input: exact retained funding/checkpoint pins, ready read proof and selected TLS CA; no key, store open or resend.\n'
+  + 'Query input: ready version one, or explicit existing-custody version two with independent full-profile pins; no key or resend.\n'
   + 'Signer history: node src/api-credit-cli.js --signer-inspect-fd 3 --output-fd 6 --bootstrap-ms 1000\n'
   + 'Signer output contains private existing signed-payment DATA; history grants no dispatch.\n'
   + 'No stdin, environment secret, mnemonic, generated key or default profile.\n';

@@ -57,7 +57,8 @@ async function coordinate(configuration, signer, recorded = false, funding = fal
   const p = fields(c.ports, ['readProfile', 'inspectOriginal', 'writeResult', 'close', 'inspect', 'clock', 'armTimer', 'cancelTimer']);
   for (const fn of Object.values(p)) if (typeof fn !== 'function' || types.isProxy(fn) || !Object.isFrozen(fn)) fail();
   const frame = { stage: 'PROFILE', prepared: null, inspectionEntered: false, outputWritten: false, opening: true, unknown: false,
-    current: null, value: null, deadline: null, last: null, timer: null, closeRequested: false, closeReceipt: null, closed: false };
+    current: null, value: null, deadline: null, last: null, timer: null, timerCancelHandle: null, opaque: [],
+    closeDeadline: null, closeRequested: false, closeReceipt: null, closeTimer: null, closed: false };
   function clock() { const n = p.clock(); if (typeof n !== 'bigint' || frame.last !== null && n < frame.last) fail(); frame.last = n; return n; }
   function expire() { if (!frame.opening) return; frame.opening = false; frame.unknown = true;
     if (frame.current !== null) frame.current.reject(Error('inspection expired')); FAILED.add(frame); }
@@ -83,24 +84,72 @@ async function coordinate(configuration, signer, recorded = false, funding = fal
     }
     return true;
   }
+  function keepOpaque(value) {
+    frame.opaque.push(value);
+    // Only observe genuine native promises; never assimilate a thenable or
+    // call an opaque timer receipt as a cleanup capability.
+    try { observe(value, () => {}, () => {}); } catch {}
+  }
+  function timerToken(value) {
+    if (value === null || value === undefined || types.isPromise(value) || types.isProxy(value)) {
+      frame.unknown = true; keepOpaque(value); fail();
+    }
+    return value;
+  }
+  function cancelOwnedTimer(token) {
+    let value;
+    try { value = p.cancelTimer(token); } catch { frame.unknown = true; throw Error('timer cancel unknown'); }
+    if (value !== undefined) { frame.unknown = true; keepOpaque(value); fail(); }
+  }
+  function closedNow() {
+    return frame.closeDeadline !== null && clock() < frame.closeDeadline && channelClosed()
+      && clock() < frame.closeDeadline && channelClosed();
+  }
   async function closeKnown() {
     frame.closeRequested = true;
-    const out = signal(); let terminal = false, timer = null, limit = null;
-    try { limit = clock() + 1000000000n; } catch { frame.unknown = true; }
+    const out = signal(); let terminal = false, finishing = false, arming = false, requested = false, failed = false, timer = null;
     function finish(clean) {
-      if (terminal) return; terminal = true;
-      if (timer !== null) { try { p.cancelTimer(timer); } catch { clean = false; } }
-      out.resolve(clean);
+      if (terminal) return;
+      requested = true; if (clean !== true) failed = true;
+      if (arming || finishing) return;
+      finishing = true;
+      try {
+        if (!failed && !closedNow()) failed = true;
+        if (timer !== null) {
+          const token = timer; timer = null;
+          // A reentrant expiry during cancellation sets failed while this
+          // finish is active. It cannot publish a provisional clean verdict.
+          cancelOwnedTimer(token);
+        }
+        if (!failed && !closedNow()) failed = true;
+      } catch { failed = true; }
+      terminal = true; finishing = false;
+      if (failed) frame.unknown = true;
+      out.resolve(!failed);
     }
     try { frame.closeReceipt = p.close(); } catch { finish(false); }
     try { observe(frame.closeReceipt, value => {
-      try { finish(value === undefined && limit !== null && clock() < limit && channelClosed()); } catch { finish(false); }
+      if (terminal) return;
+      try { finish(value === undefined && closedNow()); } catch { finish(false); }
     }, () => finish(false)); } catch { finish(false); }
-    if (!terminal) { try { timer = p.armTimer(1000, F(() => finish(false))); } catch { finish(false); } }
+    if (!terminal) {
+      arming = true;
+      try {
+        const remaining = frame.closeDeadline === null ? 0n : frame.closeDeadline - clock();
+        if (remaining <= 0n) finish(false);
+        else { frame.closeTimer = p.armTimer(Number((remaining + 999999n) / 1000000n), F(() => finish(false))); timer = timerToken(frame.closeTimer); }
+      } catch { finish(false); }
+      finally { arming = false; }
+      // An arm callback may have fired before its handle was returned. Now
+      // cancel that known handle once before resolving the latched UNKNOWN.
+      if (requested) finish(!failed);
+    }
     return out.promise;
   }
   try {
-    frame.deadline = clock() + BigInt(a.bootstrapMs) * 1000000n; frame.timer = p.armTimer(a.bootstrapMs, F(expire));
+    frame.deadline = clock() + BigInt(a.bootstrapMs) * 1000000n;
+    try { frame.timer = p.armTimer(a.bootstrapMs, F(expire)); timerToken(frame.timer); }
+    catch { frame.unknown = true; frame.timer = null; throw Error('timer arm unknown'); }
     await stage(g => p.readProfile(g)); const text = frame.value; frame.value = null;
     frame.prepared = decodeProfile(text); guard(); frame.stage = 'INSPECTION';
     await stage(g => { frame.inspectionEntered = true; return p.inspectOriginal(frame.prepared, g); });
@@ -116,9 +165,16 @@ async function coordinate(configuration, signer, recorded = false, funding = fal
   } catch { if (frame.inspectionEntered) frame.unknown = true; }
   finally {
     frame.opening = false;
-    if (frame.timer !== null) { try { p.cancelTimer(frame.timer); } catch { frame.unknown = true; } }
+    // One absolute channel-close window includes retiring the startup timer.
+    // It is never renewed by callback latency or a late clean receipt.
+    try { frame.closeDeadline = clock() + 1000000000n; } catch { frame.unknown = true; }
+    if (frame.timer !== null) {
+      frame.timerCancelHandle = frame.timer; frame.timer = null;
+      try { cancelOwnedTimer(frame.timerCancelHandle); } catch { frame.unknown = true; }
+    }
     if (frame.prepared !== null && !frame.inspectionEntered) frame.prepared.release();
-    try { frame.closed = await closeKnown(); } catch { frame.unknown = true; }
+    try { frame.closed = await closeKnown(); if (frame.closed && !closedNow()) { frame.closed = false; frame.unknown = true; } }
+    catch { frame.closed = false; frame.unknown = true; }
   }
   const clean = frame.closed && !frame.unknown, success = clean && frame.outputWritten;
   if (!clean) FAILED.add(frame);

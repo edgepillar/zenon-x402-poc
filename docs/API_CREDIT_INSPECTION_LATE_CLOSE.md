@@ -40,3 +40,11 @@ RL-LATE-CLOSE, NATIVE-RELEASE, RL-REOPEN and Linux/G1/G2 acceptance remain OPEN.
 The earlier 518 DATA controls and nineteen parser receipts are reusable only
 where their exact source bytes and runtime still match. They are not promoted
 to native evidence or silently repeated by this entry.
+
+The shared recovery coordinator now includes startup-timer retirement in one
+absolute channel-close window. It requires void timer-cancel receipts and fresh
+closed/time observations around cancellation and after the parent await.
+Reentrant expiry, opaque handles and late results cannot publish or repair a
+clean verdict. See the [channel-close contract](API_CREDIT_RECOVERY_CHANNEL_CLOSE.md).
+This source/DATA change does not establish native FIFO, SQL, TLS or release
+acceptance and does not expand history or payment authority.
