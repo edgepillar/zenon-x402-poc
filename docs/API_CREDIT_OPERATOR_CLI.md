@@ -214,3 +214,16 @@ acquired EXCLUSIVE-mode locks persist across transactions until the connection
 releases them. This supports a conditional source argument, not an executed
 contention, physical-release or restart proof. No new takeover, lease or
 cleanup protocol is inferred from the epoch counter.
+
+## Funding-only history candidate
+
+`node src/api-credit-cli.js --funding-inspect-fd 3 --output-fd 6 --bootstrap-ms 1000`
+
+The same runtime/plain-process and exclusive-pipe admission supports one existing
+V6 funding record before a grant or service proof is known. Independent original
+checkpoint bytes/pins are still mandatory. A fixed no-SDK store reader compares
+those bytes around the query and closes the known store before private output.
+No new funding/payment, grant or spending decision is made. See the complete
+[funding inspection input/output and ownership contract](API_CREDIT_FUNDING_INSPECTION.md).
+The native entry, SQL writes at existing-store open, physical close and Linux
+acceptance remain unexecuted.

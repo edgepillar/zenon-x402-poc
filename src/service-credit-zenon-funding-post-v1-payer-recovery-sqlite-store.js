@@ -56,6 +56,7 @@ export const ZENON_FUNDING_PAYER_RECOVERY_STATUS = Object.freeze({
   PAYMENT_CONFLICT: 'PAYMENT_CONFLICT',
 });
 
+const FUNDING_INSPECTION_IS_OPEN = Object.getOwnPropertyDescriptor(DatabaseSync.prototype, 'isOpen').get;
 const APPLICATION_ID = 0x5a505252;
 const DATABASE_USER_VERSION = 1;
 const ENVELOPE_SCHEMA_VERSION = 1;
@@ -1904,6 +1905,18 @@ export class ZenonFundingPayerRecoverySqliteStore {
       }
       return this.#read();
     });
+  }
+
+  /** Bounded physical-state observation for the funding-only inspector.
+   * No DB handle, SQL, path rebinding, retry or operation authority escapes. */
+  inspectFundingOriginalLifecycle() {
+    if (arguments.length !== 0) fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_INPUT');
+    let databaseOpen = null;
+    try { databaseOpen = Reflect.apply(FUNDING_INSPECTION_IS_OPEN, this.#database, []); }
+    catch { this.#quarantined = true; }
+    if (databaseOpen !== !this.#closed) this.#quarantined = true;
+    return Object.freeze({ payerFundingInspectionLifecycleVersion: 1, closed: this.#closed, quarantined: this.#quarantined,
+      active: this.#active, databaseOpen, authority: 'NONE' });
   }
 
   close() {

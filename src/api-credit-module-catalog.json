@@ -2433,8 +2433,8 @@
     },
     {
       "path": "src/api-credit-cli-arguments.js",
-      "bytes": 2202,
-      "sha256": "ea3fc7a1a0d1a97a5e50939c16c4fc77c77c34b7164275d4b3dca6cc613cb573",
+      "bytes": 2384,
+      "sha256": "01ffc5c478b7d76f4c737b41e07a42cf67f0e54c59a199c408ac8e0a808ab760",
       "format": "module"
     },
     {
@@ -2451,8 +2451,20 @@
     },
     {
       "path": "src/api-credit-cli.js",
-      "bytes": 5155,
-      "sha256": "fa2a11fdf7f8ae7d96457d806b329a5f28587fdd9f8845a8a64a7546962b3fab",
+      "bytes": 5623,
+      "sha256": "a71ec9ebb8c756cb56bab0634da3935c67bb28c689bcedee587c8c33ca1c6d47",
+      "format": "module"
+    },
+    {
+      "path": "src/api-credit-funding-inspection-owner.js",
+      "bytes": 10204,
+      "sha256": "b74e24113f74712c12c13b6ad30f640f4e10adab3889c37921bdeee0d575fdba",
+      "format": "module"
+    },
+    {
+      "path": "src/api-credit-funding-inspection-profile.js",
+      "bytes": 5258,
+      "sha256": "b76e6ec054ecef7bc2f2a82c9f91e3b26bdcc39a722933dfc0fc3570e0348339",
       "format": "module"
     },
     {
@@ -2499,8 +2511,8 @@
     },
     {
       "path": "src/api-credit-recovery-inspection-coordinator.js",
-      "bytes": 8778,
-      "sha256": "5b4f87fe8343f62ad5e0d27044f7b35f3de863e3738e5d7400f7aac5b62981e7",
+      "bytes": 9721,
+      "sha256": "b34ba856ce4dbccd80b3fe3d53a83ae5d7885fe1c8f3c07e03954f4ad046f511",
       "format": "module"
     },
     {
@@ -2829,8 +2841,8 @@
     },
     {
       "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
-      "bytes": 85817,
-      "sha256": "28dd0f0471ede84a5272e543e4b74fb803b94bdd45b87b9361945a373aeb451c",
+      "bytes": 86623,
+      "sha256": "458d8d396c594a0c7f75a2d9285cfb2965d3bcae20f64bca7b1df013d32d95ba",
       "format": "module"
     },
     {
@@ -3170,6 +3182,12 @@
       "format": "module"
     },
     {
+      "path": "src/zenon/native-api-credit-funding-inspection.js",
+      "bytes": 1790,
+      "sha256": "59af0c6c382e68dc10b5c7218f96991c7e8acf26db4f6c3889619026dbc1d206",
+      "format": "module"
+    },
+    {
       "path": "src/zenon/native-api-credit-operator-key.js",
       "bytes": 4401,
       "sha256": "e1f744465e917a71690d6821607a215291ddefde0888d2928ff8e79a970026c9",
@@ -3189,8 +3207,8 @@
     },
     {
       "path": "src/zenon/native-api-credit-recovery-inspection-launcher.js",
-      "bytes": 4236,
-      "sha256": "32fb75a928fb84885bd42c3f24b7249798c2519313c33cbdce3a8f774d6e7c23",
+      "bytes": 4875,
+      "sha256": "c2fa519d3b21fcc88f1141d98bebdddf0a6a17a1b9cf81d8a371554f93fc8694",
       "format": "module"
     },
     {
