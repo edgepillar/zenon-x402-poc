@@ -2739,14 +2739,14 @@
     },
     {
       "path": "src/service-credit-funding-post-native-https-transport.js",
-      "bytes": 19852,
-      "sha256": "dde9061c11203687383366d9e668778c29d852b3d697d84e1cdced571d7d53a5",
+      "bytes": 22113,
+      "sha256": "1be2701c96fa7ed9188ab989ceeaaae726dbbe78d61abf10487b5ae4b0f2b21d",
       "format": "module"
     },
     {
       "path": "src/service-credit-funding-post-native-response.js",
-      "bytes": 7903,
-      "sha256": "b5084844ecf029445bc55efd0b9d0ef61b8c2e65424ea74a6dfb30941f9f676c",
+      "bytes": 8219,
+      "sha256": "459a92037fd817a5d9eca1500d32cf789818c5bee255ed7e76b1fac97fd9914f",
       "format": "module"
     },
     {
@@ -2795,6 +2795,12 @@
       "path": "src/service-credit-original-funding-grant.js",
       "bytes": 7995,
       "sha256": "61fd9aee09949462ae6fa0e1a0c0fd4e67f15f8c7be78612bfe9928559b6be70",
+      "format": "module"
+    },
+    {
+      "path": "src/service-credit-original-grant-http-binding.js",
+      "bytes": 7866,
+      "sha256": "23f27e79a16a32459dc3929ec0a8446d219324f616fd7027820540f3aaff8bac",
       "format": "module"
     },
     {

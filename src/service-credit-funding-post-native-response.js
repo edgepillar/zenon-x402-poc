@@ -25,7 +25,15 @@ const TOKEN = /^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$/;
  */
 export function createFundingPostNativeResponseCustody() {
   if (arguments.length !== 0) throw problem();
-  const bytes = ALLOC(64);
+  return createCustody(64);
+}
+/** Separate opt-in history-query profile. The original POST limit stays 64. */
+export function createOriginalFundingGrantNativeResponseCustody() {
+  if (arguments.length !== 0) throw problem();
+  return createCustody(8192);
+}
+function createCustody(maxBytes) {
+  const bytes = ALLOC(maxBytes);
   let tls = false, headers = null, status = null, expected = null, length = 0;
   let ended = false, requestClosed = false, socketClosed = false, taken = false, unknown = false;
   function refuse() { unknown = true; APPLY(FILL, bytes, [0]); throw problem(); }
@@ -58,7 +66,7 @@ export function createFundingPostNativeResponseCustody() {
         if (lower === 'content-length') {
           if (!/^(?:0|[1-9][0-9]*)$/.test(value)) refuse();
           bodyLength = Number(value);
-          if (!Number.isSafeInteger(bodyLength) || bodyLength > 64) refuse();
+          if (!Number.isSafeInteger(bodyLength) || bodyLength > maxBytes) refuse();
         }
         pairs.push(FREEZE([lower, value]));
       }
@@ -73,7 +81,7 @@ export function createFundingPostNativeResponseCustody() {
           || typeof chunk !== 'object' || chunk === null || IS_PROXY(chunk)
           || PROTOTYPE(chunk) !== BUFFER || IS_SHARED(APPLY(ARRAY_BUFFER, chunk, []))) refuse();
       const count = APPLY(BYTE_LENGTH, chunk, []);
-      if (count > 64 || length + count > expected) refuse();
+      if (count > maxBytes || length + count > expected) refuse();
       const names = KEYS(chunk);
       if (names.length !== count) refuse();
       for (let i = 0; i < names.length; i++) {
@@ -112,7 +120,7 @@ export function createFundingPostNativeResponseCustody() {
       : ended && requestClosed && socketClosed ? 'READY' : 'WAITING',
       tls, headersAccepted: headers !== null, expectedBytes: expected, receivedBytes: length,
       ended, requestClosed, socketClosed, taken, unknown,
-      maxResponseBodyBytes: 64, nativeEventsAuthenticatedByThisComponent: false, authority: 'NONE' });
+      maxResponseBodyBytes: maxBytes, nativeEventsAuthenticatedByThisComponent: false, authority: 'NONE' });
   });
   const takeResponse = FREEZE(function takeResponse() {
     if (arguments.length !== 0) refuse();

@@ -3,6 +3,7 @@ import { OutgoingMessage } from 'node:http';
 import { isIP } from 'node:net';
 import { types as utilTypes } from 'node:util';
 import { captureServiceCreditBoundedHttpsIngressLimits } from './service-credit-bounded-https-ingress-limits.js';
+import { captureOriginalFundingGrantSelectedRoute, captureOriginalFundingGrantHttpsRequest } from './service-credit-original-grant-http-binding.js';
 import {
   captureOfficialUpfrontHttpsRoute,
   captureOfficialUpfrontHttpsRequest,
@@ -1044,7 +1045,7 @@ function scanRawHeaders(rawHeaders, authority, limits) {
   }
 }
 
-function captureRequestAdmission(request, authority, limits, allowedTargets, officialRoute) {
+function captureRequestAdmission(request, authority, limits, allowedTargets, officialRoute, originalGrantRoute) {
   try {
     if (
       request === null
@@ -1072,6 +1073,11 @@ function captureRequestAdmission(request, authority, limits, allowedTargets, off
         captureOfficialUpfrontHttpsRequest(request, officialRoute);
         selectedMethod = true;
       } catch { selectedMethod = false; }
+    }
+    if (originalGrantRoute !== null) {
+      selectedMethod = false;
+      try { captureOriginalFundingGrantHttpsRequest(request, originalGrantRoute); selectedMethod = true; }
+      catch { selectedMethod = false; }
     }
     const protocolValid = selectedMethod
       && typeof descriptors.url.value === 'string'
@@ -1140,7 +1146,13 @@ export function createServiceCreditBoundedHttpsIngressOwnerForOfficialX402(optio
   return createBoundedHttpsIngressOwner(options, true);
 }
 
-function createBoundedHttpsIngressOwner(options, officialProfile) {
+/** An independent, fixed GET history endpoint. Never widens the POST factory. */
+export function createServiceCreditBoundedHttpsIngressOwnerForOriginalFundingGrant(options, route) {
+  if (arguments.length !== 2) throw failure(CODE.invalidConfiguration);
+  return createBoundedHttpsIngressOwner(options, false, captureOriginalFundingGrantSelectedRoute(route));
+}
+
+function createBoundedHttpsIngressOwner(options, officialProfile, originalGrantRoute = null) {
   let configuration = exactDataObject(options, CONFIGURATION_KEYS);
   const origin = configuration === null ? null : captureOrigin(configuration.origin);
   const requestTargets = configuration === null
@@ -1166,6 +1178,10 @@ function createBoundedHttpsIngressOwner(options, officialProfile) {
     || deadlineRuntime === null
     || !safeCallable(configuration.httpsServerFactory, true)
   ) throw failure(CODE.invalidConfiguration);
+
+  if (originalGrantRoute !== null && (origin.canonicalOrigin !== originalGrantRoute.origin
+      || requestTargets.length !== 1 || requestTargets[0] !== originalGrantRoute.requestTarget))
+    throw failure(CODE.invalidConfiguration);
 
   let officialRoute = null;
   if (officialProfile) {
@@ -3178,6 +3194,7 @@ function createBoundedHttpsIngressOwner(options, officialProfile) {
       limits,
       allowedTargets,
       officialRoute,
+      originalGrantRoute,
     );
     if (!sameRequestAdmission(requestState.requestAdmission, currentAdmission)) {
       return 'DRIFT';
@@ -3388,6 +3405,7 @@ function createBoundedHttpsIngressOwner(options, officialProfile) {
       limits,
       allowedTargets,
       officialRoute,
+      originalGrantRoute,
     );
     if (requestAdmission === null) {
       increment('requestsRejected');

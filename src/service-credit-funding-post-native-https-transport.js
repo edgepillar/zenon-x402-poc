@@ -4,7 +4,9 @@ import { request as nativeRequest } from 'node:https';
 import { OutgoingMessage } from 'node:http';
 import { Socket, isIP } from 'node:net';
 import { types as utilTypes } from 'node:util';
-import { createFundingPostNativeResponseCustody } from './service-credit-funding-post-native-response.js';
+import { createFundingPostNativeResponseCustody, createOriginalFundingGrantNativeResponseCustody } from './service-credit-funding-post-native-response.js';
+import { captureOriginalFundingGrantSelectedRoute, createOriginalFundingGrantWireRequest,
+  captureOriginalFundingGrantHttpsRequest, captureOriginalFundingGrantHttpResponse } from './service-credit-original-grant-http-binding.js';
 import { createNativeHttpsClientCloseOwner } from './service-credit-native-client-close-owner.js';
 import { startFundingPostReadableFlow } from './service-credit-funding-post-readable-flow.js';
 import { validateApiCreditWireOwnerGuard, requireCurrentApiCreditWireOwner, inspectApiCreditWireOwnerGuard } from './api-credit-wire-owner-guard.js';
@@ -51,12 +53,19 @@ export function createFundingPostNativeHttpsTransportWithApiCreditWireOwner(conf
   if (arguments.length !== 2) fail('configuration_rejected'); validateApiCreditWireOwnerGuard(wireOwner);
   return createTransport(configuration, wireOwner);
 }
-function createTransport(configuration, wireOwner) {
+/** One explicit original-payment history read. No retry, payment signature,
+ * grant issuance, store opening or implicit owner close is available. */
+export function createOriginalFundingGrantNativeHttpsTransport(configuration, route) {
+  if (arguments.length !== 2) fail('configuration_rejected');
+  return createTransport(configuration, null, captureOriginalFundingGrantSelectedRoute(route));
+}
+function createTransport(configuration, wireOwner, queryRoute = null) {
   let c, resource, ca, hostname, authority;
   try {
     c = record(configuration, ['resourceUrl', 'ca', 'maxRequestStarts',
       'requestDeadlineMs', 'handshakeDeadlineMs', 'closeGraceMs']);
     resource = resourceUrl(c.resourceUrl);
+    if (queryRoute !== null && (resource !== queryRoute.queryUrl || c.maxRequestStarts !== 1)) fail('configuration_rejected');
     const url = new URL(resource); authority = url.host;
     hostname = url.hostname.startsWith('[') ? url.hostname.slice(1, -1) : url.hostname;
     ca = copyCa(c.ca);
@@ -122,6 +131,12 @@ function createTransport(configuration, wireOwner) {
       if (unknown || closing !== null) fail('outcome_unknown');
       const data = entry.custody.takeResponse();
       try {
+        if (queryRoute !== null) {
+          const rawHeaders = data.headerPairs.flat();
+          entry.resolve(captureOriginalFundingGrantHttpResponse({ statusCode: data.statusCode, rawHeaders,
+            body: data.body.toString('utf8') }, entry.originalFunding));
+          return;
+        }
         // Copy into response-owned bytes before clearing the detached handoff.
         const body = new Uint8Array(data.body);
         const headers = new HEADERS(data.headerPairs);
@@ -152,16 +167,22 @@ function createTransport(configuration, wireOwner) {
     catch (cause) { stop(entry, stage + '_REJECTED', cause); }
   }
   const fetchImpl = FREEZE(function fetchImpl(url, options) {
-    let headers, signal, remainingMs = DEADLINE;
+    let headers, signal, originalFunding = null, remainingMs = DEADLINE;
     try {
       if (arguments.length !== 2 || unknown || closing !== null || entries.size !== 0 || starts >= MAX_STARTS
           || url !== URL_VALUE) fail('input_rejected');
       const o = record(options, ['method', 'redirect', 'cache', 'credentials', 'headers', 'signal']);
-      if (o.method !== 'POST' || o.redirect !== 'manual' || o.cache !== 'no-store' || o.credentials !== 'omit')
+      if (o.method !== (queryRoute === null ? 'POST' : 'GET') || o.redirect !== 'manual' || o.cache !== 'no-store' || o.credentials !== 'omit')
         fail('input_rejected');
       if (typeof o.headers !== 'object' || o.headers === null || IS_PROXY(o.headers)
           || PROTO(o.headers) !== Object.prototype) fail('input_rejected');
       const keys = KEYS(o.headers);
+      if (queryRoute !== null) {
+        const h = record(o.headers, ['Content-Length', 'Original-Funding-Query', 'Authorization']);
+        const captured = captureOriginalFundingGrantHttpsRequest({ method: 'GET', url: queryRoute.requestTarget, httpVersion: '1.1',
+          rawHeaders: ['Host', AUTHORITY, 'Connection', 'close', ...Object.entries(h).flat()] }, queryRoute);
+        originalFunding = captured.query.originalFunding; headers = h;
+      } else {
       const h = record(o.headers, keys.length === 1 ? ['Content-Length'] : ['Content-Length', 'PAYMENT-SIGNATURE']);
       if (h['Content-Length'] !== '0') fail('input_rejected');
       headers = { 'Content-Length': '0' };
@@ -171,6 +192,7 @@ function createTransport(configuration, wireOwner) {
             || !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(payment))
           fail('input_rejected');
         headers['PAYMENT-SIGNATURE'] = payment;
+      }
       }
       signal = o.signal;
       if (typeof signal !== 'object' || signal === null || IS_PROXY(signal) || PROTO(signal) !== SIGNAL
@@ -190,7 +212,8 @@ function createTransport(configuration, wireOwner) {
     APPLY(THEN, promise, [() => undefined, () => undefined]);
     const entry = { resolve, reject, done: false, stopping: false, request: null, socket: null,
       socketSeen: false, socketStopRequested: false, requestClosed: false, socketClosed: false, signal, signalAttached: false,
-      deadline: null, handshake: null, custody: createFundingPostNativeResponseCustody(), onAbort: null,
+      deadline: null, handshake: null, originalFunding,
+      custody: queryRoute === null ? createFundingPostNativeResponseCustody() : createOriginalFundingGrantNativeResponseCustody(), onAbort: null,
       responseFlowStarted: false, responseFlowStarting: false };
     entries.add(entry); // Retain ownership before the native constructor can reenter.
     entry.onAbort = () => stop(entry, 'REQUEST_ABORT');
@@ -198,7 +221,7 @@ function createTransport(configuration, wireOwner) {
       APPLY(ADD_EVENT, signal, ['abort', entry.onAbort, { once: true }]); entry.signalAttached = true;
       if (APPLY(SIGNAL_ABORTED, signal, []) !== false) throw error('outcome_unknown');
       entry.request = REQUEST(URL_VALUE, {
-        method: 'POST', headers: { ...headers, Host: AUTHORITY, Connection: 'close' },
+        method: queryRoute === null ? 'POST' : 'GET', headers: { ...headers, Host: AUTHORITY, Connection: 'close' },
         agent: false, rejectUnauthorized: true, ca, servername: isIP(HOSTNAME) ? '' : HOSTNAME,
         minVersion: 'TLSv1.3', maxVersion: 'TLSv1.3', ALPNProtocols: ['http/1.1'],
         maxHeaderSize: 16384, insecureHTTPParser: false,
@@ -264,7 +287,7 @@ function createTransport(configuration, wireOwner) {
       }]);
       entry.deadline = timer(() => stop(entry, 'REQUEST_DEADLINE'), remainingMs);
       if (entry.stopping || closing !== null) throw error('outcome_unknown');
-      entry.request.end(); // The only end entry: fixed POST with zero body.
+      entry.request.end(); // The only end entry: selected method with zero body.
       lastObservedStage = 'REQUEST_ENDED';
     } catch (cause) { stop(entry, 'REQUEST_CREATE_OR_END_FAILED', cause); }
     finally { url = null; options = null; headers = null; signal = null; }
@@ -292,7 +315,15 @@ function createTransport(configuration, wireOwner) {
       close: state, defaultEnabled: false,
       nativeImplementation: true, nativeRuntimeQualified: false, authority: 'NONE' });
   });
-  return FREEZE({ fetchImpl, close, snapshot });
+  if (queryRoute === null) return FREEZE({ fetchImpl, close, snapshot });
+  const read = FREEZE(function read(query, proof, signal) {
+    try {
+      if (arguments.length !== 3) fail('input_rejected');
+      const wire = createOriginalFundingGrantWireRequest(queryRoute, query, proof);
+      return fetchImpl(wire.url, { method: 'GET', redirect: 'manual', cache: 'no-store', credentials: 'omit', headers: wire.headers, signal });
+    } catch { return rejected('input_rejected'); }
+  });
+  return FREEZE({ read, close, snapshot });
 }
 function record(value, fields) {
   if (typeof value !== 'object' || value === null || IS_PROXY(value)
