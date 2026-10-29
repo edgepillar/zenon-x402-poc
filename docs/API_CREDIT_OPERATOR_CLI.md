@@ -13,7 +13,7 @@ The command has not been executed as part of its source/DATA qualification.
 The existing `buyer-cli.js` modes retain their separate admission contracts.
 
 The same source candidate also has an explicit original-funding grant-history
-query mode, with two distinct owned FIFO ends and no key or database descriptor:
+query mode, with two distinct owned FIFO ends and no key descriptor:
 
 ```sh
 node src/api-credit-cli.js --funding-grant-query-fd 3 --output-fd 6 --bootstrap-ms 1000
@@ -23,7 +23,12 @@ Its canonical input retains the original checkpoint/pins, exact grant selection,
 ready read proof and selected provider CA. One query and its own CLOSED receipt
 precede result output; UNKNOWN retains uncertainty and spending reservations.
 It is source/DATA-qualified only; the native CLI has not been executed. See the
-[query contract](ORIGINAL_FUNDING_GRANT_QUERY_CLI.md).
+[query contract](ORIGINAL_FUNDING_GRANT_QUERY_CLI.md). An explicit version-two
+input instead selects only existing spending custody and independently pinned
+original/full-profile expectations. Its source reader closes that same known
+file before transport admission; it opens no payer V6 or key. The complete
+[stored-profile contract](STORED_GRANT_QUERY_RECOVERY.md) keeps UNKNOWN and
+spending reservations unchanged.
 
 For RUN, the operator supplies four distinct POSIX FIFO ends with exclusive ownership:
 

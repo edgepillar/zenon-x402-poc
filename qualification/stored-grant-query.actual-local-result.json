@@ -1,0 +1,3590 @@
+{
+  "qualification": "G2_API_CREDIT_STORED_GRANT_QUERY_DATA",
+  "status": "PASS",
+  "recordedAtUTC": "2026-10-29T16:50:28.466610+00:00",
+  "passed": 689,
+  "failed": 0,
+  "newControls": 41,
+  "reexecutedRelevantDataControls": 648,
+  "retainedEarlierTurnExactControls": 231,
+  "aggregateVerifiedControls": 920,
+  "cases": [
+    {
+      "id": "grant-custody-record-binds-existing-proof-to-the-exact-signed-context",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-custody-record-keeps-proof-bytes-without-verifying-or-replacing-them",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-custody-capture-requires-independently-matching-original-pins",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-custody-capture-rejects-another-checkpoint-or-funding-origin",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-custody-record-requires-reserved-exposure-and-a-signed-context",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-custody-record-rejects-a-foreign-payment-or-reservation-digest",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-custody-inspection-preserves-records-after-unknown-and-spent-status",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-custody-inspection-rejects-noncanonical-extra-and-tampered-records",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-custody-projection-is-keyless-and-leaves-reservation-authority-unchanged",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-custody-projection-requires-all-four-independent-pins",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-custody-capture-refuses-getter-and-proxy-input-without-running-hooks",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-custody-profile-byte-bound-and-query-namespace-remain-closed",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-custody-write-readback-precedes-local-commit-and-first-send",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-custody-fixed-product-commit-without-profile-never-enters-store-or-child",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-custody-invalid-profile-is-refused-before-one-use-write-is-claimed",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-custody-no-local-commit-or-send-is-possible-before-preparation",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-custody-retention-and-funding-submission-are-each-one-use",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-custody-lost-retain-ack-preserves-stored-profile-and-blocks-commit",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-custody-promise-retain-is-not-a-synchronous-write-receipt",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-custody-opaque-thenable-receipts-never-run-then-hooks",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-custody-readback-mismatch-blocks-local-commit",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-custody-changed-history-before-send-blocks-wire-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-custody-stale-owner-after-read-prevents-child-send",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-custody-nonvoid-owner-check-cannot-be-a-current-epoch-receipt",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-custody-commit-rejection-does-not-rewrite-custody-or-retry",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-custody-funding-response-loss-keeps-proof-and-one-original-send",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-custody-returned-unknown-funding-cannot-open-another-operation",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-custody-healthy-service-and-handoff-preserve-existing-child-results",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-custody-inspection-does-not-export-proof-or-private-profile-text",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-custody-close-is-cached-and-only-delegates-the-original-owner",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-custody-close-during-prepare-retains-late-original-without-commit",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-custody-nonvoid-close-does-not-repair-a-clean-looking-child-view",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-custody-active-retain-reentry-cannot-start-a-competing-send",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-custody-API-command-codec-carries-profile-without-widening-legacy",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-custody-API-command-result-does-not-echo-proof-or-query-profile",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-custody-profile-cannot-be-smuggled-on-submit-or-recovery-commands",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-custody-legacy-API-commit-codec-remains-readable-for-component-clients",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-custody-unobservable-borrower-prevents-competing-parent-close",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-custody-reentrant-close-waits-for-synchronous-borrower-return",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-custody-reentrant-close-with-unobservable-return-rejects-without-parent-close",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-query-cli-admits-two-distinct-owned-pipes-with-no-key-or-store",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-query-cli-preserves-the-existing-funding-history-mode",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-query-cli-requires-the-existing-plain-runtime-profile",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-query-profile-is-one-use-and-exposes-no-proof-or-ca",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-query-profile-release-before-consume-retains-no-entry-authority",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-query-profile-rejects-noncanonical-and-extra-fields",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-query-profile-rejects-changed-independent-checkpoint-pins",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-query-profile-rejects-another-original-transaction",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-query-profile-rejects-network-chain-and-amount-drift",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-query-profile-rejects-asset-payee-holder-drift",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-query-profile-rejects-resource-requirement-intent-funding-drift",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-query-profile-retained-query-digest-covers-offer-and-capability",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-query-profile-does-not-accept-a-service-proof-scope",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-query-profile-does-not-accept-a-foreign-proof-request",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-query-profile-has-no-url-alias-or-ca-fallback",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-query-profile-caps-combined-request-close-budget",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-query-owner-publishes-history-only-after-one-read-and-genuine-close",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-query-owner-cannot-be-reused-after-success",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-query-owner-recorded-grant-remains-history-after-close",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-query-owner-waits-for-the-selected-close-promise",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-query-owner-void-close-is-not-the-native-close-contract",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-query-owner-boolean-close-is-not-the-native-close-contract",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-query-owner-rejects-a-wrong-closed-receipt",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-query-owner-requires-fresh-closed-counts",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-query-owner-sticky-transport-unknown-cannot-publish",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-query-owner-rechecks-after-timer-cancellation",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-query-owner-timer-cancellation-must-return-void",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-query-owner-timer-cancellation-error-keeps-ownership",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-query-owner-expiry-does-not-compete-with-a-pending-read",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-query-owner-late-close-cannot-repair-an-expired-verdict",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-query-owner-unknown-constructor-is-not-closed-by-another-owner",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-query-owner-proxy-constructor-does-not-run-traps",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-query-owner-opaque-read-does-not-enter-thenable-or-competing-close",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-query-owner-read-rejection-enters-one-known-owner-close",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-query-owner-another-funding-response-cannot-match",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-query-owner-early-clock-regression-refuses-before-transport",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-query-owner-expiry-at-close-boundary-is-not-a-late-success",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-query-owner-synchronous-timer-expiry-never-opens-transport",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-query-owner-outer-guard-expiry-vetoes-a-valid-result",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-query-owner-close-rejection-is-not-retried",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-query-output-cannot-clear-reservations-or-add-dispatch",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-query-coordinator-writes-one-closed-history-and-closes-fifos",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-query-coordinator-bootstrap-refusal-opens-no-query",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-query-coordinator-mismatched-checkpoint-result-is-unknown",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-query-coordinator-mismatched-request-result-is-unknown",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-query-coordinator-writes-nothing-before-a-pending-native-close",
+      "status": "PASS"
+    },
+    {
+      "id": "grant-query-coordinator-expiry-keeps-pending-query-and-discards-late-history",
+      "status": "PASS"
+    },
+    {
+      "id": "late-inspection-clean-payer-stop-is-joined-before-the-single-cache-output",
+      "status": "PASS"
+    },
+    {
+      "id": "late-inspection-expired-query-retains-the-borrowed-backend-until-its-original-payer-stop-completes",
+      "status": "PASS"
+    },
+    {
+      "id": "late-inspection-rejected-payer-stop-retains-backend-without-a-competing-close-or-output",
+      "status": "PASS"
+    },
+    {
+      "id": "late-inspection-nonvoid-payer-stop-cannot-release-the-borrowed-backend-even-with-a-clean-looking-view",
+      "status": "PASS"
+    },
+    {
+      "id": "late-inspection-void-payer-stop-without-a-fresh-released-view-keeps-backend-held",
+      "status": "PASS"
+    },
+    {
+      "id": "late-inspection-known-payer-open-after-expiry-is-closed-once-without-querying-or-reopening",
+      "status": "PASS"
+    },
+    {
+      "id": "late-inspection-rejected-unreturned-payer-open-does-not-invent-a-raw-backend-close",
+      "status": "PASS"
+    },
+    {
+      "id": "late-inspection-output-completion-after-expiry-cannot-change-unknown-or-repeat-the-query",
+      "status": "PASS"
+    },
+    {
+      "id": "late-inspection-output-rejection-after-expiry-keeps-the-original-query-and-history",
+      "status": "PASS"
+    },
+    {
+      "id": "late-inspection-channel-drain-expiry-is-not-upgraded-by-a-later-clean-channel-stop",
+      "status": "PASS"
+    },
+    {
+      "id": "late-inspection-nonvoid-channel-stop-cannot-become-success-or-retry-a-complete-query",
+      "status": "PASS"
+    },
+    {
+      "id": "late-inspection-exhausted-grant-and-lost-client-response-stay-unchanged-through-late-close",
+      "status": "PASS"
+    },
+    {
+      "id": "legacy-default-16-and-maximum-64-are-preserved",
+      "status": "PASS"
+    },
+    {
+      "id": "explicit-api-profile-has-128-commands-with-the-same-byte-and-close-limits",
+      "status": "PASS"
+    },
+    {
+      "id": "api-limit-capture-does-not-enter-accessors-or-proxies",
+      "status": "PASS"
+    },
+    {
+      "id": "funding-and-both-recovery-factories-refuse-api-limits-before-child-capture",
+      "status": "PASS"
+    },
+    {
+      "id": "legacy-channel-refuses-api-limits-without-reserving-the-streams",
+      "status": "PASS"
+    },
+    {
+      "id": "invalid-api-opening-budget-refuses-before-the-client-opener",
+      "status": "PASS"
+    },
+    {
+      "id": "api-opening-reserves-the-same-streams-before-the-fixed-client-opener",
+      "status": "PASS"
+    },
+    {
+      "id": "one-funding-one-grant-and-100-distinct-requests-plus-exact-replay-cross-the-64-command-boundary",
+      "status": "PASS"
+    },
+    {
+      "id": "model-state-rehydration-preserves-100-debits-and-refuses-another-execution-for-the-exact-request",
+      "status": "PASS"
+    },
+    {
+      "id": "unknown-funding-stops-before-handoff-and-retains-the-spending-reservation",
+      "status": "PASS"
+    },
+    {
+      "id": "foreign-grant-refuses-without-service-debit-or-execution",
+      "status": "PASS"
+    },
+    {
+      "id": "changed-body-under-the-same-request-id-cannot-produce-a-second-debit",
+      "status": "PASS"
+    },
+    {
+      "id": "maximum-128-commands-including-close-remains-bounded-at-the-session-and-host",
+      "status": "PASS"
+    },
+    {
+      "id": "command-129-is-refused-before-admission-and-retains-the-last-returned-result",
+      "status": "PASS"
+    },
+    {
+      "id": "legacy-owned-opening-still-uses-the-original-mode-and-16-command-default",
+      "status": "PASS"
+    },
+    {
+      "id": "duplicate-command-id-does-not-reenter-preparation",
+      "status": "PASS"
+    },
+    {
+      "id": "output-loss-retains-the-original-without-committing-or-submitting-funding",
+      "status": "PASS"
+    },
+    {
+      "id": "file-profile-keeps-create-and-existing-ownership-selections-round-trippable",
+      "status": "PASS"
+    },
+    {
+      "id": "file-capacity-includes-10-GiB-floor-all-declared-reserves-and-main-plus-journal-allocation",
+      "status": "PASS"
+    },
+    {
+      "id": "file-profile-rejects-relative-roots-alternate-devices-and-unbounded-file-caps",
+      "status": "PASS"
+    },
+    {
+      "id": "selection-captures-existing-key-identity-policy-and-trust-without-calling-the-key-or-clock",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-mutation-after-selection-cannot-replace-the-captured-recipient-asset-or-transport",
+      "status": "PASS"
+    },
+    {
+      "id": "selection-release-clears-only-owned-trust-copies-and-cannot-refund-consumption",
+      "status": "PASS"
+    },
+    {
+      "id": "selection-rejects-account-asset-and-overlapping-store-roots-before-any-key-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "selection-rejects-nested-accessors-and-unselected-function-capabilities-without-invoking-them",
+      "status": "PASS"
+    },
+    {
+      "id": "unconsumed-released-or-forged-selection-cannot-enter-the-fixed-native-binding",
+      "status": "PASS"
+    },
+    {
+      "id": "application-close-revokes-the-budget-before-physical-close-and-caches-the-same-stop",
+      "status": "PASS"
+    },
+    {
+      "id": "a-pending-wallet-stop-prevents-physical-close-without-marking-a-normal-close-as-held",
+      "status": "PASS"
+    },
+    {
+      "id": "active-preparation-close-retains-unknown-budget-and-never-forces-the-physical-file-closed",
+      "status": "PASS"
+    },
+    {
+      "id": "physical-close-exception-is-held-and-is-not-retried",
+      "status": "PASS"
+    },
+    {
+      "id": "a-nonvoid-physical-close-or-still-open-database-cannot-become-clean-close",
+      "status": "PASS"
+    },
+    {
+      "id": "logical-revoke-refusal-still-stops-the-existing-client-and-holds-physical-close",
+      "status": "PASS"
+    },
+    {
+      "id": "fresh-view-loss-after-close-latches-held-and-never-reopens-or-retries",
+      "status": "PASS"
+    },
+    {
+      "id": "unknown-funding-retains-its-original-budget-and-open-file-under-application-close",
+      "status": "PASS"
+    },
+    {
+      "id": "one-grant-100-request-and-exact-replay-command-flow-joins-the-spending-file-close-owner",
+      "status": "PASS"
+    },
+    {
+      "id": "stale-file-owner-is-refused-before-preparation-or-reserving-another-original",
+      "status": "PASS"
+    },
+    {
+      "id": "owner-epoch-is-rechecked-before-service-even-after-the-budget-is-spent",
+      "status": "PASS"
+    },
+    {
+      "id": "a-nonvoid-current-owner-check-cannot-authorize-an-operation",
+      "status": "PASS"
+    },
+    {
+      "id": "the-complete-operational-capture-is-inert-and-retains-the-exact-policy-and-one-post-budget",
+      "status": "PASS"
+    },
+    {
+      "id": "missing-or-changed-custody-policy-is-refused-before-selection-can-escape",
+      "status": "PASS"
+    },
+    {
+      "id": "relative-traversing-and-nondirect-checkpoint-paths-refuse-before-any-key-call",
+      "status": "PASS"
+    },
+    {
+      "id": "funding-cannot-select-a-second-post-or-another-resource",
+      "status": "PASS"
+    },
+    {
+      "id": "service-origin-count-concurrency-and-aggregate-deadline-are-bound-before-opening",
+      "status": "PASS"
+    },
+    {
+      "id": "noninteger-negative-zero-and-overlong-budgets-cannot-reach-native-opening",
+      "status": "PASS"
+    },
+    {
+      "id": "official-asset-context-and-challenge-capabilities-are-validated-without-calling-them",
+      "status": "PASS"
+    },
+    {
+      "id": "material-cursor-public-bytes-and-attempt-limits-are-validated-without-a-work-search",
+      "status": "PASS"
+    },
+    {
+      "id": "funding-and-service-ca-bytes-must-match-before-selection-is-registered",
+      "status": "PASS"
+    },
+    {
+      "id": "shared-and-extended-ca-buffers-are-refused-without-clearing-borrowed-input",
+      "status": "PASS"
+    },
+    {
+      "id": "duplicate-read-peers-cannot-be-admitted-as-two-independent-endpoint-owners",
+      "status": "PASS"
+    },
+    {
+      "id": "read-owner-budgets-use-the-same-native-timing-grammar",
+      "status": "PASS"
+    },
+    {
+      "id": "public-read-selection-rejects-localhost-private-and-documentation-addresses",
+      "status": "PASS"
+    },
+    {
+      "id": "the-public-route-predicate-preserves-canonical-host-path-and-ipv4-rejection",
+      "status": "PASS"
+    },
+    {
+      "id": "local-qualification-is-a-separate-explicit-grammar-and-never-a-public-fallback",
+      "status": "PASS"
+    },
+    {
+      "id": "read-route-and-key-proxies-are-refused-without-entering-proxy-traps",
+      "status": "PASS"
+    },
+    {
+      "id": "accessor-key-methods-and-missing-sdk-methods-are-refused-without-key-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "a-proxy-day-capability-is-rejected-before-isFrozen-can-enter-its-traps",
+      "status": "PASS"
+    },
+    {
+      "id": "matching-mutation-of-both-owned-ca-buffers-cannot-change-admitted-trust",
+      "status": "PASS"
+    },
+    {
+      "id": "one-sided-ca-mutation-is-rechecked-before-a-consumed-selection-can-open-the-file",
+      "status": "PASS"
+    },
+    {
+      "id": "key-method-shape-is-rechecked-at-consumption-without-constructing-an-owner",
+      "status": "PASS"
+    },
+    {
+      "id": "trailing-newlines-cannot-pass-path-or-symbol-full-byte-admission",
+      "status": "PASS"
+    },
+    {
+      "id": "fixed-product-capture-binds-one-origin-network-asset-recipient-and-offer-without-key-or-clock-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "product-version-and-closed-input-shape-are-required",
+      "status": "PASS"
+    },
+    {
+      "id": "a-product-caller-cannot-supply-its-own-challenge-validator-or-loader",
+      "status": "PASS"
+    },
+    {
+      "id": "the-fixed-offer-must-match-the-spending-network-and-asset",
+      "status": "PASS"
+    },
+    {
+      "id": "the-first-product-has-exactly-one-spending-recipient",
+      "status": "PASS"
+    },
+    {
+      "id": "offer-amount-cannot-exceed-the-existing-payment-budget",
+      "status": "PASS"
+    },
+    {
+      "id": "a-foreign-funding-resource-cannot-select-the-fixed-product",
+      "status": "PASS"
+    },
+    {
+      "id": "multiple-offers-are-not-an-implicit-product-selection",
+      "status": "PASS"
+    },
+    {
+      "id": "the-selected-product-budgets-support-100-distinct-requests-and-an-exact-replay",
+      "status": "PASS"
+    },
+    {
+      "id": "malformed-oversized-and-noncanonical-wire-headers-refuse-before-acquisition",
+      "status": "PASS"
+    },
+    {
+      "id": "the-fixed-challenge-validator-accepts-only-the-captured-semantic-challenge",
+      "status": "PASS"
+    },
+    {
+      "id": "the-fixed-validator-refuses-accessors-and-proxies-without-entering-them",
+      "status": "PASS"
+    },
+    {
+      "id": "product-selection-consumption-is-one-use-and-lookalikes-have-no-brand",
+      "status": "PASS"
+    },
+    {
+      "id": "released-product-selection-cannot-be-consumed-and-clears-only-owned-ca-copies",
+      "status": "PASS"
+    },
+    {
+      "id": "the-existing-native-selection-still-rechecks-ca-and-key-shape-at-its-acquisition-boundary",
+      "status": "PASS"
+    },
+    {
+      "id": "a-forged-product-profile-cannot-bind-an-application",
+      "status": "PASS"
+    },
+    {
+      "id": "a-coherent-cheaper-offer-is-rejected-before-the-real-spending-gate-and-child-preparation",
+      "status": "PASS"
+    },
+    {
+      "id": "coherent-resource-metadata-drift-cannot-change-the-captured-offer",
+      "status": "PASS"
+    },
+    {
+      "id": "one-fixed-product-funding-grant-100-model-debits-and-exact-replay-use-the-actual-application-gate",
+      "status": "PASS"
+    },
+    {
+      "id": "fixed-product-pending-funding-keeps-unknown-budget-and-does-not-handoff-or-execute",
+      "status": "PASS"
+    },
+    {
+      "id": "changed-handoff-challenge-is-rejected-before-wallet-close-or-child-handoff",
+      "status": "PASS"
+    },
+    {
+      "id": "a-product-handoff-accessor-is-not-entered",
+      "status": "PASS"
+    },
+    {
+      "id": "the-product-wrapper-preserves-the-original-close-promise-and-ordered-file-release",
+      "status": "PASS"
+    },
+    {
+      "id": "late-preparation-after-product-close-cannot-start-a-second-offer-or-release-an-unknown-file",
+      "status": "PASS"
+    },
+    {
+      "id": "key-lease-construction-is-descriptor-only-and-the-handle-is-frozen",
+      "status": "PASS"
+    },
+    {
+      "id": "unclaimed-close-clears-once-and-returns-one-cached-receipt",
+      "status": "PASS"
+    },
+    {
+      "id": "revocation-precedes-unclaimed-clear-callbacks-and-blocks-a-late-native-claim",
+      "status": "PASS"
+    },
+    {
+      "id": "key-methods-cannot-enter-before-both-native-claim-and-wallet-binding",
+      "status": "PASS"
+    },
+    {
+      "id": "bound-key-methods-preserve-receiver-input-and-returned-data",
+      "status": "PASS"
+    },
+    {
+      "id": "a-raw-key-cannot-be-leased-again-even-after-its-first-close",
+      "status": "PASS"
+    },
+    {
+      "id": "copied-key-methods-do-not-forge-the-native-claim-brand",
+      "status": "PASS"
+    },
+    {
+      "id": "bare-legacy-keys-do-not-enter-the-lease-protocol-or-wallet-view",
+      "status": "PASS"
+    },
+    {
+      "id": "raw-key-accessors-and-prototype-proxies-are-rejected-without-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "sdk-prototype-method-lookup-retains-the-original-receiver",
+      "status": "PASS"
+    },
+    {
+      "id": "a-second-native-claim-and-a-second-wallet-binding-are-refused",
+      "status": "PASS"
+    },
+    {
+      "id": "claimed-close-delegates-to-the-original-wallet-stop-before-clearing",
+      "status": "PASS"
+    },
+    {
+      "id": "a-key-cleared-by-the-original-wallet-is-not-cleared-again-by-launcher-close",
+      "status": "PASS"
+    },
+    {
+      "id": "reentrant-launcher-close-joins-the-original-active-wallet-operation",
+      "status": "PASS"
+    },
+    {
+      "id": "claimed-without-returned-wallet-remains-held-and-never-direct-clears",
+      "status": "PASS"
+    },
+    {
+      "id": "a-late-wallet-is-stopped-once-without-upgrading-the-first-held-close",
+      "status": "PASS"
+    },
+    {
+      "id": "an-owner-close-exception-is-held-without-retrying-or-direct-clear",
+      "status": "PASS"
+    },
+    {
+      "id": "an-owner-thenable-is-not-assimilated",
+      "status": "PASS"
+    },
+    {
+      "id": "an-owner-close-promise-constructor-accessor-is-not-entered",
+      "status": "PASS"
+    },
+    {
+      "id": "a-clean-looking-owner-view-cannot-substitute-for-the-actual-clear-receipt",
+      "status": "PASS"
+    },
+    {
+      "id": "a-malformed-current-owner-view-preserves-unknown-after-one-returned-clear",
+      "status": "PASS"
+    },
+    {
+      "id": "raw-clear-throw-never-gets-another-clear-attempt",
+      "status": "PASS"
+    },
+    {
+      "id": "a-nonvoid-clear-return-is-not-a-clear-completion",
+      "status": "PASS"
+    },
+    {
+      "id": "an-unsupported-clear-promise-is-observed-only-to-suppress-its-native-rejection",
+      "status": "PASS"
+    },
+    {
+      "id": "a-clear-thenable-getter-is-never-entered",
+      "status": "PASS"
+    },
+    {
+      "id": "lease-inspection-exposes-no-key-material-and-closed-handles-cannot-reenter",
+      "status": "PASS"
+    },
+    {
+      "id": "a-previously-held-key-close-rejects-before-a-pending-wallet-stop-can-settle",
+      "status": "PASS"
+    },
+    {
+      "id": "held-during-wallet-stop-rejects-even-if-that-wallet-claims-a-clean-return",
+      "status": "PASS"
+    },
+    {
+      "id": "unknown-key-leases-have-a-finite-retained-owner-limit",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-argv-is-explicit-bounded-distinct-and-has-no-secret-default",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-argv-refuses-proxies-accessors-and-extra-properties-without-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-clock-uses-utc-day-numbers-required-by-the-durable-budget",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-bootstrap-is-canonical-keyless-data-without-an-sdk-or-key-placeholder",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-bootstrap-rejects-noncanonical-json-duplicate-properties-and-version-drift",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-bootstrap-rejects-secret-loader-clock-validator-and-module-fields",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-bootstrap-rejects-overlapping-roots-and-foreign-network-before-key-read",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-bootstrap-must-carry-a-bounded-public-ca-before-credential-acquisition",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-bootstrap-attaches-existing-key-once-and-detaches-owned-trust-copies",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-bootstrap-binding-rejects-replacement-prepared-data-and-released-selection",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-data-launch-orders-profile-credential-key-session-and-explicit-host",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-stage-guards-cannot-be-replayed-after-that-stage-or-session-admission",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-short-or-long-credential-is-wiped-without-entering-key-or-session",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-malformed-profile-bytes-never-start-credential-or-key-acquisition",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-profile-rejection-returns-only-sanitized-status-data",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-shared-credential-view-is-refused-before-the-key-port",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-native-factory-refusal-is-unknown-with-no-host-or-retry",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-foreign-thenable-is-not-assimilated-or-executed",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-expired-profile-is-wiped-when-it-arrives-and-never-opens-key-input",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-deadline-observed-after-synchronous-key-work-stops-the-known-late-owner",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-late-key-owner-is-stopped-once-without-opening-a-session-or-upgrading-unknown",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-session-entry-transfers-trust-release-to-that-opener-until-late-settlement",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-nonvoid-session-close-cannot-report-a-clean-cli-exit",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-input-stop-failure-remains-unknown-after-other-known-stops",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-host-ambiguity-does-not-authorize-another-host-session-or-key",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-closed-text-without-the-real-host-owner-observations-is-insufficient",
+      "status": "PASS"
+    },
+    {
+      "id": "operator-close-expiry-does-not-repeat-stop-or-upgrade-after-late-completion",
+      "status": "PASS"
+    },
+    {
+      "id": "missing-policy-and-empty-allowlists-fail-before-backend-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "amounts-use-exact-canonical-decimal-integers",
+      "status": "PASS"
+    },
+    {
+      "id": "per-payment-and-recipient-network-asset-limits-precede-writes",
+      "status": "PASS"
+    },
+    {
+      "id": "total-cap-includes-spent-and-outstanding-originals",
+      "status": "PASS"
+    },
+    {
+      "id": "daily-cap-carries-unknown-and-reserved-exposure-across-days",
+      "status": "PASS"
+    },
+    {
+      "id": "late-bound-observation-charges-its-day-without-freeing-total-budget",
+      "status": "PASS"
+    },
+    {
+      "id": "reopen-retains-counters-and-cannot-authorize-the-original-again",
+      "status": "PASS"
+    },
+    {
+      "id": "same-id-with-changed-original-is-never-a-new-reservation",
+      "status": "PASS"
+    },
+    {
+      "id": "a-new-payment-label-cannot-reserve-the-same-retained-original",
+      "status": "PASS"
+    },
+    {
+      "id": "two-live-workers-cannot-both-reserve-a-stale-account-snapshot",
+      "status": "PASS"
+    },
+    {
+      "id": "lost-reservation-ack-keeps-the-committed-original-and-latches-held",
+      "status": "PASS"
+    },
+    {
+      "id": "invalid-ack-and-promise-shaped-ack-cannot-escape-as-reservation-success",
+      "status": "PASS"
+    },
+    {
+      "id": "reentrant-close-after-cas-write-refuses-the-local-receipt",
+      "status": "PASS"
+    },
+    {
+      "id": "clock-rollback-and-terminal-downgrade-are-refused",
+      "status": "PASS"
+    },
+    {
+      "id": "changed-policy-corrupt-record-and-noncanonical-state-refuse-reopen",
+      "status": "PASS"
+    },
+    {
+      "id": "bounded-record-exhaustion-retains-all-originals",
+      "status": "PASS"
+    },
+    {
+      "id": "accessor-and-proxy-policy-values-are-refused-without-getter-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "actual-lifecycle-preparation-sees-the-reservation-before-child-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "actual-lifecycle-funding-bound-keeps-the-same-spend-and-original",
+      "status": "PASS"
+    },
+    {
+      "id": "actual-accepted-terms-are-not-replaced-by-a-cheaper-caller-claim",
+      "status": "PASS"
+    },
+    {
+      "id": "actual-payer-account-must-match-the-durable-budget-key",
+      "status": "PASS"
+    },
+    {
+      "id": "lost-reservation-ack-blocks-the-actual-lifecycle-before-preparation",
+      "status": "PASS"
+    },
+    {
+      "id": "existing-reservation-blocks-a-second-actual-preparation-after-reopen",
+      "status": "PASS"
+    },
+    {
+      "id": "a-new-label-cannot-reenter-actual-preparation-for-the-same-input",
+      "status": "PASS"
+    },
+    {
+      "id": "child-preparation-rejection-retains-unknown-exposure",
+      "status": "PASS"
+    },
+    {
+      "id": "close-during-funding-prevents-late-bound-from-upgrading-unknown",
+      "status": "PASS"
+    },
+    {
+      "id": "close-reentry-uses-one-owned-stop-promise",
+      "status": "PASS"
+    },
+    {
+      "id": "canonical-state-inspection-detaches-and-freezes-all-exposed-history",
+      "status": "PASS"
+    },
+    {
+      "id": "strict-transition-port-accepts-the-actual-reservation-owner-write-sequence",
+      "status": "PASS"
+    },
+    {
+      "id": "backend-transition-denies-removal-reordering-original-replacement-and-batches",
+      "status": "PASS"
+    },
+    {
+      "id": "backend-transition-cannot-reset-to-null-or-change-the-budget-policy",
+      "status": "PASS"
+    },
+    {
+      "id": "backend-transition-requires-the-next-revision-and-a-nondecreasing-day",
+      "status": "PASS"
+    },
+    {
+      "id": "spent-history-is-terminal-and-unknown-cannot-be-downgraded-to-reserved",
+      "status": "PASS"
+    },
+    {
+      "id": "new-reservations-must-start-reserved-on-the-current-record-day",
+      "status": "PASS"
+    },
+    {
+      "id": "create-and-open-selections-are-explicit-and-never-fall-back-to-create",
+      "status": "PASS"
+    },
+    {
+      "id": "ownership-capture-is-detached-and-account-bound",
+      "status": "PASS"
+    },
+    {
+      "id": "explicit-owner-handoff-fences-the-prior-worker-and-preserves-the-revision-floor",
+      "status": "PASS"
+    },
+    {
+      "id": "same-owner-label-still-requires-a-new-epoch-and-cannot-cross-store-scope",
+      "status": "PASS"
+    },
+    {
+      "id": "ownership-version-exhaustion-never-wraps-or-reduces-the-floor",
+      "status": "PASS"
+    },
+    {
+      "id": "hostile-profile-and-token-accessors-do-not-enter-a-callback",
+      "status": "PASS"
+    },
+    {
+      "id": "pending-funding-keeps-unknown-exposure-and-revokes-further-admission",
+      "status": "PASS"
+    },
+    {
+      "id": "malformed-bound-result-cannot-mark-the-budget-spent-or-grant-new-authority",
+      "status": "PASS"
+    },
+    {
+      "id": "lost-spent-ack-retains-the-actual-bound-budget-and-refuses-repreparation",
+      "status": "PASS"
+    },
+    {
+      "id": "single-original-admission-is-a-live-reservation-not-a-reopened-permit",
+      "status": "PASS"
+    },
+    {
+      "id": "single-original-refuses-both-reserved-and-unknown-with-new-id-and-digest",
+      "status": "PASS"
+    },
+    {
+      "id": "single-original-does-not-expire-unresolved-exposure-at-a-later-day",
+      "status": "PASS"
+    },
+    {
+      "id": "single-original-held-instance-cannot-switch-to-legacy-admission-or-observe-a-clear",
+      "status": "PASS"
+    },
+    {
+      "id": "single-original-retains-the-existing-generic-carry-forward-contract",
+      "status": "PASS"
+    },
+    {
+      "id": "single-original-spent-history-does-not-release-total-or-daily-limits",
+      "status": "PASS"
+    },
+    {
+      "id": "single-original-spent-history-keeps-id-and-original-digest-idempotence",
+      "status": "PASS"
+    },
+    {
+      "id": "single-original-cas-conflict-stops-a-second-live-reader-before-admission",
+      "status": "PASS"
+    },
+    {
+      "id": "single-original-lost-reservation-ack-is-not-a-new-preparation-on-reopen",
+      "status": "PASS"
+    },
+    {
+      "id": "single-original-reentrant-close-after-write-cannot-return-live-authority",
+      "status": "PASS"
+    },
+    {
+      "id": "single-original-keeps-the-existing-canonical-transition-and-storage-schema",
+      "status": "PASS"
+    },
+    {
+      "id": "single-original-missing-policy-arity-and-foreign-recipient-do-not-write",
+      "status": "PASS"
+    },
+    {
+      "id": "single-original-blocks-only-the-selected-account-policy-ledger",
+      "status": "PASS"
+    },
+    {
+      "id": "actual-api-credit-application-hardwires-single-original-admission",
+      "status": "PASS"
+    },
+    {
+      "id": "actual-application-refuses-preexisting-uncertainty-before-any-child-preparation",
+      "status": "PASS"
+    },
+    {
+      "id": "declared-preparation-result-loss-keeps-account-blocked-for-a-new-application",
+      "status": "PASS"
+    },
+    {
+      "id": "actual-application-lost-cas-ack-never-enters-preparation-before-or-after-reopen",
+      "status": "PASS"
+    },
+    {
+      "id": "two-actual-application-instances-share-one-cas-admission-before-child-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "close-and-late-preparation-do-not-release-the-record-or-admit-a-replacement",
+      "status": "PASS"
+    },
+    {
+      "id": "reopened-spent-history-alone-never-authorizes-commit-or-funding-dispatch",
+      "status": "PASS"
+    },
+    {
+      "id": "command-data-cannot-disable-single-original-admission-with-an-extra-flag",
+      "status": "PASS"
+    },
+    {
+      "id": "inspection-argv-has-two-explicit-distinct-pipes-and-no-wallet-key-slot",
+      "status": "PASS"
+    },
+    {
+      "id": "inspection-profile-captures-independent-exact-original-before-native-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "inspection-profile-has-no-key-loader-transport-module-or-dispatch-selector",
+      "status": "PASS"
+    },
+    {
+      "id": "inspection-profile-rejects-noncanonical-wire-altered-pins-and-foreign-grant",
+      "status": "PASS"
+    },
+    {
+      "id": "inspection-profile-rejects-path-sidecar-aliases-and-oversized-or-missing-proof",
+      "status": "PASS"
+    },
+    {
+      "id": "inspection-profile-release-and-lookalikes-cannot-restore-native-authority",
+      "status": "PASS"
+    },
+    {
+      "id": "inspection-owner-reuses-exact-checkpoint-and-closes-payer-before-backend-once",
+      "status": "PASS"
+    },
+    {
+      "id": "inspection-redaction-keeps-cache-and-absence-powerless-and-excludes-extra-payloads",
+      "status": "PASS"
+    },
+    {
+      "id": "inspection-owner-read-failure-still-closes-proven-quiescent-owners-without-output",
+      "status": "PASS"
+    },
+    {
+      "id": "inspection-owner-different-checkpoint-after-query-refuses-history-result",
+      "status": "PASS"
+    },
+    {
+      "id": "inspection-owner-unreturned-payer-does-not-close-its-borrowed-backend",
+      "status": "PASS"
+    },
+    {
+      "id": "inspection-owner-invalid-opening-promise-does-not-assimilate-a-foreign-thenable",
+      "status": "PASS"
+    },
+    {
+      "id": "inspection-owner-failed-or-nonvoid-payer-close-retains-the-backend",
+      "status": "PASS"
+    },
+    {
+      "id": "inspection-owner-backend-close-failure-is-never-retried",
+      "status": "PASS"
+    },
+    {
+      "id": "inspection-owner-late-known-payer-is-cleaned-but-expired-scope-never-emits-history",
+      "status": "PASS"
+    },
+    {
+      "id": "inspection-coordinator-decodes-before-native-and-writes-one-redacted-record",
+      "status": "PASS"
+    },
+    {
+      "id": "inspection-coordinator-invalid-profile-closes-input-without-native-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "inspection-coordinator-read-deadline-cannot-later-open-a-store",
+      "status": "PASS"
+    },
+    {
+      "id": "inspection-coordinator-late-native-result-never-writes-or-upgrades-unknown",
+      "status": "PASS"
+    },
+    {
+      "id": "inspection-coordinator-rejects-result-authority-and-does-not-write-partial-history",
+      "status": "PASS"
+    },
+    {
+      "id": "inspection-coordinator-write-loss-or-close-failure-never-retries-the-read",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-custody-intent-binds-the-actual-original-reservation-and-exact-unsigned-hash",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-custody-new-intent-is-refused-after-unknown-or-spent-reservation",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-custody-transfer-amount-recipient-and-asset-must-match-the-reservation",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-custody-records-reject-noncanonical-or-expanded-wire-shapes",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-custody-result-preserves-the-exact-original-public-signed-bytes",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-custody-changed-signed-fields-cannot-be-repaired-or-substituted",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-custody-signature-encoding-is-closed-without-claiming-authenticity",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-custody-transition-cannot-reset-replace-delete-or-repeat-a-result",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-custody-history-remains-powerless-under-unknown-and-spent",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-custody-input-accessors-and-proxies-are-refused-before-user-code",
+      "status": "PASS"
+    },
+    {
+      "id": "custodied-wallet-construction-enters-no-key-or-custody-method",
+      "status": "PASS"
+    },
+    {
+      "id": "custodied-wallet-commits-intent-before-sdk-and-result-before-acknowledgement",
+      "status": "PASS"
+    },
+    {
+      "id": "custodied-wallet-lost-intent-acknowledgement-never-enters-the-sdk",
+      "status": "PASS"
+    },
+    {
+      "id": "custodied-wallet-recreated-owner-cannot-sign-an-existing-intent",
+      "status": "PASS"
+    },
+    {
+      "id": "custodied-wallet-result-commit-with-lost-ack-keeps-exact-signed-bytes",
+      "status": "PASS"
+    },
+    {
+      "id": "custodied-wallet-discarded-caller-reply-does-not-lose-or-reauthorize-the-record",
+      "status": "PASS"
+    },
+    {
+      "id": "custodied-wallet-result-refused-before-commit-retains-intent-and-volatile-original",
+      "status": "PASS"
+    },
+    {
+      "id": "custodied-wallet-async-intent-receipt-cannot-enter-sdk-or-upgrade-on-late-settlement",
+      "status": "PASS"
+    },
+    {
+      "id": "custodied-wallet-wrong-intent-identity-is-refused-before-sdk-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "custodied-wallet-different-returned-signed-receipt-cannot-escape-as-candidate",
+      "status": "PASS"
+    },
+    {
+      "id": "custodied-wallet-sdk-method-throw-retains-intent-and-unknown-key-ownership",
+      "status": "PASS"
+    },
+    {
+      "id": "custodied-wallet-unsupported-async-sdk-result-never-becomes-a-retained-signature",
+      "status": "PASS"
+    },
+    {
+      "id": "custodied-wallet-close-during-intent-port-blocks-a-not-yet-entered-sdk",
+      "status": "PASS"
+    },
+    {
+      "id": "custodied-wallet-close-after-sdk-retains-exact-bytes-but-rejects-the-candidate",
+      "status": "PASS"
+    },
+    {
+      "id": "custodied-wallet-declared-stale-owner-loses-before-sign-or-result-write",
+      "status": "PASS"
+    },
+    {
+      "id": "custodied-wallet-two-declared-live-owners-share-one-intent-admission",
+      "status": "PASS"
+    },
+    {
+      "id": "legacy-wallet-owner-retains-its-original-noncustodied-contract",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-preparation-retains-exact-detached-input-and-reservation-digest",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-preparation-refuses-foreign-route-body-and-extra-fields",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-captures-exact-plan-checkpoint-and-unsigned-block-before-sign",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-checkpoint-quote-cannot-diverge-from-the-original-plan",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-checkpoint-refuses-noncanonical-or-different-block-bytes",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-original-subject-remains-bound-to-selected-funding-terms",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-never-feeds-a-signed-block-into-pre-sign-capture",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-intent-atomically-carries-the-full-input-and-pre-sign-text",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-current-profile-cannot-adopt-the-older-incomplete-record",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-input-digest-must-match-the-durable-reservation",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-result-cannot-replace-the-captured-plan-or-checkpoint",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-projects-the-exact-original-funding-wire-data-without-signing",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-projection-requires-independent-id-digest-and-signed-history",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-projection-exposes-no-store-wallet-or-transport-operation",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-plan-getters-and-proxies-are-not-entered",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-legacy-wallet-bridge-does-not-observe-a-handoff",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-bridge-captures-one-actual-snapshot-before-sdk-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-nonvoid-or-async-binding-receipts-are-never-awaited",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-foreign-snapshot-then-getter-is-never-entered",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-wallet-refuses-sdk-entry-until-both-context-bindings-exist",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-wallet-never-rebinds-or-uses-history-for-a-second-attempt",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-wallet-success-retains-all-original-capsule-bytes",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-lost-intent-reply-retains-full-context-without-sdk-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-lost-result-reply-still-projects-the-same-original-packet",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-result-write-refusal-keeps-intent-and-original-volatile-signature",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-recreated-owner-cannot-resign-existing-signed-history",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-close-after-sdk-keeps-context-and-rejects-new-candidate",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-wallet-never-falls-back-to-an-older-port-reply",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-wallet-refuses-coherent-but-different-pre-sign-context",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-inspection-exposes-only-binding-and-custody-facts",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-capability-marker-cannot-be-a-getter-or-false-downgrade",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-context-input-digest-matches-the-actual-application-reservation-codec",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-inspection-argv-has-two-explicit-distinct-fds-and-no-key-slot",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-inspection-profile-captures-one-existing-owner-token-and-independent-original",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-inspection-profile-has-no-create-adoption-or-owner-discovery-fallback",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-inspection-profile-cannot-select-a-key-sdk-module-or-callback",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-inspection-profile-refuses-invalid-independent-pins-and-multiple-recipients",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-inspection-profile-refuses-noncanonical-or-oversized-input",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-inspection-owner-reads-once-and-closes-before-returning-exact-history",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-inspection-intent-only-history-never-invents-a-signature-or-packet",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-inspection-absence-is-historical-and-cannot-release-reservation-authority",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-inspection-foreign-original-is-refused-and-known-file-is-closed-once",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-inspection-clean-read-failure-still-revokes-and-closes-known-owner",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-inspection-held-read-does-not-force-a-physical-close",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-inspection-unreturned-or-malformed-open-has-no-competing-stop",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-inspection-failed-or-nonvoid-revoke-never-enters-physical-close",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-inspection-close-failure-or-false-closed-view-is-never-retried",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-inspection-output-grammar-excludes-extra-fields-and-action-authority",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-inspection-output-keeps-checkpoint-pins-hash-and-origin-consistent",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-inspection-expired-open-is-cleaned-without-reading-or-returning-history",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-inspection-expired-read-is-cleaned-without-renewing-observation",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-inspection-late-sync-protocol-close-cannot-upgrade-unknown",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-inspection-an-already-returned-owner-cannot-be-read-or-closed-again",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-inspection-coordinator-writes-one-private-original-data-record",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-inspection-invalid-profile-closes-pipes-without-native-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-inspection-create-mode-is-refused-before-owned-store-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-inspection-profile-deadline-cannot-later-open-a-file",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-inspection-late-native-history-result-never-writes-after-expiry",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-inspection-coordinator-compares-the-result-to-its-original-profile",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-inspection-coordinator-refuses-injected-authority-before-output",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-inspection-output-loss-does-not-reopen-reread-or-retry",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-inspection-late-channel-close-never-upgrades-the-first-unknown",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-inspection-nontext-profile-refuses-before-native-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-inspection-declared-stale-token-is-not-discovered-or-rebound",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-age-construction-enters-no-clock-key-or-store-method",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-age-configuration-requires-context-marker-frozen-clock-and-bounded-limit",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-age-observation-requires-an-original-preparation-before-clock-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-age-context-cannot-bind-without-the-pre-read-observation",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-age-observation-is-one-shot-and-cannot-renew-its-deadline",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-age-under-budget-custody-and-exact-result-follow-the-original-order",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-age-exact-boundary-after-intent-retains-intent-with-zero-sdk-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-age-long-intent-latency-cannot-become-a-second-economic-attempt",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-age-expiry-before-intent-does-not-write-a-signer-record",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-age-last-read-latency-is-counted-before-context-binding",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-age-negative-initial-clock-cannot-open-a-window",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-age-backward-clock-after-intent-keeps-original-data-and-refuses",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-age-non-bigint-clock-values-are-refused-without-coercion",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-age-throwing-clock-is-terminal-for-the-original-window",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-age-unexpected-native-promise-clock-is-drained-without-awaiting",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-age-thenable-clock-getter-is-never-entered",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-age-closed-owner-cannot-start-or-renew-an-observation",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-age-lost-intent-reply-preserves-original-capsule-without-sdk-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-age-expiry-after-sdk-entry-never-drops-or-regenerates-the-original-result",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-age-clock-loss-after-intent-preserves-committed-unknown",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-age-close-during-intent-cannot-enter-sdk-or-compete-with-stop",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-age-inspection-exposes-only-bounded-historical-observations",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-age-runtime-clock-is-not-serialized-into-durable-original-context",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-age-legacy-wallet-and-optional-bridge-retain-their-old-surface",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-age-observation-bridge-rejects-getters-proxies-and-nonvoid-receipts",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-age-real-planner-starts-window-before-its-final-read-and-retains-result",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-age-real-planner-refuses-an-expired-final-read-before-intent-or-sdk",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-age-real-planner-keeps-intent-when-store-latency-expires-window",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-age-real-planner-refuses-clock-regression-after-intent-without-another-read",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-age-real-planner-preserves-original-signed-bytes-after-signer-latency",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-current-owner-construction-enters-no-guard-clock-key-or-store",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-current-owner-constructor-requires-a-frozen-data-method-without-getters",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-current-owner-check-follows-intent-and-precedes-final-clock-and-sdk",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-current-owner-stale-epoch-after-intent-refuses-sdk-and-retains-original",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-current-owner-closed-file-after-intent-refuses-sdk-and-retains-original",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-current-owner-throwing-check-is-not-retried-or-replaced",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-current-owner-nonvoid-receipts-never-mean-current-or-success",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-current-owner-pending-promise-cannot-later-upgrade-held",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-current-owner-rejected-native-promise-is-drained-without-awaiting",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-current-owner-thenable-result-getter-is-never-entered",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-current-owner-proxy-result-is-never-assimilated",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-current-owner-reentrant-sign-cannot-enter-another-guard-or-sdk",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-current-owner-close-during-check-precedes-sdk-with-no-competing-stop",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-current-owner-check-latency-consumes-the-original-age-window",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-current-owner-clock-regression-after-check-refuses-without-renewal",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-current-owner-unadmitted-context-or-expired-preintent-run-enters-no-guard",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-current-owner-lost-intent-reply-is-retained-before-check-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-current-owner-final-time-observation-follows-every-successful-check",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-current-owner-inspection-is-historical-and-grants-no-fencing-authority",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-current-owner-loss-after-sdk-preserves-volatile-original-and-intent",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-current-owner-sdk-entry-is-after-the-declared-guard-transaction-return",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-current-owner-legacy-constructor-retains-its-previous-port-contract",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-current-owner-a-second-sign-cannot-rerun-current-check-or-write-intent",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-current-owner-close-after-sdk-retains-original-with-one-check",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-current-owner-real-planner-checks-once-and-retains-the-exact-signed-original",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-current-owner-real-planner-stale-epoch-after-intent-has-zero-sdk-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-current-owner-real-planner-closed-file-after-intent-has-zero-sdk-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-current-owner-real-planner-check-latency-does-not-renew-time-budget",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-current-owner-real-planner-close-during-check-cannot-compete-with-owner",
+      "status": "PASS"
+    },
+    {
+      "id": "signer-current-owner-real-planner-result-write-loss-keeps-one-original-signature",
+      "status": "PASS"
+    },
+    {
+      "id": "wire-owner-construction-captures-methods-without-entering-file-or-clock",
+      "status": "PASS"
+    },
+    {
+      "id": "wire-owner-closed-configuration-refuses-getters-proxies-and-unfrozen-methods",
+      "status": "PASS"
+    },
+    {
+      "id": "wire-owner-a-json-version-marker-cannot-forge-the-private-guard",
+      "status": "PASS"
+    },
+    {
+      "id": "wire-owner-config-mutation-cannot-replace-the-captured-owner-or-clock",
+      "status": "PASS"
+    },
+    {
+      "id": "wire-owner-clean-check-precedes-each-declared-wire-entry-with-one-budget",
+      "status": "PASS"
+    },
+    {
+      "id": "wire-owner-only-a-synchronous-undefined-current-receipt-is-admitted",
+      "status": "PASS"
+    },
+    {
+      "id": "wire-owner-throwing-current-check-is-sticky-and-never-requests-a-wire",
+      "status": "PASS"
+    },
+    {
+      "id": "wire-owner-pending-current-receipt-cannot-later-upgrade-refusal",
+      "status": "PASS"
+    },
+    {
+      "id": "wire-owner-rejected-native-promise-is-drained-without-awaiting",
+      "status": "PASS"
+    },
+    {
+      "id": "wire-owner-thenable-and-proxy-receipts-are-never-assimilated",
+      "status": "PASS"
+    },
+    {
+      "id": "wire-owner-held-busy-revoked-or-closed-previews-enter-no-current-method",
+      "status": "PASS"
+    },
+    {
+      "id": "wire-owner-a-close-or-hold-during-current-check-vetoes-the-wire",
+      "status": "PASS"
+    },
+    {
+      "id": "wire-owner-reentry-permanently-vetoes-both-outer-and-nested-admissions",
+      "status": "PASS"
+    },
+    {
+      "id": "wire-owner-invalid-monotonic-values-are-not-coerced-or-used-for-deadlines",
+      "status": "PASS"
+    },
+    {
+      "id": "wire-owner-clock-regression-after-owner-io-refuses-without-new-budget",
+      "status": "PASS"
+    },
+    {
+      "id": "wire-owner-exact-deadline-after-current-io-enters-no-wire",
+      "status": "PASS"
+    },
+    {
+      "id": "wire-owner-guard-latency-is-subtracted-from-the-existing-request-budget",
+      "status": "PASS"
+    },
+    {
+      "id": "wire-owner-submillisecond-remainder-uses-at-most-one-timer-quantum",
+      "status": "PASS"
+    },
+    {
+      "id": "wire-owner-invalid-deadline-arguments-enter-no-clock-or-owner",
+      "status": "PASS"
+    },
+    {
+      "id": "wire-owner-the-same-guard-covers-successive-funding-and-service-entries",
+      "status": "PASS"
+    },
+    {
+      "id": "wire-owner-inspection-is-historical-without-clocks-paths-or-action-authority",
+      "status": "PASS"
+    },
+    {
+      "id": "wire-owner-brand-validation-cannot-reset-a-held-admission",
+      "status": "PASS"
+    },
+    {
+      "id": "wire-owner-a-prior-admission-never-substitutes-for-a-new-current-check",
+      "status": "PASS"
+    },
+    {
+      "id": "wire-owner-clock-loss-after-the-current-receipt-retains-refusal",
+      "status": "PASS"
+    },
+    {
+      "id": "wire-owner-outer-application-rechecks-after-await-before-declared-wire",
+      "status": "PASS"
+    },
+    {
+      "id": "wire-owner-stale-after-outer-admission-refuses-before-declared-wire",
+      "status": "PASS"
+    },
+    {
+      "id": "wire-owner-closed-file-after-outer-admission-refuses-before-declared-wire",
+      "status": "PASS"
+    },
+    {
+      "id": "wire-owner-outer-close-while-child-awaits-prevents-a-late-wire",
+      "status": "PASS"
+    },
+    {
+      "id": "wire-owner-outer-child-guard-latency-cannot-renew-request-time",
+      "status": "PASS"
+    },
+    {
+      "id": "wire-owner-outer-child-regressed-clock-preserves-the-original-reservation",
+      "status": "PASS"
+    },
+    {
+      "id": "wire-owner-outer-child-nonvoid-check-refuses-without-sending",
+      "status": "PASS"
+    },
+    {
+      "id": "wire-owner-late-owner-recovery-cannot-grant-an-automatic-second-attempt",
+      "status": "PASS"
+    },
+    {
+      "id": "store-owner-construction-borrows-the-same-owner-without-method-or-clock-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "store-owner-closed-arguments-refuse-coercion-and-proxies-without-io",
+      "status": "PASS"
+    },
+    {
+      "id": "store-owner-json-data-cannot-forge-or-reset-an-acquisition",
+      "status": "PASS"
+    },
+    {
+      "id": "store-owner-clean-stages-reread-current-owner-with-one-absolute-window",
+      "status": "PASS"
+    },
+    {
+      "id": "store-owner-skipped-or-repeated-stages-stay-held-without-native-effects",
+      "status": "PASS"
+    },
+    {
+      "id": "store-owner-overlapping-acquisitions-cannot-replace-the-selected-operation",
+      "status": "PASS"
+    },
+    {
+      "id": "store-owner-funding-and-service-use-distinct-completed-admissions-on-the-same-owner",
+      "status": "PASS"
+    },
+    {
+      "id": "store-owner-known-stale-owner-before-open-never-admits-database-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "store-owner-loss-after-database-entry-vetoes-owner-epoch-update",
+      "status": "PASS"
+    },
+    {
+      "id": "store-owner-loss-after-epoch-update-vetoes-the-commit-call-site",
+      "status": "PASS"
+    },
+    {
+      "id": "store-owner-loss-after-commit-vetoes-store-return-without-undoing-history",
+      "status": "PASS"
+    },
+    {
+      "id": "store-owner-loss-during-async-return-vetoes-client-exposure",
+      "status": "PASS"
+    },
+    {
+      "id": "store-owner-nonvoid-current-receipts-never-advance-the-stage",
+      "status": "PASS"
+    },
+    {
+      "id": "store-owner-async-current-receipts-are-drained-without-a-late-upgrade",
+      "status": "PASS"
+    },
+    {
+      "id": "store-owner-reentry-cannot-advance-the-outer-or-inner-stage",
+      "status": "PASS"
+    },
+    {
+      "id": "store-owner-wire-entry-cannot-race-an-unfinished-store-admission",
+      "status": "PASS"
+    },
+    {
+      "id": "store-owner-invalid-clock-values-are-not-converted-into-an-acquisition-budget",
+      "status": "PASS"
+    },
+    {
+      "id": "store-owner-a-later-stage-cannot-renew-the-original-absolute-deadline",
+      "status": "PASS"
+    },
+    {
+      "id": "store-owner-current-read-latency-is-inside-the-same-stage-budget",
+      "status": "PASS"
+    },
+    {
+      "id": "store-owner-a-clock-regression-between-stages-is-sticky",
+      "status": "PASS"
+    },
+    {
+      "id": "store-owner-submillisecond-time-is-not-rounded-into-a-new-stage-window",
+      "status": "PASS"
+    },
+    {
+      "id": "store-owner-inspection-is-historical-and-completion-is-not-reusable-authority",
+      "status": "PASS"
+    },
+    {
+      "id": "store-owner-actual-application-clean-child-opens-and-returns-only-after-current-checks",
+      "status": "PASS"
+    },
+    {
+      "id": "store-owner-actual-application-stale-after-await-enters-no-declared-store",
+      "status": "PASS"
+    },
+    {
+      "id": "store-owner-actual-application-revoked-file-enters-no-declared-store",
+      "status": "PASS"
+    },
+    {
+      "id": "store-owner-actual-application-epoch-refusal-preserves-the-entered-declared-owner",
+      "status": "PASS"
+    },
+    {
+      "id": "store-owner-actual-application-commit-refusal-cannot-publish-a-client",
+      "status": "PASS"
+    },
+    {
+      "id": "store-owner-actual-application-return-refusal-never-erases-a-declared-commit",
+      "status": "PASS"
+    },
+    {
+      "id": "store-owner-actual-application-async-return-loss-retains-original-reservation-without-reopen",
+      "status": "PASS"
+    },
+    {
+      "id": "store-owner-actual-application-slow-acquisition-cannot-reset-the-window-on-return",
+      "status": "PASS"
+    },
+    {
+      "id": "store-owner-baseline-brand-validation-alone-does-not-recheck-an-owner-after-await",
+      "status": "PASS"
+    },
+    {
+      "id": "store-owner-baseline-brand-validation-alone-does-not-fence-a-revoked-file",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-result-baseline-void-command-output-cannot-deliver-a-stored-api-response",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-result-preflight-reuses-the-real-request-auth-grammar-without-dispatch",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-result-plain-data-cannot-select-a-factory-or-enter-getters",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-result-first-call-returns-the-exact-current-recorded-response",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-result-exact-replay-never-enters-submission-reservation-or-execution-again",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-result-100-distinct-calls-and-replay-exhaust-one-reference-grant-once",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-result-in-memory-reconstruction-keeps-an-exhausted-grant-replay-read-only",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-result-101st-new-request-cannot-spend-more-reference-units",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-result-actual-command-session-returns-100-results-and-the-original-replay",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-result-api-credit-codec-accepts-bounded-recorded-data-while-legacy-stays-void",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-result-command-output-must-match-the-command-grant-and-request-key",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-result-a-foreign-grant-never-enters-the-submission-callback",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-result-a-changed-original-cannot-reuse-or-poison-the-valid-result",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-result-auth-metadata-must-match-before-history-is-read",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-result-authorization-is-never-in-the-result-or-recorded-controller-snapshot",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-result-missing-observation-does-not-authorize-resend",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-result-missing-intent-does-not-authorize-resend",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-result-unknown-custody-submission-or-drain-never-becomes-history-success",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-result-foreign-funding-network-payment-or-revision-is-refused",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-result-noncanonical-or-conflicting-response-code-is-refused",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-result-a-lost-submission-callback-is-never-upgraded-by-a-later-history-read",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-result-async-reader-is-not-awaited-or-later-upgraded",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-result-rejected-reader-promise-is-drained-without-another-dispatch",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-result-reader-thenable-and-proxy-hooks-are-never-entered",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-result-close-during-history-read-prevents-a-late-replay-result",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-result-pending-submission-cannot-admit-a-concurrent-request",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-result-close-joins-one-original-stop-and-does-not-publish-a-late-success",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-result-input-mutation-after-entry-cannot-change-the-retained-request",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-result-validation-refuses-unfrozen-extra-authority-or-version-data",
+      "status": "PASS"
+    },
+    {
+      "id": "exact-budget-keyed-product-captures-100-custody-and-service-starts-with-a-separate-single-funding-post",
+      "status": "PASS"
+    },
+    {
+      "id": "exact-budget-keyless-operator-admission-preserves-the-same-independent-request-budgets",
+      "status": "PASS"
+    },
+    {
+      "id": "exact-budget-real-keyless-bootstrap-admits-100-starts-and-the-106-command-stream",
+      "status": "PASS"
+    },
+    {
+      "id": "exact-budget-below-100-and-all-existing-upper-coupling-funding-and-concurrency-bounds-still-refuse",
+      "status": "PASS"
+    },
+    {
+      "id": "exact-budget-selection-detaches-the-100-limits-from-later-operator-input-mutation",
+      "status": "PASS"
+    },
+    {
+      "id": "exact-budget-100-distinct-results-exhaust-one-model-grant-and-replay-never-reenters-the-declared-native-child",
+      "status": "PASS"
+    },
+    {
+      "id": "exact-budget-actual-command-host-returns-100-results-and-one-replay-in-106-commands",
+      "status": "PASS"
+    },
+    {
+      "id": "exact-budget-lost-100th-callback-keeps-the-last-unit-held-and-blocks-even-a-previous-replay",
+      "status": "PASS"
+    },
+    {
+      "id": "exact-budget-a-101st-distinct-model-request-cannot-consume-more-or-start-another-funding",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-inspection-arguments-select-an-explicit-keyless-mode-with-distinct-owned-fds",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-inspection-legacy-redaction-still-withholds-cache-and-exact-response-payload",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-inspection-actual-combined-read-core-checks-pins-around-one-query-and-closes-in-owner-order",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-inspection-exhausted-100-request-reference-reconstruction-returns-one-cache-with-no-new-debit",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-inspection-lost-local-response-returns-only-backend-cache-and-keeps-client-reconciliation",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-inspection-unauthorized-backend-never-releases-even-an-existing-local-response",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-inspection-unknown-and-unrecorded-backend-outcomes-return-no-cache-or-new-authority",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-inspection-absent-client-original-does-not-query-the-backend-or-create-one",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-inspection-checkpoint-drift-refuses-output-and-never-repeats-the-query",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-inspection-stale-owner-during-backend-read-refuses-output-without-resend",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-inspection-changed-client-history-around-query-cannot-become-a-result",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-inspection-nonvoid-payer-stop-retains-the-borrowed-backend-and-withholds-result",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-inspection-backend-close-failure-is-retained-without-a-second-stop-or-result",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-inspection-foreign-request-grant-or-original-body-never-matches-the-local-record",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-inspection-unknown-execution-or-conflicting-cache-cannot-become-cached-success",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-inspection-local-response-must-match-backend-code-and-funding-context",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-inspection-output-cannot-gain-signing-payment-dispatch-or-confirmed-delivery-authority",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-inspection-closed-output-refuses-proof-raw-original-checkpoint-and-unbounded-payload-fields",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-inspection-proxy-and-accessor-data-refuse-without-entering-user-hooks",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-inspection-actual-coordinator-writes-one-bounded-cache-after-the-store-owner-close",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-inspection-invalid-profile-is-refused-before-any-existing-store-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-inspection-coordinator-rejects-a-result-for-a-foreign-request-before-output",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-inspection-expired-result-cannot-write-late-or-upgrade-the-earlier-unknown",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-inspection-output-loss-does-not-repeat-the-owner-query-or-clear-model-state",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-inspection-output-does-not-echo-capability-proof-payment-checkpoint-or-original-body",
+      "status": "PASS"
+    },
+    {
+      "id": "exact-checkpoint-branded-read-keeps-the-existing-frozen-client-facade-and-three-argument-method",
+      "status": "PASS"
+    },
+    {
+      "id": "exact-checkpoint-product-owner-returns-the-identical-projection-with-two-witness-reads",
+      "status": "PASS"
+    },
+    {
+      "id": "exact-checkpoint-legacy-redacted-owner-retains-its-independent-outer-byte-checks",
+      "status": "PASS"
+    },
+    {
+      "id": "exact-checkpoint-wrong-independent-bytes-refuse-before-any-original-or-backend-query",
+      "status": "PASS"
+    },
+    {
+      "id": "exact-checkpoint-malformed-arity-type-empty-and-oversized-input-never-enter-the-reader",
+      "status": "PASS"
+    },
+    {
+      "id": "exact-checkpoint-lookalike-and-proxy-connections-cannot-select-or-enter-a-reader",
+      "status": "PASS"
+    },
+    {
+      "id": "exact-checkpoint-dispatch-enabled-and-pre-v6-cores-have-no-exact-read-brand",
+      "status": "PASS"
+    },
+    {
+      "id": "exact-checkpoint-closed-connection-cannot-revive-a-branded-reader",
+      "status": "PASS"
+    },
+    {
+      "id": "exact-checkpoint-absent-original-still-has-before-and-after-byte-witnesses-with-no-backend-read",
+      "status": "PASS"
+    },
+    {
+      "id": "exact-checkpoint-drift-during-an-absent-original-observation-cannot-claim-matched-pins",
+      "status": "PASS"
+    },
+    {
+      "id": "exact-checkpoint-post-query-checkpoint-drift-refuses-result-without-repeating-the-query",
+      "status": "PASS"
+    },
+    {
+      "id": "exact-checkpoint-mutating-caller-pins-cannot-replace-the-first-frozen-witness",
+      "status": "PASS"
+    },
+    {
+      "id": "exact-checkpoint-reentrant-exact-read-is-busy-and-cannot-replace-the-outer-byte-witness",
+      "status": "PASS"
+    },
+    {
+      "id": "exact-checkpoint-backend-only-cache-keeps-response-null-and-client-uncertainty-with-two-reads",
+      "status": "PASS"
+    },
+    {
+      "id": "exact-checkpoint-known-cache-query-after-100-unit-reconstruction-never-reopens-spending-authority",
+      "status": "PASS"
+    },
+    {
+      "id": "funding-inspection-arguments-have-two-distinct-owned-pipes-and-no-key-grant-or-service-proof",
+      "status": "PASS"
+    },
+    {
+      "id": "funding-inspection-keeps-the-fixed-runtime-and-visible-plain-process-admission",
+      "status": "PASS"
+    },
+    {
+      "id": "funding-inspection-profile-admits-one-independent-original-before-any-grant-is-known",
+      "status": "PASS"
+    },
+    {
+      "id": "funding-inspection-profile-refuses-db-learned-pins-altered-originals-and-noncanonical-json",
+      "status": "PASS"
+    },
+    {
+      "id": "funding-inspection-profile-has-no-grant-proof-loader-or-backend-selector",
+      "status": "PASS"
+    },
+    {
+      "id": "funding-inspection-profile-refuses-nested-foreign-and-malformed-store-paths",
+      "status": "PASS"
+    },
+    {
+      "id": "funding-inspection-profile-release-and-lookalikes-do-not-restore-ownership",
+      "status": "PASS"
+    },
+    {
+      "id": "funding-inspection-unknown-original-byte-checkpoints-and-revision-survive-the-read-unchanged",
+      "status": "PASS"
+    },
+    {
+      "id": "funding-inspection-all-existing-local-statuses-stay-historical-without-funding-retry",
+      "status": "PASS"
+    },
+    {
+      "id": "funding-inspection-an-absent-record-does-not-manufacture-a-stored-checkpoint-or-payment-permission",
+      "status": "PASS"
+    },
+    {
+      "id": "funding-inspection-state-drift-cannot-be-presented-as-one-stable-original",
+      "status": "PASS"
+    },
+    {
+      "id": "funding-inspection-changed-checkpoint-is-refused-without-repeated-reads-or-a-new-original",
+      "status": "PASS"
+    },
+    {
+      "id": "funding-inspection-foreign-payment-headers-are-refused-and-the-known-owner-is-stopped",
+      "status": "PASS"
+    },
+    {
+      "id": "funding-inspection-query-failure-stops-only-the-known-quiescent-owner",
+      "status": "PASS"
+    },
+    {
+      "id": "funding-inspection-expiry-after-a-returned-read-closes-the-known-store-and-withholds-output",
+      "status": "PASS"
+    },
+    {
+      "id": "funding-inspection-unreturned-open-does-not-guess-a-handle-or-start-a-competing-close",
+      "status": "PASS"
+    },
+    {
+      "id": "funding-inspection-unobservable-open-promise-is-not-assimilated-or-adopted-late",
+      "status": "PASS"
+    },
+    {
+      "id": "funding-inspection-unjoined-read-promise-retains-the-store-instead-of-closing-an-active-borrower",
+      "status": "PASS"
+    },
+    {
+      "id": "funding-inspection-still-active-store-is-retained-without-a-competing-close",
+      "status": "PASS"
+    },
+    {
+      "id": "funding-inspection-physical-close-failure-is-one-attempt-and-no-result",
+      "status": "PASS"
+    },
+    {
+      "id": "funding-inspection-a-void-close-requires-a-fresh-closed-quiescent-native-view",
+      "status": "PASS"
+    },
+    {
+      "id": "funding-inspection-nonvoid-close-is-retained-and-not-retried",
+      "status": "PASS"
+    },
+    {
+      "id": "funding-inspection-checkpoint-proxies-refuse-without-entering-user-hooks",
+      "status": "PASS"
+    },
+    {
+      "id": "funding-inspection-result-codec-refuses-economic-authority-and-erased-ambiguity",
+      "status": "PASS"
+    },
+    {
+      "id": "funding-inspection-result-codec-rejects-unselected-grant-proof-key-and-unbounded-fields",
+      "status": "PASS"
+    },
+    {
+      "id": "funding-inspection-owner-is-one-use-and-exposes-no-store-signing-or-dispatch-capability",
+      "status": "PASS"
+    },
+    {
+      "id": "funding-inspection-actual-coordinator-writes-the-original-only-after-the-owned-store-close",
+      "status": "PASS"
+    },
+    {
+      "id": "funding-inspection-invalid-coordinator-profile-is-refused-before-store-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "funding-inspection-coordinator-rejects-a-foreign-payment-or-resource-before-output",
+      "status": "PASS"
+    },
+    {
+      "id": "funding-inspection-coordinator-checks-independent-original-byte-digest-again-before-output",
+      "status": "PASS"
+    },
+    {
+      "id": "funding-inspection-coordinator-write-loss-never-reopens-the-store-or-retries-the-output",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-profile-uses-the-existing-query-mode-and-closed-version-two",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-profile-is-one-use-and-release-revokes-future-consumption",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-profile-rejects-key-module-transport-and-callback-selection",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-profile-refuses-creation-without-owner-discovery-or-migration",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-profile-requires-all-independent-original-and-full-profile-pins",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-profile-refuses-noncanonical-duplicate-oversized-and-invalid-hash-input",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-profile-detaches-caller-owned-file-and-expected-objects",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-profile-proxy-and-getter-pins-never-run-input-hooks",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-read-validates-and-closes-the-same-owner-before-returning-ready-profile",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-ready-profile-enters-the-actual-one-query-owner-after-file-close",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-coordinator-keeps-one-input-query-and-redacted-history-output",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-missing-record-closes-known-owner-without-query-or-payment-authority",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-foreign-record-digest-is-refused-before-any-transport-opens",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-wrong-independent-full-profile-hash-cannot-select-row-transport",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-changed-ca-with-matching-row-digests-still-fails-full-profile-pin",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-changed-row-timer-budgets-cannot-become-new-authority",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-expected-payment-request-and-route-are-rebound-after-projection",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-bad-spending-policy-cannot-be-replaced-by-a-row-policy",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-expired-opening-before-file-entry-acquires-no-owner",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-expiry-after-known-read-closes-owner-but-starts-no-query",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-file-configuration-is-detached-before-opening-guard-callback",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-pointer-envelopes-cannot-be-retained-as-recursive-ready-profiles",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-wrong-full-profile-pin-reaches-no-network-or-history-output",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-pre-resource-mode-and-pins-are-admitted-before-file-port-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-normal-ready-version-one-profile-remains-keyless-and-unchanged",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-file-policy-keeps-the-existing-free-floor-and-allocation-bounds",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-opaque-opener-promise-is-retained-without-a-competing-closer",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-proxy-owner-is-rejected-without-reflection-traps",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-pending-read-borrower-never-competes-with-revoke-or-close",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-throwing-read-retains-the-original-owner-without-reopen",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-opaque-owner-view-prevents-read-and-cleanup",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-nonvoid-current-owner-receipt-prevents-read-and-cleanup",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-nonvoid-logical-revoke-prevents-physical-close",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-throwing-logical-revoke-is-never-retried-or-followed-by-close",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-promise-physical-close-is-not-a-synchronous-release-receipt",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-throwing-physical-close-is-not-retried-or-replaced",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-bad-closed-view-cannot-publish-a-ready-profile",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-post-close-guard-mutation-is-caught-by-a-fresh-closed-view",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-held-owner-view-is-not-raw-closed-by-the-reader",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-reused-owner-capability-cannot-reopen-or-close-again",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-accessor-owner-views-are-rejected-without-calling-getters",
+      "status": "PASS"
+    }
+  ],
+  "nodeVersion": "24.19.0",
+  "platform": "darwin-arm64",
+  "nodeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25",
+  "rawQualificationSha256": "6bce1ef2db833326b3ffd8ce314761d7c76da4180097f44f78911f863793cd73",
+  "sourceProfile": {
+    "path": "qualification/profiles/api-credit-application-source-v31.json",
+    "bytes": 233496,
+    "sha256": "580e3b7a27d2b1bb678d8b34de9d23a6fe50661a4ca2651ad18184e25c3ab0e0"
+  },
+  "storedOriginalGrantQuery": {
+    "version": 2,
+    "scope": "KEYLESS_EXISTING_CUSTODY_TO_ONE_ORIGINAL_GRANT_QUERY",
+    "flag": "--funding-grant-query-fd",
+    "inputVersion": 2,
+    "profile": "src/api-credit-stored-grant-query-profile.js",
+    "owner": "src/api-credit-stored-grant-query-owner.js",
+    "nativeBinding": "src/zenon/native-api-credit-original-grant-query.js",
+    "fileMode": "OPEN_EXISTING",
+    "sourceSchemaTables": 4,
+    "table": "original_spending_grant_query_v1",
+    "ownerDiscovery": false,
+    "createOrMigrate": false,
+    "inputMaxBytes": 16384,
+    "independentPins": [
+      "paymentId",
+      "originalDigest",
+      "fundingResourceUrl",
+      "paymentHash",
+      "requestId",
+      "checkpointDigest",
+      "queryDigest",
+      "profileDigest"
+    ],
+    "fullReadyProfileHash": "SHA256_OF_EXACT_CANONICAL_VERSION_ONE_TEXT;INDEPENDENT_OPERATOR_INPUT",
+    "queryDigest": "EXISTING_DOMAIN_SEPARATED_SHA256_PREFIXED_CONTRACT",
+    "rowSuppliesTrust": false,
+    "oneCustodyRead": true,
+    "sameOwnerRevokedAndClosedBeforeHttpsImport": true,
+    "freshOwnerViewsRequired": true,
+    "unknownBorrower": "HELD_NO_COMPETING_CLOSER_REOPEN_OR_QUERY",
+    "lateResultsRepairHeld": false,
+    "fileFrameLimit": 16,
+    "readyVersionOneUnchanged": true,
+    "payerV6Opened": false,
+    "custodyWriteCaptured": false,
+    "SDKExecution": false,
+    "proofGeneration": false,
+    "proofAuthentication": false,
+    "authority": "NONE_FROM_CUSTODY_OR_HISTORY",
+    "spendingReservation": "UNCHANGED",
+    "ownerChecks": "COOPERATIVE_SAME_EPOCH;NOT_ATOMIC_CROSS_PROCESS_FENCING",
+    "openingGuard": "OBSERVED_AROUND_SYNC_PROTOCOL;NOT_OS_PREEMPTION",
+    "defaultBuyerGraphChanged": true,
+    "defaultBuyerGraphInputs": 165,
+    "moduleCatalogRows": 568,
+    "applicationRows": 163,
+    "packageRows": 404,
+    "directBareEdges": 9,
+    "nativeExecution": false,
+    "physicalRelease": "NOT_ESTABLISHED",
+    "freshProcessAcceptance": "NOT_ESTABLISHED",
+    "LinuxAcceptance": "NOT_ESTABLISHED",
+    "G1G2Acceptance": "OPEN"
+  },
+  "reusedDataProofs": [
+    {
+      "path": "qualification/issued-grant-provider.actual-local-result.json",
+      "sha256": "967194d7bd2eca1ef69d1fec608b6809066574dc692a987b03f8473361e13901",
+      "rawQualificationSha256": "b14ce5134e8ec1723fef8c22be12683f2412e47036f1631afb325d08b75813ce",
+      "proofKind": "WHOLE_RAW_RESULT",
+      "count": 41,
+      "runtimeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25",
+      "sourceChecks": [
+        {
+          "path": "package.json",
+          "bytes": 2677,
+          "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+          "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+        },
+        {
+          "path": "qualification/issued-grant-provider.behavior.mjs",
+          "bytes": 28199,
+          "sha256": "b4dbb3ce54cbfab90f57506db87275148dfd0f3d717be69f7b675b61f1bccf1a",
+          "gitBlob": "027d5315c91b4793eaf8f983ec21f1cd29cd1b5f"
+        },
+        {
+          "path": "src/api-credit-original-grant-query-owner.js",
+          "bytes": 10687,
+          "sha256": "fb1d0d26828b8e8c40b7170dd3ca0f68652b53ba1113f4d80f200ce1d5d3b19c",
+          "gitBlob": "81e91816a9ad78b8f90935af385e914d7cadc3ef"
+        },
+        {
+          "path": "src/canonical.js",
+          "bytes": 967,
+          "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+          "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4"
+        },
+        {
+          "path": "src/service-credit-bounded-https-ingress-limits.js",
+          "bytes": 2661,
+          "sha256": "35e2cc603398a929979b2f939f558d43002079038922d6248cc654c425eafb68",
+          "gitBlob": "beb1fa1576a592fe206de34ccbb498ad4a6ed186"
+        },
+        {
+          "path": "src/service-credit-model.js",
+          "bytes": 56835,
+          "sha256": "f8e57c6e4b576c4b4c650d757ab9c86580c5bc4e7d457440092668b2894cefda",
+          "gitBlob": "914c325fe8c408d9936c7bb91f9ec53890cc290d"
+        },
+        {
+          "path": "src/service-credit-native-client-close-owner.js",
+          "bytes": 7750,
+          "sha256": "519809b2cc6b2bf2d37cf6048e68847255f75dc9869a1fc1119bae310462fbd7",
+          "gitBlob": "ce749d7f9637a1afffb019a89c0f0c4b2387fb92"
+        },
+        {
+          "path": "src/service-credit-original-funding-grant-reader-core.js",
+          "bytes": 5236,
+          "sha256": "1cd5da104ea30503cb48e3951b09b3b00b593236f02a5b70dea332943ec6e7a6",
+          "gitBlob": "0c80207672676006a6c13c80c67b8427d6a97b18"
+        },
+        {
+          "path": "src/service-credit-original-funding-grant.js",
+          "bytes": 7995,
+          "sha256": "61fd9aee09949462ae6fa0e1a0c0fd4e67f15f8c7be78612bfe9928559b6be70",
+          "gitBlob": "3affa8c70e08f26e48c3e213098e6e3036d6ffff"
+        },
+        {
+          "path": "src/service-credit-original-grant-http-binding.js",
+          "bytes": 7866,
+          "sha256": "23f27e79a16a32459dc3929ec0a8446d219324f616fd7027820540f3aaff8bac",
+          "gitBlob": "2b34ba5da6d7695d9432de9661fd7015258a1416"
+        },
+        {
+          "path": "src/service-credit-original-grant-http-downstream-core.js",
+          "bytes": 3917,
+          "sha256": "fecb06c76668df84d3b1f302219e379b952c5c8e349fb3368859e9a96fa3e935",
+          "gitBlob": "765b565a705e087ba1c68b80b0a29745b5125ac7"
+        },
+        {
+          "path": "src/service-credit-original-grant-http-reader-core.js",
+          "bytes": 3039,
+          "sha256": "0ead9229abd1574601d8a29ae2d66930122cd844a13798f3e9291827ff6f9a7e",
+          "gitBlob": "728b649e278d819e8dbbe56376d072538bcb8c03"
+        },
+        {
+          "path": "src/x402-funding-post-checkpoint-route.js",
+          "bytes": 1310,
+          "sha256": "157e80e9f14b41c8cacc05423a7acd8616a6f759adac377f04f1fca21869831e",
+          "gitBlob": "777ff48ac9cf255f80cda7e22c68706b7d7084b3"
+        },
+        {
+          "path": "src/x402-issued-application-response-writer.js",
+          "bytes": 3143,
+          "sha256": "929e619c4261befeba8a583a0096688df5ad6ed1cadee774a89aa579a5a60d95",
+          "gitBlob": "b38f9d6cd2052884f541d737cf8e42a958a56a0d"
+        },
+        {
+          "path": "src/x402-issued-funding-grant-application-core.js",
+          "bytes": 23245,
+          "sha256": "71bfc0b224da34fc8185f19560d4f4e823b1f22f846aaa465c61b0a809f5c8e5",
+          "gitBlob": "6d065f3ea65b41d441cfc6d15d7ecce4c43846f4"
+        },
+        {
+          "path": "src/x402-issued-funding-grant-request-binding.js",
+          "bytes": 3202,
+          "sha256": "63779ce5c838064892a5beaa578e11c0eda6ff956cf395f0cde2e61fd7919ba1",
+          "gitBlob": "b1704ca200fa346e528633c7feaeed7f686f1312"
+        },
+        {
+          "path": "src/x402-issued-funding-post-application-binding.js",
+          "bytes": 9788,
+          "sha256": "e5ff9d77cb6ad590b26591ef559ac35523f0a60ade40accc775ea2bf128bea48",
+          "gitBlob": "77f2430710dbb4577040d5429e3021f42c4a392a"
+        },
+        {
+          "path": "src/x402-issued-funding-post-sdk-resource.js",
+          "bytes": 7469,
+          "sha256": "b4500c461d61b742a4bf6f6bbfb6f6c83b478a976f1300b8c07bf2db1543e681",
+          "gitBlob": "fca3aa91c16155c9abc9ada5e5c8aceb55b6a2c4"
+        },
+        {
+          "path": "src/x402-official-funding-post-https-request-binding.js",
+          "bytes": 4154,
+          "sha256": "ce7af7ffe5cb9bf002eb596a4cc8093081ce880687cffd44d2d7c7c56871cc37",
+          "gitBlob": "fa410cf056e9de332e6ff9c3c57b907ddf34b484"
+        },
+        {
+          "path": "src/x402-wire.js",
+          "bytes": 39886,
+          "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+          "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+        }
+      ],
+      "actualRepeatedDataCommands": 0,
+      "scope": "EXACT_UNCHANGED_DATA_RUNTIME_INPUTS_ONLY;NOT_NATIVE_GRAPH"
+    },
+    {
+      "path": "qualification/original-grant-channel.actual-local-result.json",
+      "sha256": "a751d909b6859a4b4c6438b6b8dad8459589f31686e082363d924e35e406dcea",
+      "rawQualificationSha256": "f0d2370764b432da5a1acb4e19137f8fe32edab8bbd3f2e5b37a3004764aeb5a",
+      "proofKind": "WHOLE_RAW_RESULT",
+      "count": 50,
+      "runtimeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25",
+      "sourceChecks": [
+        {
+          "path": "package.json",
+          "bytes": 2677,
+          "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+          "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+        },
+        {
+          "path": "qualification/original-grant-channel.behavior.mjs",
+          "bytes": 20188,
+          "sha256": "eeac35bd0074ab470aadb64908deefb855b50f4ea625ee8a7be4de53e6486053",
+          "gitBlob": "be7cd680e8115fa55b5481e6c21b60af286699b0"
+        },
+        {
+          "path": "src/canonical.js",
+          "bytes": 967,
+          "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+          "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4"
+        },
+        {
+          "path": "src/service-credit-funding-post-native-response.js",
+          "bytes": 8219,
+          "sha256": "459a92037fd817a5d9eca1500d32cf789818c5bee255ed7e76b1fac97fd9914f",
+          "gitBlob": "8db546ee2f70bc64468fcb9826516403c559a548"
+        },
+        {
+          "path": "src/service-credit-model.js",
+          "bytes": 56835,
+          "sha256": "f8e57c6e4b576c4b4c650d757ab9c86580c5bc4e7d457440092668b2894cefda",
+          "gitBlob": "914c325fe8c408d9936c7bb91f9ec53890cc290d"
+        },
+        {
+          "path": "src/service-credit-original-funding-grant-reader-core.js",
+          "bytes": 5236,
+          "sha256": "1cd5da104ea30503cb48e3951b09b3b00b593236f02a5b70dea332943ec6e7a6",
+          "gitBlob": "0c80207672676006a6c13c80c67b8427d6a97b18"
+        },
+        {
+          "path": "src/service-credit-original-funding-grant.js",
+          "bytes": 7995,
+          "sha256": "61fd9aee09949462ae6fa0e1a0c0fd4e67f15f8c7be78612bfe9928559b6be70",
+          "gitBlob": "3affa8c70e08f26e48c3e213098e6e3036d6ffff"
+        },
+        {
+          "path": "src/service-credit-original-grant-http-binding.js",
+          "bytes": 7866,
+          "sha256": "23f27e79a16a32459dc3929ec0a8446d219324f616fd7027820540f3aaff8bac",
+          "gitBlob": "2b34ba5da6d7695d9432de9661fd7015258a1416"
+        },
+        {
+          "path": "src/service-credit-original-grant-http-reader-core.js",
+          "bytes": 3039,
+          "sha256": "0ead9229abd1574601d8a29ae2d66930122cd844a13798f3e9291827ff6f9a7e",
+          "gitBlob": "728b649e278d819e8dbbe56376d072538bcb8c03"
+        }
+      ],
+      "actualRepeatedDataCommands": 0,
+      "scope": "EXACT_UNCHANGED_DATA_RUNTIME_INPUTS_ONLY;NOT_NATIVE_GRAPH"
+    },
+    {
+      "path": "qualification/original-funding-grant.actual-local-result.json",
+      "sha256": "d14f01c5eb75c9f7d21c6916742ef54f2d7758d07c1b9868307f1ef8757f0ee1",
+      "rawQualificationSha256": "97c9c9e98b84dd84a453f92f30e3180cf91a318233958968e6e0ee47d6c7fda8",
+      "proofKind": "RAW_GROUP",
+      "count": 45,
+      "runtimeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25",
+      "sourceChecks": [
+        {
+          "path": "package.json",
+          "bytes": 2677,
+          "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+          "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+        },
+        {
+          "path": "qualification/original-funding-grant.behavior.mjs",
+          "bytes": 19806,
+          "sha256": "c4f94963fc589f42dd62879d7bd532153d5adf9e3929adc111807738612dbe46",
+          "gitBlob": "ee45cade9e72125e3b8616551c664d9dbe4ef685"
+        },
+        {
+          "path": "src/canonical.js",
+          "bytes": 967,
+          "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+          "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4"
+        },
+        {
+          "path": "src/service-credit-model.js",
+          "bytes": 56835,
+          "sha256": "f8e57c6e4b576c4b4c650d757ab9c86580c5bc4e7d457440092668b2894cefda",
+          "gitBlob": "914c325fe8c408d9936c7bb91f9ec53890cc290d"
+        },
+        {
+          "path": "src/service-credit-original-funding-grant-reader-core.js",
+          "bytes": 5236,
+          "sha256": "1cd5da104ea30503cb48e3951b09b3b00b593236f02a5b70dea332943ec6e7a6",
+          "gitBlob": "0c80207672676006a6c13c80c67b8427d6a97b18"
+        },
+        {
+          "path": "src/service-credit-original-funding-grant.js",
+          "bytes": 7995,
+          "sha256": "61fd9aee09949462ae6fa0e1a0c0fd4e67f15f8c7be78612bfe9928559b6be70",
+          "gitBlob": "3affa8c70e08f26e48c3e213098e6e3036d6ffff"
+        }
+      ],
+      "actualRepeatedDataCommands": 0,
+      "scope": "EXACT_UNCHANGED_DATA_RUNTIME_INPUTS_ONLY;NOT_NATIVE_GRAPH",
+      "group": "originalGrantLookup",
+      "entry": "qualification/original-funding-grant.behavior.mjs",
+      "sourceTaskStatus": "PASS",
+      "sourceTaskOutcome": "SUCCESS",
+      "sourceCommandExit": 0,
+      "selectedGroupOnly": true,
+      "wholeSourceTaskPassed": true,
+      "wholeSourceTaskReused": false
+    },
+    {
+      "path": "qualification/api-credit-returned-opening-custody.actual-local-result.json",
+      "sha256": "c7860d7e3842ba45b481170b3c26a22e4ce0bbdd2e0e0119949ffde3d0b875f5",
+      "rawQualificationSha256": "ee5f3395b24acf7084ab11275287beda2b5595a8cf20ace06e70b99616386a90",
+      "proofKind": "WHOLE_RAW_RESULT",
+      "count": 25,
+      "runtimeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25",
+      "sourceChecks": [
+        {
+          "path": "package.json",
+          "bytes": 2677,
+          "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+          "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+        },
+        {
+          "path": "qualification/api-credit-returned-opening-custody.behavior.mjs",
+          "bytes": 13660,
+          "sha256": "3c02ee4c573e74b4b1b0245fc79c5671cc0e761d09c123092198b3032195c267",
+          "gitBlob": "da11150619c1dedf014709135630baef8929932f"
+        },
+        {
+          "path": "src/api-credit-returned-opening-custody.js",
+          "bytes": 8483,
+          "sha256": "7ae82c161f22c3eb1f202c6cf46d0bfed7eb24a116ea08b11841dad42f49fc22",
+          "gitBlob": "2c137b955c0e90a691eb3ab8f56a15e842c57496"
+        }
+      ],
+      "actualRepeatedDataCommands": 0,
+      "scope": "EXACT_UNCHANGED_DATA_RUNTIME_INPUTS_ONLY;NOT_NATIVE_GRAPH"
+    },
+    {
+      "path": "qualification/api-credit-opening-failure-custody.actual-local-result.json",
+      "sha256": "6dab49d4feba6510bcd1a65c2e58aaeeb5c9aa8f7d70485db4e2c64396712698",
+      "rawQualificationSha256": "3b7ffab72f7df56ca64c20743ff078c43d9af64db74a2bd6fd28b6fe02bf5737",
+      "proofKind": "WHOLE_RAW_RESULT",
+      "count": 20,
+      "runtimeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25",
+      "sourceChecks": [
+        {
+          "path": "package.json",
+          "bytes": 2677,
+          "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+          "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+        },
+        {
+          "path": "qualification/api-credit-opening-failure-custody.behavior.mjs",
+          "bytes": 12552,
+          "sha256": "e0c964131634286d005c30fe62395407c99e9004eadfa79939228cc2c63f1eff",
+          "gitBlob": "9aff01461b6f00bd89de0ac5b089e6f3e7b5a2d1"
+        },
+        {
+          "path": "src/api-credit-opening-failure-custody.js",
+          "bytes": 8072,
+          "sha256": "576130ad22d64d399723efcfdc2727a5fd4d62e13a7d3c2a3ded2d9ee91cbbbe",
+          "gitBlob": "1fa08c517b494441c5a3ad5bea589d2c3e6cae51"
+        }
+      ],
+      "actualRepeatedDataCommands": 0,
+      "scope": "EXACT_UNCHANGED_DATA_RUNTIME_INPUTS_ONLY;NOT_NATIVE_GRAPH"
+    },
+    {
+      "path": "qualification/api-credit-module-source.actual-local-result.json",
+      "sha256": "7a1a48533d5225f0ddcd4dd3a67a5a29d0c4fbb39f319b78bec9ce705c2fa127",
+      "rawQualificationSha256": "b12003ce47688c2c3b245ba7e549b532b6c71e8eff4740977de52ddc5f871b0b",
+      "proofKind": "WHOLE_RAW_RESULT",
+      "count": 28,
+      "runtimeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25",
+      "sourceChecks": [
+        {
+          "path": "package.json",
+          "bytes": 2677,
+          "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+          "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+        },
+        {
+          "path": "qualification/api-credit-module-source.behavior.mjs",
+          "bytes": 14212,
+          "sha256": "7bb8beff41f0a1ea2b2a61b17cd207df2eeea54d9b6ed982d8e6f257dfdad3ac",
+          "gitBlob": "185ef0dcae197af838649bb8dc743186486f7b71"
+        },
+        {
+          "path": "src/api-credit-module-source-guard.js",
+          "bytes": 9649,
+          "sha256": "158bbc788502bf35394ce6972c619308ade70fc1584d52e1cd907f25acd2364a",
+          "gitBlob": "374c53422e9c48ec29b6c88b5cbae321981c178c"
+        }
+      ],
+      "actualRepeatedDataCommands": 0,
+      "scope": "EXACT_UNCHANGED_DATA_RUNTIME_INPUTS_ONLY;NOT_NATIVE_GRAPH"
+    },
+    {
+      "path": "qualification/original-grant-query-cli.initial-data-failure.json",
+      "sha256": "b0be88be85fbd2c89e3930ecf03ee8acd527569a78a2bcf076d5d3648c037469",
+      "rawQualificationSha256": "b16430f3bf45d99c62e4287980cda098d8d8af80629436ac754f0574206ba147",
+      "proofKind": "RAW_GROUP",
+      "count": 12,
+      "runtimeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25",
+      "sourceChecks": [
+        {
+          "path": "package.json",
+          "bytes": 2677,
+          "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+          "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+        },
+        {
+          "path": "qualification/api-credit-execution-context.behavior.mjs",
+          "bytes": 6979,
+          "sha256": "2dc6f7a7c02773e0189e8a5363f84e77d375e4ddcc35eb6501146dc6c4e1e8e0",
+          "gitBlob": "9b4220407254965d3043e16ae3d1faecbb2ee273"
+        },
+        {
+          "path": "src/api-credit-cli-arguments.js",
+          "bytes": 2580,
+          "sha256": "86a69f720c568f719df3ba49475b726acb56b544b1cd8f72b57ea7e8fe89933e",
+          "gitBlob": "66792602d91d8b3b48994fc50e90a14b14768ede"
+        },
+        {
+          "path": "src/api-credit-cli-execution-context.js",
+          "bytes": 1742,
+          "sha256": "50e365f38989d98bdd4532da4a5ab96418a006ef2a42d461a7dbcfcdec01e8df",
+          "gitBlob": "87b9b93260114b2f7580a57b5c569c973d08d1c7"
+        },
+        {
+          "path": "src/api-credit-cli-invocation.js",
+          "bytes": 939,
+          "sha256": "f9bc799176ae9ef5e6f82a8a746df786914bbd3e297f7c47603905e9dfc203d6",
+          "gitBlob": "535a926819de04a0654a633c6db8aa6dbe8b9802"
+        }
+      ],
+      "actualRepeatedDataCommands": 0,
+      "scope": "EXACT_UNCHANGED_DATA_RUNTIME_INPUTS_ONLY;NOT_NATIVE_GRAPH",
+      "group": "r302_rerun_4",
+      "entry": "qualification/api-credit-execution-context.behavior.mjs",
+      "sourceTaskStatus": "UNKNOWN",
+      "sourceTaskOutcome": "FAILURE",
+      "sourceCommandExit": 0,
+      "selectedGroupOnly": true,
+      "wholeSourceTaskPassed": false,
+      "wholeSourceTaskReused": false
+    },
+    {
+      "path": "qualification/original-grant-query-cli.initial-data-failure.json",
+      "sha256": "b0be88be85fbd2c89e3930ecf03ee8acd527569a78a2bcf076d5d3648c037469",
+      "rawQualificationSha256": "b16430f3bf45d99c62e4287980cda098d8d8af80629436ac754f0574206ba147",
+      "proofKind": "RAW_GROUP",
+      "count": 10,
+      "runtimeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25",
+      "sourceChecks": [
+        {
+          "path": "package.json",
+          "bytes": 2677,
+          "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+          "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+        },
+        {
+          "path": "qualification/api-credit-runtime-admission.behavior.mjs",
+          "bytes": 5503,
+          "sha256": "aa88e013d4b8ac6caf6c2bd491ac6db9fbbfefe6cbe22ffa17b1c7b6cedec2c9",
+          "gitBlob": "7d61e32d16ba01ce5dcfa8262226b97e2cd3ac21"
+        },
+        {
+          "path": "src/api-credit-cli-arguments.js",
+          "bytes": 2580,
+          "sha256": "86a69f720c568f719df3ba49475b726acb56b544b1cd8f72b57ea7e8fe89933e",
+          "gitBlob": "66792602d91d8b3b48994fc50e90a14b14768ede"
+        },
+        {
+          "path": "src/api-credit-cli-invocation.js",
+          "bytes": 939,
+          "sha256": "f9bc799176ae9ef5e6f82a8a746df786914bbd3e297f7c47603905e9dfc203d6",
+          "gitBlob": "535a926819de04a0654a633c6db8aa6dbe8b9802"
+        }
+      ],
+      "actualRepeatedDataCommands": 0,
+      "scope": "EXACT_UNCHANGED_DATA_RUNTIME_INPUTS_ONLY;NOT_NATIVE_GRAPH",
+      "group": "r302_rerun_5",
+      "entry": "qualification/api-credit-runtime-admission.behavior.mjs",
+      "sourceTaskStatus": "UNKNOWN",
+      "sourceTaskOutcome": "FAILURE",
+      "sourceCommandExit": 0,
+      "selectedGroupOnly": true,
+      "wholeSourceTaskPassed": false,
+      "wholeSourceTaskReused": false
+    }
+  ],
+  "reexecutedRelevantDataProofs": [
+    {
+      "sha256": "bcc17a4e649f93db49a5d1113e67dddc10c2933e796a66c3f2245f339910d0ef",
+      "group": "fundingGrantCustody",
+      "entry": "qualification/funding-grant-custody.behavior.mjs",
+      "count": 40,
+      "changedRuntimeInputs": [
+        "src/api-credit-funding-grant-recovery-record.js",
+        "src/api-credit-original-grant-query-profile.js",
+        "src/api-credit-stored-grant-query-profile.js"
+      ],
+      "currentGroup": "r305_rerun_0",
+      "runtimeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25"
+    },
+    {
+      "sha256": "fcd17a4f5a5496513a6db00dba02145cc0d834af647a2155f452190837eae433",
+      "group": "originalGrantQueryCli",
+      "entry": "qualification/original-grant-query-cli.behavior.mjs",
+      "count": 47,
+      "changedRuntimeInputs": [
+        "src/api-credit-original-grant-query-profile.js",
+        "src/api-credit-stored-grant-query-profile.js"
+      ],
+      "currentGroup": "r305_rerun_1",
+      "runtimeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25"
+    },
+    {
+      "sha256": "3fec02fb6ecf234fc992546c19f7c104a12b79b47f166f932dd5b01846a9dde7",
+      "group": "r304_rerun_0",
+      "entry": "qualification/api-credit-late-inspection-close.behavior.mjs",
+      "count": 12,
+      "changedRuntimeInputs": [
+        "src/api-credit-original-grant-query-profile.js",
+        "src/api-credit-stored-grant-query-profile.js"
+      ],
+      "currentGroup": "r305_rerun_2",
+      "runtimeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25"
+    },
+    {
+      "sha256": "3fec02fb6ecf234fc992546c19f7c104a12b79b47f166f932dd5b01846a9dde7",
+      "group": "r304_rerun_1",
+      "entry": "qualification/api-credit-exact-request-budget.behavior.mjs",
+      "count": 478,
+      "changedRuntimeInputs": [
+        "src/api-credit-original-grant-query-profile.js",
+        "src/api-credit-stored-grant-query-profile.js"
+      ],
+      "currentGroup": "r305_rerun_3",
+      "runtimeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25"
+    },
+    {
+      "sha256": "3fec02fb6ecf234fc992546c19f7c104a12b79b47f166f932dd5b01846a9dde7",
+      "group": "r304_rerun_2",
+      "entry": "qualification/api-credit-recorded-result-inspection.behavior.mjs",
+      "count": 25,
+      "changedRuntimeInputs": [
+        "src/api-credit-original-grant-query-profile.js",
+        "src/api-credit-stored-grant-query-profile.js"
+      ],
+      "currentGroup": "r305_rerun_4",
+      "runtimeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25"
+    },
+    {
+      "sha256": "3fec02fb6ecf234fc992546c19f7c104a12b79b47f166f932dd5b01846a9dde7",
+      "group": "r304_rerun_3",
+      "entry": "qualification/api-credit-exact-checkpoint-query.behavior.mjs",
+      "count": 15,
+      "changedRuntimeInputs": [
+        "src/api-credit-original-grant-query-profile.js",
+        "src/api-credit-stored-grant-query-profile.js"
+      ],
+      "currentGroup": "r305_rerun_5",
+      "runtimeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25"
+    },
+    {
+      "sha256": "b16430f3bf45d99c62e4287980cda098d8d8af80629436ac754f0574206ba147",
+      "group": "r302_rerun_6",
+      "entry": "qualification/api-credit-funding-inspection.behavior.mjs",
+      "count": 31,
+      "changedRuntimeInputs": [
+        "src/api-credit-original-grant-query-profile.js",
+        "src/api-credit-stored-grant-query-profile.js"
+      ],
+      "currentGroup": "r305_rerun_6",
+      "runtimeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25"
+    }
+  ],
+  "reusedParserProofs": {
+    "sha256": "bcc17a4e649f93db49a5d1113e67dddc10c2933e796a66c3f2245f339910d0ef",
+    "count": 28,
+    "runtimeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25",
+    "sourceChecks": [
+      {
+        "path": "src/zenon/native-api-credit-operator-launcher.js",
+        "sourceSha256": "6b3b0ea62a231549837230f882ce0fd8cd155b29caa55a8f22aa57c638b8ef31",
+        "priorParserReceiptSha256": "2fb6420cff521a7deb4968be1874a1c556ec56a2bb509777e63e399b5c90a32f"
+      },
+      {
+        "path": "src/zenon/native-api-credit-operator-key.js",
+        "sourceSha256": "e1f744465e917a71690d6821607a215291ddefde0888d2928ff8e79a970026c9",
+        "priorParserReceiptSha256": "f88146ca9c5853d92cb33d51d336dc5fc65eae60927cd43ed02f0eab817d49d1"
+      },
+      {
+        "path": "src/zenon/native-api-credit-operator-pipes.js",
+        "sourceSha256": "c6e68f3234aee9d4c9275f3b2e5a1b0be7200751aa3e06a308a07a6b736a4618",
+        "priorParserReceiptSha256": "a080c5de89f23210865af70e8d70fc20664e5e539b976d41ea3393f1a8443ed7"
+      },
+      {
+        "path": "src/zenon/sdk105-native-api-credit-command-session.js",
+        "sourceSha256": "9e487fff48de4dfdf2e9e2b1317f1aad221bbc1dd1f30c46370614c9482c788c",
+        "priorParserReceiptSha256": "3705481e4f34b780995ca7379b1b093eef15d87d7afb1a41ff19d90209e1f30d"
+      },
+      {
+        "path": "src/buyer-cli.js",
+        "sourceSha256": "1472e920578c3d0391ae29e93a9d82566eb0de4b405cfe3fdac893ce35238fd9",
+        "priorParserReceiptSha256": "8c30f883f0ed300cb87b444570169a6e508249ed4372d33d8954cd7071ea76ea"
+      },
+      {
+        "path": "src/zenon/native-api-credit-signer-inspection.js",
+        "sourceSha256": "d9c6c3817df610789c9364b5d105b809198c7ea4b19d41b1d26a02849c0c72d6",
+        "priorParserReceiptSha256": "381ad9dbda5c8575afaffeec7356e815fd1ecd39afb7052691fbe3c504f6f09b"
+      },
+      {
+        "path": "src/service-credit-native-https-client-transport.js",
+        "sourceSha256": "dfa3c6989facb2c25eae6d3018206d9aa440962ad93030b937743954c70b776b",
+        "priorParserReceiptSha256": "6b97e5ec4bd99ae78e658a58aa7573dafb629cc74b36c6fd0052652c0fe2b9f3"
+      },
+      {
+        "path": "src/service-credit-custodied-sqlite-http-client.js",
+        "sourceSha256": "1f2c12f79e84cd95acafcb1266dc9592b798232232bcb0460bb6ba38febcaa35",
+        "priorParserReceiptSha256": "77749c0042487c8a936a9d0b49035f2f9af7640943e310d4330a2179325fa3a0"
+      },
+      {
+        "path": "src/x402-official-v6-original-payment-client.js",
+        "sourceSha256": "c87a58dafd852e429674398cd68c6cfb5f4e8d44574432459cccccad16e9ca49",
+        "priorParserReceiptSha256": "2ddee6db6e19ae8ed06b9618e45ca54a1cd44b21858677898742662692f8ae04"
+      },
+      {
+        "path": "src/x402-native-v6-funding-post-client.js",
+        "sourceSha256": "c52992598439e3648650a6742e801f90efa61779ef5353ef7c5c8b01c992e396",
+        "priorParserReceiptSha256": "54c19b951e718b1dc5b2b881b28d64471d91ae991f6471a57de90fd5b00567e3"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-native-funding-service-client.js",
+        "sourceSha256": "7bc4816019c63cf69d9703bf5473eedee16565682d8c21c40afa6b0d8613e4ed",
+        "priorParserReceiptSha256": "b4d81dd823d22358fc067f3f7451a422a349f0d6816bdd6d84acb8dce9b8bd1f"
+      },
+      {
+        "path": "src/service-credit-recovery-inspect-cli.js",
+        "sourceSha256": "75284ade7fe8bb28b46a84dd5bc7d4a5223e0592c69792e1971ba20acd5ac8c1",
+        "priorParserReceiptSha256": "7baa34cc0881744bcfb412c730db27d9cecf98153436f05c522fed58dea96609"
+      },
+      {
+        "path": "src/api-credit-native-package-entries.js",
+        "sourceSha256": "8ead14ffdd8a9a65b77226603c1a55664a3e6040c9719f14127f1e204f346894",
+        "parserReceiptSha256": "0e0b8df8afcce91bc5a7a8da55b26246a88f582a3c4f8ff33fa15b0ce5c62532"
+      },
+      {
+        "path": "src/zenon/native-api-credit-funding-inspection.js",
+        "sourceSha256": "59af0c6c382e68dc10b5c7218f96991c7e8acf26db4f6c3889619026dbc1d206",
+        "parserReceiptSha256": "71716315f00b292b4f632cd85e46e4d20ad0995f61cc8aef1141fd65ba024cc4"
+      },
+      {
+        "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "sourceSha256": "458d8d396c594a0c7f75a2d9285cfb2965d3bcae20f64bca7b1df013d32d95ba",
+        "parserReceiptSha256": "b9fe283ba9679bb71eee6bd77ba2af51c7397fcd579c7f40072c5da6b15c1392"
+      },
+      {
+        "path": "src/service-credit-sqlite-store.js",
+        "sourceSha256": "c7a5559685f0ccd130d35804d58879133a2c05101adbdf965f65b5b152b99e40",
+        "parserReceiptSha256": "0adbec005a807909eb721dd257511ae8612f5d5577f4954a66ff0c0d49297d1c"
+      },
+      {
+        "path": "src/service-credit-original-funding-grant-native-reader.js",
+        "sourceSha256": "7cddb71cdb81b45898046326fba259a5d3aace65ddd18299a38f07b1bf46e40e",
+        "parserReceiptSha256": "c43a9b499c971233a93a589b3e8d4154464456256c24bd3f5713b77b9f8af43e"
+      },
+      {
+        "path": "src/service-credit-funding-post-native-https-transport.js",
+        "sourceSha256": "1be2701c96fa7ed9188ab989ceeaaae726dbbe78d61abf10487b5ae4b0f2b21d",
+        "parserReceiptSha256": "1cf8d36261d854643ad4c2db9a830bcb567377898fb9d1028497439c62b25d3f"
+      },
+      {
+        "path": "src/api-credit-cli.js",
+        "sourceSha256": "480c8e7e2c8d8f05d95c8996cb90b1fe67df9b30cd59d3a3622253f9c3cdaa33",
+        "parserReceiptSha256": "e8038585020d0093526c9f6a0035797f76d5279cdc14b998f7adadd8da6005b2"
+      },
+      {
+        "path": "src/zenon/native-api-credit-recovery-inspection-launcher.js",
+        "sourceSha256": "62a6a9b2fa38b01c8168550c29d7c8d278a061bfb1cb73f702533ac2fcb6a03b",
+        "parserReceiptSha256": "9bf67c88604b3fcb03e16c74cc1622db34ec305487c056e1a9fd39fc13cee8e2"
+      },
+      {
+        "path": "src/service-credit-bounded-https-ingress-owner.js",
+        "sourceSha256": "88f31af7493ebc4f622b72845ce7c33a7ffa3b6cb8e4b8ae78dddd10d8787a45",
+        "parserReceiptSha256": "fc7a88b77aebc1e4c47b195e40764e1dbfae51c3d43582b1b3740382df6677b4"
+      },
+      {
+        "path": "src/service-credit-original-grant-native-http-downstream.js",
+        "sourceSha256": "2841e33b1d098226c6794656f535c7fe6127fc7ba25361e661ae141407c6ba84",
+        "parserReceiptSha256": "1ea7df487cc52600a6cd1fc3feb54a892de6254c0a77ed6ab440a347b73a321f"
+      },
+      {
+        "path": "src/x402-issued-funding-grant-native-application.js",
+        "sourceSha256": "397132f6dd9ccdbee32b1bc23246c7d7c56245bca5e5ae2535683c238ac9d3f0",
+        "parserReceiptSha256": "476e283c0fa1b7dfbf74cfa8cd319023f78c4d2856b532ad056e0f4b07d80618"
+      },
+      {
+        "path": "src/x402-official-funding-post-intake-composition.js",
+        "sourceSha256": "51834311ab25336e77a8737319f0c8b316d2209a65020e29281ce52602baa604",
+        "parserReceiptSha256": "0d4c51ff2e912414fd89b53ad5eca5280f73389b4b1a8590b4006cf0b68c5401"
+      },
+      {
+        "path": "src/x402-official-selected-settlement-server.js",
+        "sourceSha256": "bb3b1f4897f86a2deb709ad2da03d3e86fbad4880e7add1a8e3ab7d9180db0c0",
+        "parserReceiptSha256": "8e065c9b4d6c79556de9ecbd91947423e74de42b995e7823fc8e5af5cb5961dc"
+      },
+      {
+        "path": "src/original-funding-spending-sqlite-store.js",
+        "sourceSha256": "4b46a7c7d59b1bb80f036a81e028d16d442b3b7792bd34776e1ab67d031db764",
+        "parserReceiptSha256": "81ace92119762ee30af3c4d0202f4c645a0dc62d5aae28ee65c338af118ffaae"
+      },
+      {
+        "path": "src/original-funding-spending-file-owner.js",
+        "sourceSha256": "4c28b8789f48dd9eb094828e44d14de4a3b585956954d43d4b2fd7342729e90d",
+        "parserReceiptSha256": "64ab476b5a403d5a3fde1c1ca8fb7695ecfc3a7f30883c651b288fa981ccc66e"
+      },
+      {
+        "path": "src/zenon/sdk105-native-api-credit-application.js",
+        "sourceSha256": "6567ebc0759d3e0af1636a09023cef7db45276e3bb3af8e86baa66a69de5e4bf",
+        "parserReceiptSha256": "29cf55af141a23efd913c82654aff8e48ebb1cd88bcba42e884cef2c62967794"
+      }
+    ],
+    "actualNewParserCommands": 2,
+    "scope": "EXACT_UNCHANGED_PARSER_SOURCE_AND_RUNTIME_ONLY",
+    "predecessorPublicResult": "qualification/funding-grant-custody.actual-local-result.json",
+    "predecessorPublicCommit": "9bba56374c1249889eafe2f79d28ad5aa71d8da5",
+    "predecessorSourceMain": null,
+    "publicationScope": "EXACT_CURRENT_MAIN_PREDECESSOR_RESULT"
+  },
+  "currentParserProofs": [
+    {
+      "path": "src/zenon/native-api-credit-original-grant-query.js",
+      "sourceSha256": "3c943249313e87bcdb9957ca6e733adff576cdc658320fad077484a4fb77811c",
+      "parserReceiptSha256": "347886f82307bf895970f00befa64c352cd1c7a29e90ec0e10da339545b55931"
+    },
+    {
+      "path": "src/api-credit-native-package-admission.js",
+      "sourceSha256": "4437111202a167971eb00617802adad39555be5efea4da3142f1966523b5dea2",
+      "parserReceiptSha256": "f4dbf429be02eef64c2c4e1856ec288f87a00603a1d447cd49198c902a677b33"
+    }
+  ],
+  "actualProfileProjectionFileProtocolQueryOwnerAndCoordinator": true,
+  "fileTransportClockTimerAndFifoPorts": "DECLARED_MEMORY_ONLY",
+  "signatureData": "UNAUTHENTICATED_EXISTING_FIELDS",
+  "actualDataNodeCommands": 8,
+  "actualSyntaxNodeCommands": 2,
+  "earlierCurrentTurnDataCommands": 8,
+  "initialFailedCandidate": {
+    "path": "qualification/stored-grant-query.initial-data-failure.json",
+    "bytes": 165238,
+    "sha256": "14e5900393bce2f70799f841d21959d8de0fb6a938d69a7835f71e293de831a9"
+  },
+  "nativeExecutions": 0,
+  "SDK": 0,
+  "SQLite": 0,
+  "keys": 0,
+  "signatures": 0,
+  "sockets": 0,
+  "nonceSearches": 0,
+  "nodeChildren": 0,
+  "actualPrepare": 0,
+  "payouts": 0,
+  "task": "CLOSED/SUCCESS",
+  "resources": {
+    "taskQuotaBytes": 4194304,
+    "plannedExecutionPeakBytes": 3007974,
+    "sourceInputs": 244,
+    "dataRuntimeInputs": 124,
+    "nativeBuyerSourceInputs": 165,
+    "additionalProviderSourceInputs": 51,
+    "parserInputs": 2,
+    "reusedParserInputs": 28,
+    "retainedExactRuntimeDataControls": 231,
+    "reexecutedRelevantDataControls": 648,
+    "sourceOnlyCASLookupsAvoided": 112,
+    "materializedInputs": 126,
+    "sourceOnlyAliasesAvoided": 118,
+    "CASVerifiedReuse": 127,
+    "CASNewImports": 5,
+    "sourceTextArchives": 0,
+    "minimumFreeFloorBytes": 10737418240,
+    "streamAllocationPlan": {
+      "serialCommands": true,
+      "maximumRetainedSuccessfulDataStdoutBytes": 116416,
+      "requiredSuccessfulStderrBytes": 0,
+      "maximumOnePendingStderrBytes": 1048576,
+      "unchangedParserReceiptsReused": 28,
+      "newParserCommands": 2,
+      "sourceAliasBytes": 1425283,
+      "newSourceCASBytes": 155555,
+      "metadataMarginBytes": 262144,
+      "CASPreviouslyVerifiedSourceBytesNotDoubleCharged": true,
+      "serialDataCommands": 8
+    },
+    "serialDataCommands": 8,
+    "earlierDataCommands": 8,
+    "earlierFailedDataCommands": 1,
+    "failedDataTasks": 1,
+    "quotaExpanded": false,
+    "parserBatchAdmission": true
+  },
+  "nativePersistence": "NOT_ESTABLISHED",
+  "nativeAcceptance": "NOT_ESTABLISHED",
+  "LinuxAcceptance": "NOT_ESTABLISHED",
+  "current108CISeparate": true,
+  "newControlsIncludedIn108CI": false
+}

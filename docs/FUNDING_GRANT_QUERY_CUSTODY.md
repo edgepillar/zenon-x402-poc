@@ -66,8 +66,12 @@ borrowed database or starts a competing cleanup.
 The keyless projection requires independent payment/original/checkpoint/query
 pins and returns the exact existing profile. It grants no sign, funding send,
 service dispatch or activation authority and leaves spending reservations
-unchanged. Native CLI acquisition of this new custody table is still a separate
-source integration step; the existing ready-profile query mode is unchanged.
+unchanged. The same query flag now accepts an explicit version-two stored
+profile with a separately retained full-profile hash; its source binding reads
+only the named existing four-table owner, revokes/closes it and then enters the
+existing one-query owner. The ready version-one path remains unchanged. See
+[stored query recovery](STORED_GRANT_QUERY_RECOVERY.md). This mount is source
+integration, with no native SQL/HTTPS execution.
 Fresh-process SQL and funding-ACK-loss recovery are not established by a memory
 port test or parser check.
 

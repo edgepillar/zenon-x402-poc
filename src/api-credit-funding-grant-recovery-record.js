@@ -27,7 +27,7 @@ function snapshot(value,depth=0,budget={nodes:8192,bytes:65536}){
 }
 function profile(textInput){
   text(textInput,65536);let token;
-  try{token=decodeApiCreditOriginalGrantQueryProfile(textInput);const captured=consumeApiCreditOriginalGrantQueryProfile(token);
+  try{token=decodeApiCreditOriginalGrantQueryProfile(textInput);if(token.originalGrantQueryVersion!==1)fail();const captured=consumeApiCreditOriginalGrantQueryProfile(token);
     return F({original:JSON.parse(textInput).originalPayment,captured,transactionHash:token.paymentHash});}
   finally{if(token!==undefined)releaseApiCreditOriginalGrantQueryProfile(token);}
 }

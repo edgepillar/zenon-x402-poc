@@ -1,3 +1,4 @@
+import { decodeApiCreditStoredGrantQueryProfile,consumeApiCreditStoredGrantQueryProfile,releaseApiCreditStoredGrantQueryProfile } from './api-credit-stored-grant-query-profile.js';
 import { Buffer } from 'node:buffer';
 import { createHash } from 'node:crypto';
 import { types } from 'node:util';
@@ -24,14 +25,16 @@ function freezeJson(v, depth = 0, budget = { nodes: 4096 }) {
 function digest(domain, value) { return 'sha256:' + createHash('sha256').update(domain + '\0', 'ascii').update(canonicalJson(value)).digest('hex'); }
 function positive(n, high) { if (!Number.isSafeInteger(n) || Object.is(n, -0) || n < 1 || n > high) fail(); }
 
-/** One original payment, retained grant-selection DATA and an existing read
- * proof. No grant ID, wallet, key pipe, SQL path or signer is accepted. The
- * comparisons below do not authenticate signatures, chain state or funding. */
+/** Ready version one retains one original payment, grant-selection DATA and
+ * an existing read proof. Explicit version two selects only existing custody
+ * and independent pins. Neither admits a wallet, key pipe or signer. These
+ * comparisons do not authenticate signatures, chain state or funding. */
 export function decodeApiCreditOriginalGrantQueryProfile(text) {
   if (arguments.length !== 1 || typeof text !== 'string' || Buffer.byteLength(text) > 65536
       || Buffer.from(text).toString('utf8') !== text) fail();
   let raw; try { raw = JSON.parse(text); freezeJson(raw); } catch { fail(); }
   if (canonicalJson(raw) !== text) fail();
+  if (raw.originalGrantQueryVersion === 2) return decodeApiCreditStoredGrantQueryProfile(text);
   const c = fields(raw, ['originalGrantQueryVersion', 'originalPayment', 'originalFunding', 'query', 'transport']);
   if (c.originalGrantQueryVersion !== 1) fail();
   const original = F(fields(c.originalPayment, ['resourceUrl', 'serializedCheckpoint', 'expectedPins']));
@@ -79,9 +82,11 @@ export function decodeApiCreditOriginalGrantQueryProfile(text) {
 }
 export function consumeApiCreditOriginalGrantQueryProfile(token) {
   if (arguments.length !== 1 || token === null || typeof token !== 'object' || types.isProxy(token)) fail();
+  if (!PROFILES.has(token)) return consumeApiCreditStoredGrantQueryProfile(token);
   const state = PROFILES.get(token); if (!state || state.used || state.released) fail(); state.used = true; return state.captured;
 }
 export function releaseApiCreditOriginalGrantQueryProfile(token) {
-  if (arguments.length !== 1 || token === null || typeof token !== 'object' || types.isProxy(token) || !PROFILES.has(token)) fail();
+  if (arguments.length !== 1 || token === null || typeof token !== 'object' || types.isProxy(token)) fail();
+  if (!PROFILES.has(token)) return releaseApiCreditStoredGrantQueryProfile(token);
   token.release();
 }

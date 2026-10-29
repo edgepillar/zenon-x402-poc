@@ -2463,8 +2463,8 @@
     },
     {
       "path": "src/api-credit-funding-grant-recovery-record.js",
-      "bytes": 7115,
-      "sha256": "a4845e34f47a4b912282e0f58dee204d397936b0044558de924c56e696f188b4",
+      "bytes": 7161,
+      "sha256": "15ee09dcb45659c49a7bb18157d8fba394d246ed34a0b336dc8fa7b21ec9d3d7",
       "format": "module"
     },
     {
@@ -2517,8 +2517,8 @@
     },
     {
       "path": "src/api-credit-original-grant-query-profile.js",
-      "bytes": 7250,
-      "sha256": "b278fc9c6c1588aa7d8198213b7835319aec82551f1c84070f8819416d97809e",
+      "bytes": 7740,
+      "sha256": "d91091174e614cc825aaf4c0dc4c2d73470d5e2be5385fb4408dba24b28e4cfd",
       "format": "module"
     },
     {
@@ -2555,6 +2555,18 @@
       "path": "src/api-credit-signer-inspection-profile.js",
       "bytes": 3942,
       "sha256": "c13564d0af16b3209077f0d2093deb8c46d2b929c620e05a8a7ddf47d05c991d",
+      "format": "module"
+    },
+    {
+      "path": "src/api-credit-stored-grant-query-owner.js",
+      "bytes": 8130,
+      "sha256": "73fc989ae1c703ab93f5d4afc4089409c39a2895e6e65fc44896dc6ac9f5153e",
+      "format": "module"
+    },
+    {
+      "path": "src/api-credit-stored-grant-query-profile.js",
+      "bytes": 4200,
+      "sha256": "bdc89210f9ae412544d9c12f4300d196ef4e41122b20d7e94edc0ad537c8c76d",
       "format": "module"
     },
     {
@@ -3249,8 +3261,8 @@
     },
     {
       "path": "src/zenon/native-api-credit-original-grant-query.js",
-      "bytes": 2215,
-      "sha256": "75f9b61c3cb4c93773a72365a32955c09471678d6b6c4249ec625b3a0017de6a",
+      "bytes": 3134,
+      "sha256": "3c943249313e87bcdb9957ca6e733adff576cdc658320fad077484a4fb77811c",
       "format": "module"
     },
     {

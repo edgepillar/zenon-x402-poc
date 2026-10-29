@@ -1,4 +1,5 @@
 // SOURCE/PARSER ONLY. No native execution or physical release is established.
+import { resolveApiCreditStoredGrantQueryOwner } from '../api-credit-stored-grant-query-owner.js';
 import { Buffer } from 'node:buffer';
 import { hrtime } from 'node:process';
 import { setTimeout, clearTimeout } from 'node:timers';
@@ -11,7 +12,19 @@ export async function inspectNativeApiCreditOriginalGrant(profile, requireOpenin
   if (arguments.length !== 2 || typeof requireOpening !== 'function' || types.isProxy(requireOpening) || !Object.isFrozen(requireOpening))
     throw new TypeError('API_CREDIT_NATIVE_ORIGINAL_GRANT_QUERY');
   try {
-    requireOpening(); const captured = consumeApiCreditOriginalGrantQueryProfile(profile);
+    requireOpening(); const selected = consumeApiCreditOriginalGrantQueryProfile(profile);
+    let captured = selected;
+    if (Object.hasOwn(selected, 'storedGrantQueryVersion')) {
+      requireOpening(); const { openOriginalFundingSpendingGrantRecoveryFileOwner } = await import('../original-funding-spending-file-owner.js');
+      requireOpening();
+      captured = resolveApiCreditStoredGrantQueryOwner(F({ profile: selected, requireOpening,
+        ports: F({ openFile: F(configuration => {
+          requireOpening(); if (configuration.storageProfile.mode !== 'OPEN_EXISTING') throw new TypeError('API_CREDIT_NATIVE_ORIGINAL_GRANT_QUERY');
+          return openOriginalFundingSpendingGrantRecoveryFileOwner(configuration);
+        }) }) }));
+    }
+    // A stored profile reaches this point only after independent full-profile
+    // binding and observed closure of the same existing spending-file owner.
     requireOpening(); const { createOriginalFundingGrantNativeHttpsTransport } = await import('../service-credit-funding-post-native-https-transport.js');
     requireOpening();
     const ports = F({

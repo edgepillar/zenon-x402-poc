@@ -15,7 +15,7 @@ environment, package lock, old cache or operator JSON. Missing ordinary
 `node_modules` is a refusal, never an instruction to install or use a cache.
 Keyless inspection keeps its separate SDK-free graph.
 
-The catalog contains 566 rows: 161 application files, root `package.json` and
+The catalog contains 568 rows: 163 application files, root `package.json` and
 404 retained package-source files. The package rows span 69 package roots,
 including nested versions, and match the current lock's corresponding versions.
 This is a reviewed selection; the lock, version labels and an old reachable
@@ -97,3 +97,11 @@ and is included in this RUN catalog. The additional provider grant-reader core
 and native borrowed-store binding are separate API source; they are not selected
 by the buyer CLI or mounted as a network route by this catalog. Capability
 verification, SQL query and HTTP recovery acceptance remain unexecuted.
+
+The explicit version-two stored-query profile and its pure file protocol are
+now included in the buyer source selection. The fixed recovery binding imports
+only the named existing four-table spending owner before resolving its original
+profile; the same owner must close before the existing HTTPS query import.
+The complete ready-profile hash is independently supplied, so a custody row
+cannot promote its own CA or transport budgets. This is source admission,
+not native SQL/HTTPS or fresh-process acceptance.

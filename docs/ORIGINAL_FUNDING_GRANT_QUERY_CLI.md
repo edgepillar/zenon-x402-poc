@@ -9,13 +9,16 @@ node src/api-credit-cli.js --funding-grant-query-fd 3 --output-fd 6 --bootstrap-
 This explicit mode uses two distinct owned POSIX FIFO ends. The input is one
 canonical JSON envelope followed by EOF. It is admitted under the existing
 Node 24.19.0/plain-process profile before the fixed native query module is
-imported. It accepts no key descriptor, generated key, signer, SDK selector,
-database path, service command or payment signature operation. Existing modes,
+imported. It accepts no key descriptor, generated key, signer, SDK selector, service
+command or payment signature operation. The explicit version-two input selects
+only the existing custody file described below. Existing modes,
 including the separate local `--funding-inspect-fd` V6 history read, retain their
-contracts. This query mode opens no payer or provider store. It does not claim
-that an earlier store owner has closed or that a reservation can be released.
+contracts. Version one opens no store. Version two reads only the explicitly selected
+four-table spending custody file and observes its close before HTTPS admission;
+it opens no payer V6 or provider store. Neither version proves an earlier owner
+closed or permits a reservation release.
 
-The input has exactly these fields:
+The ready-profile version-one input has exactly these fields:
 
 - `originalGrantQueryVersion: 1`.
 - `originalPayment`: the retained `resourceUrl`, `serializedCheckpoint` and
@@ -56,6 +59,17 @@ funding URL, transaction, request, checkpoint digest and full query digest.
 reconciliation required and the spending reservation unchanged; neither
 authorizes payment, signing, activation, dispatch, delivery, compensation or
 retry. A local close observation is not OS physical-release acceptance.
+
+## Existing custody input
+
+The same flag accepts `originalGrantQueryVersion: 2`, an explicit existing
+`spendingFile` profile and eight `expectedOriginal` fields, including an
+independently retained SHA-256 of the complete ready-profile text. The record
+cannot select its own trusted CA, origin or budgets. One known custody owner
+must close before the unchanged one-query transport can open. An unobservable
+file operation stays HELD without a competing closer or query. See the
+[stored-profile contract](STORED_GRANT_QUERY_RECOVERY.md) for the exact shape,
+limits, independent trust inputs and refusal semantics.
 
 ## Current evidence boundary
 
