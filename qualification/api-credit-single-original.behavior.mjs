@@ -1,5 +1,7 @@
 // Pure DATA and declared child/CAS ports. No native store, SDK, signer or I/O.
 import assert from 'node:assert/strict';
+import { fileURLToPath } from 'node:url';
+import process from 'node:process';
 import { apiCreditOperatorDataCases, closeApiCreditOperatorDataFixtures } from './api-credit-operator.behavior.mjs';
 import { originalFundingSpendingStoreDataCases } from './original-funding-spending-store.behavior.mjs';
 import { originalFundingSpendingDataFixtures as f } from './original-funding-spending.behavior.mjs';
@@ -194,6 +196,8 @@ check('command-data-cannot-disable-single-original-admission-with-an-extra-flag'
   assert.equal(reads, 0);
 });
 
+export const apiCreditSingleOriginalDataCases = F(checks.map(c => F(c)));
+if (typeof process.argv[1] === 'string' && fileURLToPath(import.meta.url) === process.argv[1]) {
 const cases = [];
 for (const { id, run } of checks) { try { await run(); cases.push({ id, status: 'PASS' }); } catch (e) { cases.push({ id, status: 'FAIL', error: String(e?.message ?? e) }); } }
 await closeApiCreditOperatorDataFixtures();
@@ -204,3 +208,5 @@ console.log(JSON.stringify({ qualification: 'G2_SINGLE_ORIGINAL_ACCOUNT_ADMISSIO
   nonceSearches: 0, nodeChildren: 0, actualPrepare: 0, payouts: 0, nativeDurability: 'NOT_ESTABLISHED',
   freshProcessAcceptance: 'NOT_ESTABLISHED', signerResponseLossAcceptance: 'NOT_ESTABLISHED', atomicExternalDispatchFencing: 'NOT_ESTABLISHED' }));
 if (failed) process.exitCode = 1;
+
+}

@@ -8,6 +8,8 @@ import {
   snapshotOriginalServiceRequestCustodyPolicy,
   snapshotOriginalServiceRequestCustodyKey,
 } from './service-credit-original-request-custody-contract.js';
+import { runServiceCreditRecoveryInspectionOwner } from './service-credit-recovery-inspection-owner.js';
+import { consumeApiCreditRecoveryInspectionProfile, releaseApiCreditRecoveryInspectionProfile } from './api-credit-recovery-inspection-profile.js';
 
 const FREEZE = Object.freeze, KEYS = Reflect.ownKeys, DESC = Object.getOwnPropertyDescriptor;
 const OWN = Object.hasOwn, PROTO = Object.getPrototypeOf, APPLY = Reflect.apply;
@@ -44,8 +46,9 @@ const LIMITS = FREEZE(['busyTimeoutMs', 'maxStateBytes', 'maxOffers', 'maxGrants
  * throwing deriveCost forbids a cost decision; it does not invent economics.
  *
  * Own one backend handle and one V6 payer connection, query once, close the
- * payer once and then the backend once on success/failure. A close failure
- * refuses output and is never retried or represented as release. Only native
+ * payer once and then the backend only after a proven quiescent payer close.
+ * Unreturned/unknown payer ownership retains the borrowed backend. A close
+ * failure refuses output and is never retried or represented as release. Only native
  * stdin acquisition has a 5000 ms application timer. It is not a store-operation
  * timeout, forced cancellation, file cleanup or hard OS/native lifetime promise.
  *
@@ -56,67 +59,46 @@ const LIMITS = FREEZE(['busyTimeoutMs', 'maxStateBytes', 'maxOffers', 'maxGrants
  * Preserve the VALIDATED same-signed-block rule versus UNKNOWN/ACKNOWLEDGED.
  */
 export async function inspectServiceCreditOriginal(configuration) {
-  let config = null, backend = null, payer = null, result = null, failed = false;
-  let stage = 'INPUT', failedStage = null;
+  let stage = 'INPUT';
   try {
     if (arguments.length !== 1) fail();
     const top = exact(configuration, ['manifestPath', 'allowedRoot', 'authorizationHeader']);
-    stage = 'MANIFEST'; config = loadManifest(top.manifestPath, top.allowedRoot);
-    const proof = top.authorizationHeader;
-    if (typeof proof !== 'string' || !proof.startsWith('ServiceCredit ')
-        || proof.length > PROOF_BYTES || Buffer.byteLength(proof, 'utf8') > PROOF_BYTES
-        || /[\r\n\0]/.test(proof)) fail();
-    // No arbitrary module name or caller factory. These are the existing owners.
-    stage = 'MODULES';
-    const { ServiceCreditSqliteStore } = await import('./service-credit-sqlite-store.js');
-    const { openServiceCreditCustodiedSqliteBackendRecoveryClientV6 }
-      = await import('./service-credit-custodied-backend-recovery-client.js');
-    const openBackend = ServiceCreditSqliteStore.openExisting;
-    stage = 'BACKEND_OPEN';
-    backend = APPLY(openBackend, ServiceCreditSqliteStore, [{
-      databasePath: config.backendDatabasePath, allowedRoot: config.allowedRoot,
-      deriveCost: function inspectionCannotDeriveCost() { fail(); }, ...config.backendLimits,
-    }]);
-    stage = 'PAYER_OPEN';
-    payer = await openServiceCreditCustodiedSqliteBackendRecoveryClientV6({
-      databasePath: config.payerDatabasePath, allowedRoot: config.allowedRoot,
-      backendStore: backend, fundingResourceUrl: config.fundingResourceUrl,
-      custodyPolicy: config.custodyPolicy, selectedGrantId: config.selectedGrantId,
-      deadlineMs: config.deadlineMs,
-    });
-    stage = 'ORIGINAL_READ';
-    const observed = payer.readOriginalBackendRecoveryState(
-      config.requestKey, proof, config.expectedCheckpointPins,
-    );
-    stage = 'REDACTED_RESULT';
-    if (observed === null || typeof observed !== 'object' || IS_PROXY(observed)
-        || observed.authority !== 'NONE' || observed.deliveryConfirmed !== false
-        || typeof observed.status !== 'string' || !/^[A-Z_]{1,64}$/.test(observed.status)) fail();
-    const backendStatus = observed.backend === null ? null : observed.backend.status;
-    if (backendStatus !== null && (typeof backendStatus !== 'string'
-        || !/^[A-Z_]{1,64}$/.test(backendStatus))) fail();
-    result = FREEZE({ inspectionVersion: 1, status: observed.status, backendStatus,
-      originalCheckpointPinsMatched: true,
-      localReconciliationRequired: observed.status === 'CLIENT_RECONCILIATION_REQUIRED',
-      authority: 'NONE', mayDispatchService: false, mayStartPayment: false,
-      maySignPayment: false, deliveryConfirmed: false, serviceDelivery: 'NOT_ESTABLISHED',
-      currentAuthority: 'NOT_ESTABLISHED', sameProcessObservationOnly: true });
-  } catch { failed = true; failedStage = stage; }
-  finally {
-    // The V6 connection fences its borrowed backend reader before native payer
-    // close. Backend ownership stays here and is released after that one call.
-    if (payer !== null) {
-      try { await payer.close(); } catch { if (!failed) failedStage = 'PAYER_CLOSE'; failed = true; }
-      payer = null;
-    }
-    if (backend !== null) {
-      try { backend.close(); } catch { if (!failed) failedStage = 'BACKEND_CLOSE'; failed = true; }
-      backend = null;
-    }
-    config = null; configuration = null;
+    stage = 'MANIFEST'; const config = loadManifest(top.manifestPath, top.allowedRoot), proof = top.authorizationHeader;
+    if (typeof proof !== 'string' || !proof.startsWith('ServiceCredit ') || proof.length > PROOF_BYTES
+        || Buffer.byteLength(proof, 'utf8') > PROOF_BYTES || /[\r\n\0]/.test(proof)) fail();
+    stage = 'MODULES'; return await inspectCaptured(config, proof, null, FREEZE(function requireLegacyInput() {}));
+  } catch (error) {
+    const descriptor = error !== null && typeof error === 'object' && !IS_PROXY(error) ? DESC(error, 'stage') : null;
+    fail(descriptor && OWN(descriptor, 'value') && typeof descriptor.value === 'string' ? descriptor.value : stage);
   }
-  if (failed || result === null) fail(failedStage ?? 'REDACTED_RESULT');
-  return result;
+}
+
+/** Fixed operator pipe input: all DATA is admitted before native imports.
+ * Only existing stores and the actual V6 no-dispatch connection are opened.
+ * A pending consumer owns its profile release, including after outer expiry. */
+export async function inspectServiceCreditCapturedOriginal(profile, requireOpening) {
+  try {
+    if (arguments.length !== 2 || typeof requireOpening !== 'function' || IS_PROXY(requireOpening) || !Object.isFrozen(requireOpening)) fail();
+    requireOpening(); const captured = consumeApiCreditRecoveryInspectionProfile(profile);
+    return await inspectCaptured(captured.manifest, captured.authorizationHeader, captured.serializedCheckpoint, requireOpening);
+  } finally { try { releaseApiCreditRecoveryInspectionProfile(profile); } catch {} }
+}
+async function inspectCaptured(manifest, proof, serializedCheckpoint, requireOpening) {
+  requireOpening(); const { ServiceCreditSqliteStore } = await import('./service-credit-sqlite-store.js');
+  requireOpening(); const { openServiceCreditCustodiedSqliteBackendRecoveryClientV6 } = await import('./service-credit-custodied-backend-recovery-client.js');
+  requireOpening(); const OPEN_BACKEND = ServiceCreditSqliteStore.openExisting, CLOSE_BACKEND = ServiceCreditSqliteStore.prototype.close;
+  const ports = FREEZE({
+    openBackend: FREEZE(function openExistingBackend(c) {
+      requireOpening(); return APPLY(OPEN_BACKEND, ServiceCreditSqliteStore, [{ databasePath: c.backendDatabasePath, allowedRoot: c.allowedRoot,
+        deriveCost: FREEZE(function inspectionCannotDeriveCost() { fail(); }), ...c.backendLimits }]);
+    }),
+    openPayer: FREEZE(function openExistingPayer(c, backendStore) {
+      requireOpening(); return openServiceCreditCustodiedSqliteBackendRecoveryClientV6({ databasePath: c.payerDatabasePath, allowedRoot: c.allowedRoot,
+        backendStore, fundingResourceUrl: c.fundingResourceUrl, custodyPolicy: c.custodyPolicy, selectedGrantId: c.selectedGrantId, deadlineMs: c.deadlineMs });
+    }),
+    closeBackend: FREEZE(function closeExistingBackend(store) { return APPLY(CLOSE_BACKEND, store, []); })
+  });
+  return runServiceCreditRecoveryInspectionOwner({ manifest, authorizationHeader: proof, serializedCheckpoint, ports, requireOpening });
 }
 
 /** Same bounded argument/manifest/owner path as the launcher; no output hook. */
