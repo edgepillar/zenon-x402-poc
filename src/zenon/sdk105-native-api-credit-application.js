@@ -1,6 +1,7 @@
 // SOURCE ONLY; this complete native binding has not been executed.
 import { types } from 'node:util';
 import { createApiCreditOpeningFailureCustody } from '../api-credit-opening-failure-custody.js';
+import { createApiCreditReturnedOpeningCustody } from '../api-credit-returned-opening-custody.js';
 import { hrtime } from 'node:process';
 import { claimSdk105ApiCreditExistingKeyLease, bindSdk105ApiCreditExistingKeyLeaseOwner } from './sdk105-api-credit-existing-key-lease.js';
 import { consumeSdk105ApiCreditSelection } from './sdk105-api-credit-selection.js';
@@ -81,24 +82,18 @@ async function openApplication(selection, requireCurrentOpening, productProfile)
   } catch {
     const retained = { file, wallet, client, application, wireOwner, clientStop: null, walletStop: null, applicationStop: null,
       clientClosed: false, walletClosed: false, fileCloseEntered: false, fileCloseReturned: false,
-      walletOpeningEntered, clientOpeningEntered, openingCustody: null, openingCustodyUnknown: false };
+      walletOpeningEntered, clientOpeningEntered, openingCustody: null, openingCustodyUnknown: false,
+      returnedOpeningCustody: null, returnedOpeningCustodyUnknown: false };
     failedApplication = retained;
     if (application !== null) {
       // The application already owns all three stops. Never compete with it.
       try { retained.applicationStop = application.close(); consume(retained.applicationStop); } catch {}
     } else if (client !== null) {
-      const closeFile = () => {
-        if (!retained.clientClosed || !retained.walletClosed || retained.fileCloseEntered) return;
-        retained.fileCloseEntered = true;
-        try { if (file.revoke() !== undefined || file.close() !== undefined) fail(); const v = file.inspect();
-          retained.fileCloseReturned = v.lifecycle === 'CLOSED' && v.physicalCloseReturned === true && v.databaseOpen === false && !v.held; } catch {}
-      };
-      try { retained.clientStop = client.close(); consume(retained.clientStop, value => {
-        try { const v = client.inspect(); retained.clientClosed = value === undefined && v.lifecycle === 'CLOSED' && !v.held && !v.publicOperationActive; } catch {} closeFile();
-      }); } catch {}
-      try { retained.walletStop = wallet.close(); consume(retained.walletStop, value => {
-        try { const v = wallet.inspect(); retained.walletClosed = value === undefined && v.lifecycle === 'CLOSED' && !v.held && v.clearOutcome === 'CLEAR_RETURNED'; } catch {} closeFile();
-      }); } catch {}
+      // The same file remains borrowed until BOTH returned owners are current
+      // and clean at the actual close boundary, rather than at older callbacks.
+      try { retained.returnedOpeningCustody = createApiCreditReturnedOpeningCustody(F({ fileOwner: file,
+        clientOwner: client, walletOwner: wallet })); }
+      catch { retained.returnedOpeningCustodyUnknown = true; }
     } else if (file !== null) {
       // A rejected opener can retain a borrower without returning its facade.
       // Revoke new admission, but do not raw-close its still-borrowed file.

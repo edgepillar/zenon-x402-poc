@@ -2522,6 +2522,12 @@
       "format": "module"
     },
     {
+      "path": "src/api-credit-returned-opening-custody.js",
+      "bytes": 8483,
+      "sha256": "7ae82c161f22c3eb1f202c6cf46d0bfed7eb24a116ea08b11841dad42f49fc22",
+      "format": "module"
+    },
+    {
       "path": "src/api-credit-signer-inspection-profile.js",
       "bytes": 3942,
       "sha256": "c13564d0af16b3209077f0d2093deb8c46d2b929c620e05a8a7ddf47d05c991d",
@@ -3321,8 +3327,8 @@
     },
     {
       "path": "src/zenon/sdk105-native-api-credit-application.js",
-      "bytes": 8049,
-      "sha256": "61a9f48770d3b830a4c176efee626458237d3e7c6a916e38c10a3c91ccc774ce",
+      "bytes": 7573,
+      "sha256": "6c1b65590dc105e64470ab3bfbe3baf3a1e1d975a0e2f9ea3501ed38a62fe5ac",
       "format": "module"
     },
     {

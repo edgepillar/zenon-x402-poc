@@ -227,3 +227,18 @@ No new funding/payment, grant or spending decision is made. See the complete
 [funding inspection input/output and ownership contract](API_CREDIT_FUNDING_INSPECTION.md).
 The native entry, SQL writes at existing-store open, physical close and Linux
 acceptance remain unexecuted.
+
+## Returned client on failed opening
+
+If opening fails after a native client returned but before a joined application
+returned, the fixed returned-opening custody owner requests the client and
+wallet stops independently once and revokes budget-file admission. Physical
+file close additionally requires fresh clean views of both owners before and
+after its one void close. A former clean client callback cannot justify close
+when a later wallet completion observes that client HELD. Repeated claims join
+the same owner; UNKNOWN cannot resume opening or retry a stop or file close.
+A returned joined application still owns all of its stops. Unreturned borrowers
+continue to use their separate conservative retained-file branch.
+
+This describes source and declared DATA ports. Native client, wallet, SQLite
+close, actual release and Linux acceptance remain unqualified.

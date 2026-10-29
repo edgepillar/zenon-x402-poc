@@ -15,7 +15,7 @@ environment, package lock, old cache or operator JSON. Missing ordinary
 `node_modules` is a refusal, never an instruction to install or use a cache.
 Keyless inspection keeps its separate SDK-free graph.
 
-The catalog contains 558 rows: 153 application files, root `package.json` and
+The catalog contains 559 rows: 154 application files, root `package.json` and
 404 retained package-source files. The package rows span 69 package roots,
 including nested versions, and match the current lock's corresponding versions.
 This is a reviewed selection; the lock, version labels and an old reachable
@@ -85,3 +85,9 @@ A new source-bound ordinary-install/native/Linux qualification is still needed
 before claiming runtime acceptance. No SDK construction, signature, SQLite,
 socket, nonce search, PREPARE, payment or live pilot is authorized by these
 source/DATA results.
+
+The returned-client failed-opening branch uses the fixed
+`api-credit-returned-opening-custody.js` owner. It requests the original client
+and wallet stops once, revokes file admission, and rechecks both current owners
+at physical close and on later clean observations. A cached stop callback is
+not a current release observation. This native binding remains unexecuted.
