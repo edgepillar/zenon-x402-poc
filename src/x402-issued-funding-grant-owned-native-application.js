@@ -1,4 +1,5 @@
 // SOURCE/PARSER ONLY. Actual store/core/SDK/TLS acquisition is unexecuted.
+import { createIssuedProviderExecutionSetupOwner } from './issued-provider-execution-setup.js';
 import { types } from 'node:util';
 import { canonicalJson } from './canonical.js';
 import { captureIssuedProviderOwnedConfiguration } from './issued-provider-owned-configuration.js';
@@ -13,6 +14,7 @@ const F=Object.freeze,D=Object.getOwnPropertyDescriptor,A=Reflect.apply;
 const SERVICE=ServiceCreditSqliteStore.prototype,INTAKE=ZenonFundingIntakeSqliteStore.prototype;
 const CREATE=D(ServiceCreditSqliteStore,'create').value,OPEN=D(ServiceCreditSqliteStore,'openExisting').value;
 const REGISTER=D(SERVICE,'registerOffer').value,GET=D(SERVICE,'getOffer').value,SCLOSE=D(SERVICE,'close').value,ICLOSE=D(INTAKE,'close').value;
+const SNAPSHOT=D(SERVICE,'getDurableExecutionSnapshot').value,INITIALIZE=D(SERVICE,'initializeDurableExecution').value;
 const PATHS=new Map(),ACTIVE=new Set();
 function fail(){throw new TypeError('ISSUED_PROVIDER_OWNED_NATIVE_APPLICATION');}
 function brand(v,prototype,name,fn){if(v===null||typeof v!=='object'||types.isProxy(v)||Object.getPrototypeOf(v)!==prototype||Object.hasOwn(v,name)||D(prototype,name)?.value!==fn)fail();}
@@ -24,7 +26,8 @@ function brand(v,prototype,name,fn){if(v===null||typeof v!=='object'||types.isPr
  * Journal, witness, observer and facilitator capabilities remain borrowed. */
 export function createOwnedIssuedFundingGrantNativeApplication(configuration){
  if(arguments.length!==1)fail();const lease=captureIssuedProviderOwnedConfiguration(configuration),c=lease.configuration;
- const keys=F([c.serviceStore.databasePath,c.intakeStore.databasePath]),frame={service:null,intake:null,root:null,opening:null,claimed:false,released:false};
+ if(c.executionSetup===null){lease.release();fail();}
+ const keys=F([c.serviceStore.databasePath,c.intakeStore.databasePath]),frame={service:null,executionSetup:null,intake:null,root:null,opening:null,claimed:false,released:false};
  const port=F({
   claim:F(()=>{if(frame.claimed||frame.released)fail();if(ACTIVE.size>=16||keys.some(k=>PATHS.has(k)))return 'REFUSED';
    ACTIVE.add(frame);for(const k of keys)PATHS.set(k,frame);frame.claimed=true;return 'CLAIMED';}),
@@ -33,7 +36,12 @@ export function createOwnedIssuedFundingGrantNativeApplication(configuration){
    frame.service=A(c.storageMode==='CREATE_NEW'?CREATE:OPEN,ServiceCreditSqliteStore,[c.serviceStore]);
    brand(frame.service,SERVICE,'registerOffer',REGISTER);brand(frame.service,SERVICE,'getOffer',GET);brand(frame.service,SERVICE,'close',SCLOSE);
    const offer=c.storageMode==='CREATE_NEW'?A(REGISTER,frame.service,[c.offer]):A(GET,frame.service,[F({offerId:c.offer.offerId,offerVersion:c.offer.offerVersion})]);
-   if(canonicalJson(offer)!==canonicalJson(c.offer))fail();return frame.service;
+   if(canonicalJson(offer)!==canonicalJson(c.offer))fail();
+   brand(frame.service,SERVICE,'getDurableExecutionSnapshot',SNAPSHOT);brand(frame.service,SERVICE,'initializeDurableExecution',INITIALIZE);
+   const read=F(()=>{brand(frame.service,SERVICE,'getDurableExecutionSnapshot',SNAPSHOT);return A(SNAPSHOT,frame.service,[]);});
+   const initialize=F(input=>{brand(frame.service,SERVICE,'initializeDurableExecution',INITIALIZE);return A(INITIALIZE,frame.service,[input]);});
+   frame.executionSetup=createIssuedProviderExecutionSetupOwner(c.executionSetup,c.storageMode,F({read,...(c.storageMode==='CREATE_NEW'?{initialize}:{})}));
+   frame.executionSetup.run();return frame.service;
   }),
   openIntakeStore:F(()=>{if(!frame.claimed||frame.released||frame.service===null||frame.intake!==null)fail();
    frame.intake=(c.storageMode==='CREATE_NEW'?createZenonFundingIntakeOfficialCustodySqliteStore:openZenonFundingIntakeOfficialCustodySqliteStore)(c.intakeStore);

@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "qualification": "G1_ISSUED_PROVIDER_EXECUTION_SETUP_FAILURE_INVENTORY",
+  "status": "NO_NEW_FAILURE;PRIOR_FAILURES_PRESERVED",
+  "failures": [],
+  "currentDataFailures": 0,
+  "currentParserFailures": 0,
+  "priorInventory": {
+    "path": "qualification/provider-funding-close-budget.failure-inventory.json",
+    "sha256": "ab410c36078b0c370f83dc52d37f9fd98eaaaf943237b0353791b6588208a765"
+  },
+  "priorFailuresReclassified": false,
+  "sourceReviewFindings": [
+    {
+      "id": "PROVIDER_EXECUTION_CONTRACT_UNINITIALIZED",
+      "classification": "PRODUCT_SOURCE_GAP",
+      "sourceBefore": "8dc8970e02639acc65f8639be99a71357fb826d5",
+      "status": "SOURCE_CORRECTED_DATA_QUALIFIED_NATIVE_NOT_ESTABLISHED",
+      "nativeExecuted": false
+    }
+  ],
+  "nativeExecutions": 0
+}

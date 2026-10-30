@@ -77,6 +77,8 @@ export async function runNativeIssuedProviderOperator(args,readPackageState){
    guard();frame.pipesEntered=true;frame.pipes=createNativeIssuedProviderOperatorPipes(args);guard();
    const raw=await frame.pipes.readProfile(guard,args.bootstrapMs);try{guard();frame.prepared=decodeIssuedProviderOperatorBootstrap(new TextDecoder('utf8',{fatal:true,ignoreBOM:true}).decode(raw));}finally{raw.fill(0);}guard();
   const c=frame.config=readIssuedProviderOperatorBootstrap(frame.prepared);
+  // Older DATA decoders remain inspectable; native product startup needs explicit execution terms.
+  if(c.providerBootstrapVersion!==3)throw new TypeError('ISSUED_PROVIDER_EXECUTION_SETUP_REQUIRED');
   const authority=parseZenonFundingProviderAttestationAuthorityRecord(c.funding.authorityRecord);
   if(canonicalJson(authority.chainProfile)!==canonicalJson(c.funding.terms.requirement.extra.zenonChain)
    ||authority.confirmationPolicy.minimumConfirmations!==c.funding.terms.requirement.extra.minimumMomentumConfirmations)fail();

@@ -1,3 +1,4 @@
+import { captureIssuedProviderExecutionSetup } from './issued-provider-execution-setup.js';
 import { Buffer } from 'node:buffer';
 import { types } from 'node:util';
 import { dirname,isAbsolute,resolve } from 'node:path';
@@ -31,7 +32,7 @@ function copyBytes(v,copies){if(v===null||types.isProxy(v)||!Buffer.isBuffer(v)|
  * normalization uses the existing pure model with inert local capabilities.
  * This is structural DATA admission, not authority/TLS authentication. */
 export function captureIssuedProviderOwnedConfiguration(options){
- if(arguments.length!==1)fail();const c=fields(options,['applicationMode','serviceStore','intakeStore','offer','funding','service','transport','recovery','observation']);
+ if(arguments.length!==1)fail();const names=['applicationMode','serviceStore','intakeStore','offer','funding','service','transport','recovery','observation'];const c=fields(options,options!==null&&typeof options==='object'&&!types.isProxy(options)&&O(options,'executionSetup')?[...names,'executionSetup']:names);
  if(typeof c.applicationMode!=='string'||!O(METHODS,c.applicationMode))fail();
  const s=fields(c.serviceStore,['databasePath','allowedRoot','deriveCost','now','busyTimeoutMs','maxStateBytes','maxOffers','maxGrants','maxRequests']);database(s);callable(s.deriveCost);callable(s.now);
  integer(s.busyTimeoutMs,1,60000);integer(s.maxStateBytes,512,16777216);if(s.maxOffers!==1||s.maxGrants!==1)fail();integer(s.maxRequests,100,10000);
@@ -43,6 +44,7 @@ export function captureIssuedProviderOwnedConfiguration(options){
  const official=fields(f.official,['localFacilitator','validateChallenge','reconcilePendingSettlement','maxPendingReconciliations']);
  if(official.localFacilitator===null||typeof official.localFacilitator!=='object'||types.isProxy(official.localFacilitator))fail();callable(official.validateChallenge);callable(official.reconcilePendingSettlement);integer(official.maxPendingReconciliations,0,16);integer(f.maxIntakeAttempts,1,16);integer(f.closeBudgetMs,1,60000);
  const service=fields(c.service,['execute','selectedDurationMs']);callable(service.execute);integer(service.selectedDurationMs,1,60000);
+ const executionSetup=O(c,'executionSetup')?captureIssuedProviderExecutionSetup(c.executionSetup,service.selectedDurationMs,s.maxRequests):null;
  const t=fields(c.transport,['origin','generation','limits','bind','tlsMaterial']),generation=fields(t.generation,['generationId','generationVersion']);
  text(generation.generationId,128);if(!/^[A-Za-z0-9][A-Za-z0-9._:-]*$/.test(generation.generationId))fail();integer(generation.generationVersion,1,Number.MAX_SAFE_INTEGER);
  if(t.origin!==new URL(route.resourceUrl).origin||route.resourceUrl!==t.origin+'/funding')fail();
@@ -57,7 +59,7 @@ export function captureIssuedProviderOwnedConfiguration(options){
  }else if(c.observation!==null)fail();
  const copies=[];let released=false;
  try{const key=copyBytes(material.key,copies),cert=copyBytes(material.cert,copies);
-  const configuration=F({applicationMode:c.applicationMode,storageMode:c.applicationMode==='FRESH'?'CREATE_NEW':'OPEN_EXISTING',serviceStore:F(s),intakeStore:F(i),offer,
+  const configuration=F({applicationMode:c.applicationMode,executionSetup,storageMode:c.applicationMode==='FRESH'?'CREATE_NEW':'OPEN_EXISTING',serviceStore:F(s),intakeStore:F(i),offer,
    funding:F({...f,intake:F({...fi,selection:selected,observerCatchUp:F(catchup)}),official:F(official)}),service:F(service),
    transport:F({...t,generation:F(generation),limits,bind:F(bind),tlsMaterial:F({key,cert})}),recovery,observation});
   const release=F(function release(){if(arguments.length!==0)fail();if(released)return;for(const v of copies)if(A(FILL,v,[0])!==v)fail();released=true;});

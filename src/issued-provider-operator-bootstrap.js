@@ -1,3 +1,4 @@
+import { captureIssuedProviderExecutionSetup } from './issued-provider-execution-setup.js';
 import { Buffer } from 'node:buffer';
 import { types } from 'node:util';
 import { dirname,isAbsolute,resolve } from 'node:path';
@@ -36,8 +37,8 @@ function json(v,depth=0,budget={nodes:8192,bytes:262144}){
  */
 export function decodeIssuedProviderOperatorBootstrap(raw){
  if(arguments.length!==1)fail();text(raw,262144);let c;try{c=json(JSON.parse(raw));if(canonicalJson(c)!==raw)fail();}catch{fail();}
- c=fields(c,['providerBootstrapVersion','applicationMode','serviceStore','intakeStore','offer','funding','service','transport','journal','chain','recovery','witness','control']);
- if(![1,2].includes(c.providerBootstrapVersion)||!['FRESH','RECORDED','JOURNAL','WITNESSED'].includes(c.applicationMode))fail();
+ const names=['providerBootstrapVersion','applicationMode','serviceStore','intakeStore','offer','funding','service','transport','journal','chain','recovery','witness','control'];c=fields(c,c.providerBootstrapVersion===3?[...names,'executionSetup']:names);
+ if(![1,2,3].includes(c.providerBootstrapVersion)||!['FRESH','RECORDED','JOURNAL','WITNESSED'].includes(c.applicationMode))fail();
  const s=fields(c.serviceStore,['databasePath','allowedRoot','busyTimeoutMs','maxStateBytes','maxOffers','maxGrants','maxRequests']);child(s.databasePath,s.allowedRoot);
  integer(s.busyTimeoutMs,1,60000);integer(s.maxStateBytes,512,16777216);integer(s.maxRequests,100,10000);if(s.maxOffers!==1||s.maxGrants!==1)fail();
  const i=fields(c.intakeStore,['databasePath','allowedRoot','ledgerDomain','maxChallenges']);child(i.databasePath,i.allowedRoot);text(i.ledgerDomain,128);integer(i.maxChallenges,1,16);if(s.databasePath===i.databasePath)fail();
@@ -45,12 +46,13 @@ export function decodeIssuedProviderOperatorBootstrap(raw){
  if(offer.costPolicyId!=='execution-receipt-unit-v1')fail();
  const fundingFields=['authorityRecord','terms','observerRoot','observerCatchUp','selection','resourceUrl','maxPendingReconciliations','maxIntakeAttempts','closeBudgetMs'];
  const f=fields(c.funding,c.providerBootstrapVersion===1?fundingFields:[...fundingFields,'pendingObservationMode']);
- if(c.providerBootstrapVersion===2&&(!['JOURNAL_ONLY','ORIGINAL_RPC'].includes(f.pendingObservationMode)||f.pendingObservationMode==='ORIGINAL_RPC'&&c.applicationMode!=='FRESH'))fail();
+ if(c.providerBootstrapVersion>=2&&(!['JOURNAL_ONLY','ORIGINAL_RPC'].includes(f.pendingObservationMode)||f.pendingObservationMode==='ORIGINAL_RPC'&&c.applicationMode!=='FRESH'))fail();
  text(f.authorityRecord,65536);path(f.observerRoot);const selection=captureIssuedFundingPostServiceSelection(f.selection);
  const deriveFundingTerms=createFixedZenonFundingPolicy({offer,selection,terms:f.terms});if(f.terms.totalUnits<100)fail();
  const chain=captureIssuedProviderChainSelection(c.chain,f.terms.requirement);integer(f.maxPendingReconciliations,0,16);integer(f.maxIntakeAttempts,1,16);integer(f.closeBudgetMs,1,1000);
  const catchup=fields(f.observerCatchUp,['maximumPageEntries','maximumBackfillSpan','maximumMembersPerMomentum']);for(const v of Object.values(catchup))integer(v,1,65536);
  const service=fields(c.service,['productId','selectedDurationMs']);if(service.productId!=='execution-receipt-v1')fail();integer(service.selectedDurationMs,1,60000);
+ const executionSetup=c.providerBootstrapVersion===3?captureIssuedProviderExecutionSetup(c.executionSetup,service.selectedDurationMs,s.maxRequests):null;
  const transport=fields(c.transport,['origin','generation','limits','bind']),u=new URL(transport.origin);
  if(u.protocol!=='https:'||u.origin!==transport.origin||f.resourceUrl!==transport.origin+'/funding')fail();
  const generation=fields(transport.generation,['generationId','generationVersion']);text(generation.generationId,128);if(!/^[A-Za-z0-9][A-Za-z0-9._:-]*$/.test(generation.generationId))fail();integer(generation.generationVersion,1,Number.MAX_SAFE_INTEGER);
@@ -62,7 +64,7 @@ export function decodeIssuedProviderOperatorBootstrap(raw){
  let witness=null;if(c.applicationMode==='WITNESSED'){witness=fields(c.witness,['directory','expectedDevice','mode']);path(witness.directory);if(!['CREATE_NEW','READ_EXISTING'].includes(witness.mode)||typeof witness.expectedDevice!=='string'||!/^(0|[1-9][0-9]{0,19})$/.test(witness.expectedDevice))fail();witness=F(witness);}else if(c.witness!==null)fail();
  const control=fields(c.control,['maxCommands','maxLineBytes','maxInputBytes','maxOutputBytes','closeWaitMs','operationBudgetMs']);integer(control.operationBudgetMs,1,60000);
  const channelLimits=captureBuyerOriginalFundingCommandLimits(F({maxCommands:control.maxCommands,maxLineBytes:control.maxLineBytes,maxInputBytes:control.maxInputBytes,maxOutputBytes:control.maxOutputBytes,closeWaitMs:control.closeWaitMs}));
- const state={configuration:F({...c,serviceStore:F(s),intakeStore:F(i),offer,funding:F({...f,selection,observerCatchUp:F(catchup)}),service:F(service),transport:F({...transport,generation:F(generation),limits,bind:F(bind)}),journal:F(j),recovery,witness,control:F(control)}),deriveFundingTerms,chain,channelLimits,consumed:false};
+ const state={configuration:F({...c,...(c.providerBootstrapVersion===3?{executionSetup}:{}),serviceStore:F(s),intakeStore:F(i),offer,funding:F({...f,selection,observerCatchUp:F(catchup)}),service:F(service),transport:F({...transport,generation:F(generation),limits,bind:F(bind)}),journal:F(j),recovery,witness,control:F(control)}),deriveFundingTerms,chain,channelLimits,consumed:false};
  const prepared=F({providerBootstrapVersion:c.providerBootstrapVersion,applicationMode:c.applicationMode,productId:service.productId,channelLimits,operationBudgetMs:control.operationBudgetMs});PREPARED.set(prepared,state);return prepared;
 }
 
@@ -79,7 +81,7 @@ export function bindIssuedProviderOperatorBootstrap(prepared,official,tlsMateria
  const execute=F(function execute(input){if(arguments.length!==1)fail();const v=fields(input,['executionId','signal']);
   if(typeof v.executionId!=='string'||!/^sha256:[0-9a-f]{64}$/.test(v.executionId)||types.isProxy(v.signal)||Reflect.apply(ABORTED,v.signal,[]))fail();
   return F({resultCode:'sha256:'+sha256Hex({domain:'zenon-x402-execution-receipt-v1',executionId:v.executionId})});});
- return F({applicationMode:c.applicationMode,serviceStore:F({...c.serviceStore,deriveCost,now}),intakeStore:c.intakeStore,offer:c.offer,
+ return F({applicationMode:c.applicationMode,...(c.providerBootstrapVersion===3?{executionSetup:c.executionSetup}:{}),serviceStore:F({...c.serviceStore,deriveCost,now}),intakeStore:c.intakeStore,offer:c.offer,
   funding:F({intake:F({authorityRecord:f.authorityRecord,deriveFundingTerms:state.deriveFundingTerms,now,observerRoot:f.observerRoot,observerCatchUp:f.observerCatchUp,selection:f.selection,resourceUrl:f.resourceUrl}),
    official,maxIntakeAttempts:f.maxIntakeAttempts,closeBudgetMs:f.closeBudgetMs}),service:F({execute,selectedDurationMs:c.service.selectedDurationMs}),
   transport:F({...c.transport,tlsMaterial}),recovery:c.recovery,observation});

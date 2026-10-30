@@ -111,13 +111,46 @@ or replaced with a default. The backend/drain code and their cooperative
 observation semantics are unchanged. Other selected deadlines retain their own
 bounds; this is not OS cancellation or physical-release qualification.
 
+## Explicit durable execution setup
+
+The native source entry now requires providerBootstrapVersion=3. It keeps the
+version-2 funding observation selection and adds executionSetup with exactly
+ledgerId, policy and capacity. policy has policyId, policyVersion and
+maxDurationMs. The selected service duration must fit that explicit 1..60000 ms
+policy. Capacity is 100..serviceStore.maxRequests. No ledger identity, policy or
+capacity is generated or defaulted. Version-1/2 DATA decoders remain available
+for historical inspection; native startup refuses them before reading TLS or
+opening the journal/stores. A direct owned native application also requires the
+explicit setup before opening its stores.
+
+FRESH creates the new service store, registers the original offer, then reads
+its actual durable snapshot. Only a missing execution contract may be initialized
+using that exact revision and the existing initializeDurableExecution method.
+One APPLIED acknowledgement, revision + 1, the exact initial contract and a
+matching durable readback are required before opening intake or starting funding.
+Previously this entry omitted initialization, although the real HTTP session
+requires it when admitting the grant. An initialization error or lost result is
+HELD; there is no retry, rollback, file replacement or implicit adoption.
+
+RECORDED/JOURNAL/WITNESSED only read the existing execution contract and compare
+ledger, policy, capacity and original generation identity. They never receive an
+initializer port, reset units/executions or reopen a sealed generation. This
+check provides no grant, dispatch or recovery authority. Actual store ownership,
+HTTP session admission and original recovery rules remain in their existing
+owners. The SQLite methods and their transaction contracts are unchanged.
+
+The new setup owner and configuration seams are tested with declared memory
+ports. Actual SQL initialization/readback, Linux startup, the native 100-call
+scenario, physical release and full G0/G1/G2 acceptance remain OPEN. No native
+program is executed by those DATA controls.
+
 ## Explicit public profile
 
 All top-level fields are required:
 
-`providerBootstrapVersion` (1 or 2), `applicationMode`, `serviceStore`, `intakeStore`,
+`providerBootstrapVersion` (3 for native startup), `applicationMode`, `serviceStore`, `intakeStore`,
 `offer`, `funding`, `service`, `transport`, `journal`, `chain`, `recovery`,
-`witness`, `control`.
+`witness`, `control` and the explicit `executionSetup` in version 3.
 
 - `serviceStore` has databasePath, allowedRoot, busyTimeoutMs, maxStateBytes,
   maxOffers=1, maxGrants=1 and maxRequests=100..10000. `intakeStore` has its distinct

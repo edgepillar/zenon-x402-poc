@@ -1,0 +1,648 @@
+{
+  "qualification": "G1_ISSUED_PROVIDER_EXECUTION_SETUP_DATA",
+  "status": "PASS",
+  "recordedAtUTC": "2026-10-30T09:32:04.567820+00:00",
+  "passed": 126,
+  "failed": 0,
+  "newControls": 26,
+  "reexecutedRelevantDataControls": 100,
+  "retainedEarlierTurnExactControls": 1270,
+  "aggregateVerifiedControls": 1396,
+  "cases": [
+    {
+      "id": "original-chain-constructor-is-inert-and-enters-no-queue-or-port",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-ack-to-inclusion-uses-original-read-chain-cas-and-readback",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-weak-inclusion-can-advance-one-to-three-with-original-observed-at",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-equal-inclusion-is-idempotent-with-no-cas",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-not-found-keeps-existing-ack-pending-without-terminalization",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-unconfirmed-node-ack-cannot-become-settled",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-contradictory-not-found-does-not-reuse-prior-inclusion",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-count-regression-holds-with-no-write",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-different-inclusion-is-conflict-not-replacement",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-original-resource-array-tags-preserved-and-unsafe-arrays-refused",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-original-identity-mismatch-refuses-before-queue-and-budget",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-read-requires-all-eight-stored-identity-fields-before-rpc",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-missing-record-does-not-create-or-observe-a-new-one",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-zero-and-sixteen-entry-bounds-are-not-refunded",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-failed-read-consumes-entry-and-cannot-retry",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-rpc-loss-preserves-ack-and-does-not-cas",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-lost-cas-ack-stays-held-after-declared-memory-commit",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-revision-conflict-is-not-retried",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-readback-revision-must-be-exact-after-cas",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-no-write-readback-cannot-adopt-concurrent-change",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-close-before-queue-release-prevents-late-resource-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-close-during-rpc-prevents-late-cas-and-never-repairs-held",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-close-during-cas-does-not-perform-late-readback",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-serialization-cannot-return-without-running-its-owned-work",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-duplicate-serialization-entry-holds-before-second-observation",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-unsafe-thenable-is-not-assimilated-by-port-consumer",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-admission-loss-after-node-read-prevents-cas",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-selected-real-projection-pending-to-success-keeps-one-context",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-v1-bootstrap-stays-journal-only-and-rejects-new-mode-field",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-v2-fresh-bootstrap-requires-explicit-closed-observation-mode",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-v2-restored-modes-cannot-regain-live-rpc-continuation",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-cli-runtime-arguments-and-help-have-no-native-acquisition",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-cli-rejects-buyer-modes-aliases-secret-paths-and-loader-context",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-cli-public-bootstrap-is-keyless-frozen-and-canonical",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-cli-public-bootstrap-rejects-incomplete-unsupported-or-insufficient-profile",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-cli-public-start-budgets-cover-100-calls-replay-and-funding-overhead-without-defaulting",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-cli-fresh-and-recorded-recovery-modes-are-independent-and-explicit",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-cli-bootstrap-binds-once-to-real-owned-configuration-shape",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-cli-selected-product-charges-only-original-empty-body-route",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-cli-receipt-product-is-deterministic-and-has-no-external-effect",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-cli-binary-tls-frame-copies-and-wipes-only-owned-data",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-cli-binary-tls-frame-refuses-truncation-overflow-and-accessors",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-control-construction-enters-no-provider-channel-or-timer",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-control-start-status-and-close-use-one-provider-and-ordered-stops",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-control-eof-closes-without-polling-or-operator-effect",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-control-fresh-resume-and-activation-use-original-owner-only",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-control-recorded-mode-cannot-enter-fresh-resume-or-activation",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-control-journal-recovery-commands-do-not-publish-or-admit-automatically",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-control-recorded-original-admission-remains-an-explicit-command",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-control-witness-history-remains-an-explicit-none-authority-read",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-control-unknown-command-and-arguments-refuse-before-owner-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-control-duplicate-command-id-never-repeats-a-prior-operation",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-control-command-budget-does-not-reset-on-a-status-command",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-control-start-failure-still-requests-the-original-provider-and-channel-stop",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-control-write-loss-keeps-held-and-never-retries-output",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-control-operator-loss-keeps-held-and-never-reenters-operation",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-control-unknown-provider-close-retains-auxiliary-owner",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-control-unclean-current-provider-view-prevents-auxiliary-close",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-control-whole-close-budget-does-not-renew-between-owner-legs",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-control-cancel-failure-cannot-turn-a-completed-callback-into-clean-close",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-control-timeout-keeps-late-success-held-with-no-new-output",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-control-explicit-close-is-idempotent-and-has-no-startup-acquisition",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-funding-close-budget-versions-preserve-both-supported-endpoints",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-funding-close-budget-oversized-profiles-refuse-without-clamping",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-funding-close-budget-keeps-separate-operation-and-store-budgets",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-funding-close-budget-is-forwarded-through-the-actual-inert-one-shot-binding",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-configuration-and-owner-creation-have-no-operational-callbacks",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-configuration-captures-paths-offer-and-bounds-before-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-recorded-mode-is-explicit-existing-only-with-independent-pins",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-configuration-getters-never-run",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-tls-byte-copies-are-independent-and-release-clears-only-the-copies",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-claims-before-stores-and-starts-one-actual-selected-root",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-clean-close-orders-root-intake-service-and-lease-release",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-close-before-start-acquires-no-store-or-provider",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-known-lease-refusal-has-no-store-opening-or-fallback",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-promised-service-opening-is-not-adopted-and-rejection-is-observed",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-intake-opening-loss-retains-first-store-without-force-close",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-aliased-store-handles-never-reach-provider-opening",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-opaque-opening-result-does-not-invoke-then-getters",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-close-during-opening-rejects-and-closes-late-root-once-with-stores-held",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-returned-root-accessors-are-not-invoked",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-listen-result-must-match-real-listening-contract",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-listen-rejection-never-closes-borrowed-or-unknown-opening-resources",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-root-close-must-be-a-genuine-promise",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-nonvoid-root-close-is-held-before-sql-close",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-live-native-metrics-prevent-sql-close-despite-closed-label",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-close-view-getters-never-run",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-intake-close-loss-prevents-service-close-and-lease-release",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-asynchronous-intake-close-is-observed-but-never-a-sync-ack",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-service-close-nonvoid-result-keeps-lease-held",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-unknown-release-is-not-retried-or-reported-released",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-reentrant-start-during-sql-close-is-fenced",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-rejected-operator-result-is-held-and-active-count-is-not-negative",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-close-during-operator-work-fences-late-success-and-keeps-stores",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-sync-operator-close-reentry-cannot-release-stores",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-method-arity-refusal-has-no-operator-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-successful-operator-result-preserves-captured-method-contract",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-operator-admission-is-bounded-without-reentering-target",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-actual-recorded-controller-and-reference-ledger-preserve-100-calls-and-replay-before-store-close",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-partial-ingress-metrics-never-substitute-for-release-proof",
+      "status": "PASS"
+    },
+    {
+      "id": "execution-setup-explicit-policy-and-capacity-admit-within-both-bounds",
+      "status": "PASS"
+    },
+    {
+      "id": "execution-setup-missing-or-extra-terms-never-default",
+      "status": "PASS"
+    },
+    {
+      "id": "execution-setup-capacity-must-cover-100-and-fit-selected-store",
+      "status": "PASS"
+    },
+    {
+      "id": "execution-setup-duration-must-fit-explicit-policy-without-clamping",
+      "status": "PASS"
+    },
+    {
+      "id": "execution-setup-rejects-accessor-without-invoking-it",
+      "status": "PASS"
+    },
+    {
+      "id": "execution-setup-rejects-proxy-without-entering-traps",
+      "status": "PASS"
+    },
+    {
+      "id": "execution-setup-construction-does-not-enter-store-ports",
+      "status": "PASS"
+    },
+    {
+      "id": "execution-setup-fresh-one-cas-and-exact-durable-readback",
+      "status": "PASS"
+    },
+    {
+      "id": "execution-setup-fresh-refuses-already-initialized-store-without-writing",
+      "status": "PASS"
+    },
+    {
+      "id": "execution-setup-lost-initialization-result-is-held-with-no-retry",
+      "status": "PASS"
+    },
+    {
+      "id": "execution-setup-stale-receipt-never-retries-or-opens-next-leg",
+      "status": "PASS"
+    },
+    {
+      "id": "execution-setup-wrong-ack-revision-is-held",
+      "status": "PASS"
+    },
+    {
+      "id": "execution-setup-ack-cannot-substitute-ledger-policy-or-capacity",
+      "status": "PASS"
+    },
+    {
+      "id": "execution-setup-ack-readback-revision-must-still-match",
+      "status": "PASS"
+    },
+    {
+      "id": "execution-setup-ack-readback-state-must-still-match",
+      "status": "PASS"
+    },
+    {
+      "id": "execution-setup-opaque-read-result-is-never-awaited",
+      "status": "PASS"
+    },
+    {
+      "id": "execution-setup-opaque-initializer-result-is-never-awaited",
+      "status": "PASS"
+    },
+    {
+      "id": "execution-setup-reentry-stays-held-before-initialization",
+      "status": "PASS"
+    },
+    {
+      "id": "execution-setup-existing-mode-only-reads-and-preserves-generation",
+      "status": "PASS"
+    },
+    {
+      "id": "execution-setup-existing-mode-never-initializes-a-missing-contract",
+      "status": "PASS"
+    },
+    {
+      "id": "execution-setup-existing-mode-refuses-a-different-original-profile",
+      "status": "PASS"
+    },
+    {
+      "id": "execution-setup-existing-mode-refuses-an-initializer-capability",
+      "status": "PASS"
+    },
+    {
+      "id": "execution-setup-max-revision-refuses-before-initialization",
+      "status": "PASS"
+    },
+    {
+      "id": "execution-setup-v3-real-bootstrap-binding-and-owned-capture-preserve-terms",
+      "status": "PASS"
+    },
+    {
+      "id": "execution-setup-v3-missing-terms-and-duration-conflict-refuse-in-decoder",
+      "status": "PASS"
+    },
+    {
+      "id": "execution-setup-legacy-v1-v2-data-decoders-cannot-smuggle-new-terms",
+      "status": "PASS"
+    }
+  ],
+  "nodeVersion": "24.19.0",
+  "platform": "darwin-arm64",
+  "nodeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25",
+  "rawQualificationSha256": "3b4a81ed39914ff6edeae1b17320c2037f128dad1435390ae56d05343e6f6aab",
+  "sourceProfile": {
+    "path": "qualification/profiles/api-credit-application-source-v49.json",
+    "bytes": 352317,
+    "sha256": "af2bc94a72c36328782da74847b45169292073217155ccf5717352c1138a1689"
+  },
+  "providerExecutionSetup": {
+    "version": 1,
+    "scope": "EXPLICIT_PROVIDER_DURABLE_EXECUTION_SETUP_SOURCE_CANDIDATE",
+    "bootstrapVersion": 3,
+    "bootstrap": "src/issued-provider-operator-bootstrap.js",
+    "setup": "src/issued-provider-execution-setup.js",
+    "ownedApplication": "src/x402-issued-funding-grant-owned-native-application.js",
+    "nativeOperator": "src/issued-provider-native-operator.js",
+    "explicitLedgerPolicyAndCapacity": true,
+    "capacityMinimum": 100,
+    "capacityMaximum": "SELECTED_SERVICE_STORE_MAX_REQUESTS",
+    "durationWithinExplicitPolicy": true,
+    "noDefaults": true,
+    "legacyDataDecodersPreserved": true,
+    "legacyNativeRefusedBeforeTLS": true,
+    "directOwnedSetupRequiredBeforeStores": true,
+    "oneAttemptBeforeIntakeAndFunding": true,
+    "freshExistingActualSQLiteInitializer": true,
+    "exactRevisionCASAckAndReadback": true,
+    "lostReceiptHeldWithoutRetry": true,
+    "restoredModesReadOnlyWithoutInitializer": true,
+    "noGenerationBudgetOrUnitReset": true,
+    "noGrantOrDispatchAuthority": true,
+    "SQLiteMethodsByteIdentical": true,
+    "sourceProviderOperatorInputs": 95,
+    "rootMetadataInputs": 1,
+    "providerCatalogRows": 498,
+    "providerCatalogApplicationRows": 94,
+    "packageRows": 404,
+    "explicitBareEdges": 4,
+    "defaultBuyerInputs": 167,
+    "defaultBuyerCatalogRows": 570,
+    "defaultBuyerGraphChanged": false,
+    "defaultBuyerCatalogAndReaderByteIdentical": true,
+    "defaultBuyerPackageRowsAndBareEdgesUnchanged": true,
+    "providerCatalogEdgeOrderPreserved": true,
+    "installedNamespaceQualified": false,
+    "nativeExecution": false,
+    "actualSDKOrSqlExecuted": false,
+    "native100Calls": "NOT_ESTABLISHED",
+    "nativeACKRecovery": "NOT_ESTABLISHED",
+    "nativeBudgetPersistence": "NOT_ESTABLISHED",
+    "externalOwnerFencing": "NOT_ESTABLISHED",
+    "physicalRelease": "NOT_ESTABLISHED",
+    "LinuxCommandExecution": "NOT_ESTABLISHED",
+    "G0G1G2Acceptance": "OPEN"
+  },
+  "proofManifest": {
+    "path": "qualification/issued-provider-execution-setup.proof-manifest.json",
+    "bytes": 342097,
+    "sha256": "39c19e4a94eacc0caf3683e59c3dffa5144ba46c6b2f82c31ced697c11e844cf"
+  },
+  "operationalPorts": "DECLARED_MEMORY_ONLY",
+  "actualDataNodeCommands": 5,
+  "actualSyntaxNodeCommands": 3,
+  "failureInventory": {
+    "path": "qualification/issued-provider-execution-setup.failure-inventory.json",
+    "bytes": 796,
+    "sha256": "27b96d6884f6009ca1ec56ba756631324599d3abcb7247b09212751695a6fef9"
+  },
+  "sourceContract": {
+    "path": "qualification/issued-provider-execution-setup.source-contract.json",
+    "bytes": 2875,
+    "sha256": "e4c13f6e978f31c9f1e1f3900dffb17a68029ab9a0c0a09683f67862751cf996"
+  },
+  "nativeExecutions": 0,
+  "SDK": 0,
+  "SQLite": 0,
+  "keys": 0,
+  "signatures": 0,
+  "sockets": 0,
+  "signals": 0,
+  "nonceSearches": 0,
+  "nodeChildren": 0,
+  "actualPrepare": 0,
+  "payouts": 0,
+  "task": "CLOSED/SUCCESS",
+  "resources": {
+    "taskQuotaBytes": 4194304,
+    "plannedExecutionPeakBytes": 3244352,
+    "sourceInputs": 294,
+    "dataRuntimeInputs": 78,
+    "parserInputs": 3,
+    "reusedParserInputs": 42,
+    "invalidatedParserInputs": 3,
+    "retainedExactRuntimeDataControls": 1270,
+    "reexecutedRelevantDataControls": 100,
+    "sourceOnlyCASLookupsAvoided": 213,
+    "materializedInputs": 81,
+    "sourceOnlyAliasesAvoided": 213,
+    "CASVerifiedReuse": 74,
+    "CASNewImports": 7,
+    "sourceTextArchives": 0,
+    "minimumFreeFloorBytes": 10737418240,
+    "streamAllocationPlan": {
+      "serialCommands": true,
+      "maximumRetainedSuccessfulDataStdoutBytes": 46642,
+      "requiredSuccessfulStderrBytes": 0,
+      "maximumOnePendingStderrBytes": 1048576,
+      "unchangedParserReceiptsReused": 42,
+      "newParserCommands": 3,
+      "sourceAliasBytes": 910727,
+      "newSourceCASBytes": 62928,
+      "allReferencedSourceCASBytes": 910727,
+      "metadataMarginBytes": 262144,
+      "allReferencedCASChargedPerTask": true,
+      "preexistingCASAlsoCharged": true,
+      "serialDataCommands": 5
+    },
+    "serialDataCommands": 5,
+    "failedDataTasksThisTurn": 0,
+    "quotaExpanded": false,
+    "parserBatchAdmission": true,
+    "proofManifestDeduplicated": true
+  },
+  "nativePersistence": "NOT_ESTABLISHED",
+  "nativeAcceptance": "NOT_ESTABLISHED",
+  "externalOwnerFencing": "NOT_ESTABLISHED",
+  "physicalRelease": "NOT_ESTABLISHED",
+  "LinuxAcceptance": "NOT_ESTABLISHED",
+  "current108CISeparate": true,
+  "newControlsIncludedIn108CI": false
+}
