@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "qualification": "G1_RECORDED_RESPONSE_PROVENANCE_FAILURE_INVENTORY",
+  "currentDataCaseFailures": 0,
+  "currentParserFailures": 0,
+  "currentFailedQualificationTasks": 0,
+  "unexpectedSkips": 0,
+  "cancellations": 0,
+  "currentPreparationUnknowns": [],
+  "retainedPriorTurnQualificationFailures": [
+    {
+      "sha256": "fed1285bd8d34140c45675b83cdbc64314dcc51ee33dc16fc40b8ae14c6bf453",
+      "status": "UNKNOWN",
+      "taskOutcome": "FAILURE",
+      "actualDataCommands": 1,
+      "actualParserCommands": 0,
+      "passed": 17,
+      "failed": 1,
+      "classification": "HARNESS_EXPECTED_GENERIC_EXIT_INSTEAD_OF_ESTABLISHED_CLOSE_UNKNOWN_4",
+      "failedGroupReused": false,
+      "nativeExecutions": 0
+    }
+  ],
+  "retainedPredecessorTaskFailure": {
+    "rawQualificationSha256": "a3f53b8f4ed525f28fa45dbac49c280b23210e23eb8ef3bbcac6dbc224cee52a",
+    "status": "UNKNOWN",
+    "taskOutcome": "FAILURE",
+    "classification": "COMMAND_RECORD_LIMIT",
+    "historicalPassedSourceControls": 425,
+    "wholeFailedTaskReclassified": false
+  },
+  "selectedExactControlsFromActualFailedTasks": 47,
+  "earlierInventoriesPreserved": true,
+  "nativeTestsExecuted": 0,
+  "nativeGates": "OPEN"
+}

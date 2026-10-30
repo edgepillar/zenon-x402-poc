@@ -1,7 +1,10 @@
 import { Buffer } from 'node:buffer';
 import { types } from 'node:util';
 import { captureServiceCreditHttpExecuteOriginalInput } from './service-credit-http-execute-dispatch.js';
-import { snapshotOriginalServiceRequestCustodyKey } from './service-credit-original-request-custody-contract.js';
+import { createHash } from 'node:crypto';
+import { snapshotOriginalServiceRequestCustodyKey, validateOriginalServiceRequestCustody,
+ serializeOriginalServiceRequestCustody, captureOriginalServiceDispatchIntent,
+ serializeOriginalServiceDispatchIntent } from './service-credit-original-request-custody-contract.js';
 
 const F=Object.freeze,D=Object.getOwnPropertyDescriptor,OWN=Object.hasOwn,APPLY=Reflect.apply;
 const NP=Promise,PP=NP.prototype,THEN=PP.then,CTOR=D(PP,'constructor'),SPECIES=D(NP,Symbol.species);
@@ -40,6 +43,18 @@ function responseCode(text){
  const parsed=fields(JSON.parse(text),['ok','resultCode']);
  const code=snapshotOriginalServiceRequestCustodyKey({grantId:'result',requestId:parsed.resultCode}).requestId;
  if(parsed.ok!==true||JSON.stringify({ok:true,resultCode:code})!==text)fail();return code;
+}
+function responseDigest(domain,text){return 'sha256:'+createHash('sha256').update(domain).update('\0').update(text,'utf8').digest('hex');}
+function bindRecordedResponse(original,funding,intent,response){
+ // Reuse the retained-original and intent byte contracts at the output boundary.
+ // The same owned V6 reader still supplies the local observation and funding.
+ const retained=validateOriginalServiceRequestCustody(original);
+ const expected=captureOriginalServiceDispatchIntent(retained,{fundingRevision:own(funding,'revision'),
+  challengeDigest:own(response,'challengeDigest'),paymentDigest:own(response,'paymentDigest'),custodyPolicy:own(response,'custodyPolicy')});
+ const intentText=serializeOriginalServiceDispatchIntent(intent);
+ if(intentText!==serializeOriginalServiceDispatchIntent(expected)
+  ||own(response,'originalDigest')!==responseDigest('zenon-x402:response-observation-original-v1',serializeOriginalServiceRequestCustody(retained))
+  ||own(response,'dispatchIntentDigest')!==responseDigest('zenon-x402:response-observation-intent-v1',intentText))fail();
 }
 /** A bounded local observation, never provider authentication or authority. */
 export function captureApiCreditRecordedServiceResult(value){
@@ -98,6 +113,7 @@ export function createApiCreditRecordedServiceResultApplication(configuration){
   for(const key of ['grantId','requestId'])if(own(response,key)!==expected[key]||own(intent,key)!==expected[key])fail();
   for(const key of ['paymentHash','network','fundingResourceUrl'])if(own(response,key)!==own(funding,key)||own(intent,key)!==own(funding,key))fail();
   if(own(response,'fundingRevision')!==own(funding,'revision')||own(intent,'fundingRevision')!==own(funding,'revision'))fail();
+  bindRecordedResponse(original,funding,intent,response);
   const text=own(response,'responseJson');if(own(response,'resultCode')!==responseCode(text))fail();return text;
  }
  function finishClose(){

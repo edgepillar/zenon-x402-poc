@@ -7,12 +7,15 @@ import { apiCreditApplicationDataFixtures as applications } from './api-credit-a
 import { createSdk105ApiCreditApplicationLifecycle } from '../src/zenon/sdk105-api-credit-application-lifecycle.js';
 import { captureSdk105ApiCreditProductSelection, consumeSdk105ApiCreditProductSelection,
  bindSdk105ApiCreditProductLifecycleWithRecordedResults } from '../src/zenon/sdk105-api-credit-product-profile.js';
-import { captureOriginalServiceRequestCustody, captureOriginalServiceDispatchIntent } from '../src/service-credit-original-request-custody-contract.js';
+import { captureOriginalServiceRequestCustody, captureOriginalServiceDispatchIntent, serializeOriginalServiceRequestCustody,
+ serializeOriginalServiceDispatchIntent } from '../src/service-credit-original-request-custody-contract.js';
+import { canonicalJson } from '../src/canonical.js';
 import { InMemoryServiceCreditModel } from '../src/service-credit-model.js';
 
 const F=Object.freeze,NOW=2_000_000_000_000;
 const EMPTY='sha256:'+createHash('sha256').update('').digest('hex');
 const digest=c=>'sha256:'+c.repeat(64);
+const responseDigest=(domain,text)=>'sha256:'+createHash('sha256').update(domain).update('\0').update(text,'utf8').digest('hex');
 export function deferred(){let resolve,reject;const promise=new Promise((a,b)=>{resolve=a;reject=b;});return{promise,resolve,reject};}
 export function recordedResultFixture({onRead=null,onSubmit=null,requestBudget=128}={}){
  let h,s;
@@ -36,9 +39,14 @@ export function recordedResultFixture({onRead=null,onSubmit=null,requestBudget=1
    const funding=F({revision:3,status:'BOUND',ambiguityLatched:false,fundingResourceUrl:c.fundingResourceUrl,paymentHash:original.paymentHash,network:original.network});
    const dispatchIntent=captureOriginalServiceDispatchIntent(original,{fundingRevision:3,challengeDigest:digest('a'),paymentDigest:digest('b'),
     custodyPolicy:{policyVersion:1,maxRequests:requestBudget,serviceResourceUrl:input.serviceResourceUrl}});
-   const responseObservation=F({responseObservationVersion:1,scope:'LOCAL_DECLARED_HTTP_SUCCESS_RESPONSE',status:'DECLARED_SUCCESS_RESPONSE_OBSERVED',
+   const responseCore={responseObservationVersion:1,scope:'LOCAL_DECLARED_HTTP_SUCCESS_RESPONSE',status:'DECLARED_SUCCESS_RESPONSE_OBSERVED',
     grantId:input.grantId,requestId:input.requestId,paymentHash:original.paymentHash,network:original.network,fundingResourceUrl:c.fundingResourceUrl,fundingRevision:3,
-    responseJson,resultCode:'api.'+input.requestId,authority:'NONE',mayStartPayment:false,maySignPayment:false,mayDispatchService:false,deliveryConfirmed:false,serviceDelivery:'NOT_ESTABLISHED'});
+    challengeDigest:dispatchIntent.challengeDigest,paymentDigest:dispatchIntent.paymentDigest,
+    custodyPolicy:F({policyVersion:1,maxRequests:requestBudget,serviceResourceUrl:input.serviceResourceUrl}),
+    originalDigest:responseDigest('zenon-x402:response-observation-original-v1',serializeOriginalServiceRequestCustody(original)),
+    dispatchIntentDigest:responseDigest('zenon-x402:response-observation-intent-v1',serializeOriginalServiceDispatchIntent(dispatchIntent)),
+    responseJson,resultCode:'api.'+input.requestId,authority:'NONE',mayStartPayment:false,maySignPayment:false,mayDispatchService:false,deliveryConfirmed:false,serviceDelivery:'NOT_ESTABLISHED'};
+   const responseObservation=F({...responseCore,checksum:responseDigest('zenon-x402:original-response-observation-v1',canonicalJson(responseCore))});
    s.records.set(input.requestId,F({original,funding,dispatchIntent,responseObservation,
     uncertainty:F({custody:false,submission:false,undrained:false,declaredFundingAmbiguitySeen:false}),
     evidence:'LOCAL_STORE_DECLARED_RECOVERY_STATE',qualification:'UNQUALIFIED',authority:'NONE',serviceOutcome:'NOT_ESTABLISHED',
