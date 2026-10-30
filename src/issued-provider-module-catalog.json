@@ -2487,8 +2487,8 @@
     },
     {
       "path": "src/issued-original-grant-admission-owner.js",
-      "bytes": 11459,
-      "sha256": "b498abbc567a4bb890e4478630628dd4e565d871839b08df03bfbe35b907d5b0",
+      "bytes": 11674,
+      "sha256": "30f93b84fec67ece822aa909ebe23dacdd475e01fac4d25086c9cb924fb37f5c",
       "format": "module"
     },
     {
@@ -2588,6 +2588,12 @@
       "format": "module"
     },
     {
+      "path": "src/issued-recorded-result-grant-binding.js",
+      "bytes": 4152,
+      "sha256": "7c7ea0cc7e0a794ba6ce26557be7d93c1a99445f9a93c45272a5c498857ff5b1",
+      "format": "module"
+    },
+    {
       "path": "src/journal-momentum-confirmation-advance.js",
       "bytes": 1607,
       "sha256": "5deb0a7c1d2a279d949d9e13ad46d724d6e9360c795a4d887e48810f2834e2e9",
@@ -2654,6 +2660,12 @@
       "format": "module"
     },
     {
+      "path": "src/service-credit-backend-original-outcome-reader.js",
+      "bytes": 7738,
+      "sha256": "dadd9cbfbdcc2ff4bb24252fed85a135d2ce17397e713b1917a109eb6b28938d",
+      "format": "module"
+    },
+    {
       "path": "src/service-credit-bounded-https-ingress-limits.js",
       "bytes": 2661,
       "sha256": "35e2cc603398a929979b2f939f558d43002079038922d6248cc654c425eafb68",
@@ -2691,8 +2703,8 @@
     },
     {
       "path": "src/service-credit-durable-http-session.js",
-      "bytes": 13978,
-      "sha256": "a0d6d1436cdb697f125fee2f4dc723a5ddcfd2ee7063b55d56fa006bb8ba69bf",
+      "bytes": 15235,
+      "sha256": "8b5ca80539144619cf0be9a7f5594187aff6536f8003666cb3746db2684fc6bb",
       "format": "module"
     },
     {
@@ -2774,6 +2786,12 @@
       "format": "module"
     },
     {
+      "path": "src/service-credit-recorded-http-session-core.js",
+      "bytes": 7918,
+      "sha256": "ff848fb69e433da59b9220ceed1264d39def6be16fa0bfff45fd085028496d4b",
+      "format": "module"
+    },
+    {
       "path": "src/service-credit-sqlite-store.js",
       "bytes": 83873,
       "sha256": "c7a5559685f0ccd130d35804d58879133a2c05101adbdf965f65b5b152b99e40",
@@ -2847,8 +2865,8 @@
     },
     {
       "path": "src/x402-issued-funding-grant-application-core.js",
-      "bytes": 25394,
-      "sha256": "193bb39534a356464e4ce689c23ffe9eace940b6e8ee48d47a1b55542f35784a",
+      "bytes": 26235,
+      "sha256": "f219579ad1863d1de4b279b0c494d27d18f048b683185bde6d4682653237326d",
       "format": "module"
     },
     {

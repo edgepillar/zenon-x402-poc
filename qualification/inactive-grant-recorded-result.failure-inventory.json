@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "qualification": "G2_INACTIVE_GRANT_RECORDED_RESULT_FAILURE_INVENTORY",
+  "status": "CURRENT_PASS_PRIOR_FAILURES_PRESERVED",
+  "failures": [
+    {
+      "id": "R326_RECORDED_READER_CLOSED_REVISION",
+      "classification": "HARNESS_MISMATCH",
+      "status": "FIXTURE_CORRECTED_CURRENT_DATA_PASSED_ORIGINAL_FAILURE_PRESERVED",
+      "originalRawQualificationSha256": "c61d322accd1c84c6b53352c593fae38092c217901623ffa6e6b907b96067c56",
+      "originalTaskStatus": "UNKNOWN",
+      "originalTaskOutcome": "FAILURE",
+      "actualDataCommands": 7,
+      "failedDataCommands": 1,
+      "actualParserCommands": 0,
+      "failedGroup": "r326_rerun_6",
+      "failedCases": [
+        {
+          "id": "original-grant-admission-revoked-history-selects-results-without-refresh-or-dispatch",
+          "status": "FAIL",
+          "error": "ORIGINAL_GRANT_CLOSE_HELD"
+        }
+      ],
+      "fixture": "qualification/issued-provider-recovery.behavior.mjs",
+      "nativeReader": "src/service-credit-backend-original-outcome-reader.js",
+      "cause": "The DATA close fixture returned revision 0; the unchanged actual reader returns null for CLOSED.",
+      "sourceCorrection": "Match the existing CLOSED result shape; no runtime guard relaxed.",
+      "oldCompleteOrPartialGroupsReused": false,
+      "nativeExecutions": 0
+    }
+  ],
+  "currentDataFailures": 0,
+  "currentParserFailures": 0,
+  "currentTurnFailedQualificationTasks": 1,
+  "priorInventory": {
+    "path": "qualification/issued-provider-retained-resource.failure-inventory.json",
+    "sha256": "88e262b2ef2d79012842ef85c6e4bc8aff34ef7359daf16214c841a6cd00d0ca"
+  },
+  "priorFailuresReclassified": false,
+  "sourceReviewFindings": [
+    {
+      "id": "INACTIVE_ORIGINAL_RESULT_BLOCKED_BY_ACTIVE_ONLY_ADMISSION",
+      "classification": "PRODUCT_SOURCE_GAP",
+      "sourceBefore": "bceb1f5a1fbec53d7af6afd6e9b3366607e45a4a",
+      "status": "SOURCE_CORRECTED_DATA_QUALIFIED_NATIVE_NOT_ESTABLISHED",
+      "nativeExecuted": false
+    }
+  ],
+  "nativeExecutions": 0
+}

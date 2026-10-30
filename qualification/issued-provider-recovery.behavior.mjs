@@ -11,6 +11,7 @@ import { issuedFundingGrantBoundRowDigest as boundDigest,captureIssuedFundingGra
  captureIssuedFundingGrantRecoveryRows as captureRows,restoreIssuedFundingGrantRecordedBackend as backend } from '../src/x402-issued-funding-grant-recovery.js';
 import { restoreIssuedFundingGrantApplicationCore as application } from '../src/x402-issued-funding-grant-application-core.js';
 import { InMemoryServiceCreditModel } from '../src/service-credit-model.js';
+import { createServiceCreditRecordedHttpSessionCore as recordedSession } from '../src/service-credit-recorded-http-session-core.js';
 
 const F=Object.freeze,checks=[],clone=v=>JSON.parse(JSON.stringify(v));
 function check(id,run){checks.push({id,run});}
@@ -46,17 +47,23 @@ function fixture(options={}){
 function response(){const r={statusCode:0,headers:{},body:null,destroyed:false,writableEnded:false};r.setHeader=F((k,v)=>{r.headers[k]=v;});r.end=F(v=>{r.body=v;r.writableEnded=true;});return r;}
 function completion(){const counts={success:0,failure:0};return {counts,cap:F({success:F(()=>{counts.success++;}),failure:F(()=>{counts.failure++;})})};}
 function model(x,state=null){
- const options={now(){return 100;},deriveCost(){return 1;}},m=state===null?new InMemoryServiceCreditModel(options):InMemoryServiceCreditModel.fromState(options,state),id=x.d.d.profile.originalFunding;
+ let now=100;const options={now(){return now;},deriveCost(){return 1;}},m=state===null?new InMemoryServiceCreditModel(options):InMemoryServiceCreditModel.fromState(options,state),id=x.d.d.profile.originalFunding;
  if(state===null)m.registerOffer({modelVersion:1,providerId:'provider.fixed',serviceId:'service.fixed',resourceId:'resource.fixed',resourceBinding:'sha256:'+'e'.repeat(64),
    offerId:id.offerId,offerVersion:id.offerVersion,costPolicyId:'cost.fixed',fundingPolicyId:'funding.fixed',fundingPolicyVersion:1});
  function activate(){return m.activateGrantFromTrustedRecord({activationVersion:2,authorityProfileId:'declared.authority',authorityProfileVersion:1,verifierVersion:1,
   authorityRecordDigest:'sha256:'+'b'.repeat(64),fundingPolicyId:'funding.fixed',fundingPolicyVersion:1,sourceSettlementId:'declared.settlement',providerId:'provider.fixed',serviceId:'service.fixed',resourceId:'resource.fixed',resourceBinding:'sha256:'+'e'.repeat(64),
   ...id,totalUnits:100,expiresAt:1000,scheme:'exact',paymentFlow:'upfront',payer:id.holderId,evidenceVersion:1,inclusionAuthorizationDigest:'sha256:'+'d'.repeat(64),evidenceState:'MOMENTUM_INCLUDED',
   confirmationPolicy:{policyId:'zenon.authenticated-momentum-inclusion',policyVersion:1,minimumConfirmations:2}});}
- return {m,activate};
+ return {m,activate,setNow:F(value=>{assert.ok(Number.isSafeInteger(value)&&value>=0);now=value;})};
+}
+function declaredRecordedOutcome(status,request=null){
+ const terminal=request===null?null:request.state==='SUCCEEDED'?'SUCCEEDED':request.state==='OUTCOME_UNKNOWN'?'OUTCOME_UNKNOWN':'NONE';
+ return deep({status,revision:status==='CLOSED'?null:0,originalRequest:request,execution:terminal===null?null:{terminalClassification:terminal,
+   request:{grantId:request.grantId,requestId:request.requestId,requestDigest:request.requestDigest}},
+  cachedResult:status==='CACHED_SUCCESS'?request.cachedResult:null,executionAuthorized:false,paymentAuthorized:false,signingAuthorized:false,deliveryStatus:'NOT_ESTABLISHED'});
 }
 async function app(options={}){
- const f=fixture(options),s={backend:f,creates:0,ingressCreates:0,sessions:0,executions:0,debits:0,queryReads:0,closed:false,grantReads:0},ledger=model(f.x,options.state??null),noop=F(()=>{});
+ const f=fixture(options),s={backend:f,creates:0,ingressCreates:0,sessions:0,replaySessions:0,resultReads:0,resultReaderCloses:0,executions:0,debits:0,queryReads:0,closed:false,grantReads:0},ledger=model(f.x,options.state??null),noop=F(()=>{});
  const intake=F({declaredIntake:true}),service=F({declaredService:true}),runtime=F({monotonicNowNs:F(()=>0n),schedule:F(()=>F({declaredTimer:true})),cancel:noop});
  const config={funding:{intake:{store:intake,serviceCreditStore:service,authorityRecord:'declared-authority-data',deriveFundingTerms:noop,now:F(()=>100),observerRoot:'/synthetic/observer',
    observerCatchUp:F({maximumPageEntries:1,maximumBackfillSpan:1,maximumMembersPerMomentum:1}),selection:f.x.d.config.serviceSelection,resourceUrl:f.x.d.config.resourceUrl},
@@ -69,7 +76,13 @@ async function app(options={}){
  const ports=F({validateStores:F((i,c)=>{assert.equal(i,intake);assert.equal(c,service);}),loadBound:F(()=>options.startupRows?options.startupRows(s,f):f.s.rows),
    createFunding:F(async c=>{s.creates++;assert.deepEqual(c.recovery,f.x.expected);if(options.construct)options.construct(s,f);return options.fundingView?options.fundingView(f.owner):f.owner;}),
    readCommittedGrant:F((store,id)=>{assert.equal(store,service);s.grantReads++;if(options.grantRead)return options.grantRead(s,f,ledger,id);return ledger.m.getGrant(id);}),
-   createServiceSession:F(c=>{s.sessions++;assert.equal(c.store,service);return F({close:F(()=>Promise.resolve(undefined)),handle:F((req,res)=>{
+   createServiceSession:F(c=>{s.sessions++;assert.equal(c.store,service);
+    if(c.replayOnly===true){s.replaySessions++;return recordedSession(F({admittedGrantId:c.admittedGrantId,
+     readOriginal:F(req=>{s.resultReads++;const r=ledger.m.getRequest({grantId:c.admittedGrantId,requestId:req.declaredRequestId??'request.original'});
+      return declaredRecordedOutcome(r===null?'NOT_RECORDED':r.state==='SUCCEEDED'?'CACHED_SUCCESS':r.state==='OUTCOME_UNKNOWN'?'OUTCOME_UNKNOWN':'RECONCILIATION_REQUIRED',r);}),
+     closeReader:F(()=>{s.resultReaderCloses++;return declaredRecordedOutcome('CLOSED');}),
+     writeResponse:F((res,frame)=>{res.statusCode=frame.statusCode;res.end(frame.body);})}));}
+    assert.equal(Object.hasOwn(c,'replayOnly'),false);return F({close:F(()=>Promise.resolve(undefined)),handle:F((req,res)=>{
      const id=req.declaredRequestId??'request.original',g=c.admittedGrantId,input={modelVersion:1,grantId:g,requestId:id,method:'POST',routeId:'api.fixed',canonicalBodyDigest:'sha256:'+'a'.repeat(64),selectedContentType:'application/json',maxCostUnits:1};
      const r=ledger.m.reserveRequest(input);if(!r.replayed){s.debits++;const b=ledger.m.beginExecution({grantId:g,requestId:id});if(b.executionAuthorized){s.executions++;ledger.m.completeExecution({grantId:g,requestId:id,cachedResult:{statusCode:200,contentType:'application/json',resultCode:'result.fixed'}});}}
      res.statusCode=200;res.end('{"result":"fixed"}');return Promise.resolve(undefined);

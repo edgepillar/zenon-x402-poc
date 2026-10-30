@@ -7,6 +7,8 @@ import {
   createServiceCreditHttpAdmission,
 } from './service-credit-http.js';
 import { ServiceCreditSqliteStore } from './service-credit-sqlite-store.js';
+import { createServiceCreditBackendOriginalOutcomeReader } from './service-credit-backend-original-outcome-reader.js';
+import { createServiceCreditRecordedHttpSessionCore } from './service-credit-recorded-http-session-core.js';
 import {
   createServiceCreditDurableSessionClose,
 } from './service-credit-durable-session-close.js';
@@ -45,6 +47,7 @@ const SCOPED_SESSION_KEYS = OBJECT_FREEZE([
   'selectedDurationMs',
   'admittedGrantId',
 ]);
+const RECORDED_SESSION_KEYS = OBJECT_FREEZE([...SCOPED_SESSION_KEYS, 'replayOnly']);
 const SNAPSHOT_KEYS = OBJECT_FREEZE(['revision', 'executionState']);
 const EXECUTION_STATE_KEYS = OBJECT_FREEZE([
   'contractVersion',
@@ -339,7 +342,8 @@ function send(response, descriptor) {
 export function createDurableServiceCreditHttpSession(options) {
   if (arguments.length !== 1) throw failure(INVALID_CONFIGURATION);
   const configuration = exactDataObject(options, SESSION_KEYS)
-    ?? exactDataObject(options, SCOPED_SESSION_KEYS);
+    ?? exactDataObject(options, SCOPED_SESSION_KEYS)
+    ?? exactDataObject(options, RECORDED_SESSION_KEYS);
   if (
     configuration === null
     || !NUMBER_IS_SAFE_INTEGER(configuration.selectedDurationMs)
@@ -349,6 +353,25 @@ export function createDurableServiceCreditHttpSession(options) {
   }
 
   validateDurableCutover(configuration.store, configuration.selectedDurationMs);
+
+  if (OBJECT_HAS_OWN(configuration, 'replayOnly')) {
+    if (configuration.replayOnly !== true) throw failure(INVALID_CONFIGURATION);
+    // The same existing store and scoped proof admission supply history only.
+    // Do not construct an execution owner or retain its callback/deadline ports.
+    const reader = createServiceCreditBackendOriginalOutcomeReader({
+      store: configuration.store, admittedGrantId: configuration.admittedGrantId,
+    });
+    return createServiceCreditRecordedHttpSessionCore(OBJECT_FREEZE({
+      admittedGrantId: configuration.admittedGrantId,
+      readOriginal: reader.read,
+      closeReader: reader.close,
+      writeResponse: OBJECT_FREEZE(function writeRecordedResponse(response, frame) {
+        send(response, OBJECT_FREEZE({ ...frame,
+          body: REFLECT_APPLY(BUFFER_FROM, Buffer, [frame.body, 'utf8']),
+        }));
+      }),
+    }));
+  }
 
   let admission;
   let owner;

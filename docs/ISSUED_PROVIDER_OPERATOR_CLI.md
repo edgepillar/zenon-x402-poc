@@ -196,7 +196,7 @@ All top-level fields are required:
   explicit. Terms are never refreshed per call. Authority/chain/confirmation
   consistency is checked again by the actual native authority parser before
   opening the application stores. The existing resource preparer also checks
-  exact resource/offer/terms/authority and absolute expiry before reading TLS.
+  exact resource/offer/terms/authority before TLS; FRESH also checks absolute expiry, while restored modes require the pinned original resource without a new issuance clock decision.
   Its candidate is not persisted or served; actual intake issuance still
   rechecks its own contract.
 - Version 1 keeps the exact original funding fields and selects JOURNAL_ONLY.
@@ -310,3 +310,39 @@ proves physical release, native durability, G1/G2, current chain identity,
 testnet/pilot readiness or production behavior. Current qualification is pure
 DATA with declared ports and parser-only native sources. Actual journal,
 SDK/core, SQL, TLS/FIFO, fresh-process and Linux execution remain unexecuted.
+
+## Recorded results for inactive grants
+
+In RECORDED, JOURNAL and WITNESSED, the existing local ADMIT_ORIGINAL command
+still derives the original funding identity from the independently pinned BOUND
+row and settled custody record. It then reads the actual committed grant. An
+ACTIVE grant selects DURABLE_EXECUTION, whose existing store checks decide each
+new request. An EXPIRED or REVOKED original selects RECORDED_RESULT_ONLY. Its
+admission result and provider snapshot report that mode explicitly. An ACTIVE
+stored history row may also select result-only mode when the current grant read
+observes expiry. No expiry, lifecycle, original payment, unit counter or authority
+is refreshed. Fresh grant admission keeps its existing ACTIVE-only binding.
+
+The result-only session uses the same existing scoped capability-proof admission
+and getOriginalRequestExecutionSnapshot reader on the same borrowed store. It
+accepts the original POST path and proof-bound request tuple. A committed original
+success returns the same canonical success body. A new request ID, conflicting
+request or NOT_INVOKED result returns 409. Unresolved and OUTCOME_UNKNOWN results
+return 503; their reservations remain held. Known admission UNAVAILABLE also
+returns 503 without replacing the reader or resetting its request budget.
+Authentication and framing refusals
+retain their ordinary 400/401/404/405 responses. No executor, reserve, prepare,
+clock or timer port is passed to the result-only controller. No new HTTP endpoint,
+grant, debit, execution, retry or payout is created. Reader close fences only
+that reader; the existing provider owner retains store and ingress close order.
+These reads still use the store's existing transaction machinery; this is not
+an OS-readonly database mode or a distributed atomicity claim.
+
+The current DATA controls use declared memory store/proof/writer/listener ports
+and synthetic unsigned activation metadata. They do not execute native proof
+authentication, SQLite, SDK, HTTPS or process reopen. The new source branch and
+one current parser check are recorded in
+[the local result](../qualification/inactive-grant-recorded-result.actual-local-result.json).
+The failed close fixture is preserved in the failure inventory; the native reader
+was unchanged. Native/Linux 100-call/replay/restart, physical release, late paid
+obligations and delivery/compensation acceptance remain separate OPEN gates.

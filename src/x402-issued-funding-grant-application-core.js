@@ -4,6 +4,7 @@ import { types as utilTypes } from 'node:util';
 import { createHash } from 'node:crypto';
 import { canonicalJson } from './canonical.js';
 import { createIssuedFundingPostApplicationBinding, captureIssuedFundingPostServiceSelection } from './x402-issued-funding-post-application-binding.js';
+import { createIssuedRecordedResultGrantBinding } from './issued-recorded-result-grant-binding.js';
 import { createIssuedFundingPostSdkResourceBinding } from './x402-issued-funding-post-sdk-resource.js';
 import { captureOfficialFundingPostHttpsRoute, captureOfficialFundingPostHttpsRequest } from './x402-official-funding-post-https-request-binding.js';
 import { captureOriginalFundingGrantRoute, ORIGINAL_FUNDING_GRANT_PATH } from './service-credit-original-grant-http-binding.js';
@@ -42,6 +43,9 @@ const SERVICE_UNAVAILABLE=F({statusCode:503,contentType:'application/json',body:
  * exist before funding. Check its exact ID, original transaction, issued
  * digests and holder/capability selection. It THEN constructs the actual scoped
  * session. No HTTP request, BOUND or settlement receipt activates a grant.
+ * Restored EXPIRED/REVOKED originals instead select the fixed recorded-result
+ * reader: the same scoped proof and original request are required, and no
+ * execution owner is constructed. Fresh admission remains ACTIVE-only.
  *
  * Original header replay is cache-only, not another first settlement/resend.
  * Pending observation is local/explicit on the same continuation. UNKNOWN and
@@ -95,9 +99,9 @@ async function createCore(options,ports,restoring){
     if(restoring)captureIssuedFundingGrantRecoveryRows(caps.loadBound(i.store),selection,route.resourceUrl,recovery);else fresh(i.store);
   }catch{fail('configuration');}finally{options=null;}
 
-  let funding=null,binding=null,ingress=null,service=null,query=null,mixedRoutes=null,opening=false;
+  let funding=null,binding=null,recordedResultBinding=null,ingress=null,service=null,query=null,mixedRoutes=null,opening=false;
   let closed=false,admissionRevoked=false,uncertain=false,terminal=null,rootCloseStarted=false,rootCloseDone=false;
-  let serviceCloseStarted=false,serviceCloseDone=false,active=0,fundingBusy=false,admittedGrantId=null;
+  let serviceCloseStarted=false,serviceCloseDone=false,active=0,fundingBusy=false,admittedGrantId=null,serviceAdmissionMode=null;
   let queryCloseStarted=false,queryCloseDone=false,queryCalls=0,queryRefusals=0;
   let paidCalls=0,challengeCalls=0,serviceCalls=0,pendingObservations=0,admissionAttempts=0;
   const operations=new Set(),seen=new WeakSet(),waiters=[],opaqueQueryReturns=new Set();
@@ -241,6 +245,7 @@ async function createCore(options,ports,restoring){
     if(restoring)captureIssuedFundingGrantRecoveryRows(caps.loadBound(fundingConfig.intake.store),fixedSelection,routed.resourceUrl,recovery);else fresh(fundingConfig.intake.store);
     const issuedFrame=funding.getIssuedChallenge();
     binding=BINDING({issuedFrame,resourceUrl:routed.resourceUrl,serviceSelection:fixedSelection});
+    if(restoring)recordedResultBinding=createIssuedRecordedResultGrantBinding(F({issuedFrame,resourceUrl:routed.resourceUrl,selection:fixedSelection}));
     captureRestoredOutcome();
     const issued=createIssuedFundingPostSdkResourceBinding(issuedFrame,routed.resourceUrl).selection();
     const resourceDigest='sha256:'+createHash('sha256').update('zenon-x402-service-credit-payment-resource-v1\0','ascii').update(canonicalJson(issued.resource)).digest('hex');
@@ -275,9 +280,11 @@ async function createCore(options,ports,restoring){
       if(committed===null)return F({status:'NOT_READY',authority:'NONE'});
       // This is a genuine read from the fixed actual store, never HTTP input.
       captureRestoredOutcome();
-      const pin=binding.captureCommittedGrant(committed,grantId);
+      const replayOnly=restoring&&own(committed,'lifecycle')!=='ACTIVE';
+      const pin=replayOnly?recordedResultBinding.captureCommittedGrant(committed,grantId,state.transactionHash):binding.captureCommittedGrant(committed,grantId);
       admittedGrantId=pin.admittedGrantId;
-      try{service=SESSION({...serviceOptions,admittedGrantId});const session=exact(service,['handle','close'],true);
+      serviceAdmissionMode=replayOnly?'RECORDED_RESULT_ONLY':'DURABLE_EXECUTION';
+      try{service=SESSION({...serviceOptions,admittedGrantId,...(replayOnly?{replayOnly:true}:{})});const session=exact(service,['handle','close'],true);
         if(!Object.values(session).every(callable))fail('service_unknown');}catch{discardNative(service);hold();fail('service_unknown');}
       if(!available())fail('service_unavailable');
       return F({status:'ADMITTED',grantId:admittedGrantId,authority:'NONE'});
@@ -298,7 +305,7 @@ async function createCore(options,ports,restoring){
     if(arguments.length!==0||!invariant())fail('input');
     return F({profile:'ISSUED_FUNDING_GRANT_APPLICATION_CORE',phase:terminal??(closed||admissionRevoked?'CLOSING':uncertain?'HELD':'OPEN'),
       activeOperations:active,fundingBusy,paidCalls,challengeCalls,serviceCalls,pendingObservations,
-      serviceAdmissionAttempts:admissionAttempts,serviceAdmissionOpen:service!==null,serviceOpening:opening,admissionRevoked,admittedGrantId,
+      serviceAdmissionAttempts:admissionAttempts,serviceAdmissionOpen:service!==null,serviceOpening:opening,admissionRevoked,admittedGrantId,serviceAdmissionMode,
       queryCalls,queryRefusals,queryCloseDone,query:query===null?null:query.inspect(),
       fundingCloseDone:rootCloseDone,serviceCloseDone,uncertain,ingress:NATIVE.snapshotMetrics(),funding:funding.snapshot(),
       binding:binding.inspect(),serviceStore:'BORROWED_NOT_CLOSED',intakeStore:'BORROWED_NOT_CLOSED',

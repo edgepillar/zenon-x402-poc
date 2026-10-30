@@ -45,7 +45,7 @@ export function createIssuedOriginalGrantAdmissionOwner(options){
  if(!Number.isSafeInteger(c.maximumPendingReconciliations)||Object.is(c.maximumPendingReconciliations,-0)||c.maximumPendingReconciliations<0||c.maximumPendingReconciliations>16)fail();
  const p=fields(c.port,['providerSnapshot','providerClose','loadBound','readOfficialOutcome','readOriginalFundingGrant','admitCommittedServiceGrant']);
  for(const fn of Object.values(p))if(typeof fn!=='function'||types.isProxy(fn)||!Object.isFrozen(fn))fail();if(new Set(Object.values(p)).size!==6)fail();
- let closed=false,held=false,active=false,attempts=0,admissionEntered=false,admittedGrantId=null,original=null,history=null,providerClose=null,closing=null;
+ let closed=false,held=false,active=false,attempts=0,admissionEntered=false,admittedGrantId=null,serviceMode=null,original=null,history=null,providerClose=null,closing=null;
  let lookupCalls=0,admissionCalls=0,closeCalls=0;const opaque=[];
  const retained=F(()=>[p,original,history,providerClose,closing,opaque]);
  function hold(v){held=true;HELD.add(retained);if(v!==undefined){opaque.push(v);discard(v);}}
@@ -79,18 +79,20 @@ export function createIssuedOriginalGrantAdmissionOwner(options){
    const selected=current();if(own(own(view,'binding'),'transactionHash')!==selected.identity.transactionId.slice(8))fail();
    lookupCalls++;history=captureServiceCreditOriginalFundingGrantResult(sync(p.readOriginalFundingGrant,[selected.identity]),selected.identity);
    const again=current(),latest=inspect();if(again.rowJson!==selected.rowJson||again.recordJson!==selected.recordJson||!eligible(latest))fail();
-   if(history.status==='NOT_RECORDED'||history.record.storedLifecycle!=='ACTIVE')return F({status:'NOT_READY',history,authority:'NONE'});
+   if(history.status==='NOT_RECORDED')return F({status:'NOT_READY',history,authority:'NONE'});
    live();admissionEntered=true;admissionCalls++;const id=history.record.grantId;
    const result=fields(sync(p.admitCommittedServiceGrant,[id]),['status','grantId','authority']);
    if(result.status!=='ADMITTED'||result.grantId!==id||result.authority!=='NONE')fail();
    const after=inspect();if(own(after,'phase')!=='OPEN'||own(after,'uncertain')||own(after,'admissionRevoked')||own(after,'serviceAdmissionOpen')!==true||own(after,'admittedGrantId')!==id)fail();
-   current();live();admittedGrantId=id;return F({status:'ADMITTED',grantId:id,history,admission:'EXPLICIT_LOCAL_OPERATOR',authority:'NONE'});
+   const mode=own(after,'serviceAdmissionMode');if(!['DURABLE_EXECUTION','RECORDED_RESULT_ONLY'].includes(mode)
+     ||history.record.storedLifecycle!=='ACTIVE'&&mode!=='RECORDED_RESULT_ONLY')fail();
+   current();live();admittedGrantId=id;serviceMode=mode;return F({status:'ADMITTED',grantId:id,history,serviceMode,admission:'EXPLICIT_LOCAL_OPERATOR',authority:'NONE'});
   }catch{hold();requestClose();fail();}finally{active=false;}
  });
  const admitCommittedServiceGrant=F(function admitCommittedServiceGrant(id){if(arguments.length!==1||active)fail();live();return A(p.admitCommittedServiceGrant,undefined,[id]);});
  const close=F(function close(){if(arguments.length!==0)return rejected();if(closing!==null)return closing.promise;closing=capability();closed=true;if(active)hold();
   const receipt=requestClose();A(THEN.value,receipt,[()=>{if(active||held)closing.reject(new TypeError('ORIGINAL_GRANT_CLOSE_HELD'));else closing.resolve(undefined);},()=>closing.reject(new TypeError('ORIGINAL_GRANT_CLOSE_HELD'))]);return closing.promise;});
  const view=F(function snapshotView(){if(arguments.length!==0)fail();return F({version:1,closed,held,active,attempts,maximumAttempts:16,lookupCalls,admissionCalls,admissionEntered,admittedGrantId,providerCloseCalls:closeCalls,
-  grantActivations:0,SDKEntries:0,newFunding:0,unitReset:false,storesClosed:false,authority:'EXPLICIT_LOCAL_OPERATOR_REQUIRED',physicalRelease:'NOT_ESTABLISHED'});});
+  serviceMode,grantActivations:0,SDKEntries:0,newFunding:0,unitReset:false,storesClosed:false,authority:'EXPLICIT_LOCAL_OPERATOR_REQUIRED',physicalRelease:'NOT_ESTABLISHED'});});
  return F({admitOriginalCommittedServiceGrant,admitCommittedServiceGrant,close,snapshot:view});
 }
