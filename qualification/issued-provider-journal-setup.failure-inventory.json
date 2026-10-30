@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "qualification": "G1_ISSUED_PROVIDER_JOURNAL_SETUP_FAILURE_INVENTORY",
+  "status": "PREPARATION_UNKNOWN_PRESERVED;NO_DATA_OR_PARSER_FAILURE",
+  "failures": [
+    {
+      "rawQualificationSha256": "e10cdf3db1a32eb327aeaa984fbdb1cdd8f0d560c44497fa1f7dfbd490ecd2af",
+      "status": "UNKNOWN",
+      "kind": "CATALOG_EDGE_ORDER_PREPARATION_REFUSAL",
+      "actualDataCommands": 0,
+      "actualParserCommands": 0,
+      "managedTaskCreated": false,
+      "preserved": true,
+      "correction": "The generator produced the exact same nine buyer edges in a different traversal order. V2 preserves the original order after checking equality of the entire edge set. No application, DATA/parser or native command had entered."
+    }
+  ],
+  "currentDataFailures": 0,
+  "currentParserFailures": 0,
+  "priorInventory": {
+    "path": "qualification/issued-provider-startup-stop.failure-inventory.json",
+    "sha256": "0ae9a027e817e1a18b4e789b9aebc3a051d20381f9d6955048d6b7f125e220cc"
+  },
+  "priorFailuresReclassified": false,
+  "nativeExecutions": 0
+}

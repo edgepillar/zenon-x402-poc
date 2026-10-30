@@ -2499,20 +2499,32 @@
     },
     {
       "path": "src/issued-provider-cli-invocation.js",
-      "bytes": 1319,
-      "sha256": "90ca30bd3f69c6a173f69e9b98577093ee189c6681ddc09c27e9785ae41e968c",
+      "bytes": 1716,
+      "sha256": "ec0c8994a44304fcffc184c00adbaf3a545210164c5ff9a15d13d59831c99944",
       "format": "module"
     },
     {
       "path": "src/issued-provider-cli.js",
-      "bytes": 2195,
-      "sha256": "f93fc768bff95c2d6677e6580158aca8fcfeb41e10332a8b7c14b8ff4a9c5e46",
+      "bytes": 2846,
+      "sha256": "9826a3819001667459d5d0e082499cefedaee5259fa39d966ad9232587b1970f",
+      "format": "module"
+    },
+    {
+      "path": "src/issued-provider-journal-setup.js",
+      "bytes": 7898,
+      "sha256": "e87513cb8374ea1c1edb8f4b715db6c550247a4b63c2012da3fc5ff92d4deee1",
       "format": "module"
     },
     {
       "path": "src/issued-provider-native-funding-roles.js",
       "bytes": 4452,
       "sha256": "8b46f45df756b773c6a3f019b223fd5c37fab5add29f797fabc20f31ebd4ca0b",
+      "format": "module"
+    },
+    {
+      "path": "src/issued-provider-native-journal-setup.js",
+      "bytes": 11709,
+      "sha256": "32a04df87fdf1dd80537822f59da012d21bd58bd57f1ffc9e0142bd21560748b",
       "format": "module"
     },
     {
@@ -2523,8 +2535,8 @@
     },
     {
       "path": "src/issued-provider-native-pipes.js",
-      "bytes": 7663,
-      "sha256": "b9694d62b3abc11d24dd504fadec033bdd8b9f1e89baf561e9045acb3f9f141c",
+      "bytes": 9378,
+      "sha256": "0b707e89f6fa61abd2da2a40e83cf774459befd2e7a57609dd993d4a333afe9e",
       "format": "module"
     },
     {
@@ -2787,8 +2799,8 @@
     },
     {
       "path": "src/settlement-journal.js",
-      "bytes": 64798,
-      "sha256": "b2151cb20ea3ce82e306b2b8d6b996b818d8fb4c226c35316384564eb9e1c25a",
+      "bytes": 65753,
+      "sha256": "4c96220720f18d6873a5a953197ae4173e784f0f700d154c4c3d3448376c826c",
       "format": "module"
     },
     {

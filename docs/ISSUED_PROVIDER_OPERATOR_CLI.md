@@ -18,8 +18,9 @@ launcher, package admission, SDK, credential or file owner.
 RUN first admits its separate fixed module catalog through the existing ordinary
 resolve/load guard, then imports and checks the fixed native launcher before
 adopting any descriptor. The provider catalog includes the existing pinned
-SDK/core/Noble package rows and the explicit core/server entry. The buyer's
-catalog and entry remain unchanged. No installer, module path, loader choice,
+SDK/core/Noble package rows and the explicit core/server entry. The buyer entry,
+graph and package policy remain unchanged; its catalog/reader are repinned for
+the additive journal serialization export described below. No installer, module path, loader choice,
 mock mode or implicit operator environment is accepted. The native guard and
 ordinary installed namespace remain unqualified; trusted early boot source and
 unchanged runtime intrinsics are premises, not a hostile-process sandbox.
@@ -44,6 +45,60 @@ The control/output channels use canonical JSON lines and remain private operator
 channels. Output may include original payment/grant/history DATA and must not be
 published as a diagnostic. Stderr contains fixed status labels only. A local
 write callback does not establish a remote receipt, delivery or settlement.
+
+## Explicit new-journal setup
+
+The same entry also has a distinct Linux-only source mode:
+
+```sh
+node src/issued-provider-cli.js --initialize-journal-fd 3 --output-fd 6 --bootstrap-ms 1000
+```
+
+This mode requires only two distinct exclusive operator-owned FIFO ends. It
+reads at most 8192 canonical UTF-8 bytes then EOF, and writes one bounded local
+JSON result. It never reads TLS material or creates an application, SQLite
+store, payment, key, grant, SDK session or service authority. The ordinary fixed
+provider package admission still precedes acquisition. macOS setup is refused;
+RUN retains its existing Linux/macOS source compatibility predicate.
+
+The public input is exactly providerJournalSetupVersion=1, journal,
+expectedDevice and operationBudgetMs. journal contains directory, allowedRoot,
+maxRecords (1..10000) and maxFileBytes (1024..4194304). directory must be one
+canonical absolute direct child of allowedRoot. expectedDevice is the selected
+device's canonical decimal identifier, not a default or mount authentication.
+operationBudgetMs is 1..60000. No adoption, overwrite, recursion or cleanup flag
+exists. The operator supplies an already existing private allowedRoot; this
+mode does not provision a parent tree or repair permissions.
+
+The Linux source opens that exact real operator-owned 0700 root, comparing its
+selected device and identity. It creates only the new child with nonrecursive
+mkdir. Linux /proc/self/fd paths anchor creation to the original open root and
+child directory handles; mutable selected paths are rechecked. The two 0600
+files use O_EXCL/O_NOFOLLOW, single-link checks, explicit bounded writes, file
+and directory sync, exact readback and the same directory identity. Existing
+paths are refused. Neither legacy load() nor its marker-adoption behavior is
+used. The additive createSettlementJournalInitialization serializer uses the
+actual journal's existing empty-state/checksum/validation/serialization code;
+all old class methods and existingOnly behavior are unchanged. Actual codec
+and filesystem compatibility remain source/parser-only, not DATA execution.
+
+The setup protocol requests the original handle close once, marker/state before
+child/root, and requires its clean closed view before INITIALIZED. Reentry,
+partial writes, lost receipts, deadline expiry, unreturned/opaque borrowers and
+unknown close remain HELD. There is no deletion, rename, automatic retry or
+adoption of a prior partial attempt. A pending unknown borrower is retained
+without a competing close. Late completion cannot restart setup or confer
+service authority. SIGINT/SIGTERM handlers precede acquisition and retain the
+existing sticky bootstrap/control stop selection. A lost output may follow
+completed setup; it is not permission to rerun against the same directory.
+
+The filesystem protocol has one operationBudgetMs deadline across its legs and
+close. The outer command uses one bootstrap-ms observation window across input,
+native admission checks, output and pipe close; new operations check that
+window. These are callback observation limits, not OS syscall/sandbox bounds or
+power-loss guarantees. Source identity checks do not establish cross-process
+owner fencing. Physical release, real signals, Linux command execution,
+native journal durability and the complete G1/G2 product acceptance remain OPEN.
 
 ## Explicit public profile
 
@@ -80,14 +135,14 @@ All top-level fields are required:
   for the 100-call/replay scenario and protocol overhead; no limit is raised or
   defaulted on the operator's behalf. This is not a capacity claim.
 - `journal` explicitly names directory, allowedRoot, maxRecords and maxFileBytes.
-  It must be an already initialized dedicated journal. The command constructs
+  RUN requires an already initialized dedicated journal. It constructs
   the actual class with immutable existingOnly=true and loads it before store
   startup. A missing file/marker is refused; no initializer or empty replacement
   is selected. FRESH additionally refuses any existing journal records. Journal
   loading has the explicit operation observation budget; timeout retains its
   original pending read and never falls through to application startup. Journal
-  provisioning and its native lifecycle acceptance remain setup work; the
-  command does not manufacture that prerequisite or claim it is complete.
+  provisioning has the separate explicit setup source mode above; RUN never
+  selects it as a fallback. Native provisioning/lifecycle acceptance is OPEN.
 - FRESH requires new service/intake files and null recovery/witness. RECORDED,
   JOURNAL and WITNESSED require existing stores and independent complete bound
   and official-outcome digest pins. JOURNAL supplies the same journal to the

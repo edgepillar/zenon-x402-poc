@@ -838,6 +838,20 @@ function emptyJournal() {
   return { ...data, checksum: checksumFor(data) };
 }
 
+/** Serialization only. The explicit provider setup owner must create its own
+ * exclusive new directory/files; this function never loads or adopts a path.
+ * Existing journal read/write and existingOnly behavior are unchanged. */
+export function createSettlementJournalInitialization(maxRecords, maxFileBytes) {
+  if (arguments.length !== 2 || !Number.isSafeInteger(maxRecords) || maxRecords < 1 || maxRecords > 10_000 ||
+      !Number.isSafeInteger(maxFileBytes) || maxFileBytes < 1024 || maxFileBytes > 4 * 1024 * 1024) {
+    journalError('journal_configuration_invalid');
+  }
+  const data = validateJournal(emptyJournal(), maxRecords, maxFileBytes);
+  const serialized = `${stringifyJsonWithoutHooks(data, 2, false, maxFileBytes)}\n`;
+  if (Buffer.byteLength(serialized) > maxFileBytes) journalError('journal_capacity_exceeded');
+  return Object.freeze({ fileName: JOURNAL_FILE_NAME, markerFileName: INITIALIZATION_MARKER_FILE_NAME, serialized });
+}
+
 function validatedMapKeys(map, maximumEntries) {
   const keys = REFLECT_OWN_KEYS(map);
   if (keys.length > maximumEntries) journalError('journal_corrupt');

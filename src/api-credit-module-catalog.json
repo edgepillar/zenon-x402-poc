@@ -2901,8 +2901,8 @@
     },
     {
       "path": "src/settlement-journal.js",
-      "bytes": 64798,
-      "sha256": "b2151cb20ea3ce82e306b2b8d6b996b818d8fb4c226c35316384564eb9e1c25a",
+      "bytes": 65753,
+      "sha256": "4c96220720f18d6873a5a953197ae4173e784f0f700d154c4c3d3448376c826c",
       "format": "module"
     },
     {

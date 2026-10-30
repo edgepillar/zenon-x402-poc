@@ -2,13 +2,14 @@ import { Buffer } from 'node:buffer';
 import { closeSync, fstatSync } from 'node:fs';
 import { Socket } from 'node:net';
 import process from 'node:process';
-import { Readable } from 'node:stream';
+import { Readable,Writable } from 'node:stream';
 import { setTimeout, clearTimeout } from 'node:timers';
 import { types } from 'node:util';
 import { createBuyerOwnedPipeStreams } from './buyer-owned-pipe-streams.js';
 
 const F = Object.freeze, ON = Readable.prototype.on, RESUME = Readable.prototype.resume, PAUSE = Readable.prototype.pause;
 const DESTROY = Readable.prototype.destroy, FILL = Buffer.prototype.fill, GETUID = process.getuid, FAILED = new Set();
+const WRITE=Writable.prototype.write;
 let used = false;
 function fail() { throw new TypeError('ISSUED_PROVIDER_OPERATOR_PIPES'); }
 function cap() { let resolve, reject; const promise = new Promise((a, b) => { resolve = a; reject = b; });
@@ -26,14 +27,17 @@ function same(a, b) { return a.dev === b.dev && a.ino === b.ino && a.uid === b.u
 export function createNativeIssuedProviderOperatorPipes(argumentsData) {
   if (arguments.length !== 1 || used || process.platform === 'win32' || typeof GETUID !== 'function'
       || argumentsData === null || typeof argumentsData !== 'object' || types.isProxy(argumentsData)) fail();
+  const mode=Object.getOwnPropertyDescriptor(argumentsData,'mode');
+  if(!mode?.enumerable||!Object.hasOwn(mode,'value')||!['RUN','INITIALIZE_JOURNAL'].includes(mode.value))fail();
+  const setup=mode.value==='INITIALIZE_JOURNAL',roles=setup?['profileFd','outputFd']:['profileFd','tlsFd','inputFd','outputFd'];
   const rows = [];
-  for (const name of ['profileFd', 'tlsFd', 'inputFd', 'outputFd']) {
+  for (const name of roles) {
     const d = Object.getOwnPropertyDescriptor(argumentsData, name); if (!d?.enumerable || !Object.hasOwn(d, 'value')) fail();
     const fd = d.value; if (!Number.isSafeInteger(fd) || fd < 3 || fd > 1023) fail();
     rows.push({ name, fd, identity: identity(fd), stage: 'RAW', socket: null, chunks: [], bytes: 0, read: null,
       readTerminal: false, ended: false, destroyEntered: false, closeObserved: false, rawCloseEntered: false, held: false, timer: null });
   }
-  if (new Set(rows.map(r => r.fd)).size !== 4) fail();
+  if (new Set(rows.map(r => r.fd)).size !== roles.length) fail();
   for (let i = 0; i < rows.length; i++) {
     for (let j = 0; j < i; j++) if (same(rows[i].identity, rows[j].identity)) fail();
     for (const fd of [0, 1, 2]) if (same(rows[i].identity, identity(fd, false))) fail();
@@ -101,15 +105,31 @@ export function createNativeIssuedProviderOperatorPipes(argumentsData) {
     decideClose(); return frame.closing.promise;
   });
   const adoptCommands = F(function adoptCommands(guard) {
-    if (arguments.length !== 1 || frame.stopped || frame.commandStreams !== null) fail(); guard();
+    if (arguments.length !== 1 || setup || frame.stopped || frame.commandStreams !== null) fail(); guard();
     const input = rows[2], output = rows[3];
     if (input.stage !== 'RAW' || output.stage !== 'RAW' || !same(input.identity, identity(input.fd)) || !same(output.identity, identity(output.fd))) fail();
     input.stage = output.stage = 'TRANSFERRED';
     try { frame.commandStreams = createBuyerOwnedPipeStreams({ inputFd: input.fd, outputFd: output.fd }); return frame.commandStreams; }
     catch { frame.held = true; FAILED.add(frame); fail(); }
   });
-  return F({ readProfile: F((guard, budget) => read(rows[0], 262144, guard, budget)),
-    readTlsMaterial: F((guard, budget) => read(rows[1], 131080, guard, budget)), adoptCommands, close,
+  const writeSetupResult=F(function writeSetupResult(line,guard,budget){
+    if(arguments.length!==3||!setup||frame.stopped||typeof line!=='string'||Buffer.byteLength(line)>4096||!line.endsWith('\n')
+      ||typeof guard!=='function'||types.isProxy(guard)||!Number.isSafeInteger(budget)||budget<1||budget>60000)fail();
+    const r=rows[1];if(r.stage!=='RAW'||r.read!==null)fail();guard();if(!same(r.identity,identity(r.fd)))fail();r.read=cap();
+    try{
+      r.stage='CONSTRUCTING';r.socket=new Socket({fd:r.fd,readable:false,writable:true,allowHalfOpen:true});r.stage='STREAM';
+      Reflect.apply(ON,r.socket,['error',()=>{rejectRead(r);destroy(r);decideClose();}]);
+      Reflect.apply(ON,r.socket,['close',()=>{r.closeObserved=true;r.stage='CLOSED';rejectRead(r);decideClose();}]);
+      r.timer=setTimeout(()=>{rejectRead(r);destroy(r);},budget);guard();
+      const accepted=Reflect.apply(WRITE,r.socket,[line,'utf8',error=>{
+        if(r.readTerminal)return;try{if(error!==undefined&&error!==null||frame.stopped)fail();guard();r.readTerminal=true;cancel(r);r.read.resolve(undefined);}
+        catch{rejectRead(r);destroy(r);}
+      }]);if(typeof accepted!=='boolean')fail();
+    }catch{rejectRead(r);if(r.socket!==null)destroy(r);else{r.held=true;frame.held=true;FAILED.add(frame);}}
+    return r.read.promise;
+  });
+  return F({ readProfile: F((guard, budget) => read(rows[0], setup?8192:262144, guard, budget)),
+    readTlsMaterial: F((guard, budget) => {if(setup)fail();return read(rows[1], 131080, guard, budget);}), adoptCommands,writeSetupResult,close,
     inspect: F(() => F({ providerPipeOwnerVersion: 1, stopped: frame.stopped, held: frame.held,
       descriptors: F(rows.map(r => F({ role: r.name, ownership: r.stage, closeObserved: r.closeObserved, destroyEntered: r.destroyEntered }))),
       nativeResourceRelease: 'NOT_ESTABLISHED', bootstrapDescriptorsOnly: true, authority: 'NONE' })) });
