@@ -18,6 +18,10 @@ active upfront offer and match the fixed funding resource. Its network, asset,
 single recipient and amount must fit the existing persistent spending policy.
 The local custody/start limits must accommodate 100 distinct service requests
 and one exact replay. This is a correctness scenario, not a capacity guarantee.
+The fixed operator bootstrap also rejects command/line/input/output budgets
+provably too small for the 106-command scenario before credential acquisition.
+These codec-derived byte floors are necessary bounds and do not guarantee that
+larger real packets fit. Configured limits and ordinary runtime refusals remain.
 The selected challenge is detached. Its semantic fields are rechecked by the
 fixed official-client callback, and preparation must retain the exact original
 header bytes. A coherent different offer is rejected before the application
@@ -28,8 +32,9 @@ existing lifecycle and V6 owners.
 The caller supplies an exclusive already-existing SDK key handle and frozen
 day reader through the existing configuration protocol. This source adds no
 secret loading, key construction, environment defaults, caller-selected module,
-client/store factory or automatic pin adoption. An operator key/bootstrap and
-one documented shell launch command remain open product requirements.
+client/store factory or automatic pin adoption. The [operator CLI source candidate](API_CREDIT_OPERATOR_CLI.md) supplies the
+keyless bootstrap and separate existing-key credential channel. Accepted native
+startup, Linux execution and physical key/resource release remain open.
 
 One-use product capture feeds the existing one-use native selection. That
 selection still rechecks key method shape and the original CA digests before

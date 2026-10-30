@@ -2493,8 +2493,8 @@
     },
     {
       "path": "src/api-credit-operator-bootstrap.js",
-      "bytes": 5886,
-      "sha256": "d17cc21c197a2f49b6e7ff6dccd9cb4500f38d1e1d74fc595704907757247f90",
+      "bytes": 8907,
+      "sha256": "a341dc3a3530d6a4a714be41cba2d6a2241c5b99342dcec28382712d4ff2bcdb",
       "format": "module"
     },
     {

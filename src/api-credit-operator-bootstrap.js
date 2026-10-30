@@ -1,7 +1,7 @@
 import { Buffer } from 'node:buffer';
 import { types } from 'node:util';
 import { canonicalJson } from './canonical.js';
-import { captureBuyerApiCreditCommandLimits } from './buyer-original-funding-command.js';
+import { captureBuyerApiCreditCommandLimits, encodeBuyerApiCreditCommand, encodeBuyerApiCreditCommandResult } from './buyer-original-funding-command.js';
 import { captureSdk105ApiCreditProductOperatorData, captureSdk105ApiCreditProductSelection } from './zenon/sdk105-api-credit-product-profile.js';
 
 const F = Object.freeze, DESC = Object.getOwnPropertyDescriptor, OWN = Object.hasOwn, PREPARED = new WeakMap();
@@ -22,6 +22,38 @@ function freezeJson(value, depth = 0, budget = { nodes: 4096 }) {
   if (Object.getPrototypeOf(value) !== Object.prototype) fail();
   for (const name of Reflect.ownKeys(value)) { const d = DESC(value, name); if (typeof name !== 'string' || !d?.enumerable || !OWN(d, 'value')) fail(); freezeJson(d.value, depth + 1, budget); }
   return F(value);
+}
+/** Conservative arithmetic bounds for the fixed 100-call and one-replay
+ * scenario. Empty checkpoint/pin/proof strings and one-character IDs minimize
+ * wire lengths only. They are never returned as commands, used as credentials
+ * or dispatched. Passing these floors does not guarantee runtime acceptance. */
+export function captureApiCreditOperatorCommandByteFloor(paymentRequiredHeader,serviceResourceUrl) {
+  if (arguments.length!==2 || typeof paymentRequiredHeader!=='string' || typeof serviceResourceUrl!=='string') fail();
+  const command=(operation,input)=>F({version:1,id:'a',operation,input});
+  const phases=[
+    [command('prepare',{}),F({phase:'AWAITING_INDEPENDENT_PINS',packet:F({serializedCheckpoint:'',expectedPins:F({}),
+      pair:F({challenge:F({paymentRequiredHeader})})})})],
+    [command('commit',{expectedPins:{},originalGrantQueryProfile:''}),F({phase:'LOCAL_STORE_READBACK_MATCHED'})],
+    [command('submitFunding',{expectedPins:{}}),F({phase:'FUNDING_INTAKE_BOUND',fundingIntakeStatus:'BOUND'})],
+    [command('handoff',{originalPayment:{},selectedGrantId:'a',paymentRequiredHeader}),F({phase:'SERVICE_CLIENT_OPEN_ORIGINAL_RESTORED'})],
+  ];
+  const service=command('submitService',{grantId:'a',requestId:'a',originalRequestJson:'',originalBodyBase64:'',serviceResourceUrl,authorizationHeader:''});
+  const result=replayed=>F({apiCreditServiceResultVersion:1,grantId:'a',requestId:'a',responseJson:'{"ok":true,"resultCode":"a"}',
+    resultCode:'a',replayed,source:'LOCAL_RECORDED_RESPONSE',newDispatchRequested:!replayed,authority:'NONE',serviceDelivery:'NOT_ESTABLISHED'});
+  const bytes=text=>Buffer.byteLength(text,'utf8');
+  const inputs=phases.map(([c])=>bytes(encodeBuyerApiCreditCommand(c)));
+  const outputs=phases.map(([c,r])=>bytes(encodeBuyerApiCreditCommandResult(c,r)));
+  const serviceInput=bytes(encodeBuyerApiCreditCommand(service));
+  const firstOutput=bytes(encodeBuyerApiCreditCommandResult(service,result(false)));
+  const replayOutput=bytes(encodeBuyerApiCreditCommandResult(service,result(true)));
+  const closeInput=bytes(encodeBuyerApiCreditCommand(command('close',{})));
+  // The current session consumes close without emitting a close reply. Channel
+  // totals include LF; maxLineBytes excludes the single framing LF.
+  return F({version:1,minimumCommands:106,
+    minimumLineBytes:Math.max(...inputs,...outputs,serviceInput,firstOutput,replayOutput,closeInput)-1,
+    minimumInputBytes:inputs.reduce((a,b)=>a+b,0)+101*serviceInput+closeInput,
+    minimumOutputBytes:outputs.reduce((a,b)=>a+b,0)+100*firstOutput+replayOutput,
+    distinctServiceRequests:100,exactReplays:1,lowerBoundOnly:true});
 }
 /** Canonical non-secret operator DATA, completely admitted before reading the
  * separate credential channel. No key/clock placeholder or SDK is constructed. */
@@ -44,7 +76,10 @@ export function decodeApiCreditOperatorBootstrap(text) {
     admitted = captureSdk105ApiCreditProductOperatorData({ productProfileVersion: 1, paymentRequiredHeader: c.paymentRequiredHeader,
       configuration: { storeOptions: config.storeOptions, fundingOptions: { ...funding, fundingTransportOptions: { ...fundingTransport, ca } },
         serviceOptions: { ...service, transportOptions: { ...serviceTransport, ca } } }, spendingFile: c.spendingFile, spending: c.spending });
-    const limits = captureBuyerApiCreditCommandLimits(c.limits); if (limits.maxCommands < 106) fail();
+    const limits = captureBuyerApiCreditCommandLimits(c.limits);
+    const floor = captureApiCreditOperatorCommandByteFloor(c.paymentRequiredHeader, admitted.profile.serviceResourceUrl);
+    if (limits.maxCommands < floor.minimumCommands || limits.maxLineBytes < floor.minimumLineBytes
+        || limits.maxInputBytes < floor.minimumInputBytes || limits.maxOutputBytes < floor.minimumOutputBytes) fail();
     const state = { admitted, header: c.paymentRequiredHeader, consumed: false, released: false };
     const release = F(function release() { if (arguments.length !== 0) fail(); if (!state.released) { state.released = true; ca.fill(0); } });
     const prepared = F({ operatorBootstrapVersion: 1, expectedIdentity: admitted.walletIdentity, product: admitted.profile, limits, release });

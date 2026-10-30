@@ -59,7 +59,7 @@ function declaredOperator(options = {}) {
       return options.createKey ? options.createKey(r) : Promise.resolve(r.key);
     }),
     openSession: F((selection, guard, limits) => {
-      guard(); r.guards.session = guard; r.trace.push('session'); r.calls.session++; r.selection = selection;
+      guard(); r.guards.session = guard; r.trace.push('session'); r.calls.session++; r.selection = selection; r.selectedLimits = limits;
       assert.equal(assertSelection(selection), selection); assert.ok(limits.maxCommands >= 106);
       if (options.openSession) return options.openSession(r);
       selection.release(); return Promise.resolve(r.session);
@@ -222,6 +222,7 @@ check('operator-close-expiry-does-not-repeat-stop-or-upgrade-after-late-completi
 });
 
 export const closeApiCreditOperatorDataFixtures = F(async function closeFixtures() { for (const root of roots) { try { await root.close(); } catch {} } });
+export const apiCreditOperatorDataFixtures = F({ publicData, declaredOperator });
 export const apiCreditOperatorDataCases = F(checks.map(c => F(c)));
 if (typeof process.argv[1] === 'string' && fileURLToPath(import.meta.url) === process.argv[1]) {
 const cases = [];
