@@ -26,15 +26,16 @@ function digest(domain, value) { return 'sha256:' + createHash('sha256').update(
 function positive(n, high) { if (!Number.isSafeInteger(n) || Object.is(n, -0) || n < 1 || n > high) fail(); }
 
 /** Ready version one retains one original payment, grant-selection DATA and
- * an existing read proof. Explicit version two selects only existing custody
- * and independent pins. Neither admits a wallet, key pipe or signer. These
+ * an existing read proof. Version two selects existing custody and independent
+ * pins; version three also binds independent purchase terms/original bytes.
+ * Neither admits a wallet, key pipe or signer. These
  * comparisons do not authenticate signatures, chain state or funding. */
 export function decodeApiCreditOriginalGrantQueryProfile(text) {
   if (arguments.length !== 1 || typeof text !== 'string' || Buffer.byteLength(text) > 65536
       || Buffer.from(text).toString('utf8') !== text) fail();
   let raw; try { raw = JSON.parse(text); freezeJson(raw); } catch { fail(); }
   if (canonicalJson(raw) !== text) fail();
-  if (raw.originalGrantQueryVersion === 2) return decodeApiCreditStoredGrantQueryProfile(text);
+  if (raw.originalGrantQueryVersion === 2 || raw.originalGrantQueryVersion === 3) return decodeApiCreditStoredGrantQueryProfile(text);
   const c = fields(raw, ['originalGrantQueryVersion', 'originalPayment', 'originalFunding', 'query', 'transport']);
   if (c.originalGrantQueryVersion !== 1) fail();
   const original = F(fields(c.originalPayment, ['resourceUrl', 'serializedCheckpoint', 'expectedPins']));

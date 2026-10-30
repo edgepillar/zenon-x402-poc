@@ -3,6 +3,7 @@ import { types } from 'node:util';
 import { canonicalJson } from './canonical.js';
 import { captureOriginalFundingSpendingFileProfile } from './original-funding-spending-file-profile.js';
 import { captureFundingPostCheckpointRoute } from './x402-funding-post-checkpoint-route.js';
+import { captureApiCreditPurchasedGrantRecoverySelection } from './api-credit-purchased-grant-recovery.js';
 
 const F=Object.freeze,D=Object.getOwnPropertyDescriptor,O=Object.hasOwn,PROFILES=new WeakMap();
 function fail(){throw new TypeError('API_CREDIT_STORED_GRANT_QUERY_PROFILE');}
@@ -26,23 +27,30 @@ export function captureApiCreditStoredGrantQueryExpected(input){
 }
 /** Same --funding-grant-query-fd entry, explicit stored-profile version. It
  * admits only an existing selected four-table spending file and full-profile
- * expectations. No key, module, opener, transport override or owner discovery. */
+ * expectations. Version three additionally binds independent purchase terms
+ * and exact original bytes. No key, opener, override or owner discovery. */
 export function decodeApiCreditStoredGrantQueryProfile(text){
-  if(arguments.length!==1||typeof text!=='string'||Buffer.byteLength(text)>16384||Buffer.from(text).toString('utf8')!==text)fail();
+  if(arguments.length!==1||typeof text!=='string'||Buffer.byteLength(text)>32768||Buffer.from(text).toString('utf8')!==text)fail();
   let raw;try{raw=JSON.parse(text);freezeJson(raw);}catch{fail();}
-  if(canonicalJson(raw)!==text)fail();const c=fields(raw,['originalGrantQueryVersion','spendingFile','expectedOriginal']);
-  if(c.originalGrantQueryVersion!==2)fail();const file=captureOriginalFundingSpendingFileProfile(c.spendingFile),expected=captureApiCreditStoredGrantQueryExpected(c.expectedOriginal);
+  if(canonicalJson(raw)!==text)fail();const purchased=raw.originalGrantQueryVersion===3;
+  const c=fields(raw,['originalGrantQueryVersion','spendingFile','expectedOriginal',...(purchased?['originalPayment','purchaseExpectationJson']:[])]);
+  if(![2,3].includes(c.originalGrantQueryVersion)||!purchased&&Buffer.byteLength(text)>16384)fail();
+  const file=captureOriginalFundingSpendingFileProfile(c.spendingFile),expected=captureApiCreditStoredGrantQueryExpected(c.expectedOriginal);
   if(file.storageProfile.mode!=='OPEN_EXISTING'||file.storageProfile.policy.recipients.length!==1)fail();
-  const state={file,expected,used:false,released:false};
-  const release=F(function release(){if(arguments.length!==0)fail();state.released=true;state.file=null;state.expected=null;});
-  const token=F({originalGrantQueryVersion:2,fundingResourceUrl:expected.fundingResourceUrl,paymentHash:expected.paymentHash,requestId:expected.requestId,
+  const selection=purchased?captureApiCreditPurchasedGrantRecoverySelection(c.purchaseExpectationJson,c.originalPayment):null;
+  if(purchased&&(selection.fundingResourceUrl!==expected.fundingResourceUrl||selection.paymentHash!==expected.paymentHash
+      ||selection.checkpointDigest!==expected.checkpointDigest||selection.holderId!==file.storageProfile.policy.accountId))fail();
+  const state={file,expected,selection,version:c.originalGrantQueryVersion,used:false,released:false};
+  const release=F(function release(){if(arguments.length!==0)fail();state.released=true;state.file=null;state.expected=null;state.selection=null;});
+  const token=F({originalGrantQueryVersion:c.originalGrantQueryVersion,fundingResourceUrl:expected.fundingResourceUrl,paymentHash:expected.paymentHash,requestId:expected.requestId,
     checkpointDigest:expected.checkpointDigest,queryDigest:expected.queryDigest,profileDigest:expected.profileDigest,release});
   PROFILES.set(token,state);return token;
 }
 export function consumeApiCreditStoredGrantQueryProfile(token){
   if(arguments.length!==1||token===null||typeof token!=='object'||types.isProxy(token))fail();const s=PROFILES.get(token);
   if(!s||s.used||s.released)fail();s.used=true;
-  return F({storedGrantQueryVersion:2,fileConfiguration:F({storageProfile:s.file.storageProfile,allowedRoot:s.file.allowedRoot,filePolicy:s.file.filePolicy}),expectedOriginal:s.expected});
+  return F({storedGrantQueryVersion:s.version,fileConfiguration:F({storageProfile:s.file.storageProfile,allowedRoot:s.file.allowedRoot,filePolicy:s.file.filePolicy}),
+    expectedOriginal:s.expected,...(s.version===3?{purchaseSelection:s.selection}:{})});
 }
 export function releaseApiCreditStoredGrantQueryProfile(token){
   if(arguments.length!==1||token===null||typeof token!=='object'||types.isProxy(token)||!PROFILES.has(token))fail();token.release();

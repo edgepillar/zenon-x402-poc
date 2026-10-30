@@ -4,6 +4,7 @@ import { captureOriginalFundingSpendingFileProfile } from './original-funding-sp
 import { captureApiCreditStoredGrantQueryExpected } from './api-credit-stored-grant-query-profile.js';
 import { projectApiCreditFundingGrantRecoveryRecord } from './api-credit-funding-grant-recovery-record.js';
 import { decodeApiCreditOriginalGrantQueryProfile,consumeApiCreditOriginalGrantQueryProfile,releaseApiCreditOriginalGrantQueryProfile } from './api-credit-original-grant-query-profile.js';
+import { claimApiCreditPurchasedGrantRecoverySelection,bindApiCreditPurchasedGrantRecoveryProfile } from './api-credit-purchased-grant-recovery.js';
 
 const F=Object.freeze,D=Object.getOwnPropertyDescriptor,O=Object.hasOwn,A=Reflect.apply,NP=Promise,PP=NP.prototype;
 const THEN=D(PP,'then'),CTOR=D(PP,'constructor'),SPECIES=D(NP,Symbol.species),ACTIVE=new Set(),HELD=new Set(),SEEN=new WeakSet();
@@ -23,11 +24,13 @@ function discardPromise(v){try{if(invariant()&&types.isPromise(v)&&!types.isProx
  * transport. DATA ports do not qualify SQL, ownership fencing or native drain. */
 export function resolveApiCreditStoredGrantQueryOwner(configuration){
   if(arguments.length!==1||!invariant()||ACTIVE.size+HELD.size>=16)fail();
-  const c=fields(configuration,['profile','ports','requireOpening']),p=fields(c.profile,['storedGrantQueryVersion','fileConfiguration','expectedOriginal'],true),ports=fields(c.ports,['openFile'],true);
-  if(p.storedGrantQueryVersion!==2)fail();const file=captureOriginalFundingSpendingFileProfile(p.fileConfiguration),expected=captureApiCreditStoredGrantQueryExpected(p.expectedOriginal);
+  const c=fields(configuration,['profile','ports','requireOpening']),purchased=data(c.profile,'storedGrantQueryVersion')===3;
+  const p=fields(c.profile,['storedGrantQueryVersion','fileConfiguration','expectedOriginal',...(purchased?['purchaseSelection']:[])],true),ports=fields(c.ports,['openFile'],true);
+  if(![2,3].includes(p.storedGrantQueryVersion))fail();const file=captureOriginalFundingSpendingFileProfile(p.fileConfiguration),expected=captureApiCreditStoredGrantQueryExpected(p.expectedOriginal);
   if(file.storageProfile.mode!=='OPEN_EXISTING'||file.storageProfile.policy.recipients.length!==1)fail();
   const fileConfiguration=F({storageProfile:file.storageProfile,allowedRoot:file.allowedRoot,filePolicy:file.filePolicy});
   for(const fn of [ports.openFile,c.requireOpening])if(typeof fn!=='function'||types.isProxy(fn)||!Object.isFrozen(fn))fail();
+  if(purchased)claimApiCreditPurchasedGrantRecoverySelection(p.purchaseSelection,expected,file.storageProfile.policy.accountId);
   const frame={owner:null,openEntered:false,known:false,borrowerActive:false,borrowerUnknown:false,opaque:[],view:null,current:null,revoke:null,close:null,
     read:null,custody:null,revokeEntered:false,closeEntered:false,revoked:false,closed:false,captured:null,raw:null};
   ACTIVE.add(frame);let bad=false;
@@ -64,9 +67,12 @@ export function resolveApiCreditStoredGrantQueryOwner(configuration){
     // Check the externally retained FULL profile digest before consuming any
     // row-supplied CA/route/budget/proof as transport configuration.
     if(projected.profileDigest!==expected.profileDigest)fail();
-    let ready;
-    try{ready=decodeApiCreditOriginalGrantQueryProfile(projected.profileJson);if(ready.originalGrantQueryVersion!==1)fail();frame.captured=consumeApiCreditOriginalGrantQueryProfile(ready);}
-    finally{if(ready!==undefined)releaseApiCreditOriginalGrantQueryProfile(ready);}
+    if(purchased)frame.captured=bindApiCreditPurchasedGrantRecoveryProfile(p.purchaseSelection,projected.profileJson);
+    else{
+      let ready;
+      try{ready=decodeApiCreditOriginalGrantQueryProfile(projected.profileJson);if(ready.originalGrantQueryVersion!==1)fail();frame.captured=consumeApiCreditOriginalGrantQueryProfile(ready);}
+      finally{if(ready!==undefined)releaseApiCreditOriginalGrantQueryProfile(ready);}
+    }
     const a=frame.captured,q=a.query.originalFunding,policy=file.storageProfile.policy;
     if(a.route.fundingResourceUrl!==expected.fundingResourceUrl||q.transactionId!=='zenontx:'+expected.paymentHash||a.query.requestId!==expected.requestId
         ||a.checkpointDigest!==expected.checkpointDigest||a.queryDigest!==expected.queryDigest
@@ -85,5 +91,5 @@ export function resolveApiCreditStoredGrantQueryOwner(configuration){
   }
   if(bad||frame.captured===null||!frame.closed)fail();
   try{opening();state('CLOSED',false);opening();}catch{HELD.add(frame);fail();}
-  return frame.captured;
+  return purchased?F({purchasedGrantRecoveryVersion:1,profile:frame.captured,purchaseSelection:p.purchaseSelection}):frame.captured;
 }

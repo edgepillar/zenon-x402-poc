@@ -83,3 +83,15 @@ listener is replaced. End-to-end ACK loss, fresh-process
 reopen, real proof/TLS composition, native release, Linux installation and the
 G1 100-call product scenario still require their own acceptance. G0-G5 remain
 open. Prior native evidence keeps its original source/runtime binding.
+
+## Independently purchased original recovery: version three
+
+The same `--funding-grant-query-fd` entry accepts explicit `originalGrantQueryVersion: 3`. Its canonical envelope has `spendingFile`, `expectedOriginal`, `originalPayment` and `purchaseExpectationJson`. The original payment contains `resourceUrl`, `serializedCheckpoint` and independent `expectedPins`; retain these outside the row being read. Purchase JSON uses the existing fixed-product contract. The version-three envelope is at most 32768 UTF-8 bytes; generic stored version two keeps its existing 16384-byte bound and ready version one keeps its contract. No implicit upgrade or missing-field default exists.
+
+The decoder compares purchase terms with the exact original funding challenge, independently pinned payment/checkpoint digests and selected spending account before any opener. The same existing four-table spending owner is then selected with OPEN_EXISTING and its existing owner token, free-space floor and file policy. The selection is claimed before opening callbacks, so reentry cannot borrow it twice. The independently retained full ready-profile digest still binds CA, origin, proof and deadlines before row-supplied transport data is used. Purchase comparison cannot replace that digest.
+
+The retained ready profile must match the same exact original bytes/pins, offer/version, holder, capability and funding commitment. The known original file must revoke and close under its existing protocol before the one existing query transport opens. The query must observe its existing close contract before output is compared with the independent purchase. A recorded grant must retain the exact purchased total units and absolute expiry. There is no clock default, expiry refresh, schema change, store migration, new signer/proof, payment or automatic retry.
+
+ACTIVE, EXPIRED and REVOKED records remain historical observations with the original balances. NOT_RECORDED remains absence, with reconciliation required. Expiry does not erase this history or authorize a replacement funding action. Delivery liability is still NOT_QUERIED, grant authority NOT_REVALIDATED and the spending reservation UNCHANGED. No result authorizes service dispatch, payment, signing, activation, compensation or payout. The existing closed output schema and redaction remain unchanged.
+
+This is reviewed source and declared memory DATA. SQL/file open and close, real proof authentication, HTTPS, process reopening, physical release and Linux acceptance are not established. Native execution remains disabled.
