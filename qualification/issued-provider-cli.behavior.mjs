@@ -43,6 +43,7 @@ function fixture(options={}){
   activateOriginalCommittedFunding:F(argument=>{s.operations.push('ACTIVATE');return Promise.resolve(F({status:'NOT_READY'}));}),
   inspectOriginalCommittedServiceGrant:F(()=>{s.operations.push('READ_ORIGINAL_GRANT');return options.inspectOriginal?options.inspectOriginal(s,owner):F({status:'NOT_RECORDED',authority:'NONE'});}),
   admitOriginalCommittedServiceGrant:F(()=>{s.operations.push('ADMIT_ORIGINAL');return F({status:'NOT_RECORDED'});}),
+  admitOriginalCommittedServiceGrantResults:F(()=>{s.operations.push('ADMIT_ORIGINAL_RESULTS');return options.admitOriginalResults?options.admitOriginalResults(s,owner):F({status:'NOT_READY',authority:'NONE'});}),
   reconcileOriginalFunding:F(()=>{s.operations.push('RECONCILE');return Promise.resolve(F({authority:'NONE'}));}),
   recoverOriginalFundingFirstResult:F(()=>{s.operations.push('RECOVER_FIRST');return Promise.resolve(F({authority:'NONE'}));}),
   inspectOriginalFundingHistory:F(()=>{s.operations.push('HISTORY');return F({authority:'NONE'});}),

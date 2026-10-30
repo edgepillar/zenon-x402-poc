@@ -16,7 +16,7 @@ function fixture(options={}){
   inspectProvider:F(()=>F({phase:closed?'CLOSED':'OPEN',held:false,released:closed,activeOperations:0})),
   closeProvider:F(()=>{trace.push('provider-close');closed=true;return Promise.resolve(options.closeResult);}),
   resumeOriginalSettlement:F(()=>{startup.check();trace.push('resume');return options.operation??Promise.resolve(F({status:'PENDING'}));}),
-  activateOriginalCommittedFunding:F(()=>{startup.check();throw Error('unselected');}),inspectOriginalCommittedServiceGrant:F(()=>{startup.check();throw Error('unselected');}),admitOriginalCommittedServiceGrant:F(()=>{startup.check();throw Error('unselected');}),
+  activateOriginalCommittedFunding:F(()=>{startup.check();throw Error('unselected');}),inspectOriginalCommittedServiceGrant:F(()=>{startup.check();throw Error('unselected');}),admitOriginalCommittedServiceGrant:F(()=>{startup.check();throw Error('unselected');}),admitOriginalCommittedServiceGrantResults:F(()=>{startup.check();throw Error('unselected');}),
   reconcileOriginalFunding:F(()=>{startup.check();throw Error('unselected');}),recoverOriginalFundingFirstResult:F(()=>{startup.check();throw Error('unselected');}),
   inspectOriginalFundingHistory:F(()=>{startup.check();throw Error('unselected');}),
   readCommand:F(()=>{trace.push('read');return input.promise;}),writeResult:F(value=>{writes.push(JSON.parse(value));return Promise.resolve(undefined);}),

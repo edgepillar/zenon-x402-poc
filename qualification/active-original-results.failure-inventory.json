@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "qualification": "G2_ACTIVE_ORIGINAL_RESULTS_FAILURE_INVENTORY",
+  "status": "SELECTED_DATA_AND_PARSERS_PASS_FIRST_TASK_FAILURE_PRESERVED",
+  "failures": [
+    {
+      "rawQualificationSha256": "a3f53b8f4ed525f28fa45dbac49c280b23210e23eb8ef3bbcac6dbc224cee52a",
+      "classification": "QUALIFICATION_TASK_COMMAND_RECORD_LIMIT",
+      "status": "UNKNOWN",
+      "taskOutcome": "FAILURE",
+      "actualDataCommands": 16,
+      "passedDataControls": 425,
+      "failedDataControls": 0,
+      "notLaunchedDataControls": 41,
+      "notLaunchedParserCommands": 3,
+      "configuredCommandLimit": 16,
+      "remediation": "Exact-source completed groups retained; only missing DATA/parser commands ran in a new four-command task with the same quota and root.",
+      "wholeFailedTaskReclassified": false,
+      "completedGroupsRepeated": false
+    }
+  ],
+  "currentDataFailures": 0,
+  "currentParserFailures": 0,
+  "currentTurnFailedQualificationTasks": 1,
+  "priorInventory": {
+    "path": "qualification/original-grant-inspection.failure-inventory.json",
+    "sha256": "bbb6f8f1f3c1831590a3655e473b0db050ba430c393b27a5aacc20a738831754"
+  },
+  "priorFailuresReclassified": false,
+  "sourceReviewFindings": [
+    {
+      "id": "ACTIVE_ORIGINAL_RESULTS_REQUIRED_EXECUTION_ADMISSION",
+      "classification": "PRODUCT_SOURCE_GAP",
+      "sourceBefore": "3b0c8ae3ceff90b064b0b61cad62f7629a490294",
+      "status": "SOURCE_CORRECTED_DATA_QUALIFIED_NATIVE_NOT_ESTABLISHED",
+      "nativeExecuted": false
+    }
+  ],
+  "nativeExecutions": 0
+}

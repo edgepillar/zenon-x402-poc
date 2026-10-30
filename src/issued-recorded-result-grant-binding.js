@@ -27,6 +27,17 @@ function matches(expression, value) { return typeof value === 'string' && expres
  * The real application supplies its settled bound hash and fixed store read. */
 export function createIssuedRecordedResultGrantBinding(options) {
   if (arguments.length !== 1) fail();
+  return createBinding(options, false);
+}
+
+/** Explicit recorded-result admission can also narrow an ACTIVE original to a
+ * reader. It never turns historical lifecycle into fresh execution authority. */
+export function createIssuedOriginalResultGrantBinding(options) {
+  if (arguments.length !== 1) fail();
+  return createBinding(options, true);
+}
+
+function createBinding(options, activeOriginal) {
   const c = fields(options, ['issuedFrame', 'resourceUrl', 'selection']);
   const selected = createIssuedFundingPostSdkResourceBinding(c.issuedFrame, c.resourceUrl).selection();
   const service = captureIssuedFundingPostServiceSelection(c.selection), requirement = selected.requirement;
@@ -41,7 +52,8 @@ export function createIssuedRecordedResultGrantBinding(options) {
     if (arguments.length !== 3 || pinned || !matches(/^grant_[0-9a-f]{64}$/, grantId)
         || !matches(/^[0-9a-f]{64}$/, transactionHash)) fail();
     const lifecycle = own(grant, 'lifecycle', true);
-    if (!['EXPIRED', 'REVOKED'].includes(lifecycle) || own(grant, 'grantId', true) !== grantId) fail();
+    if (!(activeOriginal ? ['ACTIVE', 'EXPIRED', 'REVOKED'] : ['EXPIRED', 'REVOKED']).includes(lifecycle)
+        || own(grant, 'grantId', true) !== grantId) fail();
     const identity = captureServiceCreditOriginalFundingIdentity({ transactionId: 'zenontx:' + transactionHash, ...expected });
     const history = createServiceCreditOriginalFundingGrantResult(identity, grant), activation = own(grant, 'activation', true);
     const intent = fields(own(grant, 'paymentIntent', true), ['intentId', 'requirementId']);

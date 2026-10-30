@@ -11,12 +11,13 @@ function check(id,run){checks.push({id,run});}
 function deep(v){if(v!==null&&typeof v==='object'){for(const x of Object.values(v))deep(x);F(v);}return v;}
 function deferred(){let resolve,reject;const promise=new Promise((yes,no)=>{resolve=yes;reject=no;});return {promise,resolve,reject};}
 async function fixture(options={}){
- const f=await provider(options.provider??{}),s={loads:0,outcomeReads:0,lookups:0,admissions:0,closeCalls:0,identity:null};let owner;
+ const f=await provider(options.provider??{}),s={loads:0,outcomeReads:0,lookups:0,admissions:0,resultAdmissions:0,closeCalls:0,identity:null};let owner;
  const port=F({providerSnapshot:F(()=>options.view?options.view(f,owner,s):f.root.snapshot()),providerClose:F(()=>{s.closeCalls++;return options.close?options.close(f,owner,s):f.root.close();}),
   loadBound:F(()=>{s.loads++;return options.load?options.load(f,owner,s):f.f.s.rows;}),
   readOfficialOutcome:F(()=>{s.outcomeReads++;return options.outcome?options.outcome(f,owner,s):f.f.s.raw;}),
   readOriginalFundingGrant:F(identity=>{s.lookups++;s.identity=identity;return options.lookup?options.lookup(f,owner,s,identity):f.ledger.m.readOriginalFundingGrant(identity);}),
   admitCommittedServiceGrant:F(id=>{s.admissions++;return options.admit?options.admit(f,owner,s,id):f.root.admitCommittedServiceGrant(id);}),
+  admitCommittedServiceGrantResults:F(id=>{s.resultAdmissions++;return options.admitResults?options.admitResults(f,owner,s,id):f.root.admitCommittedServiceGrant(id,'RECORDED_RESULT_ONLY');}),
  });
  const c=f.config.funding.intake,configuration={expectation:f.f.x.expected,selection:c.selection,resourceUrl:c.resourceUrl,maximumPendingReconciliations:f.config.funding.official.maxPendingReconciliations,port};
  if(options.configure)options.configure(configuration);owner=create(configuration);return {...f,owner,t:s,configuration};

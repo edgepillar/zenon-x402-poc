@@ -2,7 +2,7 @@ import { types } from 'node:util';
 
 const F=Object.freeze,D=Object.getOwnPropertyDescriptor,O=Object.hasOwn,K=Reflect.ownKeys,A=Reflect.apply,NP=Promise,PP=NP.prototype;
 const THEN=D(PP,'then'),CTOR=D(PP,'constructor'),SPECIES=D(NP,Symbol.species),HELD=new Set();
-const ARITY=F({admitCommittedServiceGrant:1,resumeOriginalSettlement:0,activateOriginalCommittedFunding:1,admitOriginalCommittedServiceGrant:0,inspectOriginalCommittedServiceGrant:0,
+const ARITY=F({admitCommittedServiceGrant:1,resumeOriginalSettlement:0,activateOriginalCommittedFunding:1,admitOriginalCommittedServiceGrant:0,inspectOriginalCommittedServiceGrant:0,admitOriginalCommittedServiceGrantResults:0,
  reconcileOriginalFunding:0,recoverOriginalFundingFirstResult:0,inspectOriginalFundingHistory:0});
 const ASYNC=new Set(['resumeOriginalSettlement','activateOriginalCommittedFunding','reconcileOriginalFunding','recoverOriginalFundingFirstResult']);
 function fail(){throw new TypeError('ISSUED_PROVIDER_STORE_OWNER');}
@@ -18,7 +18,7 @@ function rejected(){const c=capability();c.reject(new TypeError('ISSUED_PROVIDER
 function result(v){if(v===null||typeof v!=='object'||types.isProxy(v)||!Object.isFrozen(v)||Object.getPrototypeOf(v)!==Object.prototype)fail();
  for(const k of K(v)){const d=D(v,k);if(typeof k!=='string'||['then','toJSON','__proto__','constructor','prototype'].includes(k)||!d?.enumerable||!O(d,'value'))fail();}return v;}
 function selectedMethods(v){if(!Array.isArray(v)||types.isProxy(v)||Object.getPrototypeOf(v)!==Array.prototype||!Object.isFrozen(v))fail();
- const n=D(v,'length')?.value;if(!Number.isSafeInteger(n)||n<1||n>7||K(v).length!==n+1)fail();const names=[];
+ const n=D(v,'length')?.value;if(!Number.isSafeInteger(n)||n<1||n>8||K(v).length!==n+1)fail();const names=[];
  for(let i=0;i<n;i++){const d=D(v,String(i));if(!d?.enumerable||!O(d,'value')||typeof d.value!=='string'||!O(ARITY,d.value)||names.includes(d.value))fail();names.push(d.value);}return F(names);}
 
 /** Own only resources opened through these fixed ports. A provider close receipt

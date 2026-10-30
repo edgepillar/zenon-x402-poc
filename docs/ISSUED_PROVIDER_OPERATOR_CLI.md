@@ -265,9 +265,9 @@ are not reset, and a duplicate ID never reenters an operation.
 | --- | --- |
 | All | STATUS, CLOSE |
 | FRESH | RESUME, ACTIVATE |
-| RECORDED | READ_ORIGINAL_GRANT, ADMIT_ORIGINAL |
-| JOURNAL | READ_ORIGINAL_GRANT, ADMIT_ORIGINAL, RECONCILE, RECOVER_FIRST |
-| WITNESSED | READ_ORIGINAL_GRANT, ADMIT_ORIGINAL, RECONCILE, RECOVER_FIRST, HISTORY |
+| RECORDED | READ_ORIGINAL_GRANT, ADMIT_ORIGINAL_RESULTS, ADMIT_ORIGINAL |
+| JOURNAL | READ_ORIGINAL_GRANT, ADMIT_ORIGINAL_RESULTS, ADMIT_ORIGINAL, RECONCILE, RECOVER_FIRST |
+| WITNESSED | READ_ORIGINAL_GRANT, ADMIT_ORIGINAL_RESULTS, ADMIT_ORIGINAL, RECONCILE, RECOVER_FIRST, HISTORY |
 
 Arguments are null except ACTIVATE, whose argument is exactly observerFileName
 and recordKey. The filename must be the existing `funding-observer-<hash>.sqlite`
@@ -427,3 +427,53 @@ with 205 affected controls and three parser-only checks they passed locally;
 See the [local result](../qualification/original-grant-inspection.actual-local-result.json)
 and [V53 source profile](../qualification/profiles/api-credit-application-source-v53.json).
 Native/Linux 100-call/replay/reopen, physical release and full G0-G5 remain OPEN.
+
+## Explicit original result-only admission
+
+RECORDED, JOURNAL and WITNESSED accept ADMIT_ORIGINAL_RESULTS with argument null
+and a fresh bounded command ID. It derives the same original grant identity
+from independently pinned BOUND/outcome records, reads existing original history,
+and asks the same provider to open RECORDED_RESULT_ONLY on the existing POST
+execution path. An actual matching stored grant is still required. It accepts
+ACTIVE, EXPIRED and REVOKED originals without making stored lifecycle fresh
+service authority. The default inactive-only comparator remains strict; a
+separately named original-result comparator permits ACTIVE only for this reader.
+
+ADMIT_ORIGINAL keeps its existing active execution admission. The new explicit
+choice is for recovering committed results without opening an execution owner.
+It reaches the unchanged native replayOnly branch and its existing scoped proof
+admission and original request/execution snapshot reader. Cached original success
+returns the existing canonical body. A new or conflicting request cannot reserve
+or execute and receives 409; unfinished or UNKNOWN originals remain 503 with
+reservations unchanged. Reading stored success does not prove service delivery
+or authorize compensation. No payment, signing, SDK, funding reauthentication,
+new grant, database, schema, migration or HTTP endpoint is introduced.
+
+The same actual getGrant may observe an already elapsed expiry. This feature
+never reactivates a grant, extends expiry/terms or resets units/budgets. All
+fourteen original funding fields plus scheme, flow, payer and intent remain
+compared. Exact original rows and provider transaction hash are rechecked around
+the history read. Sixteen attempts are shared by grant inspection and both
+admission choices. There is one session: a result-only owner cannot upgrade to
+execution or create another session. The outer 128-operation limit is unchanged;
+the fixed owned method allowlist is bounded at eight. FRESH refuses the command
+and the internal restored-only mode selector. Lost/opaque admission receipts,
+row/provider drift and uncertain close remain HELD and never retry or upgrade.
+
+Qualification selected 466 pure DATA controls (24 new, 442 affected). The first
+owned task completed 425 successfully, then reached its configured 16-command
+record limit before the final DATA command; its UNKNOWN/CLOSED-FAILURE is retained.
+With all source bytes unchanged, a separate four-command task ran only the
+remaining 41 DATA controls and three parser checks. No completed DATA command was
+repeated and no task policy or quota was raised. The combined proof identifies
+each actual command origin; it does not reclassify the failed task as successful.
+Another 1049 earlier source-exact DATA controls and 44 parser receipts were
+retained without repetition.
+
+All provider/store/session/proof/channel ports and activation metadata in these
+cases are declared memory DATA. Model reconstruction and the 100-unit scenario
+are not native persistence, fresh-process, Linux or 100-call acceptance. See the
+[local result](../qualification/active-original-results.actual-local-result.json),
+[failure inventory](../qualification/active-original-results.failure-inventory.json)
+and [V54 source profile](../qualification/profiles/api-credit-application-source-v54.json).
+Native/Linux, physical release, delivery/compensation and full G0-G5 remain OPEN.

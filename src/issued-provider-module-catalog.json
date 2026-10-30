@@ -2493,8 +2493,8 @@
     },
     {
       "path": "src/issued-original-grant-admission-owner.js",
-      "bytes": 12891,
-      "sha256": "81f2a9a7eef5a9eec9f06b981f65938fe69bbbe2173556c3e794a938d9c9ebaf",
+      "bytes": 13487,
+      "sha256": "e74a1c9289da1511bcd1c1ccdb2ab7f48b300cbf66418e182a3de9bec3c96f8a",
       "format": "module"
     },
     {
@@ -2547,8 +2547,8 @@
     },
     {
       "path": "src/issued-provider-native-operator.js",
-      "bytes": 14160,
-      "sha256": "d456269480202124cd3e67d301f64288fe9016dd66ded9292399220abf8d312b",
+      "bytes": 14264,
+      "sha256": "ffdfd5de29c2fa32f4107a58169d8df589700a1c7c16d3ef6cf6da56566582bf",
       "format": "module"
     },
     {
@@ -2565,14 +2565,14 @@
     },
     {
       "path": "src/issued-provider-operator-control.js",
-      "bytes": 12282,
-      "sha256": "97ca70dc403f30acb16cf7c7dbd0507adb05767777860e04919c11090735145f",
+      "bytes": 12493,
+      "sha256": "76f12f447c037f9b537c45d3bdf9d76aa2987c4bea84ccc1f7116ccb916f20ce",
       "format": "module"
     },
     {
       "path": "src/issued-provider-owned-configuration.js",
-      "bytes": 8313,
-      "sha256": "14b1c290846d284f11d1ba4f392a420a43e2c6637ae381bd7398e51f46805add",
+      "bytes": 8445,
+      "sha256": "7edc44e725cef67e420c014d4da03e0ef81dd73b4d7eb5bfce075cc136f5dff8",
       "format": "module"
     },
     {
@@ -2589,14 +2589,14 @@
     },
     {
       "path": "src/issued-provider-store-owner.js",
-      "bytes": 10659,
-      "sha256": "62225f81048fdc8318dab98f2a7c2979ac109dbc2c5da25d42915630c850aabc",
+      "bytes": 10703,
+      "sha256": "72122948214dc64d1764b836fcb622c017c52d2a4716765047136b36c248eed0",
       "format": "module"
     },
     {
       "path": "src/issued-recorded-result-grant-binding.js",
-      "bytes": 4152,
-      "sha256": "7c7ea0cc7e0a794ba6ce26557be7d93c1a99445f9a93c45272a5c498857ff5b1",
+      "bytes": 4614,
+      "sha256": "3902ab6b8c114da92980bded34d77904ac9147c5258a206de30590b5a5f6b266",
       "format": "module"
     },
     {
@@ -2871,8 +2871,8 @@
     },
     {
       "path": "src/x402-issued-funding-grant-application-core.js",
-      "bytes": 26235,
-      "sha256": "f219579ad1863d1de4b279b0c494d27d18f048b683185bde6d4682653237326d",
+      "bytes": 26675,
+      "sha256": "b112769b5920e2389ed22a2fa5e9b7dd406dfcb1e8166999267164d0dad6b6af",
       "format": "module"
     },
     {
@@ -2895,8 +2895,8 @@
     },
     {
       "path": "src/x402-issued-funding-grant-native-recovery-application.js",
-      "bytes": 7692,
-      "sha256": "10530141ba6c128e237cbe38c16d8ceb0355a7eada812bbf21c95abcde6fa3d3",
+      "bytes": 7895,
+      "sha256": "db412a891069f33a49290f8a2a0a09500655ab43f8bc543a2468d0fbe93e48cb",
       "format": "module"
     },
     {

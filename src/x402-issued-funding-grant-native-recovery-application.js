@@ -72,8 +72,9 @@ export async function restoreIssuedFundingGrantNativeApplication(options){
     admission=createIssuedOriginalGrantAdmissionOwner(F({expectation:recovery,selection,resourceUrl:i.resourceUrl,maximumPendingReconciliations:official.maxPendingReconciliations,
       port:F({providerSnapshot:root.snapshot,providerClose:root.close,loadBound:historyRows(i.store),readOfficialOutcome:originalRead,
         readOriginalFundingGrant:F(identity=>{brand(s.store,SERVICE,'readOriginalFundingGrant',ORIGINAL);return A(ORIGINAL,s.store,[identity]);}),
-        admitCommittedServiceGrant:root.admitCommittedServiceGrant})}));}
+        admitCommittedServiceGrant:root.admitCommittedServiceGrant,
+        admitCommittedServiceGrantResults:F(id=>root.admitCommittedServiceGrant(id,'RECORDED_RESULT_ONLY'))})}));}
   catch{try{await root.close();}catch{throw new TypeError('ISSUED_ORIGINAL_GRANT_ADMISSION_CLOSE_HELD');}throw new TypeError('ISSUED_FUNDING_GRANT_NATIVE_RECOVERY_CONFIGURATION');}
-  return F({...root,close:admission.close,admitCommittedServiceGrant:admission.admitCommittedServiceGrant,inspectOriginalCommittedServiceGrant:admission.inspectOriginalCommittedServiceGrant,admitOriginalCommittedServiceGrant:admission.admitOriginalCommittedServiceGrant,
+  return F({...root,close:admission.close,admitCommittedServiceGrant:admission.admitCommittedServiceGrant,inspectOriginalCommittedServiceGrant:admission.inspectOriginalCommittedServiceGrant,admitOriginalCommittedServiceGrant:admission.admitOriginalCommittedServiceGrant,admitOriginalCommittedServiceGrantResults:admission.admitOriginalCommittedServiceGrantResults,
     snapshot:F(function snapshot(){if(arguments.length!==0)throw new TypeError('ISSUED_FUNDING_GRANT_NATIVE_RECOVERY_CONFIGURATION');return F({...root.snapshot(),originalGrantAdmission:admission.snapshot()});})});
 }
