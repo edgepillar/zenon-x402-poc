@@ -69,7 +69,7 @@ service dispatch or activation authority and leaves spending reservations
 unchanged. The same query flag now accepts an explicit version-two stored
 profile with a separately retained full-profile hash; its source binding reads
 only the named existing four-table owner, revokes/closes it and then enters the
-existing one-query owner. The ready version-one path remains unchanged. See
+existing one-query owner. The standalone ready version-one query mode retains its contract. See
 [stored query recovery](STORED_GRANT_QUERY_RECOVERY.md). This mount is source
 integration, with no native SQL/HTTPS execution.
 Fresh-process SQL and funding-ACK-loss recovery are not established by a memory
@@ -81,3 +81,9 @@ file-owner and client ports. No SDK/core package, SQL, socket/TLS, key/signature
 nonce search, PREPARE, actual funding or pilot is executed. The hosted required
 108-control profile remains separate from these DATA controls. G0-G5 remain
 open until their own source/runtime-bound acceptance evidence exists.
+
+## Fixed-product purchased grant handoff
+
+The fixed native product now selects `createApiCreditPurchasedGrantRecoveryApplication`; the generic `createApiCreditFundingGrantRecoveryApplication` retains its no-lookup component contract. The product mode binds purchase, ready query, original pins, CA and request/close limit before commit/funding, then uses one existing ready-proof lookup on explicit handoff. Its same-file guard spans the query and the custody readback before the existing selected-grant handoff. No schema, table, proof generation, signer, activation or automatic retry is added. The [complete purchase/handoff contract](API_CREDIT_FIXED_PRODUCT_PROFILE.md#purchased-grant-handoff) distinguishes historical grant matching from current service authority.
+
+A pending or unknown query owner can retain the same file guard, so the parent does not compete with its close. Known synchronous custody returns and known closed-query observations allow the existing owned child stop; malformed semantics still leave HELD. Unknown custody returns keep the borrower protected. Lookup or service failure preserves the same original funding, ready profile and spending reservation; late results cannot authorize another economic action. The separate stored-profile query mode is unchanged and still closes its independently selected owner before lookup. Native SQL/HTTPS, process restart and physical release remain unexecuted.

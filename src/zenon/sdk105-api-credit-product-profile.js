@@ -83,6 +83,7 @@ export function captureSdk105ApiCreditProductOperatorData(configuration) {
   // service replay reads the same V6 history and allocates no new wire request.
   // The minimum service wire/custody budget therefore covers 100 distinct calls.
   const purchase = captureApiCreditPurchaseExpectation(c.purchaseExpectationJson, c.paymentRequiredHeader, store.resourceUrl);
+  if (purchase.holderId !== expectedAddress || admitted.serviceOptions.transportOptions.ca.toString('base64').length > 8192) fail();
   const profile = F({ productProfileVersion: 2, purchase, fundingResourceUrl: store.resourceUrl,
     serviceResourceUrl: store.custodyPolicy.serviceResourceUrl, network: requirement.network, asset: requirement.asset,
     recipient: requirement.payTo, amount: requirement.amount, providerAuthentication: 'NOT_ESTABLISHED', nativeAcceptance: 'NOT_ESTABLISHED' });

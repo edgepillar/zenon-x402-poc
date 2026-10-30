@@ -1,3 +1,7 @@
+import { captureApiCreditPurchasedGrantQuery, requireApiCreditPurchasedGrantHandoff } from './api-credit-purchased-grant-handoff.js';
+import { captureApiCreditOriginalGrantQueryOutput } from './api-credit-original-grant-query-owner.js';
+import { captureOriginalFundingServiceHandoffRequest } from './zenon/dynamic-plasma-original-funding-service-handoff-request.js';
+import { restoreOriginalPaymentCheckpoint } from './service-credit-pilot-original-payment-checkpoint.js';
 import { types } from 'node:util';
 import { captureFundingPostCheckpointRoute } from './x402-funding-post-checkpoint-route.js';
 import { captureOriginalFundingSignerPreparation } from './original-funding-signer-context-custody.js';
@@ -25,8 +29,17 @@ function rejected(){const c=capability();c.reject(error());return c.promise;}
  * Native binding supplies the same SQL file owner; DATA tests declare ports.
  * No proof generation, query dispatch, replacement payment or retry exists. */
 export function createApiCreditFundingGrantRecoveryApplication(configuration){
-  if(arguments.length!==1||!invariant()||HELD.size>=64)fail();
-  const c=fields(configuration,['application','custody','paymentId','fundingResourceUrl']);
+  if(arguments.length!==1)fail();return createApplication(configuration,false);
+}
+/** Fixed-product connection: one existing ready-proof lookup precedes handoff.
+ * The generic custody component above retains its previous contract. */
+export function createApiCreditPurchasedGrantRecoveryApplication(configuration){
+  if(arguments.length!==1)fail();return createApplication(configuration,true);
+}
+function createApplication(configuration,purchased){
+  if(!invariant()||HELD.size>=64)fail();
+  const c=fields(configuration,['application','custody','paymentId','fundingResourceUrl',...(purchased?['purchase','inspectGrant','lookupPolicy']:[])]);
+  if(purchased){fn(c.inspectGrant);if(c.purchase===null||typeof c.purchase!=='object'||types.isProxy(c.purchase)||!Object.isFrozen(c.purchase))fail();}
   const child=fields(c.application,[...OPS,'inspect','close'],true),ports=fields(c.custody,['retain','read','assertCurrent'],true);
   for(const value of [...Object.values(child),...Object.values(ports)])fn(value);
   if(typeof c.paymentId!=='string'||!/^[A-Za-z0-9][A-Za-z0-9:._-]{0,127}$/.test(c.paymentId))fail();
@@ -34,7 +47,8 @@ export function createApiCreditFundingGrantRecoveryApplication(configuration){
   let held=false,closed=false,active=false,closing=null,childClose=null,prepared=null,originalDigest=null,retained=null,selected=null;
   let prepareClaimed=false,commitClaimed=false,commitReturned=false,submissionClaimed=false,retains=0,reads=0,currentChecks=0;
   let custodyActive=false,custodyUnknown=false,childCloseRequested=false;
-  const opaque=new Set(),retainedFrame=F(()=>[c,childClose,prepared,retained,selected,opaque]);
+  let fundingReturned=false,handoffClaimed=false,querySelection=null,queryReceipt=null,queryActive=false,queryUnknown=false,queryClosed=false,purchaseMatched=false;
+  const opaque=new Set(),retainedFrame=F(()=>[c,childClose,prepared,retained,selected,querySelection,queryReceipt,opaque]);
   function hold(){held=true;HELD.add(retainedFrame);}
   function keep(value){opaque.add(value);try{if(safe(value))observe(value,()=>{},()=>{});}catch{}}
   function childView(){try{const v=A(child.inspect,c.application,[]);if(v===null||typeof v!=='object'||types.isProxy(v)||Object.getPrototypeOf(v)!==Object.prototype||!Object.isFrozen(v))fail();
@@ -88,7 +102,8 @@ export function createApiCreditFundingGrantRecoveryApplication(configuration){
   function commit(input){
     if(prepared===null||commitClaimed)fail();const args=fields(input,['expectedPins','originalGrantQueryProfile']);
     const candidate=captureApiCreditFundingGrantRecoveryProfile(args.originalGrantQueryProfile,F({resourceUrl:c.fundingResourceUrl,serializedCheckpoint:prepared,expectedPins:args.expectedPins}));
-    commitClaimed=true;selected=candidate;
+    const purchaseQuery=purchased?captureApiCreditPurchasedGrantQuery(c.purchase,candidate.profileJson,F({resourceUrl:c.fundingResourceUrl,serializedCheckpoint:prepared,expectedPins:candidate.expectedPins}),c.lookupPolicy):null;
+    commitClaimed=true;selected=candidate;querySelection=purchaseQuery;
     try{
       current();retains++;const raw=custodyCall('retain',[c.paymentId,candidate.profileJson],'text');
       current();retained=checkRecord(raw);read();
@@ -102,11 +117,43 @@ export function createApiCreditFundingGrantRecoveryApplication(configuration){
     const pins=captureApiCreditFundingGrantRecoveryProfile(selected.profileJson,F({resourceUrl:c.fundingResourceUrl,serializedCheckpoint:prepared,expectedPins:args.expectedPins})).expectedPins;
     submissionClaimed=true;
     try{read();return delegate('submitOriginalFunding',F({expectedPins:pins}),value=>{
-      if(data(value,'phase')!=='FUNDING_INTAKE_BOUND'||data(value,'fundingIntakeStatus')!=='BOUND')hold();return value;
+      if(data(value,'phase')!=='FUNDING_INTAKE_BOUND'||data(value,'fundingIntakeStatus')!=='BOUND')hold();else fundingReturned=true;return value;
     });}catch{hold();fail();}
   }
+  function handoff(input){
+    if(!purchased)return delegate('handoffToService',input);
+    if(!fundingReturned||retained===null||querySelection===null||handoffClaimed)fail();
+    const checkpoint=restoreOriginalPaymentCheckpoint(prepared,selected.expectedPins);
+    const checked=captureOriginalFundingServiceHandoffRequest(input,F({resourceUrl:c.fundingResourceUrl,
+      serializedCheckpoint:prepared,paymentRequiredHeader:checkpoint.originalBytes.paymentRequirements}));
+    if(!/^grant_[0-9a-f]{64}$/.test(checked.selectedGrantId))fail();
+    const request=F({originalPayment:checked.originalPayment,selectedGrantId:checked.selectedGrantId,paymentRequiredHeader:checked.paymentRequiredHeader});
+    // All external originals, pins and grant shape are admitted before the
+    // one query claim. The ready profile was purchase-bound before funding.
+    read();handoffClaimed=true;queryActive=true;const out=capability();
+    const guard=F(function requireCurrentPurchasedGrantLookup(){
+      if(arguments.length!==0||!queryActive||closed||held||closing!==null||!invariant())fail();
+      current();const view=childView();if(closed||held||closing!==null||data(view,'lifecycle')!=='OPEN'||data(view,'publicOperationActive')!==false)fail();
+    });
+    function bad(){queryActive=false;if(!queryClosed)queryUnknown=true;hold();out.reject(error());startChildClose();}
+    try{
+      queryReceipt=A(c.inspectGrant,undefined,[selected.profileJson,guard]);
+      observe(queryReceipt,value=>{
+        queryActive=false;
+        try{
+          const observation=captureApiCreditOriginalGrantQueryOutput(value);queryClosed=true;
+          requireApiCreditPurchasedGrantHandoff(querySelection,request.selectedGrantId,observation);purchaseMatched=true;
+          if(closed||held||closing!==null||!invariant())fail();read();
+          observe(delegate('handoffToService',request,value=>{
+            if(data(value,'phase')!=='SERVICE_CLIENT_OPEN_ORIGINAL_RESTORED'||data(value,'selectedGrantId')!==request.selectedGrantId)fail();return value;
+          }),out.resolve,bad);
+        }catch{bad();}
+      },bad);
+    }catch{keep(queryReceipt);bad();}
+    return out.promise;
+  }
   const out={};const work={prepareOriginalFunding:prepare,commitOriginalFunding:commit,submitOriginalFunding:submit,
-    handoffToService:input=>delegate('handoffToService',input),submitOriginal:input=>delegate('submitOriginal',input)};
+    handoffToService:handoff,submitOriginal:input=>delegate('submitOriginal',input)};
   for(const name of OPS)out[name]=F(function(input){return start(work[name],arguments.length,input);});
   out.inspect=F(function inspect(){
     if(arguments.length!==0)fail();const view=childView(),copy={};
@@ -116,10 +163,11 @@ export function createApiCreditFundingGrantRecoveryApplication(configuration){
     Object.defineProperty(copy,'grantQueryRecovery',{value:F({version:1,phase:held?'HELD':retained===null?'NOT_CAPTURED':'CAPTURED',
       prepareClaimed,commitClaimed,commitReturned,submissionClaimed,active,retains,reads,currentChecks,custodyActive,custodyUnknown,childCloseRequested,
       checkpointDigest:selected?.checkpointDigest??null,queryDigest:selected?.queryDigest??null,
-      proofGeneration:false,queryDispatch:false,store:'BORROWED_SELECTED_SPENDING_OWNER',nativePersistence:'NOT_QUALIFIED',authority:'NONE'}),enumerable:true});return F(copy);
+      proofGeneration:false,...(purchased?{queryDispatchRequested:handoffClaimed}:{queryDispatch:false}),
+      ...(purchased?{purchasedGrantHandoff:F({version:1,fundingReturned,handoffClaimed,queryActive,queryUnknown,queryCloseObserved:queryClosed,purchaseMatched,maximumQueries:1,grantAuthority:'NOT_REVALIDATED',deliveryLiability:'UNCHANGED'})}:{}),store:'BORROWED_SELECTED_SPENDING_OWNER',nativePersistence:'NOT_QUALIFIED',authority:'NONE'}),enumerable:true});return F(copy);
   });
   function startChildClose(){
-    if(closing===null||childCloseRequested||custodyActive||custodyUnknown)return;
+    if(closing===null||childCloseRequested||custodyActive||custodyUnknown||purchased&&(queryActive||queryUnknown))return;
     childCloseRequested=true;
     try{childClose=A(child.close,c.application,[]);observe(childClose,value=>{
       try{const v=childView();if(value!==undefined||held||active||data(v,'lifecycle')!=='CLOSED'||data(v,'publicOperationActive')!==false)fail();closing.resolve(undefined);}
@@ -131,7 +179,10 @@ export function createApiCreditFundingGrantRecoveryApplication(configuration){
     closing=capability();closed=true;if(active)hold();
     // The parent cannot join an opaque custody borrower. Preserve the same
     // application/file under HELD instead of starting a competing parent close.
-    if(custodyUnknown){hold();closing.reject(error());return closing.promise;}
+    if(custodyUnknown||purchased&&queryUnknown){hold();closing.reject(error());return closing.promise;}
+    // A pending lookup can retain the same file guard. Do not start a
+    // competing child/file close until that known lookup has returned closed.
+    if(purchased&&queryActive){hold();closing.reject(error());return closing.promise;}
     // Reentrant close is revoked now and delegated only after the synchronous
     // custody capability has returned a known receipt.
     startChildClose();return closing.promise;

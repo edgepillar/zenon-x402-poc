@@ -1,6 +1,8 @@
 // SOURCE ONLY; this complete native binding has not been executed.
-import { createApiCreditFundingGrantRecoveryApplication } from '../api-credit-funding-grant-recovery-application.js';
+import { createApiCreditPurchasedGrantRecoveryApplication } from '../api-credit-funding-grant-recovery-application.js';
 import { types } from 'node:util';
+import { decodeApiCreditOriginalGrantQueryProfile, releaseApiCreditOriginalGrantQueryProfile } from '../api-credit-original-grant-query-profile.js';
+import { inspectNativeApiCreditOriginalGrant } from './native-api-credit-original-grant-query.js';
 import { createApiCreditOpeningFailureCustody } from '../api-credit-opening-failure-custody.js';
 import { createApiCreditReturnedOpeningCustody } from '../api-credit-returned-opening-custody.js';
 import { hrtime } from 'node:process';
@@ -48,6 +50,7 @@ async function openApplication(selection, requireCurrentOpening, productProfile)
   let walletOpeningEntered = false, clientOpeningEntered = false;
   try {
     c = captureSdk105FundingServiceConfiguration(selected.configuration);
+    const lookupPolicy=productProfile===null?null:F({caBase64:c.serviceOptions.transportOptions.ca.toString('base64'),maxTotalMs:c.serviceOptions.deadlineMs});
     requireCurrentOpening();
     file = (productProfile === null ? openOriginalFundingSpendingSignerContextFileOwner : openOriginalFundingSpendingGrantRecoveryFileOwner)({ storageProfile: selected.spendingFile.storageProfile,
       allowedRoot: selected.spendingFile.allowedRoot, filePolicy: selected.spendingFile.filePolicy });
@@ -79,8 +82,19 @@ async function openApplication(selection, requireCurrentOpening, productProfile)
     });
     if (productProfile !== null) {
       const product = bindSdk105ApiCreditProductLifecycleWithRecordedResults(application, productProfile, readState);
-      application = createApiCreditFundingGrantRecoveryApplication(F({ application: product,
-        custody: file.grantQueryCustody, paymentId: selected.spending.paymentId, fundingResourceUrl: c.storeOptions.resourceUrl }));
+      const inspectGrant=F(async function inspectPurchasedOriginalGrant(profileJson,requireCurrent){
+        if(arguments.length!==2)fail();let token;
+        const guard=F(function requireCurrentPurchasedLookup(){
+          if(arguments.length!==0)fail();requireCurrent();requireCurrentApiCreditWireOwner(wireOwner,readBudgetMs);requireCurrent();
+        });
+        try{
+          guard();token=decodeApiCreditOriginalGrantQueryProfile(profileJson);if(token.originalGrantQueryVersion!==1)fail();
+          const result=await inspectNativeApiCreditOriginalGrant(token,guard);guard();return result;
+        }finally{if(token!==undefined)releaseApiCreditOriginalGrantQueryProfile(token);}
+      });
+      application = createApiCreditPurchasedGrantRecoveryApplication(F({ application: product,
+        custody: file.grantQueryCustody, paymentId: selected.spending.paymentId, fundingResourceUrl: c.storeOptions.resourceUrl,
+        purchase: productProfile.purchase, inspectGrant, lookupPolicy }));
     }
     requireCurrentOpening(); return application;
   } catch {

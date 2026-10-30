@@ -24,9 +24,9 @@ function check(id,run){checks.push({id,run});}
 function digest(domain,value){return 'sha256:'+createHash('sha256').update(domain+'\0','ascii').update(canonicalJson(value)).digest('hex');}
 function deferred(){let resolve,reject;const promise=new Promise((a,b)=>{resolve=a;reject=b;});return {promise,resolve,reject};}
 async function flush(){for(let i=0;i<20;i++)await Promise.resolve();}
-export function fundingGrantCustodyDataFixture(){
-  const f=retainedOriginalInputFixture(),r=f.input.plannerContext.readInput;
-  r.paymentRequired.resource={url:f.resourceUrl,tags:['x402-service-credit-funding-v1','c'.repeat(32),'c'.repeat(32)]};
+export function fundingGrantCustodyDataFixture({fundingFixture=null,purchase=null,paymentId='payment.original',caBase64=null}={}){
+  const f=fundingFixture??retainedOriginalInputFixture(),r=f.input.plannerContext.readInput;
+  if(fundingFixture===null)r.paymentRequired.resource={url:f.resourceUrl,tags:['x402-service-credit-funding-v1','c'.repeat(32),'c'.repeat(32)]};
   f.input.challenge.paymentRequired=clone(r.paymentRequired);f.input.challenge.paymentRequiredHeader=encodeB64Json(r.paymentRequired);
   const unsigned={...f.candidate.originalUnsignedBlock,data:Buffer.from(paymentIntentDigest(r.paymentRequired,r.accepted),'hex').toString('base64')};
   unsigned.hash=computeZenonUnsignedUserSendHash(unsigned);
@@ -34,15 +34,15 @@ export function fundingGrantCustodyDataFixture(){
   const subject={subjectVersion:1};for(const key of ['version','chainIdentifier','blockType','previousHash','height','momentumAcknowledged','address','toAddress','amount','tokenStandard','fromBlockHash','data'])subject[key]=unsigned[key];
   const plan={observedUserSendPlanVersion:1,subject,quote:{declaredQuoteVersion:1,label:'fixed-original-data'}};
   const context=preSign(prepared,{originalUnsignedBlock:unsigned,originalPlan:plan,preSignCheckpointJson:canonicalJson({accountBlock:unsigned,checkpointVersion:1,phase:'UNSIGNED',quote:plan.quote})});
-  const row={paymentId:'payment.original',originalDigest:prepared.originalDigest,network:r.accepted.network,asset:unsigned.tokenStandard,recipient:unsigned.toAddress,amount:unsigned.amount,reservedDay:1,status:'RESERVED',spentDay:null};
+  const row={paymentId,originalDigest:prepared.originalDigest,network:r.accepted.network,asset:unsigned.tokenStandard,recipient:unsigned.toAddress,amount:unsigned.amount,reservedDay:1,status:'RESERVED',spentDay:null};
   const initial=intent(row,unsigned,context),signer=signed(initial,block,row),packet=assemble(f.input,{originalUnsignedBlock:unsigned,accountBlock:block},f.resourceUrl);
   const identity={transactionId:'zenontx:'+block.hash,network:r.accepted.network,chainProfile:r.accepted.extra.zenonChain,asset:r.accepted.asset,amount:r.accepted.amount,payee:r.accepted.payTo,
-    offerId:'offer-1',offerVersion:1,holderId:block.address,capabilityCommitment:'sha256:'+'d'.repeat(64),paymentResourceDigest:digest('zenon-x402-service-credit-payment-resource-v1',r.paymentRequired.resource),
-    paymentRequirementDigest:digest('zenon-x402-service-credit-payment-requirement-v1',r.accepted),paymentIntentDigest:'sha256:'+paymentIntentDigest(r.paymentRequired,r.accepted),grantFundingCommitment:'sha256:'+'c'.repeat(64)};
+    offerId:purchase?.offerId??'offer-1',offerVersion:purchase?.offerVersion??1,holderId:block.address,capabilityCommitment:purchase?.capabilityCommitment??'sha256:'+'d'.repeat(64),paymentResourceDigest:digest('zenon-x402-service-credit-payment-resource-v1',r.paymentRequired.resource),
+    paymentRequirementDigest:digest('zenon-x402-service-credit-payment-requirement-v1',r.accepted),paymentIntentDigest:'sha256:'+paymentIntentDigest(r.paymentRequired,r.accepted),grantFundingCommitment:purchase?.fundingCommitment??'sha256:'+'c'.repeat(64)};
   const q=query({queryVersion:1,requestId:'retained-read-1',originalFunding:identity});
   const profile={originalGrantQueryVersion:1,originalPayment:{resourceUrl:f.resourceUrl,serializedCheckpoint:packet.serializedCheckpoint,expectedPins:clone(packet.expectedPins)},originalFunding:identity,
     query:{requestId:q.query.requestId,expectedQueryDigest:q.request.canonicalBodyDigest,proof:{proofVersion:1,grantId:q.request.grantId,requestId:q.query.requestId,publicKey:'declared-key-data',maxCostUnits:1,signature:'declared-proof-data'}},
-    transport:{caBase64:Buffer.from('declared-test-ca-data').toString('base64'),requestDeadlineMs:100,handshakeDeadlineMs:50,closeGraceMs:100}};
+    transport:{caBase64:caBase64??Buffer.from('declared-test-ca-data').toString('base64'),requestDeadlineMs:100,handshakeDeadlineMs:50,closeGraceMs:100}};
   const text=canonicalJson(profile),captured=capture(text,profile.originalPayment);
   return {f,row,initial,signer,packet,profile,text,captured,expected:{paymentId:row.paymentId,originalDigest:row.originalDigest,checkpointDigest:captured.checkpointDigest,queryDigest:captured.queryDigest}};
 }

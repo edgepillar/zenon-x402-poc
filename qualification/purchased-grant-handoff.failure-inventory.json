@@ -1,0 +1,102 @@
+{
+  "version": 1,
+  "qualification": "G1_PURCHASED_GRANT_HANDOFF_FAILURE_INVENTORY",
+  "currentDataCaseFailures": 0,
+  "currentParserFailures": 0,
+  "currentFailedQualificationTasks": 0,
+  "unexpectedSkips": 0,
+  "cancellations": 0,
+  "currentPreparationUnknowns": [],
+  "priorSourceFailedTasksThisTurn": [
+    {
+      "bytes": 626293,
+      "sha256": "aa34081e58bfb6559d3bf8925043517c7d2bcacb2702037ad5967213b47ee069",
+      "status": "UNKNOWN",
+      "taskOutcome": "FAILURE",
+      "actualDataCommands": 1,
+      "actualParserCommands": 0,
+      "passed": 20,
+      "failed": 17,
+      "classification": "HARNESS_EXPECTED_REFERENCE_IDENTITY_INSTEAD_OF_DETACHED_QUERY_DATA",
+      "failedGroupReused": false,
+      "oldSourcePreserved": true
+    },
+    {
+      "bytes": 625200,
+      "sha256": "354cf37423b69c63c739b84b0cd697f82314521c7e927722bf1545a6865958a8",
+      "status": "UNKNOWN",
+      "taskOutcome": "FAILURE",
+      "actualDataCommands": 1,
+      "actualParserCommands": 0,
+      "passed": 36,
+      "failed": 1,
+      "classification": "HARNESS_CONFLATED_RETURNED_INVALID_DATA_WITH_UNRETURNED_CUSTODY_BORROWER",
+      "failedGroupReused": false,
+      "oldSourcePreserved": true
+    }
+  ],
+  "fixtureCorrections": [
+    {
+      "id": "R336_QUERY_FIXTURE_REFERENCE_COMPARISON",
+      "classification": "HARNESS_EXPECTED_REFERENCE_IDENTITY_INSTEAD_OF_DETACHED_QUERY_DATA",
+      "evidence": "The actual query owner captures a new normalized query before invoking read; the fixture required the original object reference.",
+      "correctedInput": "qualification/purchased-grant-handoff.fixture.mjs",
+      "previousSha256": "ee34de45fcc985aaf39893b85e49fb2a5b025cda9dc27fde2eb620c616731bab",
+      "sha256": "4a962051017b10df9130f1229911475c489d9747489f1d101d4600360d72758e",
+      "productionRuntimeChangedAfterFailedRun": false,
+      "caseIdsOrExpectedResultsRelaxed": false,
+      "structuralQueryAndProofChecksPreserved": true,
+      "oldSourceAndRawFailurePreserved": true,
+      "failedGroupReused": false
+    },
+    {
+      "id": "R336_KNOWN_CUSTODY_RECEIPT_CLOSE_EXPECTATION",
+      "classification": "HARNESS_CONFLATED_RETURNED_INVALID_DATA_WITH_UNRETURNED_CUSTODY_BORROWER",
+      "correctedInput": "qualification/purchased-grant-handoff.behavior.mjs",
+      "previousSha256": "53d8be7adac2b804bf4b1cd40ea41fa4e4acb66b4f155769b59bf7b35f3924c8",
+      "sha256": "3115fdf62276ef90aa604d2c09e3dd53cd8d94057507ac2200c90d3589a2b6a0",
+      "evidence": "custodyCall returned known text; checkRecord rejected it after the borrower returned. Existing close can stop known child once after closed query. A throwing read retains custodyUnknown and blocks child close.",
+      "productionRuntimeChangedAfterFailedRun": false,
+      "heldAndNoHandoffAndReservationAssertionsPreserved": true,
+      "knownReceiptExpectedChildCloseCorrectedFrom": 0,
+      "knownReceiptExpectedChildCloseCorrectedTo": 1,
+      "separateUnreturnedBorrowerRegressionAdded": true,
+      "oldSourceAndRawFailurePreserved": true,
+      "failedGroupReused": false
+    }
+  ],
+  "productionRuntimeChangedAfterFailedAttempts": false,
+  "retainedPreparedPlan": {
+    "rawQualificationSha256": "a3549149566e79a5dd2e18a922d89abdc27741aebd5a0cccdac30a88e2aa8d7b",
+    "status": "PREPARED",
+    "managedTaskCreated": false,
+    "actualDataCommands": 0,
+    "actualParserCommands": 0
+  },
+  "retainedPriorTurnQualificationFailures": [
+    {
+      "sha256": "fed1285bd8d34140c45675b83cdbc64314dcc51ee33dc16fc40b8ae14c6bf453",
+      "status": "UNKNOWN",
+      "taskOutcome": "FAILURE",
+      "actualDataCommands": 1,
+      "actualParserCommands": 0,
+      "passed": 17,
+      "failed": 1,
+      "classification": "HARNESS_EXPECTED_GENERIC_EXIT_INSTEAD_OF_ESTABLISHED_CLOSE_UNKNOWN_4",
+      "failedGroupReused": false,
+      "nativeExecutions": 0
+    }
+  ],
+  "retainedPredecessorTaskFailure": {
+    "rawQualificationSha256": "a3f53b8f4ed525f28fa45dbac49c280b23210e23eb8ef3bbcac6dbc224cee52a",
+    "status": "UNKNOWN",
+    "taskOutcome": "FAILURE",
+    "classification": "COMMAND_RECORD_LIMIT",
+    "historicalPassedSourceControls": 425,
+    "wholeFailedTaskReclassified": false
+  },
+  "selectedExactControlsFromActualFailedTasks": 47,
+  "earlierInventoriesPreserved": true,
+  "nativeTestsExecuted": 0,
+  "nativeGates": "OPEN"
+}

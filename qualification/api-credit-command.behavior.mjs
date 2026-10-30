@@ -30,10 +30,10 @@ function activation() { return { activationVersion: 1, authorityProfileId: 'auth
   verifierVersion: 1, authorityRecordDigest: hash('d'), fundingPolicyId: 'funding.synthetic', fundingPolicyVersion: 1,
   sourceSettlementId: 'settlement.synthetic', transactionId: 'mocktx:' + 'a'.repeat(64),
   providerId: 'provider.synthetic', serviceId: 'api.synthetic', resourceId: 'resource.synthetic', resourceBinding: hash('e'),
-  offerId: 'offer.synthetic', offerVersion: 1, holderId: 'holder.synthetic', capabilityCommitment: hash('a'), totalUnits: 100,
+  offerId: 'offer.synthetic', offerVersion: 1, holderId: 'z1qrv8fqk3ha78tpwegtmx2k5qyp6g28kymvqlfy', capabilityCommitment: hash('a'), totalUnits: 100,
   expiresAt: NOW + 10_000, scheme: 'exact', paymentFlow: 'upfront', network: 'zenon:mock',
   chainProfile: { version: 1, chainIdentifier: Number.MAX_SAFE_INTEGER.toString(), genesisMomentumHash: '0'.repeat(64) },
-  asset: 'zts1mockasset', amount: '1', payee: 'payee.mock', payer: 'holder.synthetic', paymentResourceDigest: hash('4'),
+  asset: 'zts1mockasset', amount: '1', payee: 'payee.mock', payer: 'z1qrv8fqk3ha78tpwegtmx2k5qyp6g28kymvqlfy', paymentResourceDigest: hash('4'),
   paymentRequirementDigest: hash('2'), paymentIntentDigest: hash('1'), grantFundingCommitment: hash('3'), evidenceState: 'MOMENTUM_INCLUDED',
   confirmationPolicy: { policyId: 'mock.momentum-included', policyVersion: 1, minimumConfirmations: 1 } }; }
 function ledgerRequest(input) {
