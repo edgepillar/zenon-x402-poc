@@ -1026,6 +1026,41 @@ function errorCode(error) {
  * evidence producer, authenticate a node, or accept caller-chosen terms or a
  * caller assertion as settlement evidence.
  */
+/** Capture the configured immutable resource without deciding whether a NEW
+ * issuance is currently eligible. Uses the same normalizers/commitments as the
+ * fresh preparer. A restored caller must compare this candidate with its exact
+ * independently pinned persisted challenge. No clock is accepted or synthesized.
+ * This cannot replace the fresh preparer's expiry check or authenticate funding. */
+export function captureZenonFundingResourceConfiguration(input) {
+  if (arguments.length !== 1) failConfiguration();
+  const value = exactDataObject(input, [
+    'offer', 'selection', 'resourceUrl', 'deriveFundingTerms', 'authorityProfile',
+  ], failConfiguration);
+  if (typeof value.deriveFundingTerms !== 'function'
+      || REFLECT_APPLY(IS_PROXY, undefined, [value.deriveFundingTerms])) failConfiguration();
+  const selection = normalizeFundingSelection(value.selection);
+  const offer = normalizeOffer(value.offer, selection);
+  const authority = normalizeAuthority(value.authorityProfile);
+  const { activationIntent, accepted } = deriveProviderTerms(
+    value.deriveFundingTerms, authority, offer, selection,
+  );
+  if (resourceBinding(activationIntent.resourceId, value.resourceUrl) !== offer.resourceBinding) failRejected();
+  const funding = fundingCommitment(authority, offer, activationIntent, accepted);
+  return deepFreeze({
+    offer,
+    authorityRecordDigest: authority.recordDigest,
+    challenge: {
+      activationIntent,
+      fundingCommitment: funding,
+      paymentRequired: {
+        x402Version: 2,
+        resource: fundingResource(value.resourceUrl, funding),
+        accepts: [accepted],
+      },
+    },
+  });
+}
+
 /** Derive an issuance candidate from one captured offer; this does not persist or serve it. */
 export function prepareZenonFundingResource(input) {
   const value = exactDataObject(input, [

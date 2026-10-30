@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "qualification": "G2_ISSUED_PROVIDER_RETAINED_RESOURCE_FAILURE_INVENTORY",
+  "status": "NO_NEW_FAILURE;PRIOR_FAILURES_PRESERVED",
+  "failures": [],
+  "currentDataFailures": 0,
+  "currentParserFailures": 0,
+  "priorInventory": {
+    "path": "qualification/issued-provider-execution-setup.failure-inventory.json",
+    "sha256": "27b96d6884f6009ca1ec56ba756631324599d3abcb7247b09212751695a6fef9"
+  },
+  "priorFailuresReclassified": false,
+  "sourceReviewFindings": [
+    {
+      "id": "RESTORED_STARTUP_REQUIRES_FRESH_EXPIRY",
+      "classification": "PRODUCT_SOURCE_GAP",
+      "sourceBefore": "9e2ea4764be06df0d334a7d28b34d63656d2bb72",
+      "status": "SOURCE_CORRECTED_DATA_QUALIFIED_NATIVE_NOT_ESTABLISHED",
+      "nativeExecuted": false
+    }
+  ],
+  "nativeExecutions": 0
+}

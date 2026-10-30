@@ -14,7 +14,7 @@ import { createOwnedIssuedFundingGrantNativeApplication } from './x402-issued-fu
 import { createIssuedProviderNativeFundingRoles } from './issued-provider-native-funding-roles.js';
 import { SettlementJournal } from './settlement-journal.js';
 import { parseZenonFundingProviderAttestationAuthorityRecord } from './service-credit-zenon-funding-provider-attestation.js';
-import { prepareZenonFundingResource } from './service-credit-zenon-funding-evidence.js';
+import { captureIssuedProviderFundingResourceAdmission } from './issued-provider-funding-resource-admission.js';
 import { createFixedZenonFundingPolicy } from './service-credit-zenon-fixed-funding-policy.js';
 import { openNativeFundingTransitionWitness,NativeFundingTransitionWitness } from './native-funding-transition-witness.js';
 import { openZenonFundingObserverSqliteStore,ZenonFundingObserverSqliteStore } from './service-credit-zenon-funding-observer-sqlite-store.js';
@@ -82,11 +82,12 @@ export async function runNativeIssuedProviderOperator(args,readPackageState){
   const authority=parseZenonFundingProviderAttestationAuthorityRecord(c.funding.authorityRecord);
   if(canonicalJson(authority.chainProfile)!==canonicalJson(c.funding.terms.requirement.extra.zenonChain)
    ||authority.confirmationPolicy.minimumConfirmations!==c.funding.terms.requirement.extra.minimumMomentumConfirmations)fail();
-  // Admit the existing exact resource/offer/terms/authority/expiry contract
-  // before TLS acquisition or store opening. This creates no persisted issue,
-  // transaction, proof or grant; the real intake rechecks its own issuance.
-  prepareZenonFundingResource({offer:c.offer,selection:c.funding.selection,resourceUrl:c.funding.resourceUrl,
-   deriveFundingTerms:createFixedZenonFundingPolicy({offer:c.offer,selection:c.funding.selection,terms:c.funding.terms}),authorityProfile:authority.authorityProfile,now});
+  // FRESH keeps actual issuance expiry admission before TLS. Restored modes
+  // capture configuration without a new clock decision; the owned opener
+  // compares the pinned original challenge before constructing the provider.
+  // Neither candidate persists an issue, transaction, proof or grant.
+  captureIssuedProviderFundingResourceAdmission({applicationMode:c.applicationMode,offer:c.offer,selection:c.funding.selection,resourceUrl:c.funding.resourceUrl,
+   deriveFundingTerms:createFixedZenonFundingPolicy({offer:c.offer,selection:c.funding.selection,terms:c.funding.terms}),authorityProfile:authority.authorityProfile,...(c.applicationMode==='FRESH'?{now}:{})});
    const secret=await frame.pipes.readTlsMaterial(guard,args.bootstrapMs);try{guard();frame.tls=captureIssuedProviderTlsFrame(secret);}finally{secret.fill(0);}guard();
   frame.journal=new SettlementJournal({...c.journal,clock:F(()=>new DATE(now())),existingOnly:true});
   frame.pendingJournal=A(LOAD,frame.journal,[]);const loaded=await startupValue(frame.pendingJournal,c.control.operationBudgetMs);frame.pendingJournal=null;guard();if(c.applicationMode==='FRESH'&&loaded.records.length!==0)fail();

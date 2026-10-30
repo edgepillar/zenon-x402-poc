@@ -1,5 +1,7 @@
 // SOURCE/PARSER ONLY. Actual store/core/SDK/TLS acquisition is unexecuted.
 import { createIssuedProviderExecutionSetupOwner } from './issued-provider-execution-setup.js';
+import { admitRetainedIssuedProviderFundingResource } from './issued-provider-funding-resource-admission.js';
+import { parseZenonFundingProviderAttestationAuthorityRecord } from './service-credit-zenon-funding-provider-attestation.js';
 import { types } from 'node:util';
 import { canonicalJson } from './canonical.js';
 import { captureIssuedProviderOwnedConfiguration } from './issued-provider-owned-configuration.js';
@@ -14,7 +16,7 @@ const F=Object.freeze,D=Object.getOwnPropertyDescriptor,A=Reflect.apply;
 const SERVICE=ServiceCreditSqliteStore.prototype,INTAKE=ZenonFundingIntakeSqliteStore.prototype;
 const CREATE=D(ServiceCreditSqliteStore,'create').value,OPEN=D(ServiceCreditSqliteStore,'openExisting').value;
 const REGISTER=D(SERVICE,'registerOffer').value,GET=D(SERVICE,'getOffer').value,SCLOSE=D(SERVICE,'close').value,ICLOSE=D(INTAKE,'close').value;
-const SNAPSHOT=D(SERVICE,'getDurableExecutionSnapshot').value,INITIALIZE=D(SERVICE,'initializeDurableExecution').value;
+const SNAPSHOT=D(SERVICE,'getDurableExecutionSnapshot').value,INITIALIZE=D(SERVICE,'initializeDurableExecution').value,LOAD=D(INTAKE,'loadBound').value;
 const PATHS=new Map(),ACTIVE=new Set();
 function fail(){throw new TypeError('ISSUED_PROVIDER_OWNED_NATIVE_APPLICATION');}
 function brand(v,prototype,name,fn){if(v===null||typeof v!=='object'||types.isProxy(v)||Object.getPrototypeOf(v)!==prototype||Object.hasOwn(v,name)||D(prototype,name)?.value!==fn)fail();}
@@ -49,6 +51,12 @@ export function createOwnedIssuedFundingGrantNativeApplication(configuration){
   }),
   openProvider:F(async(service,intake)=>{
    if(service!==frame.service||intake!==frame.intake||frame.opening!==null||!frame.claimed||frame.released)fail();
+   if(c.applicationMode!=='FRESH'){
+    brand(intake,INTAKE,'loadBound',LOAD);
+    const authority=parseZenonFundingProviderAttestationAuthorityRecord(c.funding.intake.authorityRecord);
+    const readRows=F(()=>{brand(intake,INTAKE,'loadBound',LOAD);return A(LOAD,intake,[]);});
+    admitRetainedIssuedProviderFundingResource(F({applicationMode:c.applicationMode,offer:c.offer,selection:c.funding.intake.selection,resourceUrl:c.funding.intake.resourceUrl,deriveFundingTerms:c.funding.intake.deriveFundingTerms,authorityProfile:authority.authorityProfile}),c.recovery,c.funding.intake.authorityRecord,readRows);
+   }
    const options=F({funding:F({...c.funding,intake:F({...c.funding.intake,store:intake,serviceCreditStore:service})}),service:F({...c.service,store:service}),transport:c.transport,
     ...(c.applicationMode==='FRESH'?{}:{recovery:c.recovery}),...(['JOURNAL','WITNESSED'].includes(c.applicationMode)?{observation:c.observation}:{})});
    frame.opening=c.applicationMode==='FRESH'?createIssuedFundingGrantNativeApplication(options):c.applicationMode==='RECORDED'?restoreIssuedFundingGrantNativeApplication(options)

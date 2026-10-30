@@ -2516,6 +2516,12 @@
       "format": "module"
     },
     {
+      "path": "src/issued-provider-funding-resource-admission.js",
+      "bytes": 4690,
+      "sha256": "d07adb3426645893d1cc6cbf8e0948d31daf70e5c0e90768637579c8375450f8",
+      "format": "module"
+    },
+    {
       "path": "src/issued-provider-journal-setup.js",
       "bytes": 7898,
       "sha256": "e87513cb8374ea1c1edb8f4b715db6c550247a4b63c2012da3fc5ff92d4deee1",
@@ -2535,8 +2541,8 @@
     },
     {
       "path": "src/issued-provider-native-operator.js",
-      "bytes": 13886,
-      "sha256": "a137762da55888d6ba5c84d9cbb90fbdf93fd98164fe750f4dc1480569d707a8",
+      "bytes": 14066,
+      "sha256": "b995357492a4192d6d20148f4a6199c0d9b57adbfe1c61502683c01ed0ed48eb",
       "format": "module"
     },
     {
@@ -2787,8 +2793,8 @@
     },
     {
       "path": "src/service-credit-zenon-funding-evidence.js",
-      "bytes": 52430,
-      "sha256": "adde739cf8f927ce411bd10b45020febcd41cd76073eebdcd3560bf1635df754",
+      "bytes": 54078,
+      "sha256": "cf21c98b21d9097930ffca9e10c3d94d53c931d365991b7f76fe15f848b88038",
       "format": "module"
     },
     {
@@ -2871,8 +2877,8 @@
     },
     {
       "path": "src/x402-issued-funding-grant-owned-native-application.js",
-      "bytes": 6302,
-      "sha256": "8cf0a3f0507e0e51d03788983b4f74e151a0ccd20cb1f15888d185b86d89e2b7",
+      "bytes": 7187,
+      "sha256": "f1e37bec2f9513010db8ae4e385cad052d4dba33fa9787c6c32ea0506e222e5b",
       "format": "module"
     },
     {

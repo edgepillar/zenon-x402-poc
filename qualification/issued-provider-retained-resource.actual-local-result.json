@@ -1,0 +1,235 @@
+{
+  "qualification": "G2_ISSUED_PROVIDER_RETAINED_RESOURCE_DATA",
+  "status": "PASS",
+  "recordedAtUTC": "2026-10-30T10:44:50.866735+00:00",
+  "passed": 22,
+  "failed": 0,
+  "newControls": 22,
+  "reexecutedRelevantDataControls": 0,
+  "retainedEarlierTurnExactControls": 1396,
+  "aggregateVerifiedControls": 1418,
+  "cases": [
+    {
+      "id": "retained-resource-static-configuration-equals-fresh-candidate-before-expiry",
+      "status": "PASS"
+    },
+    {
+      "id": "retained-resource-fresh-still-rejects-at-and-after-original-expiry",
+      "status": "PASS"
+    },
+    {
+      "id": "retained-resource-fresh-enters-the-original-clock-once",
+      "status": "PASS"
+    },
+    {
+      "id": "retained-resource-all-restored-modes-preserve-the-original-expired-terms",
+      "status": "PASS"
+    },
+    {
+      "id": "retained-resource-restoration-has-no-clock-parameter-or-fallback",
+      "status": "PASS"
+    },
+    {
+      "id": "retained-resource-invalid-mode-refuses-before-policy-or-clock",
+      "status": "PASS"
+    },
+    {
+      "id": "retained-resource-fresh-cannot-enter-the-retained-admission-port",
+      "status": "PASS"
+    },
+    {
+      "id": "retained-resource-missing-or-malformed-independent-pins-refuse-before-row-read",
+      "status": "PASS"
+    },
+    {
+      "id": "retained-resource-wrong-bound-pin-refuses-the-original-row",
+      "status": "PASS"
+    },
+    {
+      "id": "retained-resource-no-authority-from-the-unread-outcome-pin",
+      "status": "PASS"
+    },
+    {
+      "id": "retained-resource-configured-expiry-cannot-refresh-the-original",
+      "status": "PASS"
+    },
+    {
+      "id": "retained-resource-configured-units-cannot-increase-the-original",
+      "status": "PASS"
+    },
+    {
+      "id": "retained-resource-changed-payee-amount-or-asset-cannot-rebind",
+      "status": "PASS"
+    },
+    {
+      "id": "retained-resource-foreign-selection-or-resource-refuses",
+      "status": "PASS"
+    },
+    {
+      "id": "retained-resource-raw-authority-and-record-digest-must-both-match",
+      "status": "PASS"
+    },
+    {
+      "id": "retained-resource-frame-and-challenge-must-describe-the-same-original",
+      "status": "PASS"
+    },
+    {
+      "id": "retained-resource-row-drift-between-reads-is-not-repaired",
+      "status": "PASS"
+    },
+    {
+      "id": "retained-resource-missing-row-or-promised-row-is-never-awaited-or-created",
+      "status": "PASS"
+    },
+    {
+      "id": "retained-resource-mode-and-field-getters-are-not-invoked",
+      "status": "PASS"
+    },
+    {
+      "id": "retained-resource-proxies-and-extra-fields-refuse-without-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "retained-resource-detaches-candidate-from-subsequent-input-mutation",
+      "status": "PASS"
+    },
+    {
+      "id": "retained-resource-policy-is-still-called-with-the-captured-original-selection",
+      "status": "PASS"
+    }
+  ],
+  "nodeVersion": "24.19.0",
+  "platform": "darwin-arm64",
+  "nodeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25",
+  "rawQualificationSha256": "786363faea03b7b651a303d4df75da66f34be6ffef2e5b5d9dc6447d16d27b87",
+  "sourceProfile": {
+    "path": "qualification/profiles/api-credit-application-source-v50.json",
+    "bytes": 356429,
+    "sha256": "aa77e3a388364a6381162d78eeee974635ac2aff96bf8c648981d2aac20a18b1"
+  },
+  "providerRetainedResource": {
+    "version": 1,
+    "scope": "MODE_SPECIFIC_ORIGINAL_FUNDING_RESOURCE_ADMISSION_SOURCE_CANDIDATE",
+    "modeAdmission": "src/issued-provider-funding-resource-admission.js",
+    "configurationCodec": "src/service-credit-zenon-funding-evidence.js#captureZenonFundingResourceConfiguration",
+    "nativeOperator": "src/issued-provider-native-operator.js",
+    "ownedApplication": "src/x402-issued-funding-grant-owned-native-application.js",
+    "freshPreparerAndAllOtherEvidenceLibraryBytesUnchanged": true,
+    "freshOriginalClockAndExpiryCheckPreserved": true,
+    "restoredModes": [
+      "RECORDED",
+      "JOURNAL",
+      "WITNESSED"
+    ],
+    "restoredConfigurationNoClockOrDefault": true,
+    "sharedActualModeFunction": true,
+    "configurationBeforeTLS": true,
+    "originalTermsBeforeRestoredProviderConstruction": true,
+    "exactOriginalAuthorityRecordAndDigest": true,
+    "exactOriginalChallengeAndDecodedFrame": true,
+    "independentBoundPinAndTwoStableReads": true,
+    "actualRecordedBackendStillChecksOutcomePin": true,
+    "earlyGateOutcomeChecked": false,
+    "noTermRefreshOrRowRepair": true,
+    "noNewIssuanceOrGrantAuthority": true,
+    "originalActivationAndVerifierMethodsUnchanged": true,
+    "sourceProviderOperatorInputs": 96,
+    "rootMetadataInputs": 1,
+    "providerCatalogRows": 499,
+    "providerCatalogApplicationRows": 95,
+    "packageRows": 404,
+    "explicitBareEdges": 4,
+    "defaultBuyerInputs": 167,
+    "defaultBuyerCatalogRows": 570,
+    "defaultBuyerGraphChanged": false,
+    "defaultBuyerCatalogAndReaderByteIdentical": true,
+    "defaultBuyerPackageRowsAndBareEdgesUnchanged": true,
+    "providerCatalogEdgeOrderPreserved": true,
+    "installedNamespaceQualified": false,
+    "nativeExecution": false,
+    "actualSDKOrSqlExecuted": false,
+    "native100Calls": "NOT_ESTABLISHED",
+    "nativeACKRecovery": "NOT_ESTABLISHED",
+    "nativeBudgetPersistence": "NOT_ESTABLISHED",
+    "externalOwnerFencing": "NOT_ESTABLISHED",
+    "physicalRelease": "NOT_ESTABLISHED",
+    "LinuxCommandExecution": "NOT_ESTABLISHED",
+    "originalDeliveryCompensationContract": "OPEN",
+    "G0G1G2Acceptance": "OPEN"
+  },
+  "proofManifest": {
+    "path": "qualification/issued-provider-retained-resource.proof-manifest.json",
+    "bytes": 432097,
+    "sha256": "74ebfa317055739f6f64eaceb5998f6581a22ff52fda776e15f62f888857b52a"
+  },
+  "operationalPorts": "DECLARED_MEMORY_ONLY",
+  "actualDataNodeCommands": 1,
+  "actualSyntaxNodeCommands": 3,
+  "failureInventory": {
+    "path": "qualification/issued-provider-retained-resource.failure-inventory.json",
+    "bytes": 797,
+    "sha256": "88e262b2ef2d79012842ef85c6e4bc8aff34ef7359daf16214c841a6cd00d0ca"
+  },
+  "sourceContract": {
+    "path": "qualification/issued-provider-retained-resource.source-contract.json",
+    "bytes": 3172,
+    "sha256": "e046a3847a57d4af585ea0b8db6daa8b236da7f4571fec237510a78824af04a4"
+  },
+  "nativeExecutions": 0,
+  "SDK": 0,
+  "SQLite": 0,
+  "keys": 0,
+  "signatures": 0,
+  "sockets": 0,
+  "signals": 0,
+  "nonceSearches": 0,
+  "nodeChildren": 0,
+  "actualPrepare": 0,
+  "payouts": 0,
+  "task": "CLOSED/SUCCESS",
+  "resources": {
+    "taskQuotaBytes": 4194304,
+    "plannedExecutionPeakBytes": 1912359,
+    "sourceInputs": 296,
+    "dataRuntimeInputs": 15,
+    "parserInputs": 3,
+    "reusedParserInputs": 42,
+    "invalidatedParserInputs": 3,
+    "retainedExactRuntimeDataControls": 1396,
+    "reexecutedRelevantDataControls": 0,
+    "sourceOnlyCASLookupsAvoided": 278,
+    "materializedInputs": 18,
+    "sourceOnlyAliasesAvoided": 278,
+    "CASVerifiedReuse": 12,
+    "CASNewImports": 6,
+    "sourceTextArchives": 0,
+    "minimumFreeFloorBytes": 10737418240,
+    "streamAllocationPlan": {
+      "serialCommands": true,
+      "maximumRetainedSuccessfulDataStdoutBytes": 18463,
+      "requiredSuccessfulStderrBytes": 0,
+      "maximumOnePendingStderrBytes": 1048576,
+      "unchangedParserReceiptsReused": 42,
+      "newParserCommands": 3,
+      "sourceAliasBytes": 258820,
+      "newSourceCASBytes": 97687,
+      "allReferencedSourceCASBytes": 258820,
+      "metadataMarginBytes": 262144,
+      "allReferencedCASChargedPerTask": true,
+      "preexistingCASAlsoCharged": true,
+      "serialDataCommands": 1
+    },
+    "serialDataCommands": 1,
+    "failedDataTasksThisTurn": 0,
+    "quotaExpanded": false,
+    "parserBatchAdmission": true,
+    "proofManifestDeduplicated": true
+  },
+  "nativePersistence": "NOT_ESTABLISHED",
+  "nativeAcceptance": "NOT_ESTABLISHED",
+  "externalOwnerFencing": "NOT_ESTABLISHED",
+  "physicalRelease": "NOT_ESTABLISHED",
+  "LinuxAcceptance": "NOT_ESTABLISHED",
+  "current108CISeparate": true,
+  "newControlsIncludedIn108CI": false
+}

@@ -111,6 +111,37 @@ or replaced with a default. The backend/drain code and their cooperative
 observation semantics are unchanged. Other selected deadlines retain their own
 bounds; this is not OS cancellation or physical-release qualification.
 
+## Restore the original resource after expiry
+
+FRESH continues to use the original issuance preparer and actual clock. A new
+issuance at or after the configured expiresAt is rejected. No expiry, terms,
+clock or grant policy is refreshed or defaulted.
+
+RECORDED, JOURNAL and WITNESSED now capture resource configuration without a
+new-issuance clock decision. Previously the ordinary command applied the fresh
+expiry check to every mode, refusing an expired original before it could open
+the selected historical stores. The configuration-only candidate creates no
+persisted issue, payment, verification receipt or grant and grants no authority.
+
+The owned restored opener compares this candidate with the exact independently
+pinned bound row before constructing the provider. It requires the original raw
+authority record and digest, complete challenge, decoded payment-required frame,
+selection and resource URL. Two exact bound-row reads must agree. Changed amount,
+payee, asset, units, expiry or authority is refused; no row is repaired or
+replaced. The actual recorded backend still separately checks the independently
+selected outcome digest and original complete custody context before serving.
+The early bound-row comparison does not claim to verify that outcome itself.
+
+The existing actual fresh preparer, activation/verifier methods and grant clock
+rules are unchanged. This permits restoration of original evidence; it does not
+mint or reactivate an expired grant, erase a paid obligation, authorize dispatch,
+prove delivery or authorize compensation. The separate late-payment/delivery
+contract, real fresh-process reopen and full G0/G1/G2 acceptance remain OPEN.
+
+Local controls use the actual pure configuration/mode/row functions with declared
+synthetic authority, row and clock DATA. Actual SDK, SQLite, journal, TLS/socket,
+keys/signatures, native command and physical release are not exercised.
+
 ## Explicit durable execution setup
 
 The native source entry now requires providerBootstrapVersion=3. It keeps the
