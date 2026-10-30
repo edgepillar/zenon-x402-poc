@@ -1,0 +1,291 @@
+{
+  "qualification": "G1_ORIGINAL_FUNDING_CHAIN_OBSERVER_DATA",
+  "status": "PASS",
+  "recordedAtUTC": "2026-10-30T02:11:02.082512+00:00",
+  "passed": 31,
+  "failed": 0,
+  "newControls": 31,
+  "reexecutedRelevantDataControls": 0,
+  "retainedEarlierTurnExactControls": 1271,
+  "retainedCurrentTurnCompletedRegressionControls": 31,
+  "aggregateVerifiedControls": 1333,
+  "cases": [
+    {
+      "id": "original-chain-constructor-is-inert-and-enters-no-queue-or-port",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-ack-to-inclusion-uses-original-read-chain-cas-and-readback",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-weak-inclusion-can-advance-one-to-three-with-original-observed-at",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-equal-inclusion-is-idempotent-with-no-cas",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-not-found-keeps-existing-ack-pending-without-terminalization",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-unconfirmed-node-ack-cannot-become-settled",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-contradictory-not-found-does-not-reuse-prior-inclusion",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-count-regression-holds-with-no-write",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-different-inclusion-is-conflict-not-replacement",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-original-resource-array-tags-preserved-and-unsafe-arrays-refused",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-original-identity-mismatch-refuses-before-queue-and-budget",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-read-requires-all-eight-stored-identity-fields-before-rpc",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-missing-record-does-not-create-or-observe-a-new-one",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-zero-and-sixteen-entry-bounds-are-not-refunded",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-failed-read-consumes-entry-and-cannot-retry",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-rpc-loss-preserves-ack-and-does-not-cas",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-lost-cas-ack-stays-held-after-declared-memory-commit",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-revision-conflict-is-not-retried",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-readback-revision-must-be-exact-after-cas",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-no-write-readback-cannot-adopt-concurrent-change",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-close-before-queue-release-prevents-late-resource-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-close-during-rpc-prevents-late-cas-and-never-repairs-held",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-close-during-cas-does-not-perform-late-readback",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-serialization-cannot-return-without-running-its-owned-work",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-duplicate-serialization-entry-holds-before-second-observation",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-unsafe-thenable-is-not-assimilated-by-port-consumer",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-admission-loss-after-node-read-prevents-cas",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-selected-real-projection-pending-to-success-keeps-one-context",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-v1-bootstrap-stays-journal-only-and-rejects-new-mode-field",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-v2-fresh-bootstrap-requires-explicit-closed-observation-mode",
+      "status": "PASS"
+    },
+    {
+      "id": "original-chain-v2-restored-modes-cannot-regain-live-rpc-continuation",
+      "status": "PASS"
+    }
+  ],
+  "nodeVersion": "24.19.0",
+  "platform": "darwin-arm64",
+  "nodeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25",
+  "rawQualificationSha256": "dd781378e3613d2486d0d911331a82919ca232d3a61a09b3c1f09a9a8e825d4a",
+  "sourceProfile": {
+    "path": "qualification/profiles/api-credit-application-source-v46.json",
+    "bytes": 338858,
+    "sha256": "03c10c976ca95e4ed6f17305d5da5f5085e506e88a661df9a70841281817d158"
+  },
+  "originalFundingChainObserver": {
+    "version": 1,
+    "scope": "EXPLICIT_ORIGINAL_ONLY_CHAIN_OBSERVER_SOURCE_CANDIDATE",
+    "pureOwner": "src/original-funding-chain-observer.js#createOriginalFundingChainObserver",
+    "nativeBinding": "src/zenon-payment.js#createZenonOriginalFundingChainObserver",
+    "providerRoles": "src/issued-provider-native-funding-roles.js",
+    "operator": "src/issued-provider-native-operator.js",
+    "bootstrapVersion1StillJournalOnly": true,
+    "bootstrapVersion2ExplicitModeRequired": true,
+    "originalRPCFreshOnly": true,
+    "recordedModesNoLiveContinuation": true,
+    "oneOriginalEightFieldContext": true,
+    "boundedOwnDataArraysAccepted": true,
+    "unsafeArraysRefusedWithoutAccessors": true,
+    "originalDurableBudgetBeforeCallback": true,
+    "localEntryConsumedBeforeQueue": true,
+    "maximumObservations": 16,
+    "noEntryRefund": true,
+    "fixedActualPayerQueue": true,
+    "sameExistingOnlyJournal": true,
+    "originalSnapshotBeforeRPC": true,
+    "actualOwnedSdkReadinessAndFullBlockValidator": true,
+    "oneOriginalBlockLookupPerEntry": true,
+    "readinessHasSeparateExistingReads": true,
+    "guardBeforeQueuedOwnerAndEachRPCLeg": true,
+    "originalOwnedSdkCleanupPreserved": true,
+    "ackUnconfirmedOrNotFoundRemainsPending": true,
+    "includedContradictionAndRegressionHeld": true,
+    "sameMomentumCountCASOnly": true,
+    "exactRevisionAndWholeRecordThenReadback": true,
+    "lostCASReceiptCannotRetry": true,
+    "originalThresholdProjectionUnchanged": true,
+    "stopBeforeSameProviderClose": true,
+    "lateRPCCannotCASOrRestart": true,
+    "noSettlementMaintenanceScan": true,
+    "noPublicationSignatureReplacementOrGrant": true,
+    "actualFacilitatorClassByteIdentical": true,
+    "sourceProviderOperatorInputs": 93,
+    "rootMetadataInputs": 1,
+    "providerCatalogRows": 496,
+    "providerCatalogApplicationRows": 92,
+    "packageRows": 404,
+    "explicitBareEdges": 4,
+    "defaultBuyerInputs": 167,
+    "defaultBuyerCatalogRows": 570,
+    "defaultBuyerAddedSourceInputs": [
+      "src/original-funding-chain-observer.js"
+    ],
+    "defaultBuyerPackageRowsAndBareEdgesUnchanged": true,
+    "defaultBuyerCatalogEdgeOrderPreserved": true,
+    "installedNamespaceQualified": false,
+    "actualJournalCASExecuted": false,
+    "nativeExecution": false,
+    "chainAuthentication": false,
+    "currentCanonicality": "NOT_ESTABLISHED",
+    "nativePersistence": "NOT_ESTABLISHED",
+    "native100Calls": "NOT_ESTABLISHED",
+    "nativeACKRecovery": "NOT_ESTABLISHED",
+    "nativeBudgetPersistence": "NOT_ESTABLISHED",
+    "externalOwnerFencing": "NOT_ESTABLISHED",
+    "physicalRelease": "NOT_ESTABLISHED",
+    "LinuxCommandExecution": "NOT_ESTABLISHED",
+    "G0G1G2Acceptance": "OPEN"
+  },
+  "proofManifest": {
+    "path": "qualification/original-funding-chain-observer.proof-manifest.json",
+    "bytes": 352703,
+    "sha256": "804653ad21df0657c38f218762458b67aeb677645da349c5bb68fc8f5092c88d"
+  },
+  "operationalPorts": "DECLARED_MEMORY_ONLY",
+  "actualDataNodeCommands": 1,
+  "actualSyntaxNodeCommands": 5,
+  "failureInventory": {
+    "path": "qualification/original-funding-chain-observer.failure-inventory.json",
+    "bytes": 23778,
+    "sha256": "62a81ee8e476ce13d025ac043c5cab48440a6a2705d13a5c4bd58893723205aa"
+  },
+  "sourceContract": {
+    "path": "qualification/original-funding-chain-observer.source-contract.json",
+    "bytes": 4131,
+    "sha256": "3b59f4494f53aa4b8efdfbec43c383e975467ab6754cae6c2315451adee0780a"
+  },
+  "nativeExecutions": 0,
+  "SDK": 0,
+  "SQLite": 0,
+  "keys": 0,
+  "signatures": 0,
+  "sockets": 0,
+  "signals": 0,
+  "nonceSearches": 0,
+  "nodeChildren": 0,
+  "actualPrepare": 0,
+  "payouts": 0,
+  "task": "CLOSED/SUCCESS",
+  "resources": {
+    "taskQuotaBytes": 4194304,
+    "plannedExecutionPeakBytes": 3211599,
+    "sourceInputs": 292,
+    "dataRuntimeInputs": 67,
+    "parserInputs": 5,
+    "reusedParserInputs": 40,
+    "invalidatedParserInputs": 4,
+    "retainedExactRuntimeDataControls": 1302,
+    "reexecutedRelevantDataControls": 0,
+    "sourceOnlyCASLookupsAvoided": 220,
+    "materializedInputs": 72,
+    "sourceOnlyAliasesAvoided": 220,
+    "CASVerifiedReuse": 68,
+    "CASNewImports": 4,
+    "sourceTextArchives": 0,
+    "minimumFreeFloorBytes": 10737418240,
+    "streamAllocationPlan": {
+      "serialCommands": true,
+      "maximumRetainedSuccessfulDataStdoutBytes": 19365,
+      "requiredSuccessfulStderrBytes": 0,
+      "maximumOnePendingStderrBytes": 1048576,
+      "unchangedParserReceiptsReused": 40,
+      "newParserCommands": 5,
+      "sourceAliasBytes": 907989,
+      "newSourceCASBytes": 40994,
+      "allReferencedSourceCASBytes": 907989,
+      "metadataMarginBytes": 262144,
+      "allReferencedCASChargedPerTask": true,
+      "preexistingCASAlsoCharged": true,
+      "serialDataCommands": 1
+    },
+    "serialDataCommands": 1,
+    "failedDataTasksThisTurn": 1,
+    "quotaExpanded": false,
+    "parserBatchAdmission": true,
+    "proofManifestDeduplicated": true,
+    "wholeTurnActualDataCommands": 3,
+    "wholeTurnSuccessfulDataCommands": 2,
+    "retainedCompletedCurrentGroupControls": 31,
+    "earlierTurnUnchangedControls": 1271,
+    "failedGroupControlsNotReused": 30
+  },
+  "nativePersistence": "NOT_ESTABLISHED",
+  "nativeAcceptance": "NOT_ESTABLISHED",
+  "externalOwnerFencing": "NOT_ESTABLISHED",
+  "physicalRelease": "NOT_ESTABLISHED",
+  "LinuxAcceptance": "NOT_ESTABLISHED",
+  "current108CISeparate": true,
+  "newControlsIncludedIn108CI": false
+}

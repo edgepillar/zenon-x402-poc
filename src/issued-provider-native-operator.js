@@ -55,6 +55,7 @@ export async function runNativeIssuedProviderOperator(args,readPackageState){
   if(!types.isPromise(promise)||types.isProxy(promise)){finish(false);return;}A(THEN,promise,[value=>finish(value===undefined),()=>finish(false)]);
  });}
   function closeProvider(){try{startDeadline();}catch{hold();}
+  try{if(frame.roles!==null&&frame.roles.stop()!==undefined)fail();}catch{hold();}
   if(frame.app===null)fail();return frame.app.close();}
  const closeAuxiliary=F(async()=>{
   if(frame.auxEntered){if(frame.auxHeld||!frame.auxClosed)fail();return;}frame.auxEntered=true;
@@ -87,7 +88,8 @@ export async function runNativeIssuedProviderOperator(args,readPackageState){
    const secret=await frame.pipes.readTlsMaterial(guard,args.bootstrapMs);try{guard();frame.tls=captureIssuedProviderTlsFrame(secret);}finally{secret.fill(0);}guard();
   frame.journal=new SettlementJournal({...c.journal,clock:F(()=>new DATE(now())),existingOnly:true});
   frame.pendingJournal=A(LOAD,frame.journal,[]);const loaded=await startupValue(frame.pendingJournal,c.control.operationBudgetMs);frame.pendingJournal=null;guard();if(c.applicationMode==='FRESH'&&loaded.records.length!==0)fail();
-  frame.roles=createIssuedProviderNativeFundingRoles({chain:c.chain,requirement:c.funding.terms.requirement,serviceSelection:c.funding.selection,journal:frame.journal,maximumPendingReconciliations:c.funding.maxPendingReconciliations});
+  frame.roles=createIssuedProviderNativeFundingRoles({chain:c.chain,requirement:c.funding.terms.requirement,serviceSelection:c.funding.selection,journal:frame.journal,maximumPendingReconciliations:c.funding.maxPendingReconciliations,
+   pendingObservationMode:c.providerBootstrapVersion===1?'JOURNAL_ONLY':c.funding.pendingObservationMode,currentGuard:guard});
   // Keep the fixed real facilitator, but guard its original methods around any
   // later lazy package import. A post-entry failure remains original UNKNOWN.
   const target=frame.roles.official.localFacilitator,proto=Object.getPrototypeOf(target),VERIFY=D(proto,'verify').value,SETTLE=D(proto,'settle').value;

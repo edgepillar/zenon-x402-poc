@@ -2517,8 +2517,8 @@
     },
     {
       "path": "src/issued-provider-native-funding-roles.js",
-      "bytes": 4452,
-      "sha256": "8b46f45df756b773c6a3f019b223fd5c37fab5add29f797fabc20f31ebd4ca0b",
+      "bytes": 5947,
+      "sha256": "6a7133c9fa8d5245e99321636cc891fef9c43b695d0e8561a0edf4da57d78e09",
       "format": "module"
     },
     {
@@ -2529,8 +2529,8 @@
     },
     {
       "path": "src/issued-provider-native-operator.js",
-      "bytes": 13477,
-      "sha256": "c918284038518e635dc2bc7c39380e5f9e91394a8854852acd9ea16ca172ad7b",
+      "bytes": 13685,
+      "sha256": "938cf14ab4ded2bc4945e875fa443a5a355d2537b654c34fcd4ccb1a168c33a2",
       "format": "module"
     },
     {
@@ -2541,8 +2541,8 @@
     },
     {
       "path": "src/issued-provider-operator-bootstrap.js",
-      "bytes": 12143,
-      "sha256": "3e1ae1ec86c7dd25e9c7db9de3afc5a06a527009d49bd4a46903df488fdeef3a",
+      "bytes": 12478,
+      "sha256": "2dd8f9f45d069effdb30451a5863428c0cf714ed0c885275fa855ec29bad46ad",
       "format": "module"
     },
     {
@@ -2627,6 +2627,12 @@
       "path": "src/official-funding-post-transition-witness.js",
       "bytes": 15064,
       "sha256": "fc28583cb307ac5809a9a5f22bee8e730550e96ee800294a0d5a036df60079c4",
+      "format": "module"
+    },
+    {
+      "path": "src/original-funding-chain-observer.js",
+      "bytes": 11206,
+      "sha256": "0e612f9ab03a544f261479ee41ba1b3975c801af2d4166298d0d88027dd4369b",
       "format": "module"
     },
     {
@@ -2931,8 +2937,8 @@
     },
     {
       "path": "src/zenon-payment.js",
-      "bytes": 128301,
-      "sha256": "44ee797207d557175256b5f69c89c5009e238e4c1b5b01c83b118b7e7b0ab35c",
+      "bytes": 135577,
+      "sha256": "ed62ceb8314c7ac2f70f8970080f515cf5eae26b4f5b60ed4c6dc642d5c912d5",
       "format": "module"
     },
     {

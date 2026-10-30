@@ -1,66 +1,61 @@
 # Issued-provider funding roles
 
 Source candidate for the one-funding, one-grant API-credit provider. Native
-execution is disabled by the current user instruction. This package supplies
-the missing fixed facilitator/pending-observer role assembly; it is not a
-completed Linux provider command or G1/G2 acceptance.
+execution is disabled. The single operator command is documented in
+[the source command contract](ISSUED_PROVIDER_OPERATOR_CLI.md); Linux and full
+G1/G2 acceptance remain OPEN.
 
-`createIssuedProviderNativeFundingRoles` accepts an actual, explicitly configured
-borrowed `SettlementJournal` constructed explicitly with `existingOnly: true`, one upfront requirement and service selection, an explicit existing
-operator-trusted testnet selection/RPC/timeout and a 0..16 pending budget. It
-constructs the real `ExactZenonFacilitator` and returns `official` for the existing
-owned provider's `funding.official` configuration. Its `validateChallenge` is a
-void-returning strict local validator. The original journal must already be initialized: a missing file/marker refuses
-without creating an empty replacement. The existing-only setting constrains
-acquisition; the real first settlement can still append its normal original
-record to the admitted journal. No arbitrary verifier, settlement callback,
-module path, implicit environment or mock facilitator is selected by this entry.
+`createIssuedProviderNativeFundingRoles` takes an actual borrowed
+`SettlementJournal` constructed with immutable `existingOnly: true`, the
+original upfront requirement and service selection, the explicit existing
+operator-trusted testnet policy/RPC/timeout, a 0..16 pending budget, an explicit
+pendingObservationMode and the native owner's current-admission check. It
+constructs the real `ExactZenonFacilitator` for the owned provider's
+funding.official configuration. Its challenge validator returns only void.
+The first verify/settle retains its original separate operational authority.
+No arbitrary verifier, settlement callback, module path, implicit environment
+or mock facilitator is selected.
 
-The first verifier/settlement entry retains the existing facilitator's real
-operational authority. The separate pending callback captures the selected
-payload, requirement and challenge and reads only the same original journal
-entry through its captured actual prototype method. It never calls `settle` or
-`runReconciliationMaintenance`, creates a fresh RPC observer, publishes, signs,
-writes custody or activates a grant. That distinction matters because general
-maintenance can enter original publication paths.
+JOURNAL_ONLY retains the existing original-journal reader. Bootstrap version 1
+always selects this mode and rejects new mode fields. Bootstrap version 2
+requires JOURNAL_ONLY or ORIGINAL_RPC explicitly. ORIGINAL_RPC is permitted only
+for FRESH; restored RECORDED/JOURNAL/WITNESSED modes cannot regain live pending
+continuation. RUN still refuses missing journals and nonempty FRESH journals.
 
-Before the first read, the callback derives the existing authorization key from
-the exact original resource, payment intent, chain profile and transaction hash.
-It compares all eight original journal fields, including the complete signed
-account block. Missing/tombstoned/unknown records, changed delivery state, a
-cached service response, foreign context or unsafe callback result cannot
-produce settlement success. A submission ACK or inclusion below the original
-threshold remains PENDING. The shared existing recovery projection normalizes
-included history; current canonicality remains NOT_ESTABLISHED. Native consumers
-must not mistake that history for provider attestation, grant activation,
-delivery proof, restored authority or a reason to repeat a payment.
+The selected pending observer captures the same payload, requirement and
+challenge, compares all eight original journal fields and applies the original
+confirmation threshold. ACK remains PENDING. In JOURNAL_ONLY mode no fresh
+chain read is produced; absent a separately admitted journal update it may
+remain pending or exhaust its original budget.
 
-One observer binds one tuple and consumes at most the original 0..16 local read
-entries. Concurrent entry is refused. A failed/opaque read consumes its entry and
-keeps HELD; closing during a read fences the late result. There is no retry,
-rebind, budget reset, cleanup or automatic restart. The adapter borrows its
-journal and its close method only retires this observer; it never closes the
-journal or asserts physical release. The embedding owner must close the same
-provider first, then this observer, before retiring its actual journal owner.
+[Explicit ORIGINAL_RPC](ORIGINAL_FUNDING_CHAIN_OBSERVER.md) uses the same actual
+facilitator's fixed payer queue, owned SDK session/readiness, one original-hash
+ledger lookup and existing journal CAS. It checks the returned full block/hash
+with the existing validator. Only ACK-to-inclusion or a stronger count for the
+same Momentum can update the original record, followed by exact revision and
+record readback. Missing/opaque/changed records and contradictory inclusion
+cannot become settlement success. General reconciliation maintenance and its
+worklist/tombstone policy are never the pending fallback. There is no new
+publication, signature, record creation, grant activation or delivery entry.
 
-Only the repository's existing explicit historical/current/DP testnet policy
-selectors are admitted, with their original acknowledgements and matching
-requirement chain profile. DP selectors additionally retain their exact event
-and endpoint selection. The reset-epoch facilitator additionally receives the
-selected original holder as its explicit expected payer. Remote plaintext RPC, credentials, URL aliases and
-missing settings are refused. Operator trust does not authenticate a running
-network, binary, genesis, active rules, canonicality or finality. G3a and any
-applicable DP G3b acceptance remain separate and OPEN.
+The real pending intake reserves its durable observation before invoking this
+callback. The separate observer binds one tuple and admits at most the original
+0..16 local entries without refund. Concurrent entry is refused. A failed or
+opaque queue/read/RPC/CAS receipt keeps HELD. Stop is requested before the same
+provider closes, fences queued or late work and never grants retry, rebind or
+restart. The owned SDK session remains its own closer. Roles borrow the journal
+and never close it or assert physical release.
 
-Journal-only pending can remain pending or exhaust when no separately admitted
-authenticated observer advances the original journal. This implementation does
-not disguise that gap as successful fresh chain observation.
+Only the repository's explicit historical/current/DP testnet policy selectors
+are admitted, retaining the original acknowledgements and matching chain
+profile. DP selections retain their exact event/endpoint and reset-epoch
+expected payer. Plaintext remote RPC, credentials, URL aliases and missing
+settings are refused. Operator trust does not authenticate a running network,
+binary, genesis, active rules, canonicality or finality. G3a and applicable DP
+G3b acceptance remain separate and OPEN.
 
-The remaining command work is bounded public bootstrap/credential/control
-channel admission, explicit actual journal acquisition/ownership and binding
-these roles to the existing owned provider. There is no documented executable
-provider command yet. The complete current SDK/core/SQLite/HTTPS graph, Linux
-startup, 100 real metered calls/exact replay, persisted reopen and physical
-release remain unexecuted. Current proof is pure DATA with declared memory
-readers/facilitators, plus a parser-only native adapter check. Existing successful
-native records retain their original source/runtime scope.
+Current local proof covers actual pure DATA with declared memory ports and
+parser-only native source. The actual SDK/core/SQLite/HTTPS/FIFO graph, Linux
+startup, one grant and 100 real calls/replay, fresh-process recovery and physical
+release have not been executed. Existing native evidence keeps its original
+source/runtime scope; source changes do not extend its qualification.

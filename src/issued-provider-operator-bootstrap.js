@@ -37,13 +37,15 @@ function json(v,depth=0,budget={nodes:8192,bytes:262144}){
 export function decodeIssuedProviderOperatorBootstrap(raw){
  if(arguments.length!==1)fail();text(raw,262144);let c;try{c=json(JSON.parse(raw));if(canonicalJson(c)!==raw)fail();}catch{fail();}
  c=fields(c,['providerBootstrapVersion','applicationMode','serviceStore','intakeStore','offer','funding','service','transport','journal','chain','recovery','witness','control']);
- if(c.providerBootstrapVersion!==1||!['FRESH','RECORDED','JOURNAL','WITNESSED'].includes(c.applicationMode))fail();
+ if(![1,2].includes(c.providerBootstrapVersion)||!['FRESH','RECORDED','JOURNAL','WITNESSED'].includes(c.applicationMode))fail();
  const s=fields(c.serviceStore,['databasePath','allowedRoot','busyTimeoutMs','maxStateBytes','maxOffers','maxGrants','maxRequests']);child(s.databasePath,s.allowedRoot);
  integer(s.busyTimeoutMs,1,60000);integer(s.maxStateBytes,512,16777216);integer(s.maxRequests,100,10000);if(s.maxOffers!==1||s.maxGrants!==1)fail();
  const i=fields(c.intakeStore,['databasePath','allowedRoot','ledgerDomain','maxChallenges']);child(i.databasePath,i.allowedRoot);text(i.ledgerDomain,128);integer(i.maxChallenges,1,16);if(s.databasePath===i.databasePath)fail();
  const model=new InMemoryServiceCreditModel({deriveCost:F(()=>1),now:F(()=>0)}),offer=Reflect.apply(REGISTER,model,[c.offer]);
  if(offer.costPolicyId!=='execution-receipt-unit-v1')fail();
- const f=fields(c.funding,['authorityRecord','terms','observerRoot','observerCatchUp','selection','resourceUrl','maxPendingReconciliations','maxIntakeAttempts','closeBudgetMs']);
+ const fundingFields=['authorityRecord','terms','observerRoot','observerCatchUp','selection','resourceUrl','maxPendingReconciliations','maxIntakeAttempts','closeBudgetMs'];
+ const f=fields(c.funding,c.providerBootstrapVersion===1?fundingFields:[...fundingFields,'pendingObservationMode']);
+ if(c.providerBootstrapVersion===2&&(!['JOURNAL_ONLY','ORIGINAL_RPC'].includes(f.pendingObservationMode)||f.pendingObservationMode==='ORIGINAL_RPC'&&c.applicationMode!=='FRESH'))fail();
  text(f.authorityRecord,65536);path(f.observerRoot);const selection=captureIssuedFundingPostServiceSelection(f.selection);
  const deriveFundingTerms=createFixedZenonFundingPolicy({offer,selection,terms:f.terms});if(f.terms.totalUnits<100)fail();
  const chain=captureIssuedProviderChainSelection(c.chain,f.terms.requirement);integer(f.maxPendingReconciliations,0,16);integer(f.maxIntakeAttempts,1,16);integer(f.closeBudgetMs,1,60000);
@@ -61,7 +63,7 @@ export function decodeIssuedProviderOperatorBootstrap(raw){
  const control=fields(c.control,['maxCommands','maxLineBytes','maxInputBytes','maxOutputBytes','closeWaitMs','operationBudgetMs']);integer(control.operationBudgetMs,1,60000);
  const channelLimits=captureBuyerOriginalFundingCommandLimits(F({maxCommands:control.maxCommands,maxLineBytes:control.maxLineBytes,maxInputBytes:control.maxInputBytes,maxOutputBytes:control.maxOutputBytes,closeWaitMs:control.closeWaitMs}));
  const state={configuration:F({...c,serviceStore:F(s),intakeStore:F(i),offer,funding:F({...f,selection,observerCatchUp:F(catchup)}),service:F(service),transport:F({...transport,generation:F(generation),limits,bind:F(bind)}),journal:F(j),recovery,witness,control:F(control)}),deriveFundingTerms,chain,channelLimits,consumed:false};
- const prepared=F({providerBootstrapVersion:1,applicationMode:c.applicationMode,productId:service.productId,channelLimits,operationBudgetMs:control.operationBudgetMs});PREPARED.set(prepared,state);return prepared;
+ const prepared=F({providerBootstrapVersion:c.providerBootstrapVersion,applicationMode:c.applicationMode,productId:service.productId,channelLimits,operationBudgetMs:control.operationBudgetMs});PREPARED.set(prepared,state);return prepared;
 }
 
 /** One explicit attachment of fixed native roles and TLS copies. Operational

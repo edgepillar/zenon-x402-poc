@@ -2642,6 +2642,12 @@
       "format": "module"
     },
     {
+      "path": "src/original-funding-chain-observer.js",
+      "bytes": 11206,
+      "sha256": "0e612f9ab03a544f261479ee41ba1b3975c801af2d4166298d0d88027dd4369b",
+      "format": "module"
+    },
+    {
       "path": "src/original-funding-signer-context-custody.js",
       "bytes": 9439,
       "sha256": "75ef6f91edf7d521f3c115ad5f67dcd8b6374ab573a604817390639a6be468e9",
@@ -2961,8 +2967,8 @@
     },
     {
       "path": "src/zenon-payment.js",
-      "bytes": 128301,
-      "sha256": "44ee797207d557175256b5f69c89c5009e238e4c1b5b01c83b118b7e7b0ab35c",
+      "bytes": 135577,
+      "sha256": "ed62ceb8314c7ac2f70f8970080f515cf5eae26b4f5b60ed4c6dc642d5c912d5",
       "format": "module"
     },
     {

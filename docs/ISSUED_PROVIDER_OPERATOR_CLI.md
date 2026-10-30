@@ -18,9 +18,9 @@ launcher, package admission, SDK, credential or file owner.
 RUN first admits its separate fixed module catalog through the existing ordinary
 resolve/load guard, then imports and checks the fixed native launcher before
 adopting any descriptor. The provider catalog includes the existing pinned
-SDK/core/Noble package rows and the explicit core/server entry. The buyer entry,
-graph and package policy remain unchanged; its catalog/reader are repinned for
-the additive journal serialization export described below. No installer, module path, loader choice,
+SDK/core/Noble package rows and the explicit core/server entry. The buyer entry and package policy remain unchanged; its source graph and
+catalog/reader are repinned for the original-only chain observer imported by
+the shared facilitator. No installer, module path, loader choice,
 mock mode or implicit operator environment is accepted. The native guard and
 ordinary installed namespace remain unqualified; trusted early boot source and
 unchanged runtime intrinsics are premises, not a hostile-process sandbox.
@@ -104,7 +104,7 @@ native journal durability and the complete G1/G2 product acceptance remain OPEN.
 
 All top-level fields are required:
 
-`providerBootstrapVersion: 1`, `applicationMode`, `serviceStore`, `intakeStore`,
+`providerBootstrapVersion` (1 or 2), `applicationMode`, `serviceStore`, `intakeStore`,
 `offer`, `funding`, `service`, `transport`, `journal`, `chain`, `recovery`,
 `witness`, `control`.
 
@@ -124,6 +124,12 @@ All top-level fields are required:
   exact resource/offer/terms/authority and absolute expiry before reading TLS.
   Its candidate is not persisted or served; actual intake issuance still
   rechecks its own contract.
+- Version 1 keeps the exact original funding fields and selects JOURNAL_ONLY.
+  Version 2 requires one additional funding.pendingObservationMode field,
+  exactly JOURNAL_ONLY or ORIGINAL_RPC. ORIGINAL_RPC is FRESH-only; recorded,
+  journal and witnessed recovery remain journal-only. There is no default RPC
+  activation or broad maintenance fallback. See the
+  [original-only observation contract](ORIGINAL_FUNDING_CHAIN_OBSERVER.md).
 - `chain` is the existing explicit selection, RPC URL and timeout contract from
   [fixed funding roles](ISSUED_PROVIDER_FUNDING_ROLES.md). Trust acknowledgements,
   chain profile and any DP event/endpoint match the original requirement. This

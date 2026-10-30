@@ -1,6 +1,7 @@
 import { performance } from 'node:perf_hooks';
 import { types as utilTypes } from 'node:util';
-import { paymentIntentDigest, sha256Hex } from './canonical.js';
+import { canonicalJson, paymentIntentDigest, sha256Hex } from './canonical.js';
+import { createOriginalFundingChainObserver } from './original-funding-chain-observer.js';
 import {
   createPaymentCapabilities,
   effectiveMinimumMomentumConfirmations,
@@ -1018,8 +1019,17 @@ async function withOwnedZenonSession({
   lifecycleRole,
   lifecycleObservations,
   readinessWork,
+  entryGuard,
   work,
 }) {
+  if (entryGuard !== undefined && (typeof entryGuard !== 'function' || utilTypes.isProxy(entryGuard) || !Object.isFrozen(entryGuard))) {
+    safetyError('sdk_entry_guard_invalid');
+  }
+  const checkEntry = () => {
+    if (entryGuard !== undefined && REFLECT_APPLY(entryGuard, undefined, []) !== undefined) {
+      safetyError('sdk_entry_guard_invalid');
+    }
+  };
   const hasAuthenticatorInput = authenticateChainProfile !== undefined;
   const hasAuthenticator = typeof authenticateChainProfile === 'function';
   const hasOperatorPolicy = operatorTrustedChainPolicy !== undefined;
@@ -1045,6 +1055,7 @@ async function withOwnedZenonSession({
     );
     let zenon;
     try {
+      checkEntry();
       recordLifecycle(
         lifecycleObserver,
         lifecycleObservations,
@@ -1052,6 +1063,7 @@ async function withOwnedZenonSession({
         `${lifecycleRole}_readiness_started`,
       );
       const { sdk, ed } = await loadZenonDeps();
+      checkEntry();
       const networkId = configuredTestnetNetworkId(environment);
       const operatorBoundRpcUrl = configuredOperatorTrustedRpcUrl(
         operatorTrustedChainPolicy,
@@ -1071,7 +1083,11 @@ async function withOwnedZenonSession({
         }
       }
       try {
-        await runRead(scope, zenon, rpcTimeoutMs, 'zenon.initialize', () => zenon.initialize(rpcUrl));
+        await runRead(scope, zenon, rpcTimeoutMs, 'zenon.initialize', () => {
+          checkEntry();
+          return zenon.initialize(rpcUrl);
+        });
+        checkEntry();
       } catch (error) {
         if (error?.code === LIVE_RUNTIME_ERROR_CODES.READ_TIMEOUT ||
             error?.code === LIVE_RUNTIME_ERROR_CODES.POISONED) throw error;
@@ -1083,10 +1099,14 @@ async function withOwnedZenonSession({
         authenticateChainProfile,
         expectedChainProfile,
         {
-          callRead: (operation, execute) => runRead(scope, zenon, rpcTimeoutMs, operation, execute),
+          callRead: (operation, execute) => runRead(scope, zenon, rpcTimeoutMs, operation, entryGuard === undefined ? execute : () => {
+            checkEntry();
+            return execute();
+          }),
           operatorTrustedChainPolicy,
         },
       );
+      checkEntry();
       sdk.Zenon.setChainID(readiness.chainId);
       let readinessFinished = false;
       const finishReadiness = () => {
@@ -1101,9 +1121,11 @@ async function withOwnedZenonSession({
       };
       const connection = { sdk, ed, zenon, ...readiness, finishReadiness };
       if (readinessWork !== undefined) {
+        checkEntry();
         await readinessWork(connection, scope);
         finishReadiness();
       }
+      checkEntry();
       return await work(connection, scope);
     } finally {
       const alreadyPoisoned = runtime.poisoned;
@@ -3238,6 +3260,93 @@ export class ExactZenonFacilitator {
     validateSettlementIdentity(settlement);
     return this.journal.markDelivered(settlement.authorizationKey, settlement.transaction, cachedResponse);
   }
+}
+
+/** Fixed ORIGINAL observation adapter. Construction is inert. Its caller must
+ * already own the selected server context and durable observation reservation.
+ * This uses the actual session/readiness/block validator and journal methods;
+ * no arbitrary RPC/writer, settle, maintenance, publication or signer is used.
+ */
+export function createZenonOriginalFundingChainObserver(options) {
+  const names = ['facilitator', 'chainProfile', 'expectedPayer', 'maximumObservations', 'check'];
+  if (arguments.length !== 1 || options === null || typeof options !== 'object' || utilTypes.isProxy(options) ||
+      Object.getPrototypeOf(options) !== Object.prototype || Reflect.ownKeys(options).length !== names.length) {
+    safetyError('original_chain_observer_invalid');
+  }
+  const c = {};
+  for (const name of names) {
+    const d = Object.getOwnPropertyDescriptor(options, name);
+    if (!d?.enumerable || !Object.hasOwn(d, 'value')) safetyError('original_chain_observer_invalid');
+    Object.defineProperty(c, name, { value: d.value, enumerable: true });
+  }
+  const target = c.facilitator;
+  if (target === null || typeof target !== 'object' || utilTypes.isProxy(target) ||
+      Object.getPrototypeOf(target) !== ExactZenonFacilitator.prototype || !FACILITATOR_RUNTIME_ENVIRONMENTS.has(target) ||
+      typeof c.check !== 'function' || utilTypes.isProxy(c.check) || !Object.isFrozen(c.check)) {
+    safetyError('original_chain_observer_invalid');
+  }
+  const chainNames = ['version', 'chainIdentifier', 'genesisMomentumHash'], chainData = {};
+  if (c.chainProfile === null || typeof c.chainProfile !== 'object' || utilTypes.isProxy(c.chainProfile) ||
+      Object.getPrototypeOf(c.chainProfile) !== Object.prototype || Reflect.ownKeys(c.chainProfile).length !== 3) {
+    safetyError('original_chain_observer_invalid');
+  }
+  for (const name of chainNames) {
+    const d = Object.getOwnPropertyDescriptor(c.chainProfile, name);
+    if (!d?.enumerable || !Object.hasOwn(d, 'value')) safetyError('original_chain_observer_invalid');
+    Object.defineProperty(chainData, name, { value: d.value, enumerable: true });
+  }
+  const chainProfile = Object.freeze(chainData);
+  validateZenonChainProfile(chainProfile);
+  const chainJson = canonicalJson(chainProfile), journal = target.journal, queue = target.payerQueue;
+  const policy = target.operatorTrustedChainPolicy, rpcUrl = target.rpcUrl, rpcTimeoutMs = target.rpcTimeoutMs;
+  const READ = Object.getOwnPropertyDescriptor(SettlementJournal.prototype, 'getEntrySnapshot').value;
+  const CAS = Object.getOwnPropertyDescriptor(SettlementJournal.prototype, 'compareAndUpdateEvidence').value;
+  const RUN = Object.getOwnPropertyDescriptor(PerPayerQueue.prototype, 'run').value;
+  function brands() {
+    if (journal === null || typeof journal !== 'object' || utilTypes.isProxy(journal) || Object.getPrototypeOf(journal) !== SettlementJournal.prototype ||
+        Object.hasOwn(journal, 'getEntrySnapshot') || Object.hasOwn(journal, 'compareAndUpdateEvidence') ||
+        Object.getOwnPropertyDescriptor(SettlementJournal.prototype, 'getEntrySnapshot').value !== READ ||
+        Object.getOwnPropertyDescriptor(SettlementJournal.prototype, 'compareAndUpdateEvidence').value !== CAS) safetyError('original_chain_observer_invalid');
+    const mode = Object.getOwnPropertyDescriptor(journal, 'existingOnly');
+    if (!mode || !Object.hasOwn(mode, 'value') || mode.value !== true || mode.configurable || mode.enumerable || mode.writable ||
+        queue === null || typeof queue !== 'object' || utilTypes.isProxy(queue) || Object.getPrototypeOf(queue) !== PerPayerQueue.prototype || Object.hasOwn(queue, 'run') ||
+        Object.getOwnPropertyDescriptor(PerPayerQueue.prototype, 'run').value !== RUN || target.journal !== journal || target.payerQueue !== queue || target.runtime !== liveSdkRuntime ||
+        target.authenticateChainProfile !== undefined || target.operatorTrustedChainPolicy !== policy || !isOperatorTrustedTestnetPolicy(policy) ||
+        canonicalJson(target.operatorTrustedChainProfile) !== chainJson || target.rpcUrl !== rpcUrl || target.rpcTimeoutMs !== rpcTimeoutMs ||
+        target.expectedPayer !== undefined && target.expectedPayer !== c.expectedPayer) safetyError('original_chain_observer_invalid');
+  }
+  brands();
+  let observer = null;
+  const admit = Object.freeze(() => {
+    observer.assertOpen();
+    if (REFLECT_APPLY(c.check, undefined, []) !== undefined) safetyError('original_chain_observer_invalid');
+    brands();observer.assertOpen();
+  });
+  observer = createOriginalFundingChainObserver({ chainProfile, expectedPayer: c.expectedPayer, maximumObservations: c.maximumObservations,
+    port: Object.freeze({ check: admit,
+      serialize: Object.freeze(operation => { admit();return REFLECT_APPLY(RUN, queue, [c.expectedPayer, operation]); }),
+      readJournal: Object.freeze(async original => {
+        admit();const value = await REFLECT_APPLY(READ, journal, [original.authorizationKey, original.transactionHash]);admit();return value;
+      }),
+      observeOriginalBlock: Object.freeze(async (original, entry) => {
+        admit();const environment = FACILITATOR_RUNTIME_ENVIRONMENTS.get(target);requireLiveAck(environment);configuredTestnetNetworkId(environment);
+        const value = await withOwnedZenonSession({ owner: 'facilitator.original-journal-observation', expectedChainProfile: chainProfile,
+          authenticateChainProfile: undefined, operatorTrustedChainPolicy: policy, environment, rpcUrl, runtime: liveSdkRuntime, rpcTimeoutMs, entryGuard: admit,
+          work: async ({ sdk, zenon }, scope) => {
+            admit();const observed = await runRead(scope, zenon, rpcTimeoutMs, 'ledger.getAccountBlockByHash', () => {
+              admit();return zenon.ledger.getAccountBlockByHash(sdk.Hash.parse(original.transactionHash));
+            });admit();
+            if (observed === null) return Object.freeze({ found: false, confirmationDetail: null });
+            const inspected = validateObservedJournalRecord(observed, entry, sdk);
+            const detail = inspected.confirmationDetail === null ? null : Object.freeze(normalizeConfirmationDetail(inspected.confirmationDetail));
+            return Object.freeze({ found: true, confirmationDetail: detail });
+          } });
+        admit();return value;
+      }),
+      compareAndUpdate: Object.freeze(async options => {
+        admit();const value = await REFLECT_APPLY(CAS, journal, [options]);admit();return value;
+      }) }) });
+  return observer;
 }
 
 function validateSettlementIdentity(settlement) {

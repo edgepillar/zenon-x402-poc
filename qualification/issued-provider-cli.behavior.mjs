@@ -89,6 +89,8 @@ check('provider-control-cancel-failure-cannot-turn-a-completed-callback-into-cle
 check('provider-control-timeout-keeps-late-success-held-with-no-new-output',async()=>{let resolve;const pending=new Promise(yes=>resolve=yes),f=fixture({input:[line('RESUME')],operation:()=>pending}),work=f.owner.run();await flush();const live=f.s.tokens.findLast(t=>!t.cancelled);assert.ok(live);live.callback();const result=await work;assert.equal(result.exitCode,4);const writes=f.s.writes.length;resolve(F({status:'SETTLED'}));await flush();assert.equal(f.owner.inspect().held,true);assert.equal(f.s.writes.length,writes);assert.deepEqual(f.s.operations,['RESUME']);});
 check('provider-control-explicit-close-is-idempotent-and-has-no-startup-acquisition',async()=>{const f=fixture(),a=f.owner.close(),b=f.owner.close();assert.equal(a,b);await a;assert.equal(f.s.trace.includes('start'),false);assert.equal(f.s.trace.filter(v=>v==='provider-close').length,1);assert.throws(()=>f.owner.run());});
 
+export function issuedProviderCliPublicDataProfile(mode='FRESH'){return profile(mode);}
+
 export const issuedProviderCliDataCases=F([...checks]);
 if(process.argv[1]===fileURLToPath(import.meta.url)){
  const cases=[];let current=null,reported=false;
