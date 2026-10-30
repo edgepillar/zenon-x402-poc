@@ -26,7 +26,7 @@ export function sdk105FundingServiceFixture(mode={}){
     commitOriginalFunding:F(function commit(input){f.commits++;f.commitInput=input;
       return Promise.resolve(Object.hasOwn(mode,'commitResult')?mode.commitResult:F({phase:'LOCAL_STORE_READBACK_MATCHED',transactionHash:f.packet.transactionHash,authority:'NONE'}));}),
     submitOriginalFunding:F(function submit(input){f.submits++;f.submitInput=input;
-      return Promise.resolve(F({phase:mode.unbound?'SUBMISSION_OUTCOME_UNKNOWN':'FUNDING_INTAKE_BOUND',fundingIntakeStatus:mode.unbound?'UNKNOWN':'BOUND'}));}),
+      return Promise.resolve(F({phase:mode.unbound?'SUBMISSION_OUTCOME_UNKNOWN':'FUNDING_INTAKE_BOUND',fundingIntakeStatus:mode.unbound?'UNKNOWN':'BOUND',transactionHash:f.packet.transactionHash}));}),
     handoffToService:F(function handoff(input){
       f.handoffs++;f.handoffInput=input;f.trace.push('handoff');
       if(f.onHandoff)return f.onHandoff(input);

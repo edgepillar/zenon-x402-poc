@@ -134,11 +134,17 @@ export function createSdk105FundingServiceLifecycle(configuration) {
     return out.promise;
   }
   function fundingWork(fn,kind,input){
-    if(phase!=='FUNDING')fail('operation_unavailable');
+    if(phase!=='FUNDING'||kind==='submit'&&transaction===null)fail('operation_unavailable');
     const out=capability();
     try{observe(APPLY(fn,client,[input]),value=>{
       try{plainResult(value);if(kind==='prepare')capturePacket(value);
-        if(kind==='submit')bound=data(value,'phase')==='FUNDING_INTAKE_BOUND'&&data(value,'fundingIntakeStatus')==='BOUND';
+        if(kind==='submit'){
+          // The same original must survive the funding receipt boundary. A
+          // late or unrelated BOUND cannot promote this owner's observation.
+          if(closing!==null||held||!invariant()||transaction===null
+              ||data(value,'transactionHash')!==transaction.hash)fail('observation_rejected');
+          bound=data(value,'phase')==='FUNDING_INTAKE_BOUND'&&data(value,'fundingIntakeStatus')==='BOUND';
+        }
         out.resolve(value);
       }catch{hold();out.reject(error('operation_unknown'));}
     },()=>out.reject(error('operation_refused_or_unknown')));}

@@ -3387,8 +3387,8 @@
     },
     {
       "path": "src/zenon/sdk105-funding-service-lifecycle.js",
-      "bytes": 16970,
-      "sha256": "ef8ba06f4e0f716197be5debc64eab65e973f0c354a33a6c4f385be6f32f9137",
+      "bytes": 17346,
+      "sha256": "604cc9f4f0f0df8c2034b1607f5be523f409cebc90682f103990ab442caeb32e",
       "format": "module"
     },
     {

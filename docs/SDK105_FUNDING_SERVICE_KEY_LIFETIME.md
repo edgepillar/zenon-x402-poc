@@ -115,3 +115,36 @@ source pins; they have not been relabeled as results for this current graph.
 The current result keeps the 124-case componentRegression separate from four
 real provided-pipe controls. All 124 cases were rerun after the shared session
 write-uncertainty fix; earlier command-host results retain their original pins.
+
+## Original funding receipt identity
+
+The same lifecycle used by the API-credit buyer now requires a prepared
+original before entering its funding child. Every returned funding observation
+must carry the exact transaction hash retained from that prepared payment.
+The real existing submission already returns this field; no new wire endpoint
+or SDK protocol is introduced. Missing, foreign, accessor or otherwise invalid
+receipt data refuses the observation and leaves the owner HELD.
+
+Before setting the local BOUND flag, the owner checks that it is still open,
+not HELD and on the same intrinsic contract. A matching response received after
+close cannot promote that flag. The existing spending wrapper then retains the
+same original exposure as UNKNOWN; it cannot reserve, sign or submit another
+original to repair the failed observation. A matching live BOUND still marks
+the same reservation SPENT and permits the normal explicit key-closed handoff
+and service operations. BOUND remains funding intake, not inclusion, delivery
+or settlement proof.
+
+[Eighteen new DATA cases](../qualification/original-funding-receipt.actual-local-result.json)
+exercise the actual lifecycle and spending owner with declared memory children.
+The 530 affected controls were rerun, including the existing 100-call reference
+product scenario. A further 985 controls retain exact runtime-input matches.
+One changed native package-reader file passed a parser-only check; 46 unchanged
+parser receipts were reused. The buyer catalog and its fixed reader digest
+were updated together, without changing their row count, dependency pins or
+resolution edges. The provider catalog and native SQL implementation are
+unchanged.
+
+These checks do not execute the native application, SDK/core, SQL, TLS, a real
+signer, nonce work or payment. Memory-owner reconstruction is not a process
+restart, physical release or Linux acceptance result. G0-G5 remain OPEN, and
+the existing approved 108-control hosted profile excludes these new local cases.

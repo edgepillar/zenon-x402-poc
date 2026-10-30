@@ -41,8 +41,8 @@ function application({ db = memory(), mode = 'bound', accountId = null, paymentI
   }, commitOriginalFunding() { return Promise.resolve(F({ phase: 'LOCAL_STORE_READBACK_MATCHED' })); },
   submitOriginalFunding() {
     submits++;
-    return h.submitGate ? h.submitGate.promise : Promise.resolve(F(h.mode === 'pending' ? { phase: 'FUNDING_INTAKE_PENDING', fundingIntakeStatus: 'PENDING' }
-      : { phase: 'FUNDING_INTAKE_BOUND', fundingIntakeStatus: 'BOUND' }));
+    return h.submitGate ? h.submitGate.promise : Promise.resolve(F(h.mode === 'pending' ? { phase: 'FUNDING_INTAKE_PENDING', fundingIntakeStatus: 'PENDING', transactionHash: packet.transactionHash }
+      : { phase: 'FUNDING_INTAKE_BOUND', fundingIntakeStatus: 'BOUND', transactionHash: packet.transactionHash }));
   }, handoffToService() { return Promise.reject(Error('not selected')); }, submitOriginal() { return Promise.reject(Error('not selected')); },
   inspect() { return F({ lifecycle: clientClosed ? 'CLOSED' : 'OPEN', held: false }); }, close() {
     closes++; clientClosed = true; if (h.onClose) h.onClose(); return Promise.resolve(undefined);
@@ -169,7 +169,7 @@ check('child-preparation-rejection-retains-unknown-exposure', async () => {
 check('close-during-funding-prevents-late-bound-from-upgrading-unknown', async () => {
   const h = application(); await h.root.prepareOriginalFunding(h.f.input); h.submitGate = gate(); const submit = h.root.submitOriginalFunding({});
   const closing = h.root.close(); assert.equal(JSON.parse(h.db.read()).reservations[0].status, 'UNKNOWN');
-  h.submitGate.resolve(F({ phase: 'FUNDING_INTAKE_BOUND', fundingIntakeStatus: 'BOUND' })); await assert.rejects(submit); await assert.rejects(closing);
+  h.submitGate.resolve(F({ phase: 'FUNDING_INTAKE_BOUND', fundingIntakeStatus: 'BOUND', transactionHash: h.packet.transactionHash })); await assert.rejects(submit); await assert.rejects(closing);
   assert.equal(JSON.parse(h.db.read()).reservations[0].status, 'UNKNOWN'); assert.equal(h.root.inspect().held, true);
 });
 check('close-reentry-uses-one-owned-stop-promise', async () => {

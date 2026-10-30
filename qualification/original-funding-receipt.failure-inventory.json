@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "qualification": "G1_G2_ORIGINAL_FUNDING_RECEIPT_FAILURE_INVENTORY",
+  "currentDataCaseFailures": 0,
+  "currentParserFailures": 0,
+  "currentFailedQualificationTasks": 0,
+  "unexpectedSkips": 0,
+  "cancellations": 0,
+  "preparationUnknowns": [
+    {
+      "rawQualificationSha256": "27d3f209600f1eff2bea5db5d5187eded0dcd8573836e8f06777c0950b9f6db0",
+      "classification": "HARNESS_REPORT_PROJECTION",
+      "status": "UNKNOWN",
+      "managedTaskCreated": false,
+      "dataCommands": 0,
+      "parserCommands": 0,
+      "correction": "Duplicate status projection corrected before any command; original report retained"
+    }
+  ],
+  "retainedPredecessorTaskFailure": {
+    "rawQualificationSha256": "a3f53b8f4ed525f28fa45dbac49c280b23210e23eb8ef3bbcac6dbc224cee52a",
+    "status": "UNKNOWN",
+    "taskOutcome": "FAILURE",
+    "classification": "COMMAND_RECORD_LIMIT",
+    "passedSourceControls": 425,
+    "wholeFailedTaskReclassified": false
+  },
+  "earlierInventoriesPreserved": true,
+  "nativeTestsExecuted": 0,
+  "nativeGates": "OPEN"
+}

@@ -69,9 +69,9 @@ function fixture({ pending = false, onWrite = null, createLifecycle = join } = {
   }), commitOriginalFunding: F(async function commit(input) { assert.deepEqual(input.expectedPins, packet.expectedPins); return F({ phase: 'LOCAL_STORE_READBACK_MATCHED' }); }),
   submitOriginalFunding: F(async function submit(input) {
     counts.funding++; assert.deepEqual(input.expectedPins, packet.expectedPins);
-    if (pending) return F({ phase: 'SUBMISSION_OUTCOME_UNKNOWN', fundingIntakeStatus: 'UNKNOWN' });
+    if (pending) return F({ phase: 'SUBMISSION_OUTCOME_UNKNOWN', fundingIntakeStatus: 'UNKNOWN', transactionHash: packet.transactionHash });
     h.grant = model.activateGrantFromTrustedRecord(activation()); counts.grants++;
-    return F({ phase: 'FUNDING_INTAKE_BOUND', fundingIntakeStatus: 'BOUND' });
+    return F({ phase: 'FUNDING_INTAKE_BOUND', fundingIntakeStatus: 'BOUND', transactionHash: packet.transactionHash });
   }), handoffToService: F(async function handoff(input) {
     counts.handoffs++; assert.equal(input.selectedGrantId, h.grant.grantId); return F({ phase: 'SERVICE_CLIENT_OPEN_ORIGINAL_RESTORED' });
   }), submitOriginal: F(async function submit(input) {
