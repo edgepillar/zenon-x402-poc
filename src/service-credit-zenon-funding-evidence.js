@@ -1,3 +1,4 @@
+import { captureIssuedExpiredFundingResult } from './issued-expired-funding-receipt.js';
 import { createHash } from 'node:crypto';
 import { types as utilTypes } from 'node:util';
 
@@ -1230,6 +1231,18 @@ export class ZenonFundingEvidenceActivation {
   }
 
   async activate(input) {
+    return this.#activate(input, false);
+  }
+
+  /** Explicit composition mode: authenticate the same original once, then
+   * report expiry without entering the grant store. Legacy activate retains
+   * its error contract. No failed/unknown store call becomes known funding. */
+  async activateWithExpiredFundingOutcome(input) {
+    if (arguments.length !== 1) failInput();
+    return this.#activate(input, true);
+  }
+
+  async #activate(input, expiredFundingOutcome) {
     const value = exactDataObject(input, ['intent', 'paymentRequired', 'fundingEvidence']);
     const activationIntent = normalizeIntent(value.intent);
     const selection = selectionFromIntent(activationIntent);
@@ -1284,7 +1297,7 @@ export class ZenonFundingEvidenceActivation {
       this.#now,
       'SERVICE_CREDIT_ZENON_FUNDING_EVIDENCE_CLOCK_FAILED',
     );
-    if (activationIntent.expiresAt <= beforeVerification) failRejected();
+    if (!expiredFundingOutcome && activationIntent.expiresAt <= beforeVerification) failRejected();
 
     let verificationPromise;
     try {
@@ -1309,7 +1322,7 @@ export class ZenonFundingEvidenceActivation {
       this.#now,
       'SERVICE_CREDIT_ZENON_FUNDING_EVIDENCE_SETTLED_NOT_GRANTED',
     );
-    if (activationIntent.expiresAt <= afterVerification) {
+    if (!expiredFundingOutcome && activationIntent.expiresAt <= afterVerification) {
       throw failure('SERVICE_CREDIT_ZENON_FUNDING_EVIDENCE_SETTLED_NOT_GRANTED');
     }
 
@@ -1347,6 +1360,12 @@ export class ZenonFundingEvidenceActivation {
       failRejected();
     }
 
+    // This branch follows every exact verified-record comparison. A bad
+    // clock or a foreign receipt cannot be classified as known expired funding.
+    if (expiredFundingOutcome && afterVerification < beforeVerification) {
+      throw failure('SERVICE_CREDIT_ZENON_FUNDING_EVIDENCE_SETTLED_NOT_GRANTED');
+    }
+
     const inclusionAuthorizationDigest = commitment(
       INCLUSION_AUTHORIZATION_DOMAIN,
       {
@@ -1372,6 +1391,19 @@ export class ZenonFundingEvidenceActivation {
       sourceSettlementCommitment,
       ['sha256:'.length],
     )}`;
+    if (expiredFundingOutcome && activationIntent.expiresAt <= afterVerification) {
+      const transactionHash = REFLECT_APPLY(STRING_SLICE, verified.transactionId, ['zenontx:'.length]);
+      return captureIssuedExpiredFundingResult(deepFreeze({
+        expiredFundingVersion: 1, status: 'FUNDED_NO_NEW_GRANT', transactionHash,
+        sourceSettlementId, fundingCommitment: expectedFunding,
+        expiresAt: activationIntent.expiresAt, eligibilityObservedAt: afterVerification, paymentAt: null,
+        grantActivation: 'NOT_ENTERED_THIS_OPERATION', grantExistence: 'NOT_QUERIED',
+        deliveryLiability: 'RECONCILIATION_REQUIRED', serviceDelivery: 'NOT_ESTABLISHED', compensation: 'NOT_ESTABLISHED',
+        verification: 'SELECTED_ORIGINAL_VERIFIER', mayStartPayment: false, maySignPayment: false,
+        mayDispatchService: false, mayActivateGrant: false, mayStartCompensation: false, authority: 'NONE',
+      }), deepFreeze({transactionHash, fundingCommitment: expectedFunding, expiresAt: activationIntent.expiresAt}));
+    }
+
     const activation = {
       activationVersion: SERVICE_CREDIT_ZENON_ACTIVATION_RECORD_VERSION,
       evidenceVersion: EVIDENCE_VERSION,

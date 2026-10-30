@@ -161,6 +161,7 @@ check('expired-owner-never-invokes-an-opaque-prepared-verifier-getter', async ()
   await held(f); assert.equal(hooks, 0); assert.equal(f.s.verifies + f.s.admissions, 0);
 });
 
+export const expiredOriginalFundingDataFixtures = F({context});
 export const expiredOriginalFundingDataCases = F([...checks]);
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const cases = []; let current = null, reported = false;

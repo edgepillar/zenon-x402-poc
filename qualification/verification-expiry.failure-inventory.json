@@ -1,0 +1,72 @@
+{
+  "version": 1,
+  "qualification": "G1_G2_VERIFICATION_EXPIRY_OUTCOME_FAILURE_INVENTORY",
+  "currentDataCaseFailures": 0,
+  "currentParserFailures": 0,
+  "currentFailedQualificationTasks": 0,
+  "unexpectedSkips": 0,
+  "cancellations": 0,
+  "currentPreparationUnknowns": [],
+  "priorSourceFailedTasksThisTurn": [],
+  "fixtureCorrections": [],
+  "productionRuntimeChangedAfterFailedAttempts": false,
+  "retainedPreparedPlan": {
+    "rawQualificationSha256": "c3b09332c65b098db1a87816367e50156b696c399c2918e7c58dba525e9d40d6",
+    "status": "PREPARED",
+    "managedTaskCreated": false,
+    "actualDataCommands": 0,
+    "actualParserCommands": 0
+  },
+  "retainedPriorTurnQualificationFailures": [
+    {
+      "sha256": "fed1285bd8d34140c45675b83cdbc64314dcc51ee33dc16fc40b8ae14c6bf453",
+      "status": "UNKNOWN",
+      "taskOutcome": "FAILURE",
+      "actualDataCommands": 1,
+      "actualParserCommands": 0,
+      "passed": 17,
+      "failed": 1,
+      "classification": "HARNESS_EXPECTED_GENERIC_EXIT_INSTEAD_OF_ESTABLISHED_CLOSE_UNKNOWN_4",
+      "failedGroupReused": false,
+      "nativeExecutions": 0
+    },
+    {
+      "bytes": 626293,
+      "sha256": "aa34081e58bfb6559d3bf8925043517c7d2bcacb2702037ad5967213b47ee069",
+      "status": "UNKNOWN",
+      "taskOutcome": "FAILURE",
+      "actualDataCommands": 1,
+      "actualParserCommands": 0,
+      "passed": 20,
+      "failed": 17,
+      "classification": "HARNESS_EXPECTED_REFERENCE_IDENTITY_INSTEAD_OF_DETACHED_QUERY_DATA",
+      "failedGroupReused": false,
+      "oldSourcePreserved": true
+    },
+    {
+      "bytes": 625200,
+      "sha256": "354cf37423b69c63c739b84b0cd697f82314521c7e927722bf1545a6865958a8",
+      "status": "UNKNOWN",
+      "taskOutcome": "FAILURE",
+      "actualDataCommands": 1,
+      "actualParserCommands": 0,
+      "passed": 36,
+      "failed": 1,
+      "classification": "HARNESS_CONFLATED_RETURNED_INVALID_DATA_WITH_UNRETURNED_CUSTODY_BORROWER",
+      "failedGroupReused": false,
+      "oldSourcePreserved": true
+    }
+  ],
+  "retainedPredecessorTaskFailure": {
+    "rawQualificationSha256": "a3f53b8f4ed525f28fa45dbac49c280b23210e23eb8ef3bbcac6dbc224cee52a",
+    "status": "UNKNOWN",
+    "taskOutcome": "FAILURE",
+    "classification": "COMMAND_RECORD_LIMIT",
+    "historicalPassedSourceControls": 425,
+    "wholeFailedTaskReclassified": false
+  },
+  "selectedExactControlsFromActualFailedTasks": 22,
+  "earlierInventoriesPreserved": true,
+  "nativeTestsExecuted": 0,
+  "nativeGates": "OPEN"
+}

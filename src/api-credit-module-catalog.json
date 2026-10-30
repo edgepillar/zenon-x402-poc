@@ -2642,6 +2642,12 @@
       "format": "module"
     },
     {
+      "path": "src/issued-expired-funding-receipt.js",
+      "bytes": 2509,
+      "sha256": "b4ce190574c656476f9092c975890f1b6d7576391351c9860f47058a87ffd644",
+      "format": "module"
+    },
+    {
       "path": "src/journal-momentum-confirmation-advance.js",
       "bytes": 1607,
       "sha256": "5deb0a7c1d2a279d949d9e13ad46d724d6e9360c795a4d887e48810f2834e2e9",
@@ -2919,8 +2925,8 @@
     },
     {
       "path": "src/service-credit-zenon-funding-evidence.js",
-      "bytes": 54078,
-      "sha256": "cf21c98b21d9097930ffca9e10c3d94d53c931d365991b7f76fe15f848b88038",
+      "bytes": 56046,
+      "sha256": "bbe35586b07c5d890402e62feb26545ebbe8dede69eab466896a3c4b7ce7a95f",
       "format": "module"
     },
     {

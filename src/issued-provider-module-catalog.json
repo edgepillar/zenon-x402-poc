@@ -2481,14 +2481,20 @@
     },
     {
       "path": "src/issued-expired-funding-preparation.js",
-      "bytes": 7692,
-      "sha256": "8a44da46541aa63443d4c3c47ac52350cdfa6b88166c60414b51c7471a2bb1b3",
+      "bytes": 6239,
+      "sha256": "c0d397f72af0c23e32601cad3631b70ae87188cdf5428d6a21ec8fdcdf29cd6b",
+      "format": "module"
+    },
+    {
+      "path": "src/issued-expired-funding-receipt.js",
+      "bytes": 2509,
+      "sha256": "b4ce190574c656476f9092c975890f1b6d7576391351c9860f47058a87ffd644",
       "format": "module"
     },
     {
       "path": "src/issued-funding-grant-activation-owner.js",
-      "bytes": 13007,
-      "sha256": "eef7052e028faf10676176d8959f96878d77483e9c8986f2a9f97608d72009b4",
+      "bytes": 13920,
+      "sha256": "c44d0b454531adf8b114564bc0dedfb188fb24ac99fbf42b0bf3fba78815ba31",
       "format": "module"
     },
     {
@@ -2817,14 +2823,14 @@
     },
     {
       "path": "src/service-credit-zenon-funding-composition.js",
-      "bytes": 30736,
-      "sha256": "44ad33d3b773053978b474978e7c45c8f29a4796b08b6cf4299b1c6e2fab900a",
+      "bytes": 32475,
+      "sha256": "ea598edfebcb13e6f32203a5b594190389fa376e5baf8aeceb4a37e138a8a278",
       "format": "module"
     },
     {
       "path": "src/service-credit-zenon-funding-evidence.js",
-      "bytes": 54078,
-      "sha256": "cf21c98b21d9097930ffca9e10c3d94d53c931d365991b7f76fe15f848b88038",
+      "bytes": 56046,
+      "sha256": "bbe35586b07c5d890402e62feb26545ebbe8dede69eab466896a3c4b7ce7a95f",
       "format": "module"
     },
     {
@@ -2883,8 +2889,8 @@
     },
     {
       "path": "src/x402-issued-funding-grant-native-activation.js",
-      "bytes": 6005,
-      "sha256": "1a367949dac8d62b8fb3d5f933e0f5836042bf8f23564f1e3d3c9179bd01eefc",
+      "bytes": 6075,
+      "sha256": "11d7244f50bebb4d271fba447abb25838aedf8954a5fe946391c4ea91571433b",
       "format": "module"
     },
     {

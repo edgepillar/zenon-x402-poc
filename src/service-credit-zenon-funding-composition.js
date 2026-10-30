@@ -1,3 +1,4 @@
+import { captureIssuedExpiredFundingResult } from './issued-expired-funding-receipt.js';
 import { createHash } from 'node:crypto';
 import { types as utilTypes } from 'node:util';
 
@@ -26,6 +27,7 @@ import {
 const NATIVE_PROMISE = Promise;
 const PROMISE_PROTOTYPE = NATIVE_PROMISE.prototype;
 const PROMISE_THEN = PROMISE_PROTOTYPE.then;
+const STRING_SLICE = String.prototype.slice;
 const ARRAY_IS_ARRAY = Array.isArray;
 const ARRAY_PROTOTYPE = Array.prototype;
 const ARRAY_JOIN = Array.prototype.join;
@@ -70,6 +72,7 @@ const OBSERVER_MATCH = OBSERVER_STORE_PROTOTYPE.matchReadyFundingEvidence;
 const ACTIVATION_PROTOTYPE = ZenonFundingEvidenceActivation.prototype;
 const ACTIVATION_CREATE_RESOURCE = ACTIVATION_PROTOTYPE.createFundingResource;
 const ACTIVATION_ACTIVATE = ACTIVATION_PROTOTYPE.activate;
+const ACTIVATION_WITH_EXPIRED_OUTCOME = ACTIVATION_PROTOTYPE.activateWithExpiredFundingOutcome;
 
 const MAX_DEPTH = 24;
 const MAX_ARRAY_LENGTH = 4_096;
@@ -588,6 +591,19 @@ function mappedActivationFailure(error, state) {
  * is never marked consumed here.
  */
 export function createZenonFundingComposition(options) {
+  return createComposition(options, false);
+}
+
+/** Fixed original-only opt-in. It accepts no replacement verifier, grant
+ * writer or receipt. Existing composition keeps its activation-error contract. */
+export function createZenonFundingCompositionWithExpiredFundingOutcome(options) {
+  if (arguments.length !== 1 || new.target !== undefined) {
+    fail('SERVICE_CREDIT_ZENON_FUNDING_COMPOSITION_INVALID_CONFIGURATION');
+  }
+  return createComposition(options, true);
+}
+
+function createComposition(options, expiredFundingOutcome) {
   const invalidConfiguration = 'SERVICE_CREDIT_ZENON_FUNDING_COMPOSITION_INVALID_CONFIGURATION';
   const value = exactDataObject(options, [
     'serviceCreditStore',
@@ -670,6 +686,10 @@ export function createZenonFundingComposition(options) {
     rejectPublicReentry();
     if (state.latched) fail('SERVICE_CREDIT_ZENON_FUNDING_COMPOSITION_LATCHED');
     assertBoundStores();
+    if (expiredFundingOutcome && !exactPrototypeMethod(ACTIVATION_PROTOTYPE,
+        'activateWithExpiredFundingOutcome', ACTIVATION_WITH_EXPIRED_OUTCOME)) {
+      fail('SERVICE_CREDIT_ZENON_FUNDING_COMPOSITION_INVALID_CONFIGURATION');
+    }
   }
   function loadChallengeEligibleObserver() {
     assertBoundStores();
@@ -809,7 +829,7 @@ export function createZenonFundingComposition(options) {
           fail('SERVICE_CREDIT_ZENON_FUNDING_COMPOSITION_NOT_READY');
         }
         artifact = snapshotJson(artifact);
-        sourcePromise = REFLECT_APPLY(ACTIVATION_ACTIVATE, activation, [{
+        sourcePromise = REFLECT_APPLY(expiredFundingOutcome ? ACTIVATION_WITH_EXPIRED_OUTCOME : ACTIVATION_ACTIVATE, activation, [{
           intent: captured.intent,
           paymentRequired: captured.paymentRequired,
           fundingEvidence: artifact,
@@ -824,7 +844,17 @@ export function createZenonFundingComposition(options) {
             reject(failure('SERVICE_CREDIT_ZENON_FUNDING_COMPOSITION_REENTRANT_OPERATION'));
             return;
           }
-          resolve(result);
+          try {
+            if (expiredFundingOutcome && result !== null && typeof result === 'object'
+                && !REFLECT_APPLY(IS_PROXY, undefined, [result]) && OBJECT_HAS_OWN(result, 'expiredFundingVersion')) {
+              result = captureIssuedExpiredFundingResult(result, OBJECT_FREEZE({
+                transactionHash: REFLECT_APPLY(STRING_SLICE, observerTargetBinding.transactionId, ['zenontx:'.length]),
+                fundingCommitment: observerTargetBinding.grantFundingCommitment,
+                expiresAt: observerTargetBinding.expiresAt,
+              }));
+            }
+            resolve(result);
+          } catch (error) { reject(mappedActivationFailure(error, state)); }
         },
         error => reject(mappedActivationFailure(error, state)),
       ]);

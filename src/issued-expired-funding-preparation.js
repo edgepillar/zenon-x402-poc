@@ -1,3 +1,5 @@
+import { captureIssuedExpiredFundingResult } from './issued-expired-funding-receipt.js';
+export { captureIssuedExpiredFundingResult };
 import { Buffer } from 'node:buffer';
 import { types } from 'node:util';
 import { deriveZenonFundingObserverTarget, verifyZenonIssuedFundingWithoutActivation } from './service-credit-zenon-funding-evidence.js';
@@ -5,10 +7,6 @@ import { deriveZenonFundingObserverTarget, verifyZenonIssuedFundingWithoutActiva
 const F = Object.freeze, D = Object.getOwnPropertyDescriptor, A = Reflect.apply;
 const NP = Promise, PP = NP.prototype, THEN = PP.then;
 const CONTEXT = ['offer', 'challenge', 'authorityProfile', 'transactionHash', 'payer', 'resourceUrl'];
-const RECEIPT = ['expiredFundingVersion', 'status', 'transactionHash', 'sourceSettlementId', 'fundingCommitment',
-  'expiresAt', 'eligibilityObservedAt', 'paymentAt', 'grantActivation', 'grantExistence', 'deliveryLiability',
-  'serviceDelivery', 'compensation', 'verification', 'mayStartPayment', 'maySignPayment', 'mayDispatchService',
-  'mayActivateGrant', 'mayStartCompensation', 'authority'];
 function fail() { throw new TypeError('ISSUED_EXPIRED_ORIGINAL_FUNDING'); }
 function own(value, key) {
   if (value === null || typeof value !== 'object' || types.isProxy(value) || Object.getPrototypeOf(value) !== Object.prototype) fail();
@@ -57,18 +55,6 @@ export function captureIssuedFundingActivationTime(expiresAt, readClock) {
 
 /** Closed powerless receipt. No claim that a grant never existed or that no
  * delivery/compensation occurred. Those independent obligations need recovery. */
-export function captureIssuedExpiredFundingResult(input, expected) {
-  if (arguments.length !== 2) fail(); const r = fields(input, RECEIPT), e = fields(expected, ['transactionHash', 'fundingCommitment', 'expiresAt']);
-  if (r.expiredFundingVersion !== 1 || r.status !== 'FUNDED_NO_NEW_GRANT' || r.transactionHash !== e.transactionHash
-      || !matches(/^[0-9a-f]{64}$/, r.transactionHash) || !matches(/^settlement_[0-9a-f]{64}$/, r.sourceSettlementId)
-      || r.fundingCommitment !== e.fundingCommitment || !matches(/^sha256:[0-9a-f]{64}$/, r.fundingCommitment)
-      || integer(r.expiresAt, 1) !== e.expiresAt || integer(r.eligibilityObservedAt) < r.expiresAt || r.paymentAt !== null
-      || r.grantActivation !== 'NOT_ENTERED_THIS_OPERATION' || r.grantExistence !== 'NOT_QUERIED'
-      || r.deliveryLiability !== 'RECONCILIATION_REQUIRED' || r.serviceDelivery !== 'NOT_ESTABLISHED'
-      || r.compensation !== 'NOT_ESTABLISHED' || r.verification !== 'SELECTED_ORIGINAL_VERIFIER' || r.authority !== 'NONE') fail();
-  for (const key of ['mayStartPayment', 'maySignPayment', 'mayDispatchService', 'mayActivateGrant', 'mayStartCompensation']) if (r[key] !== false) fail();
-  return F(r);
-}
 
 /** The fixed native binding supplies its existing committed observer projector
  * and matcher. The existing no-activation verifier authenticates and rebinds the

@@ -5,7 +5,7 @@ import { canonicalJson } from './canonical.js';
 import { ZenonFundingIntakeSqliteStore } from './service-credit-zenon-funding-intake-sqlite-store.js';
 import { ZenonFundingObserverSqliteStore } from './service-credit-zenon-funding-observer-sqlite-store.js';
 import { ServiceCreditSqliteStore } from './service-credit-sqlite-store.js';
-import { createZenonFundingComposition } from './service-credit-zenon-funding-composition.js';
+import { createZenonFundingCompositionWithExpiredFundingOutcome } from './service-credit-zenon-funding-composition.js';
 import { parseZenonFundingProviderAttestationAuthorityRecord } from './service-credit-zenon-funding-provider-attestation.js';
 import { captureIssuedFundingActivationTime, createIssuedExpiredFundingPreparation } from './issued-expired-funding-preparation.js';
 
@@ -47,10 +47,10 @@ export function createIssuedFundingGrantNativeActivationPreparation(options){
      verifyFundingEvidence:F(candidate=>new Promise((resolve,reject)=>{try{brand(observer,OBSERVER,'matchReadyFundingEvidence',MATCH);resolve(A(MATCH,observer,[candidate]));}catch{reject(new TypeError('ISSUED_EXPIRED_FUNDING_VERIFICATION'));}})),
    }));
   }
-  const original=canonicalJson(row),composition=createZenonFundingComposition({serviceCreditStore:c.serviceStore,fundingObserverStore:observer,
+  const original=canonicalJson(row),composition=createZenonFundingCompositionWithExpiredFundingOutcome({serviceCreditStore:c.serviceStore,fundingObserverStore:observer,
    authorityRecord:c.authorityRecord,deriveFundingTerms:c.deriveFundingTerms,now:c.now});
   const activate=D(composition,'activateCommittedFunding')?.value;if(typeof activate!=='function'||types.isProxy(activate))fail();
-  return F({status:'READY',activate:F(function activateOriginal(){if(arguments.length!==0)fail();const rows=loadBound();if(!Array.isArray(rows)||rows.length!==1||canonicalJson(rows[0])!==original)fail();
+  return F({status:'READY_WITH_EXPIRY_OUTCOME',activate:F(function activateOriginal(){if(arguments.length!==0)fail();const rows=loadBound();if(!Array.isArray(rows)||rows.length!==1||canonicalJson(rows[0])!==original)fail();
    return A(activate,composition,[F({intent,paymentRequired})]);})});
  });
  return F({loadBound,prepareActivation});
