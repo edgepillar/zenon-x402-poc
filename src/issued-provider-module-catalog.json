@@ -2517,8 +2517,8 @@
     },
     {
       "path": "src/issued-provider-native-operator.js",
-      "bytes": 12600,
-      "sha256": "fe45093fd302e9228ddc0d3448f19d5d841993db504074fc6b0663ce8f5b0552",
+      "bytes": 13477,
+      "sha256": "c918284038518e635dc2bc7c39380e5f9e91394a8854852acd9ea16ca172ad7b",
       "format": "module"
     },
     {
@@ -2549,6 +2549,12 @@
       "path": "src/issued-provider-selected-journal-observer.js",
       "bytes": 4933,
       "sha256": "063a7fd50b3e38e0e2b1b1b025b2536655a9a648e5b43260d42d93354c98985d",
+      "format": "module"
+    },
+    {
+      "path": "src/issued-provider-startup-stop.js",
+      "bytes": 3304,
+      "sha256": "826330cc39a851354e2abcbf49a97438a798e5ceaf226de95cc98a29c31ac132",
       "format": "module"
     },
     {

@@ -154,9 +154,19 @@ original stops even after observation failure and never turns a late receipt
 into a clean earlier result. Bootstrap descriptors have their same remaining
 native close observation window. Unknown partial acquisition or release retains
 the frame; there is no raw-close fallback after transfer, force-close, reopen,
-automatic retry, migration or historical cleanup. SIGINT/SIGTERM request the
-same cached close operation; the entry never uses process.exit to manufacture
-release.
+automatic retry, migration or historical cleanup. SIGINT/SIGTERM handlers are
+installed before the first descriptor acquisition. A sticky stop selector is
+cached before callback entry: before control handoff it requests only the same
+bootstrap pipe stop, and afterwards only the same control close. Repeated or
+reentrant signals reuse that receipt. A stop before handoff refuses a later
+handoff and every subsequent guarded acquisition. Late profile/TLS bytes are
+wiped without opening the next resource. A stop interrupts startup journal
+observation without canceling or releasing its entered read; the original
+promise remains retained and cannot start roles on a late result. The first
+stop begins the native close window; neither finalization nor a later signal
+renews it. Both signal subscriptions are removed on the finalization path,
+including partial subscription failures. The entry never uses process.exit
+to manufacture release. Actual OS signal delivery is unqualified.
 
 Exit 0 means the observed control/provider/channel closure completed; exit 1
 means input was refused with known closure; exit 4 retains HELD/unknown. None

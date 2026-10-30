@@ -7,6 +7,7 @@ import { types,TextDecoder } from 'node:util';
 import { canonicalJson } from './canonical.js';
 import { decodeIssuedProviderOperatorBootstrap,readIssuedProviderOperatorBootstrap,bindIssuedProviderOperatorBootstrap,captureIssuedProviderTlsFrame } from './issued-provider-operator-bootstrap.js';
 import { createIssuedProviderOperatorControl } from './issued-provider-operator-control.js';
+import { createIssuedProviderStartupStop } from './issued-provider-startup-stop.js';
 import { createNativeIssuedProviderOperatorPipes } from './issued-provider-native-pipes.js';
 import { createBuyerCommandLineChannel } from './buyer-command-line-channel.js';
 import { createOwnedIssuedFundingGrantNativeApplication } from './x402-issued-funding-grant-owned-native-application.js';
@@ -32,22 +33,28 @@ function brand(v,proto,name,method){if(v===null||typeof v!=='object'||types.isPr
  */
 export async function runNativeIssuedProviderOperator(args,readPackageState){
  if(arguments.length!==2||entered||FAILED.size!==0||typeof readPackageState!=='function'||types.isProxy(readPackageState))fail();entered=true;
- const frame={pipes:null,prepared:null,config:null,tls:null,journal:null,roles:null,witness:null,witnessEntered:false,app:null,appEntered:false,
+  const frame={pipes:null,pipesEntered:false,prepared:null,config:null,tls:null,journal:null,roles:null,witness:null,witnessEntered:false,app:null,appEntered:false,
   channel:null,channelEntered:false,commandsEntered:false,observer:null,observerEntered:false,observerName:null,observerKey:null,observerClosed:false,auxEntered:false,auxClosed:false,auxHeld:false,control:null,deadline:null,pendingJournal:null};
- const now=F(()=>A(NOW,DATE,[])),clock=F(()=>A(CLOCK,hrtime,[])),guard=F(()=>{if(readPackageState()!=='READY')fail();});
+  const now=F(()=>A(NOW,DATE,[])),clock=F(()=>A(CLOCK,hrtime,[]));
  function hold(){frame.auxHeld=true;FAILED.add(frame);}
+  function startDeadline(){if(frame.deadline===null)frame.deadline=clock()+BigInt(frame.prepared?.channelLimits.closeWaitMs??args.bootstrapMs)*1000000n;}
+  const stopping=createIssuedProviderStartupStop(F(()=>{try{startDeadline();}catch{hold();}return frame.pipes===null?Promise.resolve():frame.pipes.close();}));
+  const guard=F(()=>{stopping.check();if(readPackageState()!=='READY')fail();stopping.check();});
  function remaining(){const n=frame.deadline===null?0n:frame.deadline-clock();return n>0n?Math.max(1,Number((n+999999n)/1000000n)):1;}
  function startupValue(promise,budget){const deadline=clock()+BigInt(budget)*1000000n;return new Promise((resolve,reject)=>{
   let settled=false;const finish=(ok,value)=>{if(settled)return;settled=true;clearTimeout(timer);if(!ok||clock()>deadline){hold();reject(new TypeError('ISSUED_PROVIDER_JOURNAL_STARTUP_HELD'));}else resolve(value);};
   const timer=setTimeout(()=>finish(false),budget);if(!types.isPromise(promise)||types.isProxy(promise)){finish(false);return;}
-  A(THEN,promise,[value=>finish(true,value),()=>finish(false)]);
+   A(THEN,promise,[value=>finish(true,value),()=>finish(false)]);
+   // Stop observation never cancels or releases the journal's entered read.
+   // Its original promise stays in the retained frame after an early stop.
+   A(THEN,stopping.whenRequested,[()=>finish(false),()=>finish(false)]);
  });}
  function closeObservation(promise,budget){return new Promise(resolve=>{
   let settled=false;const finish=ok=>{if(settled)return;settled=true;clearTimeout(timer);resolve(ok&&frame.deadline!==null&&clock()<=frame.deadline);};
   const timer=setTimeout(()=>finish(false),budget);
   if(!types.isPromise(promise)||types.isProxy(promise)){finish(false);return;}A(THEN,promise,[value=>finish(value===undefined),()=>finish(false)]);
  });}
- function closeProvider(){if(frame.deadline===null)frame.deadline=clock()+BigInt(frame.prepared?.channelLimits.closeWaitMs??args.bootstrapMs)*1000000n;
+  function closeProvider(){try{startDeadline();}catch{hold();}
   if(frame.app===null)fail();return frame.app.close();}
  const closeAuxiliary=F(async()=>{
   if(frame.auxEntered){if(frame.auxHeld||!frame.auxClosed)fail();return;}frame.auxEntered=true;
@@ -60,10 +67,14 @@ export async function runNativeIssuedProviderOperator(args,readPackageState){
    frame.auxClosed=true;
   }catch{hold();fail();}
  });
- let exitCode=4,result=null,onSignal=null;
+  let exitCode=4,result=null;const signals=[];
+  const onSignal=F(()=>{try{A(THEN,stopping.requestStop(),[()=>{},()=>hold()]);}catch{hold();}});
  try{
-  guard();frame.pipes=createNativeIssuedProviderOperatorPipes(args);
-  const raw=await frame.pipes.readProfile(guard,args.bootstrapMs);try{frame.prepared=decodeIssuedProviderOperatorBootstrap(new TextDecoder('utf8',{fatal:true,ignoreBOM:true}).decode(raw));}finally{raw.fill(0);}guard();
+   // Subscribe before the first descriptor acquisition. Record entry before
+   // subscribing so a partial subscription failure still owns its removal.
+   for(const name of ['SIGINT','SIGTERM']){signals.push(name);process.on(name,onSignal);}
+   guard();frame.pipesEntered=true;frame.pipes=createNativeIssuedProviderOperatorPipes(args);guard();
+   const raw=await frame.pipes.readProfile(guard,args.bootstrapMs);try{guard();frame.prepared=decodeIssuedProviderOperatorBootstrap(new TextDecoder('utf8',{fatal:true,ignoreBOM:true}).decode(raw));}finally{raw.fill(0);}guard();
   const c=frame.config=readIssuedProviderOperatorBootstrap(frame.prepared);
   const authority=parseZenonFundingProviderAttestationAuthorityRecord(c.funding.authorityRecord);
   if(canonicalJson(authority.chainProfile)!==canonicalJson(c.funding.terms.requirement.extra.zenonChain)
@@ -73,7 +84,7 @@ export async function runNativeIssuedProviderOperator(args,readPackageState){
   // transaction, proof or grant; the real intake rechecks its own issuance.
   prepareZenonFundingResource({offer:c.offer,selection:c.funding.selection,resourceUrl:c.funding.resourceUrl,
    deriveFundingTerms:createFixedZenonFundingPolicy({offer:c.offer,selection:c.funding.selection,terms:c.funding.terms}),authorityProfile:authority.authorityProfile,now});
-  const secret=await frame.pipes.readTlsMaterial(guard,args.bootstrapMs);try{frame.tls=captureIssuedProviderTlsFrame(secret);}finally{secret.fill(0);}guard();
+   const secret=await frame.pipes.readTlsMaterial(guard,args.bootstrapMs);try{guard();frame.tls=captureIssuedProviderTlsFrame(secret);}finally{secret.fill(0);}guard();
   frame.journal=new SettlementJournal({...c.journal,clock:F(()=>new DATE(now())),existingOnly:true});
   frame.pendingJournal=A(LOAD,frame.journal,[]);const loaded=await startupValue(frame.pendingJournal,c.control.operationBudgetMs);frame.pendingJournal=null;guard();if(c.applicationMode==='FRESH'&&loaded.records.length!==0)fail();
   frame.roles=createIssuedProviderNativeFundingRoles({chain:c.chain,requirement:c.funding.terms.requirement,serviceSelection:c.funding.selection,journal:frame.journal,maximumPendingReconciliations:c.funding.maxPendingReconciliations});
@@ -103,19 +114,19 @@ export async function runNativeIssuedProviderOperator(args,readPackageState){
    closeAuxiliary,inspectAuxiliary:F(()=>F({closed:frame.auxClosed,held:frame.auxHeld,active:frame.roles?.snapshot().busy??false})),clock,
    armTimer:F((ms,fn)=>setTimeout(fn,ms)),cancelTimer:F(token=>{clearTimeout(token);})});
   frame.control=createIssuedProviderOperatorControl({mode:c.applicationMode,limits:frame.prepared.channelLimits,operationBudgetMs:frame.prepared.operationBudgetMs,ports});
-  onSignal=()=>{try{frame.control.close().then(()=>{},()=>hold());}catch{hold();}};process.on('SIGINT',onSignal);process.on('SIGTERM',onSignal);
+   stopping.attachControl(frame.control.close);guard();
   result=await frame.control.run();exitCode=result.exitCode;
  }catch{hold();exitCode=4;}
  finally{
   try{if(frame.tls!==null)frame.tls.release();}catch{hold();}
-  if(frame.deadline===null)frame.deadline=clock()+BigInt(frame.prepared?.channelLimits.closeWaitMs??args.bootstrapMs)*1000000n;
+   try{startDeadline();}catch{hold();}
   try{if(frame.control!==null)await frame.control.close();else if(frame.app!==null){if(!await closeObservation(closeProvider(),remaining()))fail();await closeAuxiliary();}
-   else if(frame.appEntered||frame.witnessEntered||frame.observerEntered||frame.channelEntered||frame.commandsEntered)fail();
+    else if(frame.appEntered||frame.witnessEntered||frame.observerEntered||frame.channelEntered||frame.commandsEntered||frame.pipesEntered&&frame.pipes===null)fail();
    else if(frame.roles!==null)frame.roles.close();
   }catch{hold();}
   try{if(frame.pipes!==null&&!await closeObservation(frame.pipes.close(),remaining()))fail();}catch{hold();}
-  if(onSignal!==null){process.off('SIGINT',onSignal);process.off('SIGTERM',onSignal);}
-  if(frame.auxHeld)exitCode=4;
+   for(const name of signals){try{process.off(name,onSignal);}catch{hold();}}
+   if(frame.auxHeld||stopping.inspect().held)exitCode=4;
  }
  return F({providerOperatorResultVersion:1,status:exitCode===0?'CLOSED':exitCode===1?'INPUT_REFUSED':'HELD',exitCode,physicalRelease:'NOT_ESTABLISHED',nativeAcceptance:'NOT_ESTABLISHED'});
 }

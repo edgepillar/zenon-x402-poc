@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "qualification": "G2_ISSUED_PROVIDER_STARTUP_STOP_FAILURE_INVENTORY",
+  "status": "NO_NEW_FAILURE;PRIOR_FAILURES_PRESERVED",
+  "failures": [],
+  "currentDataFailures": 0,
+  "currentParserFailures": 0,
+  "priorInventory": {
+    "path": "qualification/issued-provider-cli.failure-inventory.json",
+    "sha256": "c08c300df351d2236ade037e9a8400b309312cdf678e86897056b28bfd295f21"
+  },
+  "priorFailuresReclassified": false,
+  "nativeExecutions": 0
+}
