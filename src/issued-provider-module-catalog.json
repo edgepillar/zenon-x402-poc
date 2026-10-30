@@ -2451,8 +2451,8 @@
     },
     {
       "path": "src/api-credit-recorded-service-result.js",
-      "bytes": 12169,
-      "sha256": "aebac97aabe729b02746c2846583f5e41c4b635495943481686d0b41b1221f0e",
+      "bytes": 13507,
+      "sha256": "e3705ff7bb8fc4e58e9b5c75954a7824728348367ee75cc507a4758e06ae266f",
       "format": "module"
     },
     {
@@ -2516,6 +2516,12 @@
       "format": "module"
     },
     {
+      "path": "src/issued-provider-close-observation.js",
+      "bytes": 1998,
+      "sha256": "3843045e78f0e211cdc7a19db5ee8effbea4b0e634f733285a7c8cac64d74561",
+      "format": "module"
+    },
+    {
       "path": "src/issued-provider-execution-setup.js",
       "bytes": 4484,
       "sha256": "21240ebbc0277976f3985274b961c12121f59ab6c82fad44435ee8b88baa8d77",
@@ -2547,8 +2553,8 @@
     },
     {
       "path": "src/issued-provider-native-operator.js",
-      "bytes": 14264,
-      "sha256": "ffdfd5de29c2fa32f4107a58169d8df589700a1c7c16d3ef6cf6da56566582bf",
+      "bytes": 14909,
+      "sha256": "111cd6eaf052920b83819304061f20ad4e0ae319ba953726257e368a5a41c860",
       "format": "module"
     },
     {
@@ -2565,8 +2571,8 @@
     },
     {
       "path": "src/issued-provider-operator-control.js",
-      "bytes": 12493,
-      "sha256": "76f12f447c037f9b537c45d3bdf9d76aa2987c4bea84ccc1f7116ccb916f20ce",
+      "bytes": 12904,
+      "sha256": "3f083f0291e60b7e36b72e9dd7771c3cada26a9b433c2800a0fae55b67b3ab4b",
       "format": "module"
     },
     {

@@ -1,3 +1,4 @@
+import { requireIssuedProviderClosedOwners } from './issued-provider-close-observation.js';
 // SOURCE/PARSER ONLY: actual journal/SQL/core/SDK/TLS/FIFO use is unexecuted.
 import process,{hrtime} from 'node:process';
 import { Buffer } from 'node:buffer';
@@ -131,6 +132,14 @@ export async function runNativeIssuedProviderOperator(args,readPackageState){
   }catch{hold();}
   try{if(frame.pipes!==null&&!await closeObservation(frame.pipes.close(),remaining()))fail();}catch{hold();}
    for(const name of signals){try{process.off(name,onSignal);}catch{hold();}}
+   // The controller result is historical across the final pipe/signal awaits.
+   // Re-read the same returned owners before preserving a clean exit. This
+   // cannot repair HELD, repeat a stop or establish atomic/physical release.
+   try{if(exitCode===0||exitCode===1){
+     if(frame.control===null||frame.app===null||frame.channel===null)fail();
+     requireIssuedProviderClosedOwners(frame.app.snapshot(),
+       F({closed:frame.auxClosed,held:frame.auxHeld,active:frame.roles?.snapshot().busy??false}),frame.channel.inspect());
+   }}catch{hold();}
    if(frame.auxHeld||stopping.inspect().held)exitCode=4;
  }
  return F({providerOperatorResultVersion:1,status:exitCode===0?'CLOSED':exitCode===1?'INPUT_REFUSED':'HELD',exitCode,physicalRelease:'NOT_ESTABLISHED',nativeAcceptance:'NOT_ESTABLISHED'});

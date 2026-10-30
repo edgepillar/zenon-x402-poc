@@ -1,3 +1,4 @@
+import { requireIssuedProviderClosedAuxiliary, requireIssuedProviderClosedOwners } from './issued-provider-close-observation.js';
 import { Buffer } from 'node:buffer';
 import { types } from 'node:util';
 import { canonicalJson } from './canonical.js';
@@ -68,6 +69,11 @@ export function createIssuedProviderOperatorControl(options){
  function cleanProvider(){const v=inspect(p.inspectProvider);if(v.phase!=='CLOSED'||v.held!==false||v.released!==true||v.activeOperations!==0)fail();}
  function cleanChannel(){const v=inspect(p.inspectChannel);if(v.lifecycle!=='CLOSED'||v.held!==false||v.reading!==false||v.writing!==false||v.writeCallbackPending!==false
   ||v.inputClosed!==true||v.outputClosed!==true||v.historicalClose!=='FULFILLED_UNDEFINED')fail();}
+ function cleanReturnedOwners(includeChannel=false){
+  const provider=inspect(p.inspectProvider),auxiliary=inspect(p.inspectAuxiliary);
+  if(includeChannel)requireIssuedProviderClosedOwners(provider,auxiliary,inspect(p.inspectChannel));
+  else requireIssuedProviderClosedAuxiliary(provider,auxiliary);
+ }
  const close=F(function close(){
   if(arguments.length!==0)fail();closed=true;if(stopping!==null)return stopping.promise;stopping=cap();if(!held)phase='CLOSING';
   async function stop(){let ok=true,deadline;try{deadline=clock()+BigInt(limits.closeWaitMs)*1000000n;}catch{ok=false;hold();}
@@ -76,11 +82,11 @@ export function createIssuedProviderOperatorControl(options){
    // Failure to observe them within the one deadline still remains HELD.
    let providerReceipt=null;try{providerReceipt=A(p.closeProvider,undefined,[]);if(safe(providerReceipt))A(THEN.value,providerReceipt,[()=>{},()=>{}]);}catch{hold();}
    try{if(await requireCall(F(()=>providerReceipt),[],remaining())!==undefined)fail();cleanProvider();providerClosed=true;
-    if(await requireCall(p.closeAuxiliary,[],remaining())!==undefined)fail();const a=inspect(p.inspectAuxiliary);if(a.closed!==true||a.held!==false||a.active!==false)fail();auxiliaryClosed=true;
-    if(closeReply!==null&&!held)await write(closeReply,F({status:'CLOSED'}),remaining());
+    if(await requireCall(p.closeAuxiliary,[],remaining())!==undefined)fail();cleanReturnedOwners();auxiliaryClosed=true;
+    if(closeReply!==null&&!held){await write(closeReply,F({status:'CLOSED'}),remaining());cleanReturnedOwners();}
    }catch{ok=false;hold();}
    let channelReceipt=null;try{channelReceipt=A(p.closeChannel,undefined,[]);if(safe(channelReceipt))A(THEN.value,channelReceipt,[()=>{},()=>{}]);}catch{hold();}
-   try{if(await requireCall(F(()=>channelReceipt),[],remaining(true))!==undefined)fail();cleanChannel();channelClosed=true;if(clock()>deadline)fail();}catch{ok=false;hold();}
+   try{if(await requireCall(F(()=>channelReceipt),[],remaining(true))!==undefined)fail();cleanChannel();channelClosed=true;cleanReturnedOwners(true);if(clock()>deadline)fail();}catch{ok=false;hold();}
    if(ok&&!held){phase='CLOSED';stopping.resolve(undefined);}else stopping.reject(new TypeError('ISSUED_PROVIDER_CONTROL_CLOSE_HELD'));
   }A(THEN.value,stop(),[()=>{},()=>{hold();stopping.reject(new TypeError('ISSUED_PROVIDER_CONTROL_CLOSE_HELD'));}]);return stopping.promise;
  });

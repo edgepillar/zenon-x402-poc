@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "qualification": "G2_PROVIDER_CURRENT_CLOSE_OWNERS_FAILURE_INVENTORY",
+  "currentDataCaseFailures": 0,
+  "currentParserFailures": 0,
+  "currentFailedQualificationTasks": 0,
+  "unexpectedSkips": 0,
+  "cancellations": 0,
+  "currentPreparationUnknowns": [
+    {
+      "rawQualificationSha256": "22b4788d71f3a4b4549ea0fd1f22b29b273729eb345e2e76262005034a08c1f9",
+      "status": "UNKNOWN",
+      "classification": "SOURCE_CATALOG_STALE_SHARED_RESULT_ROW_BEFORE_TASK",
+      "actualDataCommands": 0,
+      "actualParserCommands": 0,
+      "managedTaskCreated": false,
+      "originalRecordReclassified": false,
+      "currentSourcePreparationPassed": true
+    },
+    {
+      "rawQualificationSha256": "28b56e0525307af911b5239e8deeed292062e2b9c8e249b9daa4823aa6b64b01",
+      "status": "UNKNOWN",
+      "classification": "METADATA_PREDECESSOR_FILENAME_REWRITE_BEFORE_TASK",
+      "actualDataCommands": 0,
+      "actualParserCommands": 0,
+      "managedTaskCreated": false,
+      "originalRecordReclassified": false,
+      "currentSourcePreparationPassed": true
+    }
+  ],
+  "retainedPreparedPlan": {
+    "rawQualificationSha256": "de6ea91645d3a861be45ffd6213f1f96a6566b75984957bf4349e07998dc0864",
+    "status": "PREPARED",
+    "managedTaskCreated": false,
+    "actualDataCommands": 0,
+    "actualParserCommands": 0
+  },
+  "retainedPriorTurnQualificationFailures": [
+    {
+      "sha256": "fed1285bd8d34140c45675b83cdbc64314dcc51ee33dc16fc40b8ae14c6bf453",
+      "status": "UNKNOWN",
+      "taskOutcome": "FAILURE",
+      "actualDataCommands": 1,
+      "actualParserCommands": 0,
+      "passed": 17,
+      "failed": 1,
+      "classification": "HARNESS_EXPECTED_GENERIC_EXIT_INSTEAD_OF_ESTABLISHED_CLOSE_UNKNOWN_4",
+      "failedGroupReused": false,
+      "nativeExecutions": 0
+    }
+  ],
+  "retainedPredecessorTaskFailure": {
+    "rawQualificationSha256": "a3f53b8f4ed525f28fa45dbac49c280b23210e23eb8ef3bbcac6dbc224cee52a",
+    "status": "UNKNOWN",
+    "taskOutcome": "FAILURE",
+    "classification": "COMMAND_RECORD_LIMIT",
+    "historicalPassedSourceControls": 425,
+    "wholeFailedTaskReclassified": false
+  },
+  "selectedExactControlsFromActualFailedTasks": 47,
+  "earlierInventoriesPreserved": true,
+  "nativeTestsExecuted": 0,
+  "nativeGates": "OPEN"
+}
