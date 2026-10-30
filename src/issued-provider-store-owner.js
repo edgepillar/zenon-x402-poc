@@ -2,7 +2,7 @@ import { types } from 'node:util';
 
 const F=Object.freeze,D=Object.getOwnPropertyDescriptor,O=Object.hasOwn,K=Reflect.ownKeys,A=Reflect.apply,NP=Promise,PP=NP.prototype;
 const THEN=D(PP,'then'),CTOR=D(PP,'constructor'),SPECIES=D(NP,Symbol.species),HELD=new Set();
-const ARITY=F({admitCommittedServiceGrant:1,resumeOriginalSettlement:0,activateOriginalCommittedFunding:1,admitOriginalCommittedServiceGrant:0,
+const ARITY=F({admitCommittedServiceGrant:1,resumeOriginalSettlement:0,activateOriginalCommittedFunding:1,admitOriginalCommittedServiceGrant:0,inspectOriginalCommittedServiceGrant:0,
  reconcileOriginalFunding:0,recoverOriginalFundingFirstResult:0,inspectOriginalFundingHistory:0});
 const ASYNC=new Set(['resumeOriginalSettlement','activateOriginalCommittedFunding','reconcileOriginalFunding','recoverOriginalFundingFirstResult']);
 function fail(){throw new TypeError('ISSUED_PROVIDER_STORE_OWNER');}

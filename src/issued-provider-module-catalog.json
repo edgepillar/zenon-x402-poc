@@ -2493,8 +2493,8 @@
     },
     {
       "path": "src/issued-original-grant-admission-owner.js",
-      "bytes": 11674,
-      "sha256": "30f93b84fec67ece822aa909ebe23dacdd475e01fac4d25086c9cb924fb37f5c",
+      "bytes": 12891,
+      "sha256": "81f2a9a7eef5a9eec9f06b981f65938fe69bbbe2173556c3e794a938d9c9ebaf",
       "format": "module"
     },
     {
@@ -2547,8 +2547,8 @@
     },
     {
       "path": "src/issued-provider-native-operator.js",
-      "bytes": 14066,
-      "sha256": "b995357492a4192d6d20148f4a6199c0d9b57adbfe1c61502683c01ed0ed48eb",
+      "bytes": 14160,
+      "sha256": "d456269480202124cd3e67d301f64288fe9016dd66ded9292399220abf8d312b",
       "format": "module"
     },
     {
@@ -2565,14 +2565,14 @@
     },
     {
       "path": "src/issued-provider-operator-control.js",
-      "bytes": 12096,
-      "sha256": "b4921b7ae5fc585db8e6aa5b2ffa5823515a6040fa4997b8c791bc2e8bb3aa08",
+      "bytes": 12282,
+      "sha256": "97ca70dc403f30acb16cf7c7dbd0507adb05767777860e04919c11090735145f",
       "format": "module"
     },
     {
       "path": "src/issued-provider-owned-configuration.js",
-      "bytes": 8196,
-      "sha256": "a3825ab02568200e8a9a378acc8bc364da138e5a8fbf07f0431ee67cd6851f81",
+      "bytes": 8313,
+      "sha256": "14b1c290846d284f11d1ba4f392a420a43e2c6637ae381bd7398e51f46805add",
       "format": "module"
     },
     {
@@ -2589,8 +2589,8 @@
     },
     {
       "path": "src/issued-provider-store-owner.js",
-      "bytes": 10620,
-      "sha256": "f99d0bea251cfb94bcf7f872500f148efa2df082df8f3182697cd38911dfa0ca",
+      "bytes": 10659,
+      "sha256": "62225f81048fdc8318dab98f2a7c2979ac109dbc2c5da25d42915630c850aabc",
       "format": "module"
     },
     {
@@ -2895,8 +2895,8 @@
     },
     {
       "path": "src/x402-issued-funding-grant-native-recovery-application.js",
-      "bytes": 7608,
-      "sha256": "a38f8cfe96e0774c63f90c34682f1bf32b911e9d235e139959cca9528a5f48c0",
+      "bytes": 7692,
+      "sha256": "10530141ba6c128e237cbe38c16d8ceb0355a7eada812bbf21c95abcde6fa3d3",
       "format": "module"
     },
     {

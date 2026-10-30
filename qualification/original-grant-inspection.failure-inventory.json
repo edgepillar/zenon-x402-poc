@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "qualification": "G2_ORIGINAL_GRANT_INSPECTION_FAILURE_INVENTORY",
+  "status": "NO_NEW_FAILURE_PRIOR_FAILURES_PRESERVED",
+  "failures": [],
+  "currentDataFailures": 0,
+  "currentParserFailures": 0,
+  "currentTurnFailedQualificationTasks": 0,
+  "priorInventory": {
+    "path": "qualification/expired-original-funding.failure-inventory.json",
+    "sha256": "b1eda0b0da12f32a066d115163f1be3449eec083c3f363e67957c9a95f4d0117"
+  },
+  "priorFailuresReclassified": false,
+  "sourceReviewFindings": [
+    {
+      "id": "ORIGINAL_GRANT_LOOKUP_COUPLED_TO_SERVICE_ADMISSION",
+      "classification": "PRODUCT_SOURCE_GAP",
+      "sourceBefore": "485fd2fbdda4d11462d30d0b458c38b6c23ccf86",
+      "status": "SOURCE_CORRECTED_DATA_QUALIFIED_NATIVE_NOT_ESTABLISHED",
+      "nativeExecuted": false
+    }
+  ],
+  "nativeExecutions": 0
+}

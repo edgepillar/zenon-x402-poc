@@ -41,6 +41,7 @@ function fixture(options={}){
   closeProvider:F(()=>{s.trace.push('provider-close');s.providerClosed=true;return options.closeProvider?options.closeProvider(s,owner):Promise.resolve(undefined);}),
   resumeOriginalSettlement:F(()=>{s.operations.push('RESUME');return options.operation?options.operation(s,owner):Promise.resolve(F({status:'PENDING'}));}),
   activateOriginalCommittedFunding:F(argument=>{s.operations.push('ACTIVATE');return Promise.resolve(F({status:'NOT_READY'}));}),
+  inspectOriginalCommittedServiceGrant:F(()=>{s.operations.push('READ_ORIGINAL_GRANT');return options.inspectOriginal?options.inspectOriginal(s,owner):F({status:'NOT_RECORDED',authority:'NONE'});}),
   admitOriginalCommittedServiceGrant:F(()=>{s.operations.push('ADMIT_ORIGINAL');return F({status:'NOT_RECORDED'});}),
   reconcileOriginalFunding:F(()=>{s.operations.push('RECONCILE');return Promise.resolve(F({authority:'NONE'}));}),
   recoverOriginalFundingFirstResult:F(()=>{s.operations.push('RECOVER_FIRST');return Promise.resolve(F({authority:'NONE'}));}),
@@ -90,6 +91,7 @@ check('provider-control-timeout-keeps-late-success-held-with-no-new-output',asyn
 check('provider-control-explicit-close-is-idempotent-and-has-no-startup-acquisition',async()=>{const f=fixture(),a=f.owner.close(),b=f.owner.close();assert.equal(a,b);await a;assert.equal(f.s.trace.includes('start'),false);assert.equal(f.s.trace.filter(v=>v==='provider-close').length,1);assert.throws(()=>f.owner.run());});
 
 export function issuedProviderCliPublicDataProfile(mode='FRESH'){return profile(mode);}
+export const issuedProviderCliDataFixture=fixture;
 
 export const issuedProviderCliDataCases=F([...checks]);
 if(process.argv[1]===fileURLToPath(import.meta.url)){

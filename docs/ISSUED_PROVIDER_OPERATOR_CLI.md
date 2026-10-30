@@ -265,9 +265,9 @@ are not reset, and a duplicate ID never reenters an operation.
 | --- | --- |
 | All | STATUS, CLOSE |
 | FRESH | RESUME, ACTIVATE |
-| RECORDED | ADMIT_ORIGINAL |
-| JOURNAL | ADMIT_ORIGINAL, RECONCILE, RECOVER_FIRST |
-| WITNESSED | ADMIT_ORIGINAL, RECONCILE, RECOVER_FIRST, HISTORY |
+| RECORDED | READ_ORIGINAL_GRANT, ADMIT_ORIGINAL |
+| JOURNAL | READ_ORIGINAL_GRANT, ADMIT_ORIGINAL, RECONCILE, RECOVER_FIRST |
+| WITNESSED | READ_ORIGINAL_GRANT, ADMIT_ORIGINAL, RECONCILE, RECOVER_FIRST, HISTORY |
 
 Arguments are null except ACTIVATE, whose argument is exactly observerFileName
 and recordKey. The filename must be the existing `funding-observer-<hash>.sqlite`
@@ -386,3 +386,44 @@ remaining source-exact scopes were retained. See the
 [local result](../qualification/expired-original-funding.actual-local-result.json)
 and [V52 source profile](../qualification/profiles/api-credit-application-source-v52.json).
 Native authentication, Linux, physical release and full G0-G5 remain OPEN.
+
+## Read original grant without service admission
+
+After an operator response is lost, select the existing RECORDED, JOURNAL or
+WITNESSED profile with the original independent bound/outcome digests. The
+canonical local control command is READ_ORIGINAL_GRANT, with argument null and
+a new bounded command ID. FRESH refuses it. It uses the same already opened
+provider, original funding identity and native readOriginalFundingGrant method.
+It does not open another database or authenticate the funding again.
+
+The original fourteen identity fields come from the pinned retained payment
+and issued frame. Exact original BOUND/outcome rows and the same settled, idle
+provider are checked before and after the synchronous history read. The existing
+closed result schema is returned unchanged: RECORDED includes original grant ID,
+stored lifecycle, expiry and available/held/consumed units; NOT_RECORDED has no
+grant record. Neither result revalidates current grant authority or authenticates
+current-chain payment evidence. Historical ACTIVE is not fresh service authority.
+NOT_RECORDED does not prove no payment, no prior grant or no delivery liability.
+Delivery liability is NOT_QUERIED, reservations are UNCHANGED, reconciliation is
+required and every existing action flag is false. No compensation is authorized.
+
+READ_ORIGINAL_GRANT never calls service admission, activation, execution, signing
+or submission. ADMIT_ORIGINAL remains a separate explicit decision. Reads and
+admission share the same sixteen-attempt owner budget; the existing outer
+128-operation cap, command-ID deduplication and observation/output budgets stay
+in force. A missing record cannot reset those budgets. Unknown lookup, changed
+pins/rows/provider identity, opaque asynchronous work or close during lookup
+remain HELD. Lost output is not retried and does not repair the old operation.
+A later explicit read in a newly admitted recorded process observes existing
+records only; it does not reconstruct a missing verification receipt or reopen
+HELD ownership in the old process. No store, schema, migration or HTTP endpoint
+is added. SQLite and original-history comparison library bytes are unchanged.
+
+The 22 new DATA cases use memory store, provider, channel and timer ports and
+synthetic unauthenticated activation metadata. State reconstruction here is
+model reconstruction, not native fresh-process persistence evidence. Together
+with 205 affected controls and three parser-only checks they passed locally;
+1264 exact DATA controls and 44 parser receipts were retained without repetition.
+See the [local result](../qualification/original-grant-inspection.actual-local-result.json)
+and [V53 source profile](../qualification/profiles/api-credit-application-source-v53.json).
+Native/Linux 100-call/replay/reopen, physical release and full G0-G5 remain OPEN.

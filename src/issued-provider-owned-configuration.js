@@ -12,9 +12,9 @@ const F=Object.freeze,D=Object.getOwnPropertyDescriptor,O=Object.hasOwn,K=Reflec
 const TP=Object.getPrototypeOf(Uint8Array.prototype),LENGTH=D(TP,'length').get,ARRAYBUFFER=D(TP,'buffer').get,SET=TP.set,FILL=Buffer.prototype.fill;
 const REGISTER=InMemoryServiceCreditModel.prototype.registerOffer;
 const METHODS=F({FRESH:F(['admitCommittedServiceGrant','resumeOriginalSettlement','activateOriginalCommittedFunding']),
- RECORDED:F(['admitCommittedServiceGrant','resumeOriginalSettlement','admitOriginalCommittedServiceGrant']),
- JOURNAL:F(['admitCommittedServiceGrant','resumeOriginalSettlement','admitOriginalCommittedServiceGrant','reconcileOriginalFunding','recoverOriginalFundingFirstResult']),
- WITNESSED:F(['admitCommittedServiceGrant','resumeOriginalSettlement','admitOriginalCommittedServiceGrant','reconcileOriginalFunding','recoverOriginalFundingFirstResult','inspectOriginalFundingHistory'])});
+ RECORDED:F(['admitCommittedServiceGrant','resumeOriginalSettlement','inspectOriginalCommittedServiceGrant','admitOriginalCommittedServiceGrant']),
+ JOURNAL:F(['admitCommittedServiceGrant','resumeOriginalSettlement','inspectOriginalCommittedServiceGrant','admitOriginalCommittedServiceGrant','reconcileOriginalFunding','recoverOriginalFundingFirstResult']),
+ WITNESSED:F(['admitCommittedServiceGrant','resumeOriginalSettlement','inspectOriginalCommittedServiceGrant','admitOriginalCommittedServiceGrant','reconcileOriginalFunding','recoverOriginalFundingFirstResult','inspectOriginalFundingHistory'])});
 function fail(){throw new TypeError('ISSUED_PROVIDER_OWNED_CONFIGURATION');}
 function fields(v,names){if(v===null||typeof v!=='object'||types.isProxy(v)||Object.getPrototypeOf(v)!==Object.prototype||K(v).length!==names.length)fail();
  const out={};for(const k of names){const d=D(v,k);if(!d?.enumerable||!O(d,'value'))fail();Object.defineProperty(out,k,{value:d.value,enumerable:true});}return out;}

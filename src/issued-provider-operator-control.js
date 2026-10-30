@@ -5,10 +5,10 @@ import { captureBuyerOriginalFundingCommandLimits } from './buyer-original-fundi
 
 const F=Object.freeze,D=Object.getOwnPropertyDescriptor,A=Reflect.apply,NP=Promise,PP=NP.prototype;
 const THEN=D(PP,'then'),CTOR=D(PP,'constructor'),SPECIES=D(NP,Symbol.species),HELD=new Set();
-const OPS=F({FRESH:F(['STATUS','RESUME','ACTIVATE','CLOSE']),RECORDED:F(['STATUS','ADMIT_ORIGINAL','CLOSE']),
- JOURNAL:F(['STATUS','ADMIT_ORIGINAL','RECONCILE','RECOVER_FIRST','CLOSE']),WITNESSED:F(['STATUS','ADMIT_ORIGINAL','RECONCILE','RECOVER_FIRST','HISTORY','CLOSE'])});
+const OPS=F({FRESH:F(['STATUS','RESUME','ACTIVATE','CLOSE']),RECORDED:F(['STATUS','READ_ORIGINAL_GRANT','ADMIT_ORIGINAL','CLOSE']),
+ JOURNAL:F(['STATUS','READ_ORIGINAL_GRANT','ADMIT_ORIGINAL','RECONCILE','RECOVER_FIRST','CLOSE']),WITNESSED:F(['STATUS','READ_ORIGINAL_GRANT','ADMIT_ORIGINAL','RECONCILE','RECOVER_FIRST','HISTORY','CLOSE'])});
 const PORTS=F(['startProvider','inspectProvider','closeProvider','resumeOriginalSettlement','activateOriginalCommittedFunding','admitOriginalCommittedServiceGrant',
- 'reconcileOriginalFunding','recoverOriginalFundingFirstResult','inspectOriginalFundingHistory','readCommand','writeResult','closeChannel','inspectChannel','closeAuxiliary','inspectAuxiliary','clock','armTimer','cancelTimer']);
+ 'inspectOriginalCommittedServiceGrant','reconcileOriginalFunding','recoverOriginalFundingFirstResult','inspectOriginalFundingHistory','readCommand','writeResult','closeChannel','inspectChannel','closeAuxiliary','inspectAuxiliary','clock','armTimer','cancelTimer']);
 function fail(){throw new TypeError('ISSUED_PROVIDER_OPERATOR_CONTROL');}
 function fields(v,names){if(v===null||typeof v!=='object'||types.isProxy(v)||Object.getPrototypeOf(v)!==Object.prototype||Reflect.ownKeys(v).length!==names.length)fail();
  const out={};for(const k of names){const d=D(v,k);if(!d?.enumerable||!Object.hasOwn(d,'value'))fail();Object.defineProperty(out,k,{value:d.value,enumerable:true});}return out;}
@@ -94,8 +94,8 @@ export function createIssuedProviderOperatorControl(options){
      ids.add(command.id);commands++;let result;
      if(command.operation==='CLOSE'){closeReply=command;break;}
      if(command.operation==='STATUS')result=inspect(p.inspectProvider);
-     else{const name={RESUME:'resumeOriginalSettlement',ACTIVATE:'activateOriginalCommittedFunding',ADMIT_ORIGINAL:'admitOriginalCommittedServiceGrant',RECONCILE:'reconcileOriginalFunding',RECOVER_FIRST:'recoverOriginalFundingFirstResult',HISTORY:'inspectOriginalFundingHistory'}[command.operation];
-      result=await requireCall(p[name],command.operation==='ACTIVATE'?[command.argument]:[],c.operationBudgetMs,['ADMIT_ORIGINAL','HISTORY'].includes(command.operation));}
+     else{const name={RESUME:'resumeOriginalSettlement',ACTIVATE:'activateOriginalCommittedFunding',READ_ORIGINAL_GRANT:'inspectOriginalCommittedServiceGrant',ADMIT_ORIGINAL:'admitOriginalCommittedServiceGrant',RECONCILE:'reconcileOriginalFunding',RECOVER_FIRST:'recoverOriginalFundingFirstResult',HISTORY:'inspectOriginalFundingHistory'}[command.operation];
+      result=await requireCall(p[name],command.operation==='ACTIVATE'?[command.argument]:[],c.operationBudgetMs,['READ_ORIGINAL_GRANT','ADMIT_ORIGINAL','HISTORY'].includes(command.operation));}
      if(closed||held)fail();await write(command,result);
     }
    }catch{hold();}finally{try{await close();}catch{hold();}}

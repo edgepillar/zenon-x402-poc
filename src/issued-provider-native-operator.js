@@ -107,7 +107,7 @@ export async function runNativeIssuedProviderOperator(args,readPackageState){
   frame.commandsEntered=true;const streams=frame.pipes.adoptCommands(guard);frame.channelEntered=true;frame.channel=createBuyerCommandLineChannel({input:streams.input,output:streams.output,limits:frame.prepared.channelLimits});
   const invoke=F((name,a)=>{guard();const value=frame.app[name](...a);return value;});
   const ports=F({startProvider:F(()=>{guard();return frame.app.start();}),inspectProvider:frame.app.snapshot,closeProvider:F(closeProvider),
-   resumeOriginalSettlement:F(()=>invoke('resumeOriginalSettlement',[])),admitOriginalCommittedServiceGrant:F(()=>invoke('admitOriginalCommittedServiceGrant',[])),
+   resumeOriginalSettlement:F(()=>invoke('resumeOriginalSettlement',[])),inspectOriginalCommittedServiceGrant:F(()=>invoke('inspectOriginalCommittedServiceGrant',[])),admitOriginalCommittedServiceGrant:F(()=>invoke('admitOriginalCommittedServiceGrant',[])),
    reconcileOriginalFunding:F(()=>invoke('reconcileOriginalFunding',[])),recoverOriginalFundingFirstResult:F(()=>invoke('recoverOriginalFundingFirstResult',[])),inspectOriginalFundingHistory:F(()=>invoke('inspectOriginalFundingHistory',[])),
    activateOriginalCommittedFunding:F(async argument=>{guard();
     if(frame.observer===null){if(frame.observerEntered)fail();frame.observerEntered=true;frame.observerName=argument.observerFileName;frame.observerKey=argument.recordKey;

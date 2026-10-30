@@ -74,6 +74,6 @@ export async function restoreIssuedFundingGrantNativeApplication(options){
         readOriginalFundingGrant:F(identity=>{brand(s.store,SERVICE,'readOriginalFundingGrant',ORIGINAL);return A(ORIGINAL,s.store,[identity]);}),
         admitCommittedServiceGrant:root.admitCommittedServiceGrant})}));}
   catch{try{await root.close();}catch{throw new TypeError('ISSUED_ORIGINAL_GRANT_ADMISSION_CLOSE_HELD');}throw new TypeError('ISSUED_FUNDING_GRANT_NATIVE_RECOVERY_CONFIGURATION');}
-  return F({...root,close:admission.close,admitCommittedServiceGrant:admission.admitCommittedServiceGrant,admitOriginalCommittedServiceGrant:admission.admitOriginalCommittedServiceGrant,
+  return F({...root,close:admission.close,admitCommittedServiceGrant:admission.admitCommittedServiceGrant,inspectOriginalCommittedServiceGrant:admission.inspectOriginalCommittedServiceGrant,admitOriginalCommittedServiceGrant:admission.admitOriginalCommittedServiceGrant,
     snapshot:F(function snapshot(){if(arguments.length!==0)throw new TypeError('ISSUED_FUNDING_GRANT_NATIVE_RECOVERY_CONFIGURATION');return F({...root.snapshot(),originalGrantAdmission:admission.snapshot()});})});
 }
