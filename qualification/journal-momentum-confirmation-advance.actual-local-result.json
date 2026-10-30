@@ -1,0 +1,210 @@
+{
+  "qualification": "G2_JOURNAL_MOMENTUM_CONFIRMATION_ADVANCE_DATA",
+  "status": "PASS",
+  "recordedAtUTC": "2026-10-30T01:18:44.837598+00:00",
+  "passed": 16,
+  "failed": 0,
+  "newControls": 16,
+  "reexecutedRelevantDataControls": 0,
+  "retainedEarlierTurnExactControls": 1286,
+  "aggregateVerifiedControls": 1302,
+  "cases": [
+    {
+      "id": "journal-confirmation-comparison-advances-original-one-to-three",
+      "status": "PASS"
+    },
+    {
+      "id": "journal-confirmation-comparison-allows-stronger-count-with-same-inclusion",
+      "status": "PASS"
+    },
+    {
+      "id": "journal-confirmation-comparison-identical-detail-is-idempotent",
+      "status": "PASS"
+    },
+    {
+      "id": "journal-confirmation-comparison-admits-safe-integer-upper-bound",
+      "status": "PASS"
+    },
+    {
+      "id": "journal-confirmation-comparison-refuses-count-regression",
+      "status": "PASS"
+    },
+    {
+      "id": "journal-confirmation-comparison-refuses-different-momentum-hash",
+      "status": "PASS"
+    },
+    {
+      "id": "journal-confirmation-comparison-refuses-different-momentum-height",
+      "status": "PASS"
+    },
+    {
+      "id": "journal-confirmation-comparison-refuses-different-momentum-timestamp",
+      "status": "PASS"
+    },
+    {
+      "id": "journal-confirmation-comparison-count-must-be-positive-safe-integer",
+      "status": "PASS"
+    },
+    {
+      "id": "journal-confirmation-comparison-height-must-be-positive-safe-integer",
+      "status": "PASS"
+    },
+    {
+      "id": "journal-confirmation-comparison-timestamp-allows-zero-but-refuses-unsafe-values",
+      "status": "PASS"
+    },
+    {
+      "id": "journal-confirmation-comparison-requires-canonical-lowercase-hash",
+      "status": "PASS"
+    },
+    {
+      "id": "journal-confirmation-comparison-never-mutates-either-input-and-freezes-result",
+      "status": "PASS"
+    },
+    {
+      "id": "journal-confirmation-comparison-does-not-enter-accessor-or-proxy-hooks",
+      "status": "PASS"
+    },
+    {
+      "id": "journal-confirmation-comparison-refuses-extra-symbol-and-inherited-fields",
+      "status": "PASS"
+    },
+    {
+      "id": "journal-confirmation-comparison-rejects-arity-and-non-data-inputs",
+      "status": "PASS"
+    }
+  ],
+  "nodeVersion": "24.19.0",
+  "platform": "darwin-arm64",
+  "nodeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25",
+  "rawQualificationSha256": "00dd5a8c35159486cc4d0f6a3f2cc645119c30901668a32338f95bb1a4e195ce",
+  "sourceProfile": {
+    "path": "qualification/profiles/api-credit-application-source-v45.json",
+    "bytes": 332560,
+    "sha256": "aeac207d3b0668751c247424046f6fec3deb182c4450ae4cc3a21269191be7dd"
+  },
+  "journalMomentumConfirmationAdvance": {
+    "version": 1,
+    "scope": "ORIGINAL_MOMENTUM_COUNT_CAS_ADVANCEMENT_SOURCE_CANDIDATE",
+    "journal": "src/settlement-journal.js#compareAndUpdateEvidence",
+    "pureDecision": "src/journal-momentum-confirmation-advance.js#captureJournalMomentumConfirmationAdvance",
+    "sameStateNoLongerAlwaysIgnored": true,
+    "exactRevisionAndEntireRecordBeforeComparison": true,
+    "sameMomentumHashHeightTimestampRequired": true,
+    "positiveSafeIntegerCounts": true,
+    "strictlyStrongerCountOnly": true,
+    "identicalDetailIdempotent": true,
+    "regressionAndConflictingInclusionRefused": true,
+    "onlyCountAndUpdatedAtChange": true,
+    "originalObservedAtPreserved": true,
+    "updatedAtMonotonic": true,
+    "existingValidateRevisionWriteAndExactReadback": true,
+    "otherJournalMethodsByteIdentical": true,
+    "initializationSerializerUnchanged": true,
+    "existingStateRankAndDeliveryExclusionsUnchanged": true,
+    "noSignaturePublicationReplacementGrantOrDelivery": true,
+    "originalOnlyRpcBindingAdded": false,
+    "generalMaintenanceNotSelected": true,
+    "sourceProviderOperatorInputs": 92,
+    "rootMetadataInputs": 1,
+    "providerCatalogRows": 495,
+    "providerCatalogApplicationRows": 91,
+    "packageRows": 404,
+    "explicitBareEdges": 4,
+    "defaultBuyerInputs": 166,
+    "defaultBuyerCatalogRows": 569,
+    "defaultBuyerAddedSourceInputs": [
+      "src/journal-momentum-confirmation-advance.js"
+    ],
+    "defaultBuyerPackageRowsAndBareEdgesUnchanged": true,
+    "defaultBuyerCatalogEdgeOrderPreserved": true,
+    "installedNamespaceQualified": false,
+    "actualJournalCASExecuted": false,
+    "nativeExecution": false,
+    "chainAuthentication": false,
+    "currentCanonicality": "NOT_ESTABLISHED",
+    "nativePersistence": "NOT_ESTABLISHED",
+    "native100Calls": "NOT_ESTABLISHED",
+    "nativeACKRecovery": "NOT_ESTABLISHED",
+    "nativeBudgetPersistence": "NOT_ESTABLISHED",
+    "externalOwnerFencing": "NOT_ESTABLISHED",
+    "physicalRelease": "NOT_ESTABLISHED",
+    "LinuxCommandExecution": "NOT_ESTABLISHED",
+    "G0G1G2Acceptance": "OPEN"
+  },
+  "proofManifest": {
+    "path": "qualification/journal-momentum-confirmation-advance.proof-manifest.json",
+    "bytes": 350590,
+    "sha256": "09f184984217547ef3a42c8443663321cb4d63ca540a6e162ba1fa7affb69c4a"
+  },
+  "operationalPorts": "DECLARED_MEMORY_ONLY",
+  "actualDataNodeCommands": 1,
+  "actualSyntaxNodeCommands": 3,
+  "failureInventory": {
+    "path": "qualification/journal-momentum-confirmation-advance.failure-inventory.json",
+    "bytes": 484,
+    "sha256": "e3211d9da87b0c2c4cc177c0a005bfe58d35713bddd4fe2aad1c7e9ecb612e08"
+  },
+  "sourceContract": {
+    "path": "qualification/journal-momentum-confirmation-advance.source-contract.json",
+    "bytes": 2929,
+    "sha256": "22cfd935920d168c359d9e561a4840a6488ed4560ce1c61ba7611debd1f27927"
+  },
+  "nativeExecutions": 0,
+  "SDK": 0,
+  "SQLite": 0,
+  "keys": 0,
+  "signatures": 0,
+  "sockets": 0,
+  "signals": 0,
+  "nonceSearches": 0,
+  "nodeChildren": 0,
+  "actualPrepare": 0,
+  "payouts": 0,
+  "task": "CLOSED/SUCCESS",
+  "resources": {
+    "taskQuotaBytes": 4194304,
+    "plannedExecutionPeakBytes": 1572476,
+    "sourceInputs": 288,
+    "dataRuntimeInputs": 3,
+    "parserInputs": 3,
+    "reusedParserInputs": 41,
+    "invalidatedParserInputs": 3,
+    "retainedExactRuntimeDataControls": 1286,
+    "reexecutedRelevantDataControls": 0,
+    "sourceOnlyCASLookupsAvoided": 282,
+    "materializedInputs": 6,
+    "sourceOnlyAliasesAvoided": 282,
+    "CASVerifiedReuse": 1,
+    "CASNewImports": 5,
+    "sourceTextArchives": 0,
+    "minimumFreeFloorBytes": 10737418240,
+    "streamAllocationPlan": {
+      "serialCommands": true,
+      "maximumRetainedSuccessfulDataStdoutBytes": 17940,
+      "requiredSuccessfulStderrBytes": 0,
+      "maximumOnePendingStderrBytes": 1048576,
+      "unchangedParserReceiptsReused": 41,
+      "newParserCommands": 3,
+      "sourceAliasBytes": 89140,
+      "newSourceCASBytes": 86463,
+      "allReferencedSourceCASBytes": 89140,
+      "metadataMarginBytes": 262144,
+      "allReferencedCASChargedPerTask": true,
+      "preexistingCASAlsoCharged": true,
+      "serialDataCommands": 1
+    },
+    "serialDataCommands": 1,
+    "failedDataTasksThisTurn": 0,
+    "quotaExpanded": false,
+    "parserBatchAdmission": true,
+    "proofManifestDeduplicated": true
+  },
+  "nativePersistence": "NOT_ESTABLISHED",
+  "nativeAcceptance": "NOT_ESTABLISHED",
+  "externalOwnerFencing": "NOT_ESTABLISHED",
+  "physicalRelease": "NOT_ESTABLISHED",
+  "LinuxAcceptance": "NOT_ESTABLISHED",
+  "current108CISeparate": true,
+  "newControlsIncludedIn108CI": false
+}

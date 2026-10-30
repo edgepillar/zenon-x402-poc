@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "qualification": "G2_JOURNAL_MOMENTUM_CONFIRMATION_ADVANCE_FAILURE_INVENTORY",
+  "status": "NO_NEW_FAILURE;PRIOR_FAILURES_PRESERVED",
+  "failures": [],
+  "currentDataFailures": 0,
+  "currentParserFailures": 0,
+  "priorInventory": {
+    "path": "qualification/issued-provider-journal-setup.failure-inventory.json",
+    "sha256": "4cc7e84a77516d5ecd92fda8ad28b07e5fecfe5199009566d37fca204ae26259"
+  },
+  "priorFailuresReclassified": false,
+  "nativeExecutions": 0
+}

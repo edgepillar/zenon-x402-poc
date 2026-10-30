@@ -2624,6 +2624,12 @@
       "format": "module"
     },
     {
+      "path": "src/journal-momentum-confirmation-advance.js",
+      "bytes": 1607,
+      "sha256": "5deb0a7c1d2a279d949d9e13ad46d724d6e9360c795a4d887e48810f2834e2e9",
+      "format": "module"
+    },
+    {
       "path": "src/live-observation.js",
       "bytes": 12389,
       "sha256": "36ce902ffb667b17eaf3e2ac94beb287be1401b34d83f8253407a93d286328c4",
@@ -2901,8 +2907,8 @@
     },
     {
       "path": "src/settlement-journal.js",
-      "bytes": 65753,
-      "sha256": "4c96220720f18d6873a5a953197ae4173e784f0f700d154c4c3d3448376c826c",
+      "bytes": 66619,
+      "sha256": "29cce1c48105d9fc71fa9ff626b2cac4f8697dc3e3b29f3ba04c165c2ccb0cb5",
       "format": "module"
     },
     {

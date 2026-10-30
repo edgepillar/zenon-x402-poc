@@ -10,6 +10,7 @@ import {
 import { createHash, randomBytes } from 'node:crypto';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { captureJournalMomentumConfirmationAdvance } from './journal-momentum-confirmation-advance.js';
 import {
   MAX_ZENON_AMOUNT,
   snapshotActiveUpfrontRequirement,
@@ -1312,20 +1313,36 @@ export class SettlementJournal {
       }
       const observedAt = this.#now();
       if (current.evidenceState === evidenceState) {
-        return { changed: false, record: cloneJson(current) };
-      }
-      const currentRank = Number(EVIDENCE_STATES.MOMENTUM_INCLUDED === current.evidenceState) * 3 +
-        Number(EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED === current.evidenceState) * 2 +
-        Number(EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN === current.evidenceState);
-      const nextRank = evidenceState === EVIDENCE_STATES.MOMENTUM_INCLUDED ? 3 : 2;
-      if (nextRank <= currentRank) journalError('journal_compare_and_replace_failed');
+        if (evidenceState !== EVIDENCE_STATES.MOMENTUM_INCLUDED) {
+          return { changed: false, record: cloneJson(current) };
+        }
+        let advance;
+        try {
+          advance = captureJournalMomentumConfirmationAdvance(
+            current.momentumEvidence.confirmationDetail,
+            confirmationDetail,
+          );
+        } catch {
+          journalError('journal_compare_and_replace_failed');
+        }
+        if (!advance.changed) return { changed: false, record: cloneJson(current) };
+        // Preserve the original inclusion and observedAt; only its count grows.
+        current.momentumEvidence.confirmationDetail.numConfirmations = advance.numConfirmations;
+        current.updatedAt = observedAt < current.updatedAt ? current.updatedAt : observedAt;
+      } else {
+        const currentRank = Number(EVIDENCE_STATES.MOMENTUM_INCLUDED === current.evidenceState) * 3 +
+          Number(EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED === current.evidenceState) * 2 +
+          Number(EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN === current.evidenceState);
+        const nextRank = evidenceState === EVIDENCE_STATES.MOMENTUM_INCLUDED ? 3 : 2;
+        if (nextRank <= currentRank) journalError('journal_compare_and_replace_failed');
 
-      const durableObservedAt = observedAt < current.updatedAt ? current.updatedAt : observedAt;
-      current.evidenceState = evidenceState;
-      current.momentumEvidence = confirmationDetail === null
-        ? null
-        : { observedAt: durableObservedAt, confirmationDetail };
-      current.updatedAt = durableObservedAt;
+        const durableObservedAt = observedAt < current.updatedAt ? current.updatedAt : observedAt;
+        current.evidenceState = evidenceState;
+        current.momentumEvidence = confirmationDetail === null
+          ? null
+          : { observedAt: durableObservedAt, confirmationDetail };
+        current.updatedAt = durableObservedAt;
+      }
       if (!validateRecord(current)) journalError('journal_compare_and_replace_failed');
       data.revision += 1;
       const writtenRevision = data.revision;
