@@ -1,0 +1,275 @@
+{
+  "qualification": "G1_ISSUED_PROVIDER_CLI_DATA",
+  "status": "PASS",
+  "recordedAtUTC": "2026-10-29T23:53:37.760045+00:00",
+  "passed": 31,
+  "failed": 0,
+  "newControls": 31,
+  "reexecutedRelevantDataControls": 0,
+  "retainedEarlierTurnExactControls": 1207,
+  "aggregateVerifiedControls": 1238,
+  "cases": [
+    {
+      "id": "provider-cli-runtime-arguments-and-help-have-no-native-acquisition",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-cli-rejects-buyer-modes-aliases-secret-paths-and-loader-context",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-cli-public-bootstrap-is-keyless-frozen-and-canonical",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-cli-public-bootstrap-rejects-incomplete-unsupported-or-insufficient-profile",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-cli-public-start-budgets-cover-100-calls-replay-and-funding-overhead-without-defaulting",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-cli-fresh-and-recorded-recovery-modes-are-independent-and-explicit",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-cli-bootstrap-binds-once-to-real-owned-configuration-shape",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-cli-selected-product-charges-only-original-empty-body-route",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-cli-receipt-product-is-deterministic-and-has-no-external-effect",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-cli-binary-tls-frame-copies-and-wipes-only-owned-data",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-cli-binary-tls-frame-refuses-truncation-overflow-and-accessors",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-control-construction-enters-no-provider-channel-or-timer",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-control-start-status-and-close-use-one-provider-and-ordered-stops",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-control-eof-closes-without-polling-or-operator-effect",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-control-fresh-resume-and-activation-use-original-owner-only",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-control-recorded-mode-cannot-enter-fresh-resume-or-activation",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-control-journal-recovery-commands-do-not-publish-or-admit-automatically",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-control-recorded-original-admission-remains-an-explicit-command",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-control-witness-history-remains-an-explicit-none-authority-read",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-control-unknown-command-and-arguments-refuse-before-owner-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-control-duplicate-command-id-never-repeats-a-prior-operation",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-control-command-budget-does-not-reset-on-a-status-command",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-control-start-failure-still-requests-the-original-provider-and-channel-stop",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-control-write-loss-keeps-held-and-never-retries-output",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-control-operator-loss-keeps-held-and-never-reenters-operation",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-control-unknown-provider-close-retains-auxiliary-owner",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-control-unclean-current-provider-view-prevents-auxiliary-close",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-control-whole-close-budget-does-not-renew-between-owner-legs",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-control-cancel-failure-cannot-turn-a-completed-callback-into-clean-close",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-control-timeout-keeps-late-success-held-with-no-new-output",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-control-explicit-close-is-idempotent-and-has-no-startup-acquisition",
+      "status": "PASS"
+    }
+  ],
+  "nodeVersion": "24.19.0",
+  "platform": "darwin-arm64",
+  "nodeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25",
+  "rawQualificationSha256": "cfbe6bebdf4926ad35ea0b000b1c3d4700e0217accb818e960feaa4cec8445d6",
+  "sourceProfile": {
+    "path": "qualification/profiles/api-credit-application-source-v42.json",
+    "bytes": 316447,
+    "sha256": "5a709a2d237e4d4eda19c624d4b21552fedfe2275bc360a0ba1c8bca085703c3"
+  },
+  "issuedProviderOperator": {
+    "version": 1,
+    "scope": "SINGLE_EXPLICIT_PROVIDER_COMMAND_SOURCE_CANDIDATE",
+    "entry": "src/issued-provider-cli.js",
+    "nativeEntry": "src/issued-provider-native-operator.js",
+    "controller": "src/issued-provider-operator-control.js",
+    "bootstrap": "src/issued-provider-operator-bootstrap.js",
+    "documentedSourceCommand": "node src/issued-provider-cli.js --profile-fd 3 --tls-fd 4 --input-fd 5 --output-fd 6 --bootstrap-ms 1000",
+    "plainRuntimeAndFDAdmission": true,
+    "helpWithoutNativeImports": true,
+    "publicProfileBeforeTLS": true,
+    "binaryTLSMaximumBytes": 131080,
+    "existingMaterialOnly": true,
+    "explicitFixedEconomicsAndProfile": true,
+    "minimumUnits": 100,
+    "minimumRequestAndConnectionStarts": 106,
+    "noDefaultMockOrArbitraryModule": true,
+    "existingOnlyJournalRequired": true,
+    "freshJournalMustBeEmpty": true,
+    "authorityResourceOfferTermsAndExpiryBeforeTLS": true,
+    "operationBudgetForInitialJournalRead": true,
+    "sameOwnedProviderFactories": true,
+    "explicitOriginalOnlyControlModes": true,
+    "oneObserverStoreOpening": true,
+    "noACKOrHistoryGrantAuthority": true,
+    "oneCloseObservationWindow": true,
+    "originalStopsRequestedAfterObservationFailure": true,
+    "noForceCloseRetryMigrationOrReopen": true,
+    "providerBeforeAuxiliary": true,
+    "explicitReceiptProductCandidate": "execution-receipt-v1",
+    "finalProductionProductAccepted": false,
+    "sourceProviderOperatorInputs": 88,
+    "rootMetadataInputs": 1,
+    "providerCatalogRows": 491,
+    "providerCatalogApplicationRows": 87,
+    "packageRows": 404,
+    "explicitBareEdges": 4,
+    "defaultBuyerInputs": 165,
+    "defaultBuyerCatalogRows": 568,
+    "defaultBuyerGraphChanged": false,
+    "ordinaryInstalledNamespaceQualified": false,
+    "nativeExecution": false,
+    "nativeJournalProvisioning": "NOT_ESTABLISHED",
+    "native100Calls": "NOT_ESTABLISHED",
+    "nativeACKRecovery": "NOT_ESTABLISHED",
+    "nativeBudgetPersistence": "NOT_ESTABLISHED",
+    "externalOwnerFencing": "NOT_ESTABLISHED",
+    "physicalRelease": "NOT_ESTABLISHED",
+    "LinuxCommandExecution": "NOT_ESTABLISHED",
+    "G0G1G2Acceptance": "OPEN"
+  },
+  "proofManifest": {
+    "path": "qualification/issued-provider-cli.proof-manifest.json",
+    "bytes": 326321,
+    "sha256": "585bea7226b0aca3f2459e040d3983e0d114fb77ada279941b9c05afe04b33d6"
+  },
+  "journalAndFacilitatorPorts": "DECLARED_MEMORY_ONLY",
+  "signatureData": "UNAUTHENTICATED_EXISTING_FIELDS",
+  "actualDataNodeCommands": 1,
+  "actualSyntaxNodeCommands": 4,
+  "failureInventory": {
+    "path": "qualification/issued-provider-cli.failure-inventory.json",
+    "bytes": 1916,
+    "sha256": "c08c300df351d2236ade037e9a8400b309312cdf678e86897056b28bfd295f21"
+  },
+  "sourceContract": {
+    "path": "qualification/issued-provider-cli.source-contract.json",
+    "bytes": 3405,
+    "sha256": "ed4cfc17de49e150cf184ea24e68b4a0633abe6589cbeb0478e5e2eee18eaa6a"
+  },
+  "nativeExecutions": 0,
+  "SDK": 0,
+  "SQLite": 0,
+  "keys": 0,
+  "signatures": 0,
+  "sockets": 0,
+  "nonceSearches": 0,
+  "nodeChildren": 0,
+  "actualPrepare": 0,
+  "payouts": 0,
+  "task": "CLOSED/SUCCESS",
+  "resources": {
+    "taskQuotaBytes": 4194304,
+    "plannedExecutionPeakBytes": 2788312,
+    "sourceInputs": 281,
+    "dataRuntimeInputs": 61,
+    "fundingRoleSourceInputs": 23,
+    "parserInputs": 4,
+    "reusedParserInputs": 38,
+    "invalidatedParserInputs": 0,
+    "retainedExactRuntimeDataControls": 1207,
+    "reexecutedRelevantDataControls": 0,
+    "sourceOnlyCASLookupsAvoided": 216,
+    "materializedInputs": 65,
+    "sourceOnlyAliasesAvoided": 216,
+    "CASVerifiedReuse": 62,
+    "CASNewImports": 3,
+    "sourceTextArchives": 0,
+    "minimumFreeFloorBytes": 10737418240,
+    "streamAllocationPlan": {
+      "serialCommands": true,
+      "maximumRetainedSuccessfulDataStdoutBytes": 19522,
+      "requiredSuccessfulStderrBytes": 0,
+      "maximumOnePendingStderrBytes": 1048576,
+      "unchangedParserReceiptsReused": 38,
+      "newParserCommands": 4,
+      "sourceAliasBytes": 696267,
+      "newSourceCASBytes": 40566,
+      "allReferencedSourceCASBytes": 696267,
+      "metadataMarginBytes": 262144,
+      "allReferencedCASChargedPerTask": true,
+      "preexistingCASAlsoCharged": true,
+      "serialDataCommands": 1
+    },
+    "serialDataCommands": 1,
+    "earlierDataCommands": 1,
+    "earlierFailedDataCommands": 1,
+    "failedDataTasks": 1,
+    "quotaExpanded": false,
+    "parserBatchAdmission": true,
+    "proofManifestDeduplicated": true
+  },
+  "nativePersistence": "NOT_ESTABLISHED",
+  "nativeAcceptance": "NOT_ESTABLISHED",
+  "externalOwnerFencing": "NOT_ESTABLISHED",
+  "physicalRelease": "NOT_ESTABLISHED",
+  "LinuxAcceptance": "NOT_ESTABLISHED",
+  "current108CISeparate": true,
+  "newControlsIncludedIn108CI": false
+}

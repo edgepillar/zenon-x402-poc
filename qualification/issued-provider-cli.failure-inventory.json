@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "qualification": "G1_ISSUED_PROVIDER_CLI_FAILURE_INVENTORY",
+  "status": "EARLIER_FAILURE_AND_PREPARATION_UNKNOWN_PRESERVED",
+  "failures": [
+    {
+      "rawQualificationSha256": "602ea4bbf467cf7c40d5388ef92077b7b4af9d1899b66479230eb4230529d8cc",
+      "status": "UNKNOWN",
+      "kind": "PRE_QUALIFICATION_REFERENCE_ERROR",
+      "actualDataCommands": 0,
+      "actualParserCommands": 0,
+      "managedTaskCreated": false,
+      "preserved": true,
+      "correction": "Corrected a static count that mixed JavaScript graph inputs with root package metadata before any managed task or DATA/native command entered."
+    },
+    {
+      "rawQualificationSha256": "fdca5f95bb631f0d4b6f8d47bd0dff3c1ac3e29e3b1bdb4626c8d45afb2a34b1",
+      "status": "UNKNOWN",
+      "task": "CLOSED/FAILURE",
+      "actualDataCommands": 1,
+      "actualParserCommands": 0,
+      "failedGroupPassed": 30,
+      "failedGroupFailed": 1,
+      "failedCases": [
+        {
+          "id": "provider-cli-public-start-budgets-cover-100-calls-replay-and-funding-overhead-without-defaulting",
+          "status": "FAIL",
+          "error": "ISSUED_PROVIDER_OPERATOR_BOOTSTRAP"
+        }
+      ],
+      "wholeTaskReused": false,
+      "partialFailedGroupReused": false,
+      "completeExitZeroGroupsReused": 0,
+      "correction": "The new boundary fixture lowered only the connection ceiling while keeping a higher request ceiling, contrary to the existing ingress relationship. The positive boundary now selects both ceilings at106. The existing ingress rules and bootstrap minimum are unchanged; all31 cases were rerun. Separately reviewed native startup semantic admission remains source/parser only."
+    }
+  ],
+  "currentDataFailures": 0,
+  "currentParserFailures": 0,
+  "priorInventory": "qualification/issued-provider-funding-roles.failure-inventory.json",
+  "priorFailuresReclassified": false,
+  "nativeExecutions": 0
+}
