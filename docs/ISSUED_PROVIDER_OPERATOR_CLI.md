@@ -346,3 +346,43 @@ one current parser check are recorded in
 The failed close fixture is preserved in the failure inventory; the native reader
 was unchanged. Native/Linux 100-call/replay/restart, physical release, late paid
 obligations and delivery/compensation acceptance remain separate OPEN gates.
+
+## Expired original funding without grant activation
+
+The existing explicit FRESH ACTIVATE command distinguishes an original intent
+that is already expired when preparation observes the trusted clock. The
+selected native observer must still match the original row, authority, target,
+chain profile and confirmation policy, with a READY outbox. A READY or SETTLED
+tag alone is insufficient. The expired branch runs before construction of the
+ordinary activation composition. It reads the actual selected offer and parsed
+authority, then uses the existing committed-evidence projector/matcher and
+verifyZenonIssuedFundingWithoutActivation to authenticate and rebind the whole
+original funding context. No grant-store, activation, signing, payout, clock or
+timer port is passed to the expired verification controller.
+
+After verification the same owner rechecks its provider and exact BOUND row.
+A known result returns FUNDED_NO_NEW_GRANT, grantActivation
+NOT_ENTERED_THIS_OPERATION, grantExistence NOT_QUERIED and deliveryLiability
+RECONCILIATION_REQUIRED. paymentAt is null: eligibilityObservedAt is preparation
+time, not proof that the payment itself was late. Delivery and compensation
+remain NOT_ESTABLISHED. Every action flag is false and authority is NONE. The
+existing committed observer evidence and original funding rows remain the
+recovery source. No database, schema, migration, endpoint, economic transaction
+or compensation permission is added; net quantity owed is not established.
+
+The known verification-only result leaves the provider open without grant
+admission or a service session. The same owner cannot repeat verification or
+switch to activation after a clock regression. Normal activation, commit/admission
+receipt loss, invalid proof, row drift, opaque work and close during verification
+retain their existing HELD boundaries. No generic activation error is converted
+to a known no-grant result. Expiry first observed inside an ordinary activation
+attempt still follows its existing outcome contract. Reconstructing this
+observation after a lost operator response remains a separate recovery gate.
+
+The 20 new DATA cases declare memory projector/verifier/provider/store ports and
+synthetic unsigned records. They do not perform native signature verification,
+SQLite, SDK or HTTPS. Twenty-five affected activation controls were rerun; the
+remaining source-exact scopes were retained. See the
+[local result](../qualification/expired-original-funding.actual-local-result.json)
+and [V52 source profile](../qualification/profiles/api-credit-application-source-v52.json).
+Native authentication, Linux, physical release and full G0-G5 remain OPEN.

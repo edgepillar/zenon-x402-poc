@@ -2480,9 +2480,15 @@
       "format": "module"
     },
     {
+      "path": "src/issued-expired-funding-preparation.js",
+      "bytes": 7692,
+      "sha256": "8a44da46541aa63443d4c3c47ac52350cdfa6b88166c60414b51c7471a2bb1b3",
+      "format": "module"
+    },
+    {
       "path": "src/issued-funding-grant-activation-owner.js",
-      "bytes": 11444,
-      "sha256": "393ea518fd7173450d9aabc627546fd238dfaeefd8611d393e96ca75b700353c",
+      "bytes": 13007,
+      "sha256": "eef7052e028faf10676176d8959f96878d77483e9c8986f2a9f97608d72009b4",
       "format": "module"
     },
     {
@@ -2871,8 +2877,8 @@
     },
     {
       "path": "src/x402-issued-funding-grant-native-activation.js",
-      "bytes": 4742,
-      "sha256": "88f4026696d3f1a80dd666e12df1e69f0b20b17ee4dcff2d27db2fe184816785",
+      "bytes": 6005,
+      "sha256": "1a367949dac8d62b8fb3d5f933e0f5836042bf8f23564f1e3d3c9179bd01eefc",
       "format": "module"
     },
     {

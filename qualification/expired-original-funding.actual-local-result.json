@@ -1,0 +1,325 @@
+{
+  "qualification": "G1_G2_EXPIRED_ORIGINAL_FUNDING_DATA",
+  "status": "PASS",
+  "recordedAtUTC": "2026-10-30T12:20:44.277711+00:00",
+  "passed": 45,
+  "failed": 0,
+  "newControls": 20,
+  "reexecutedRelevantDataControls": 25,
+  "retainedEarlierTurnExactControls": 1424,
+  "aggregateVerifiedControls": 1469,
+  "cases": [
+    {
+      "id": "expired-time-classifies-before-at-and-after-original-deadline",
+      "status": "PASS"
+    },
+    {
+      "id": "expired-time-rejects-invalid-clock-results-without-thenable-hooks",
+      "status": "PASS"
+    },
+    {
+      "id": "expired-preparation-is-inert-and-accepts-no-grant-or-store-port",
+      "status": "PASS"
+    },
+    {
+      "id": "expired-preparation-cannot-select-a-nonexpired-original",
+      "status": "PASS"
+    },
+    {
+      "id": "expired-verification-reuses-original-authenticator-with-no-grant-authority",
+      "status": "PASS"
+    },
+    {
+      "id": "expired-verification-cannot-repeat-after-success-or-a-clock-regression",
+      "status": "PASS"
+    },
+    {
+      "id": "expired-verification-captures-original-context-before-project-and-await",
+      "status": "PASS"
+    },
+    {
+      "id": "expired-verification-rejects-success-bound-and-cached-flags",
+      "status": "PASS"
+    },
+    {
+      "id": "expired-verification-rebinds-every-original-field-and-confirmation-policy",
+      "status": "PASS"
+    },
+    {
+      "id": "expired-verification-never-enters-project-context-getters",
+      "status": "PASS"
+    },
+    {
+      "id": "expired-verification-rejects-promised-projector-and-custom-verifier-thenable",
+      "status": "PASS"
+    },
+    {
+      "id": "expired-receipt-cannot-claim-delivery-compensation-or-existing-grant-absence",
+      "status": "PASS"
+    },
+    {
+      "id": "expired-owner-known-result-preserves-open-provider-and-never-enters-grant-admission",
+      "status": "PASS"
+    },
+    {
+      "id": "expired-owner-cannot-repeat-or-switch-to-mint-after-known-result",
+      "status": "PASS"
+    },
+    {
+      "id": "expired-owner-pending-official-phase-does-not-enter-verification",
+      "status": "PASS"
+    },
+    {
+      "id": "expired-owner-authentication-failure-retains-held-and-one-close",
+      "status": "PASS"
+    },
+    {
+      "id": "expired-owner-does-not-downgrade-a-normal-activation-error-to-known-funding",
+      "status": "PASS"
+    },
+    {
+      "id": "expired-owner-close-during-verification-cannot-admit-late-success",
+      "status": "PASS"
+    },
+    {
+      "id": "expired-owner-row-drift-after-verification-is-held-with-original-records-untouched",
+      "status": "PASS"
+    },
+    {
+      "id": "expired-owner-never-invokes-an-opaque-prepared-verifier-getter",
+      "status": "PASS"
+    },
+    {
+      "id": "original-activation-construction-is-inert-and-ports-are-closed",
+      "status": "PASS"
+    },
+    {
+      "id": "original-activation-unfunded-and-pending-provider-never-enter-preparation",
+      "status": "PASS"
+    },
+    {
+      "id": "original-activation-settled-alone-does-not-create-or-open-a-grant",
+      "status": "PASS"
+    },
+    {
+      "id": "original-activation-ready-target-creates-one-original-grant-then-actual-admission",
+      "status": "PASS"
+    },
+    {
+      "id": "original-activation-second-call-cannot-repeat-even-after-known-success",
+      "status": "PASS"
+    },
+    {
+      "id": "original-activation-not-ready-is-explicit-and-bounded-to-sixteen-attempts",
+      "status": "PASS"
+    },
+    {
+      "id": "original-activation-not-ready-then-ready-does-not-renew-funding",
+      "status": "PASS"
+    },
+    {
+      "id": "original-activation-foreign-or-extra-bound-row-refuses-before-preparation",
+      "status": "PASS"
+    },
+    {
+      "id": "original-activation-changed-selection-or-issued-challenge-is-refused",
+      "status": "PASS"
+    },
+    {
+      "id": "original-activation-bound-getters-are-never-run",
+      "status": "PASS"
+    },
+    {
+      "id": "original-activation-preparation-must-be-sync-and-cannot-return-opaque-promise",
+      "status": "PASS"
+    },
+    {
+      "id": "original-activation-ready-function-is-captured-without-running-accessors",
+      "status": "PASS"
+    },
+    {
+      "id": "original-activation-reentrant-second-call-cannot-enter-a-second-preparer",
+      "status": "PASS"
+    },
+    {
+      "id": "original-activation-manual-admission-is-fenced-during-preparation",
+      "status": "PASS"
+    },
+    {
+      "id": "original-activation-close-during-preparation-prevents-activation-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "original-activation-row-drift-after-preparation-stops-the-mint-call",
+      "status": "PASS"
+    },
+    {
+      "id": "original-activation-thenable-is-held-without-reading-then",
+      "status": "PASS"
+    },
+    {
+      "id": "original-activation-lost-target-result-keeps-created-grant-without-admission-or-retry",
+      "status": "PASS"
+    },
+    {
+      "id": "original-activation-foreign-result-grant-is-rejected-before-service-admission",
+      "status": "PASS"
+    },
+    {
+      "id": "original-activation-close-during-target-await-cannot-admit-a-late-grant",
+      "status": "PASS"
+    },
+    {
+      "id": "original-activation-row-drift-after-grant-commit-preserves-held-and-blocks-admission",
+      "status": "PASS"
+    },
+    {
+      "id": "original-activation-lost-admission-receipt-never-repeats-activation",
+      "status": "PASS"
+    },
+    {
+      "id": "original-activation-manual-committed-grant-path-keeps-its-existing-contract",
+      "status": "PASS"
+    },
+    {
+      "id": "original-activation-normal-close-shares-the-same-provider-close-receipt",
+      "status": "PASS"
+    },
+    {
+      "id": "original-activation-actual-controller-and-ledger-cover-one-funding-one-grant-100-calls-and-exact-replay",
+      "status": "PASS"
+    }
+  ],
+  "nodeVersion": "24.19.0",
+  "platform": "darwin-arm64",
+  "nodeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25",
+  "rawQualificationSha256": "15e4e0b93fb840e44ad2936be645d91b97360eb1362b9c8121538164277fc637",
+  "sourceProfile": {
+    "path": "qualification/profiles/api-credit-application-source-v52.json",
+    "bytes": 367489,
+    "sha256": "0cdb45e2f4f19ccbfdcb45bbf90ed9b3cc712a8ff6eacbe36b5bf561c4d2ac49"
+  },
+  "expiredOriginalFunding": {
+    "version": 1,
+    "scope": "ALREADY_EXPIRED_ORIGINAL_FUNDING_WITHOUT_GRANT_ACTIVATION_SOURCE_CANDIDATE",
+    "activationOwner": "src/issued-funding-grant-activation-owner.js",
+    "nativePreparation": "src/x402-issued-funding-grant-native-activation.js",
+    "expiredPreparation": "src/issued-expired-funding-preparation.js",
+    "existingVerifier": "src/service-credit-zenon-funding-evidence.js#verifyZenonIssuedFundingWithoutActivation",
+    "evidenceLibraryBytesUnchanged": true,
+    "existingFreshActivateOnly": true,
+    "originalObserverBindingAndReadyBeforeTimeClassification": true,
+    "expiredBranchBeforeNormalComposition": true,
+    "actualBorrowedOfferAndAuthority": true,
+    "actualCommittedProjectAndMatchPrototypeMethods": true,
+    "contextCapturedBeforeProjectAndAwait": true,
+    "fullOriginalFundingRecordRebound": true,
+    "noGrantStoreActivationSigningPayoutOrClockPortInExpiredController": true,
+    "oneVerificationEntry": true,
+    "providerAndBoundRowRecheckedAfterAwait": true,
+    "result": "FUNDED_NO_NEW_GRANT",
+    "grantActivation": "NOT_ENTERED_THIS_OPERATION",
+    "grantExistence": "NOT_QUERIED",
+    "deliveryLiability": "RECONCILIATION_REQUIRED",
+    "paymentTimeUnknown": true,
+    "noDeliveryCompensationOrNetLiabilityClaim": true,
+    "noGenericActivationErrorDowngrade": true,
+    "normalUnknownActivationHeld": true,
+    "noTermExpiryBudgetOrUnitRefresh": true,
+    "noNewStoreSchemaMigrationOrEndpoint": true,
+    "sourceProviderOperatorInputs": 100,
+    "rootMetadataInputs": 1,
+    "providerCatalogRows": 503,
+    "providerCatalogApplicationRows": 99,
+    "packageRows": 404,
+    "explicitBareEdges": 4,
+    "defaultBuyerInputs": 167,
+    "defaultBuyerCatalogRows": 570,
+    "defaultBuyerGraphChanged": false,
+    "defaultBuyerCatalogAndReaderByteIdentical": true,
+    "installedNamespaceQualified": false,
+    "nativeExecution": false,
+    "nativeFundingAuthentication": "NOT_EXECUTED",
+    "externalOwnerFencing": "NOT_ESTABLISHED",
+    "physicalRelease": "NOT_ESTABLISHED",
+    "LinuxCommandExecution": "NOT_ESTABLISHED",
+    "originalDeliveryCompensationContract": "OPEN",
+    "G0G1G2Acceptance": "OPEN"
+  },
+  "proofManifest": {
+    "path": "qualification/expired-original-funding.proof-manifest.json",
+    "bytes": 452964,
+    "sha256": "3d99d629c95da111d0b8e4c03f8b3c34ab00826b86ca8a768336bd91e3407a6e"
+  },
+  "operationalPorts": "DECLARED_MEMORY_ONLY",
+  "actualDataNodeCommands": 2,
+  "actualSyntaxNodeCommands": 2,
+  "failureInventory": {
+    "path": "qualification/expired-original-funding.failure-inventory.json",
+    "bytes": 856,
+    "sha256": "b1eda0b0da12f32a066d115163f1be3449eec083c3f363e67957c9a95f4d0117"
+  },
+  "sourceContract": {
+    "path": "qualification/expired-original-funding.source-contract.json",
+    "bytes": 3414,
+    "sha256": "d77141c7fa58f18fd7503f8d192877df90a07b8a46aefcd582f3274bc6c319f5"
+  },
+  "nativeExecutions": 0,
+  "SDK": 0,
+  "SQLite": 0,
+  "keys": 0,
+  "signatures": 0,
+  "sockets": 0,
+  "signals": 0,
+  "nonceSearches": 0,
+  "nodeChildren": 0,
+  "actualPrepare": 0,
+  "payouts": 0,
+  "task": "CLOSED/SUCCESS",
+  "resources": {
+    "taskQuotaBytes": 4194304,
+    "plannedExecutionPeakBytes": 2209197,
+    "sourceInputs": 301,
+    "dataRuntimeInputs": 29,
+    "parserInputs": 2,
+    "reusedParserInputs": 45,
+    "invalidatedParserInputs": 2,
+    "addedParserInputs": 0,
+    "currentFileParserProofs": 47,
+    "retainedExactRuntimeDataControls": 1424,
+    "reexecutedRelevantDataControls": 25,
+    "sourceOnlyCASLookupsAvoided": 270,
+    "materializedInputs": 31,
+    "sourceOnlyAliasesAvoided": 270,
+    "CASVerifiedReuse": 26,
+    "CASNewImports": 5,
+    "sourceTextArchives": 0,
+    "minimumFreeFloorBytes": 10737418240,
+    "streamAllocationPlan": {
+      "serialCommands": true,
+      "maximumRetainedSuccessfulDataStdoutBytes": 25519,
+      "requiredSuccessfulStderrBytes": 0,
+      "maximumOnePendingStderrBytes": 1048576,
+      "unchangedParserReceiptsReused": 45,
+      "newParserCommands": 2,
+      "sourceAliasBytes": 403711,
+      "newSourceCASBytes": 50468,
+      "allReferencedSourceCASBytes": 403711,
+      "metadataMarginBytes": 262144,
+      "allReferencedCASChargedPerTask": true,
+      "preexistingCASAlsoCharged": true,
+      "serialDataCommands": 2
+    },
+    "serialDataCommands": 2,
+    "failedDataTasksThisTurn": 0,
+    "quotaExpanded": false,
+    "parserBatchAdmission": true,
+    "proofManifestDeduplicated": true
+  },
+  "nativeFundingAuthentication": "NOT_EXECUTED",
+  "nativeAcceptance": "NOT_ESTABLISHED",
+  "physicalRelease": "NOT_ESTABLISHED",
+  "LinuxAcceptance": "NOT_ESTABLISHED",
+  "current108CISeparate": true,
+  "newControlsIncludedIn108CI": false
+}

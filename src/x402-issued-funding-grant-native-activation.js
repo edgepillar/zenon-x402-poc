@@ -6,6 +6,8 @@ import { ZenonFundingIntakeSqliteStore } from './service-credit-zenon-funding-in
 import { ZenonFundingObserverSqliteStore } from './service-credit-zenon-funding-observer-sqlite-store.js';
 import { ServiceCreditSqliteStore } from './service-credit-sqlite-store.js';
 import { createZenonFundingComposition } from './service-credit-zenon-funding-composition.js';
+import { parseZenonFundingProviderAttestationAuthorityRecord } from './service-credit-zenon-funding-provider-attestation.js';
+import { captureIssuedFundingActivationTime, createIssuedExpiredFundingPreparation } from './issued-expired-funding-preparation.js';
 
 const F=Object.freeze,D=Object.getOwnPropertyDescriptor,A=Reflect.apply;
 const INTAKE=ZenonFundingIntakeSqliteStore.prototype,OBSERVER=ZenonFundingObserverSqliteStore.prototype,SERVICE=ServiceCreditSqliteStore.prototype;
@@ -35,6 +37,16 @@ export function createIssuedFundingGrantNativeActivationPreparation(options){
   // the READY envelope and authority; a raw READY/SETTLED flag cannot mint.
   if(own(own(loaded,'outbox'),'status')!=='READY')return F({status:'NOT_READY'});
   const challenge=own(issue,'challenge'),intent=own(challenge,'activationIntent'),paymentRequired=own(challenge,'paymentRequired');
+  const time=captureIssuedFundingActivationTime(own(intent,'expiresAt'),F(()=>A(c.now,undefined,[])));
+  if(time.expired){
+   const selected=own(issue,'selection'),offer=A(OFFER,c.serviceStore,[F({offerId:own(selected,'offerId'),offerVersion:own(selected,'offerVersion')})]);
+   const authority=parseZenonFundingProviderAttestationAuthorityRecord(c.authorityRecord);
+   return createIssuedExpiredFundingPreparation(F({offer,challenge,authorityProfile:authority.authorityProfile,
+    transactionHash:own(binding,'transactionHash'),payer:own(selected,'holderId'),resourceUrl:own(issue,'resourceUrl')}),time,F({
+     projectFundingEvidence:F(()=>{brand(observer,OBSERVER,'projectCommittedFundingEvidence',PROJECT);return A(PROJECT,observer,[]);}),
+     verifyFundingEvidence:F(candidate=>new Promise((resolve,reject)=>{try{brand(observer,OBSERVER,'matchReadyFundingEvidence',MATCH);resolve(A(MATCH,observer,[candidate]));}catch{reject(new TypeError('ISSUED_EXPIRED_FUNDING_VERIFICATION'));}})),
+   }));
+  }
   const original=canonicalJson(row),composition=createZenonFundingComposition({serviceCreditStore:c.serviceStore,fundingObserverStore:observer,
    authorityRecord:c.authorityRecord,deriveFundingTerms:c.deriveFundingTerms,now:c.now});
   const activate=D(composition,'activateCommittedFunding')?.value;if(typeof activate!=='function'||types.isProxy(activate))fail();

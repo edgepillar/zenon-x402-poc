@@ -4,6 +4,7 @@ import { canonicalJson } from './canonical.js';
 import { captureIssuedFundingPostServiceSelection } from './x402-issued-funding-post-application-binding.js';
 import { createIssuedFundingPostSdkResourceBinding } from './x402-issued-funding-post-sdk-resource.js';
 import { captureOfficialFundingPostHttpsRoute } from './x402-official-funding-post-https-request-binding.js';
+import { captureIssuedExpiredFundingResult } from './issued-expired-funding-preparation.js';
 
 const F=Object.freeze,D=Object.getOwnPropertyDescriptor,K=Reflect.ownKeys,A=Reflect.apply,O=Object.hasOwn,NP=Promise,PP=NP.prototype;
 const THEN=D(PP,'then'),CTOR=D(PP,'constructor'),SPECIES=D(NP,Symbol.species),HELD=new Set();
@@ -38,8 +39,8 @@ export function createIssuedFundingGrantActivationOwner(options){
  const c=fields(options,['selection','resourceUrl','port']),selection=captureIssuedFundingPostServiceSelection(c.selection),url=captureOfficialFundingPostHttpsRoute(c.resourceUrl).resourceUrl;
  const p=fields(c.port,['providerSnapshot','providerClose','loadBound','prepareActivation','admitCommittedServiceGrant']);
  for(const fn of Object.values(p))if(typeof fn!=='function'||types.isProxy(fn)||!Object.isFrozen(fn))fail();if(new Set(Object.values(p)).size!==5)fail();
- let closed=false,held=false,active=false,attempts=0,activationEntered=false,admittedGrantId=null,row=null,observer=null,prepared=null,work=null,closing=null,providerClose=null;
- let preparations=0,activationCalls=0,admissionCalls=0,closeCalls=0;const opaque=[];
+ let closed=false,held=false,active=false,attempts=0,activationEntered=false,verificationEntered=false,fundedWithoutGrantObserved=false,admittedGrantId=null,row=null,observer=null,prepared=null,work=null,closing=null,providerClose=null;
+ let preparations=0,activationCalls=0,verificationCalls=0,admissionCalls=0,closeCalls=0;const opaque=[];
  const retained=F(()=>[p,row,observer,prepared,work,closing,providerClose,opaque]);
  function hold(v){held=true;HELD.add(retained);if(v!==undefined){opaque.push(v);discard(v);}}
  function live(){if(closed||held||!invariant())fail();}
@@ -64,6 +65,13 @@ export function createIssuedFundingGrantActivationOwner(options){
    A(THEN.value,observed,[()=>providerClose.resolve(undefined),()=>{hold();providerClose.reject(new TypeError('ACTIVATION_PROVIDER_CLOSE_UNKNOWN'));}]);
   }catch{hold();providerClose.reject(new TypeError('ACTIVATION_PROVIDER_CLOSE_UNKNOWN'));}return providerClose.promise;}
  function failed(ticket){hold();requestClose();ticket.reject(new TypeError('ORIGINAL_ACTIVATION_UNKNOWN'));}
+ async function settleExpiredFunding(value,ticket,hash,pinnedRow){
+  try{const result=(await observe(value,v=>snapshot(v))).value;live();current(hash);if(bound(hash).raw!==pinnedRow)fail();
+   const issue=own(row,'issue'),intent=own(own(issue,'challenge'),'activationIntent'),selection=createIssuedFundingPostSdkResourceBinding(own(issue,'frame'),url).selection();
+   const receipt=captureIssuedExpiredFundingResult(result,F({transactionHash:hash,fundingCommitment:'sha256:'+selection.resource.tags[1]+selection.resource.tags[2],expiresAt:own(intent,'expiresAt')}));
+   current(hash);if(bound(hash).raw!==pinnedRow)fail();live();fundedWithoutGrantObserved=true;ticket.resolve(receipt);
+  }catch{failed(ticket);}finally{active=false;}
+ }
  async function settle(value,ticket,hash,pinnedRow){
   try{const result=(await observe(value,v=>snapshot(v))).value;live();current(hash);if(bound(hash).raw!==pinnedRow)fail();
    const r=fields(result,['activation','grant']),grant=r.grant,id=own(grant,'grantId');
@@ -76,13 +84,19 @@ export function createIssuedFundingGrantActivationOwner(options){
   }catch{failed(ticket);}finally{active=false;}
  }
  const activateOriginalCommittedFunding=F(function activateOriginalCommittedFunding(observerStore){
-  if(arguments.length!==1||closed||held||active||activationEntered||attempts>=16||!invariant())return rejected();
+  if(arguments.length!==1||closed||held||active||activationEntered||verificationEntered||attempts>=16||!invariant())return rejected();
   const ticket=capability();work=ticket;active=true;attempts++;observer=observerStore;
   try{const view=inspect();live();if(!eligible(view)){active=false;ticket.resolve(F({status:'NOT_READY',activationEntered:false,authority:'NONE'}));return ticket.promise;}
    const hash=current(),selected=bound(hash);row=selected.row;preparations++;
    prepared=A(p.prepareActivation,undefined,[observerStore,row]);if(types.isPromise(prepared)){hold(prepared);fail();}live();
    if(!Object.isFrozen(prepared))fail();const status=own(prepared,'status');
    if(status==='NOT_READY'){fields(prepared,['status']);current(hash);if(bound(hash).raw!==selected.raw)fail();active=false;ticket.resolve(F({status:'NOT_READY',activationEntered:false,authority:'NONE'}));return ticket.promise;}
+   if(status==='VERIFY_EXPIRED_FUNDING'){
+    const ready=fields(prepared,['status','verify']);if(typeof ready.verify!=='function'||types.isProxy(ready.verify)||!Object.isFrozen(ready.verify)||Object.values(p).includes(ready.verify))fail();
+    current(hash);if(bound(hash).raw!==selected.raw)fail();live();verificationEntered=true;verificationCalls++;
+    let returned;try{returned=A(ready.verify,undefined,[]);}catch{fail();}
+    const running=settleExpiredFunding(returned,ticket,hash,selected.raw);A(THEN.value,running,[()=>{},()=>{}]);return ticket.promise;
+   }
    const ready=fields(prepared,['status','activate']);if(status!=='READY'||typeof ready.activate!=='function'||types.isProxy(ready.activate)||!Object.isFrozen(ready.activate)||Object.values(p).includes(ready.activate))fail();
    current(hash);if(bound(hash).raw!==selected.raw)fail();live();activationEntered=true;activationCalls++;
    let returned;try{returned=A(ready.activate,undefined,[]);}catch{fail();}const running=settle(returned,ticket,hash,selected.raw);A(THEN.value,running,[()=>{},()=>{}]);
@@ -92,6 +106,6 @@ export function createIssuedFundingGrantActivationOwner(options){
  const close=F(function close(){if(arguments.length!==0)return rejected();if(closing!==null)return closing.promise;
   closing=capability();closed=true;if(active)hold();const receipt=requestClose();A(THEN.value,receipt,[()=>{if(held||active)closing.reject(new TypeError('ACTIVATION_CLOSE_HELD'));else closing.resolve(undefined);},()=>closing.reject(new TypeError('ACTIVATION_CLOSE_HELD'))]);return closing.promise;});
  const view=F(function snapshotView(){if(arguments.length!==0)fail();return F({version:1,closed,held,active,attempts,maximumAttempts:16,activationEntered,preparations,activationCalls,admissionCalls,admittedGrantId,providerCloseCalls:closeCalls,
-  observerStore:'BORROWED_NOT_CLOSED',serviceStore:'BORROWED_NOT_CLOSED',fundingStore:'BORROWED_NOT_CLOSED',newFunding:0,SDKSettlementCalls:0,signatures:0,authority:'EXPLICIT_LOCAL_OPERATOR_REQUIRED',nativeAcceptance:'NOT_ESTABLISHED'});});
+  verificationEntered,verificationCalls,fundedWithoutGrantObserved,observerStore:'BORROWED_NOT_CLOSED',serviceStore:'BORROWED_NOT_CLOSED',fundingStore:'BORROWED_NOT_CLOSED',newFunding:0,SDKSettlementCalls:0,signatures:0,authority:'EXPLICIT_LOCAL_OPERATOR_REQUIRED',nativeAcceptance:'NOT_ESTABLISHED'});});
  return F({activateOriginalCommittedFunding,admitCommittedServiceGrant,close,snapshot:view});
 }

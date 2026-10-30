@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "qualification": "G1_G2_EXPIRED_ORIGINAL_FUNDING_FAILURE_INVENTORY",
+  "status": "NO_NEW_FAILURE_PRIOR_FAILURES_PRESERVED",
+  "failures": [],
+  "currentDataFailures": 0,
+  "currentParserFailures": 0,
+  "currentTurnFailedQualificationTasks": 0,
+  "priorInventory": {
+    "path": "qualification/inactive-grant-recorded-result.failure-inventory.json",
+    "sha256": "d5c8bebb689e9255281ac813f37eec0bb707ec7a77235546b3b0b5bf62a0e51b"
+  },
+  "priorFailuresReclassified": false,
+  "sourceReviewFindings": [
+    {
+      "id": "ALREADY_EXPIRED_ORIGINAL_ONLY_HAD_GENERIC_ACTIVATION_FAILURE",
+      "classification": "PRODUCT_SOURCE_GAP",
+      "sourceBefore": "d0eabac6ccbfff6fd68156602a2a8d4735d9df18",
+      "status": "SOURCE_CORRECTED_DATA_QUALIFIED_NATIVE_NOT_ESTABLISHED",
+      "nativeExecuted": false
+    }
+  ],
+  "nativeExecutions": 0
+}
