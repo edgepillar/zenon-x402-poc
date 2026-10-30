@@ -100,6 +100,17 @@ power-loss guarantees. Source identity checks do not establish cross-process
 owner fencing. Physical release, real signals, Linux command execution,
 native journal durability and the complete G1/G2 product acceptance remain OPEN.
 
+## Funding close budget admission
+
+funding.closeBudgetMs is an explicit integer from 1 through 1000 milliseconds.
+The bootstrap now enforces the actual funding backend and operation-drain
+helper's existing range, before TLS material or application stores are acquired.
+It previously admitted up to 60000 although the backend would refuse anything
+above 1000 later in construction. Oversized values are rejected, never clamped
+or replaced with a default. The backend/drain code and their cooperative
+observation semantics are unchanged. Other selected deadlines retain their own
+bounds; this is not OS cancellation or physical-release qualification.
+
 ## Explicit public profile
 
 All top-level fields are required:

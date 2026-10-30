@@ -2541,8 +2541,8 @@
     },
     {
       "path": "src/issued-provider-operator-bootstrap.js",
-      "bytes": 12478,
-      "sha256": "2dd8f9f45d069effdb30451a5863428c0cf714ed0c885275fa855ec29bad46ad",
+      "bytes": 12477,
+      "sha256": "cc152ef3bee37c7b9c06220d0c16fd0dbf75ea435405fd0cc5d2450e14baa4d2",
       "format": "module"
     },
     {

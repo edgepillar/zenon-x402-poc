@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "qualification": "G1_PROVIDER_FUNDING_CLOSE_BUDGET_FAILURE_INVENTORY",
+  "status": "NO_NEW_FAILURE;PRIOR_FAILURES_PRESERVED",
+  "failures": [],
+  "currentDataFailures": 0,
+  "currentParserFailures": 0,
+  "priorInventory": {
+    "path": "qualification/reserved-original-funding-observer.failure-inventory.json",
+    "sha256": "59b573fba47d8f0ab2804d47a2a5e1cb5bf12b1ddc41b2d37e4b0abb13c188f3"
+  },
+  "priorFailuresReclassified": false,
+  "nativeExecutions": 0
+}

@@ -48,7 +48,7 @@ export function decodeIssuedProviderOperatorBootstrap(raw){
  if(c.providerBootstrapVersion===2&&(!['JOURNAL_ONLY','ORIGINAL_RPC'].includes(f.pendingObservationMode)||f.pendingObservationMode==='ORIGINAL_RPC'&&c.applicationMode!=='FRESH'))fail();
  text(f.authorityRecord,65536);path(f.observerRoot);const selection=captureIssuedFundingPostServiceSelection(f.selection);
  const deriveFundingTerms=createFixedZenonFundingPolicy({offer,selection,terms:f.terms});if(f.terms.totalUnits<100)fail();
- const chain=captureIssuedProviderChainSelection(c.chain,f.terms.requirement);integer(f.maxPendingReconciliations,0,16);integer(f.maxIntakeAttempts,1,16);integer(f.closeBudgetMs,1,60000);
+ const chain=captureIssuedProviderChainSelection(c.chain,f.terms.requirement);integer(f.maxPendingReconciliations,0,16);integer(f.maxIntakeAttempts,1,16);integer(f.closeBudgetMs,1,1000);
  const catchup=fields(f.observerCatchUp,['maximumPageEntries','maximumBackfillSpan','maximumMembersPerMomentum']);for(const v of Object.values(catchup))integer(v,1,65536);
  const service=fields(c.service,['productId','selectedDurationMs']);if(service.productId!=='execution-receipt-v1')fail();integer(service.selectedDurationMs,1,60000);
  const transport=fields(c.transport,['origin','generation','limits','bind']),u=new URL(transport.origin);
