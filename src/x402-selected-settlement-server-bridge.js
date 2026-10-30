@@ -127,13 +127,11 @@ function constructBridge(configuration, argumentCount, officialCore223) {
     const c = record(configuration, CONFIG);
     fixed = parse(serialize(c.requirement)); REQUIREMENT(fixed); fixed = deepFreeze(fixed);
     receiver = c.localFacilitator;
-    verify = captureMethod(receiver, 'verify'); first = captureMethod(receiver, 'settle');
-    observe = c.reconcilePendingSettlement === null ? null : callable(c.reconcilePendingSettlement);
-    schema = callable(c.validateChallenge); budget = c.maxPendingReconciliations; limit = c.contextLimit;
+    const roles = captureSelectedSettlementServerCallbackRoles(receiver,c.validateChallenge,c.reconcilePendingSettlement);
+    verify = roles.verify; first = roles.first; observe = roles.observe; schema = roles.schema;
+    budget = c.maxPendingReconciliations; limit = c.contextLimit;
     if (!safe(budget) || budget < 0 || budget > 16 || same(budget, -0)
-        || !safe(limit) || limit < 1 || limit > 64 || same(limit, -0)
-        || verify === first || observe === verify || observe === first
-        || schema === verify || schema === first || schema === observe) fail('configuration_rejected');
+        || !safe(limit) || limit < 1 || limit > 64 || same(limit, -0)) fail('configuration_rejected');
   } catch { fail('configuration_rejected'); }
   const RECEIVER = receiver, VERIFY = verify, FIRST = first, OBSERVE = observe, SCHEMA = schema;
   const entries = [], selectedEntries = new NativeMap(), hashClaims = new NativeMap();
@@ -571,6 +569,21 @@ function constructBridge(configuration, argumentCount, officialCore223) {
   });
 }
 
+
+/** Capture the original role identities BEFORE an embedding wraps a callback.
+ * Metadata only: no method is invoked and no context/SDK owner is created.
+ * This preserves direct alias exclusions; it cannot sandbox a trusted wrapper
+ * that deliberately delegates to another operational capability.
+ */
+export function captureSelectedSettlementServerCallbackRoles(receiver,validateChallenge,reconcilePendingSettlement) {
+  if (arguments.length !== 3 || !invariant()) fail('configuration_rejected');
+  const verify = captureMethod(receiver,'verify'), first = captureMethod(receiver,'settle');
+  const observe = reconcilePendingSettlement === null ? null : callable(reconcilePendingSettlement);
+  const schema = callable(validateChallenge);
+  if (verify === first || observe === verify || observe === first
+      || schema === verify || schema === first || schema === observe) fail('configuration_rejected');
+  return freeze({receiver,verify,first,observe,schema});
+}
 
 function sealUpfrontTransport(context) {
   const request = record(context, freeze(['request'])).request;

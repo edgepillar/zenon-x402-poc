@@ -69,3 +69,18 @@ evaluating it. Actual SQLite durability/contention, SDK/core/HTTPS composition,
 ACK-loss cutpoints, process reopen, stale workers, native release, Linux and
 G1's 100-call product scenario remain OPEN. The unchanged hosted 108-control
 profile does not execute this new native path. G0-G5 remain OPEN.
+
+## Reservation admission at the observer boundary
+
+The durable constructor binds the existing pending callback through the same
+custody owner before SDK server construction. This additive source path requires
+one current, original OBSERVATION_IN_FLIGHT row per callback entry, blocks
+concurrent custody writes and rechecks the row before returning normalized DATA.
+See [reservation-bound observation](RESERVED_ORIGINAL_FUNDING_OBSERVATION.md).
+The legacy nondurable callback and first-settlement path are unchanged. Native
+SDK/SQL/journal execution and physical-release acceptance remain unestablished.
+
+Original callback-role alias checks run before custody wrapping and intake
+issuance, so the wrapper cannot hide an observer that is the verifier, first
+settlement or challenge validator. The shared SDK-free bridge retains the same
+pairwise exclusions.

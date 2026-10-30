@@ -1,0 +1,404 @@
+{
+  "qualification": "G1_RESERVED_ORIGINAL_FUNDING_OBSERVER_DATA",
+  "status": "PASS",
+  "recordedAtUTC": "2026-10-30T03:22:28.360565+00:00",
+  "passed": 59,
+  "failed": 0,
+  "newControls": 33,
+  "reexecutedRelevantDataControls": 26,
+  "retainedEarlierTurnExactControls": 1030,
+  "retainedCurrentTurnExactRegressionControls": 277,
+  "aggregateVerifiedControls": 1366,
+  "cases": [
+    {
+      "id": "provider-funding-roles-construction-does-not-read-journal-or-call-facilitator",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-selected-journal-binding-matches-all-original-fields",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-selected-journal-projection-refuses-forged-or-copied-bindings",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-selected-journal-ack-is-pending-and-grants-no-publication-or-service",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-selected-journal-original-confirmation-threshold-is-preserved",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-selected-journal-included-original-produces-only-sdk-shaped-result",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-selected-journal-pending-budget-exhausts-without-reset-or-extra-read",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-selected-journal-zero-budget-never-enters-reader",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-selected-journal-max-16-policy-refuses-the-seventeenth-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-selected-journal-concurrent-reentry-is-refused-before-reading",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-selected-journal-read-failure-consumes-entry-and-keeps-held",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-selected-journal-close-fences-late-result-with-no-new-authority",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-selected-journal-nonpromise-read-is-held-without-thenable-assimilation",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-selected-journal-promised-then-getter-is-not-invoked",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-selected-journal-tombstone-missing-and-unknown-cannot-claim-success",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-selected-journal-every-original-field-must-match-before-result",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-selected-journal-delivery-or-cached-response-is-not-funding-proof",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-selected-journal-malformed-or-changed-context-does-not-enter-reader",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-selected-journal-input-getters-are-not-invoked",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-selected-journal-wrong-arity-and-closed-state-have-no-read",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-chain-selection-is-explicit-and-environment-is-detached",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-chain-selection-current-profile-reuses-existing-explicit-policy",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-chain-selection-does-not-default-or-fall-back-on-mismatch",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-chain-selection-refuses-ambiguous-or-unencrypted-remote-endpoints",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-chain-selection-proxies-and-getters-are-rejected-without-hooks",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-selected-journal-real-sdk-free-bridge-uses-one-first-and-original-read",
+      "status": "PASS"
+    },
+    {
+      "id": "reserved-observer-original-role-capture-is-inert-and-retains-identities",
+      "status": "PASS"
+    },
+    {
+      "id": "reserved-observer-all-original-role-aliases-stay-refused-by-the-actual-bridge",
+      "status": "PASS"
+    },
+    {
+      "id": "reserved-observer-original-role-gate-precedes-custody-wrapping",
+      "status": "PASS"
+    },
+    {
+      "id": "reserved-observer-role-recheck-refuses-post-issuance-method-replacement",
+      "status": "PASS"
+    },
+    {
+      "id": "reserved-observer-original-role-gate-never-enters-getters-or-proxy-traps",
+      "status": "PASS"
+    },
+    {
+      "id": "reserved-observer-binding-is-inert-and-cannot-be-rebound",
+      "status": "PASS"
+    },
+    {
+      "id": "reserved-observer-cannot-be-added-after-first-authority-claim",
+      "status": "PASS"
+    },
+    {
+      "id": "reserved-observer-unreserved-pending-callback-refuses-before-chain",
+      "status": "PASS"
+    },
+    {
+      "id": "reserved-observer-first-in-flight-cannot-authorize-observation",
+      "status": "PASS"
+    },
+    {
+      "id": "reserved-observer-original-reservation-readback-precedes-all-chain-work",
+      "status": "PASS"
+    },
+    {
+      "id": "reserved-observer-actual-bridge-custody-and-chain-progress-one-to-three",
+      "status": "PASS"
+    },
+    {
+      "id": "reserved-observer-direct-bridge-reconciliation-cannot-bypass-durable-budget",
+      "status": "PASS"
+    },
+    {
+      "id": "reserved-observer-sixteen-reservations-exhaust-the-same-bridge-with-one-first-attempt",
+      "status": "PASS"
+    },
+    {
+      "id": "reserved-observer-one-reservation-cannot-enter-callback-twice",
+      "status": "PASS"
+    },
+    {
+      "id": "reserved-observer-lost-reservation-cas-ack-prevents-observer-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "reserved-observer-missing-row-cannot-be-recreated-from-a-callback",
+      "status": "PASS"
+    },
+    {
+      "id": "reserved-observer-foreign-original-payload-refuses-before-rpc",
+      "status": "PASS"
+    },
+    {
+      "id": "reserved-observer-changed-original-requirement-refuses-before-rpc",
+      "status": "PASS"
+    },
+    {
+      "id": "reserved-observer-changed-original-challenge-refuses-before-rpc",
+      "status": "PASS"
+    },
+    {
+      "id": "reserved-observer-reservation-cannot-skip-an-unobserved-budget-slot",
+      "status": "PASS"
+    },
+    {
+      "id": "reserved-observer-external-row-change-after-rpc-stays-held",
+      "status": "PASS"
+    },
+    {
+      "id": "reserved-observer-close-during-callback-fences-late-readback",
+      "status": "PASS"
+    },
+    {
+      "id": "reserved-observer-reentrant-close-retains-the-returned-promise",
+      "status": "PASS"
+    },
+    {
+      "id": "reserved-observer-early-outcome-write-cannot-race-live-observation",
+      "status": "PASS"
+    },
+    {
+      "id": "reserved-observer-callback-rejection-never-restores-a-consumed-slot",
+      "status": "PASS"
+    },
+    {
+      "id": "reserved-observer-unsafe-thenable-getter-is-never-assimilated",
+      "status": "PASS"
+    },
+    {
+      "id": "reserved-observer-result-getter-cannot-become-success",
+      "status": "PASS"
+    },
+    {
+      "id": "reserved-observer-foreign-response-payer-cannot-replace-original-holder",
+      "status": "PASS"
+    },
+    {
+      "id": "reserved-observer-opaque-native-promise-is-retained-without-own-then-hook",
+      "status": "PASS"
+    },
+    {
+      "id": "reserved-observer-concurrent-callback-refuses-without-a-second-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "reserved-observer-historical-record-has-no-observation-or-grant-authority",
+      "status": "PASS"
+    },
+    {
+      "id": "reserved-observer-helper-receipt-brand-cannot-be-forged",
+      "status": "PASS"
+    },
+    {
+      "id": "reserved-observer-zero-budget-cannot-enter-any-chain-observation",
+      "status": "PASS"
+    }
+  ],
+  "nodeVersion": "24.19.0",
+  "platform": "darwin-arm64",
+  "nodeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25",
+  "rawQualificationSha256": "7ea418f8efc6162006d6fd7b212babea9f717134234dc8deaf2ede4a56488871",
+  "sourceProfile": {
+    "path": "qualification/profiles/api-credit-application-source-v47.json",
+    "bytes": 345453,
+    "sha256": "e91d9cadb67b4e9dee5f983456e2f296b2dcc4b09aca4f52fea3498761f821d4"
+  },
+  "reservedOriginalFundingObserver": {
+    "version": 1,
+    "scope": "DURABLE_ORIGINAL_RESERVATION_BOUND_OBSERVER_SOURCE_CANDIDATE",
+    "custodyOwner": "src/official-funding-post-outcome-custody.js#bindPendingObserver",
+    "reservedData": "src/official-funding-post-reserved-observation.js",
+    "nativeBinding": "src/x402-official-funding-post-intake-composition.js",
+    "legacyNondurableCallbackUnchanged": true,
+    "originalRoleIdentitiesAdmittedBeforeWrapping": true,
+    "roleRecheckAfterIntakeCallbacks": true,
+    "originalPairwiseAliasExclusionsPreserved": true,
+    "sameRoleGateUsedBySharedSdkFreeBridge": true,
+    "roleGateDoesNotInvokeCallbacks": true,
+    "trustedCallbackNotSandboxed": true,
+    "firstCustodyMethodsByteIdentical": true,
+    "storedRecordCodecAndTransitionsUnchanged": true,
+    "bindingBeforeSdkServer": true,
+    "bindingPortEntries": 0,
+    "actualSameCustodyOwner": true,
+    "oneFrozenCallbackBoundBeforeFirstClaim": true,
+    "outerDurableReservationBeforeResumeUnchanged": true,
+    "currentObservationReservationRequiredAtCallback": true,
+    "completeOriginalPayloadRequirementChallengeCompared": true,
+    "originalHeaderBytesRetained": true,
+    "strictNextObservationOnly": true,
+    "oneCallbackPerReservation": true,
+    "observerEntryBeforeCallback": true,
+    "concurrentCustodyOperationsBlocked": true,
+    "originalHashNetworkAndPayerResponse": true,
+    "constructedPrimitiveReplyOnly": true,
+    "noThenableAssimilation": true,
+    "exactCurrentRowReadbackBeforeReply": true,
+    "closeDuringCallbackBlocksLateReadbackAndPublication": true,
+    "unknownReturnedPromiseOrObjectRetained": true,
+    "noCompetingStoreJournalOrSdkClose": true,
+    "lostReserveAckCannotEnterCallback": true,
+    "directUnreservedBridgeRetryCannotEnterObserver": true,
+    "noNewFirstSettlement": true,
+    "noBudgetRefundOrReset": true,
+    "pureChainOwnerAndFacilitatorByteIdentical": true,
+    "sourceProviderOperatorInputs": 94,
+    "rootMetadataInputs": 1,
+    "providerCatalogRows": 497,
+    "providerCatalogApplicationRows": 93,
+    "packageRows": 404,
+    "explicitBareEdges": 4,
+    "defaultBuyerInputs": 167,
+    "defaultBuyerCatalogRows": 570,
+    "defaultBuyerGraphChanged": false,
+    "defaultBuyerCatalogAndReaderByteIdentical": true,
+    "defaultBuyerPackageRowsAndBareEdgesUnchanged": true,
+    "providerCatalogEdgeOrderPreserved": true,
+    "installedNamespaceQualified": false,
+    "actualJournalCASExecuted": false,
+    "nativeExecution": false,
+    "actualSdkOrSqlExecuted": false,
+    "chainAuthentication": false,
+    "currentCanonicality": "NOT_ESTABLISHED",
+    "nativePersistence": "NOT_ESTABLISHED",
+    "native100Calls": "NOT_ESTABLISHED",
+    "nativeACKRecovery": "NOT_ESTABLISHED",
+    "nativeBudgetPersistence": "NOT_ESTABLISHED",
+    "externalOwnerFencing": "NOT_ESTABLISHED",
+    "physicalRelease": "NOT_ESTABLISHED",
+    "LinuxCommandExecution": "NOT_ESTABLISHED",
+    "G0G1G2Acceptance": "OPEN"
+  },
+  "proofManifest": {
+    "path": "qualification/reserved-original-funding-observer.proof-manifest.json",
+    "bytes": 360184,
+    "sha256": "b234eda2d61e0d3ba7e3c8ec0efb2cd6f7b2fc957110346289a83f844be11581"
+  },
+  "operationalPorts": "DECLARED_MEMORY_ONLY",
+  "actualDataNodeCommands": 2,
+  "actualSyntaxNodeCommands": 2,
+  "failureInventory": {
+    "path": "qualification/reserved-original-funding-observer.failure-inventory.json",
+    "bytes": 1967,
+    "sha256": "59b573fba47d8f0ab2804d47a2a5e1cb5bf12b1ddc41b2d37e4b0abb13c188f3"
+  },
+  "sourceContract": {
+    "path": "qualification/reserved-original-funding-observer.source-contract.json",
+    "bytes": 4445,
+    "sha256": "c354c75c0a9c56aae1492e526a301d48d1916015d4e2dad212627a5efd859903"
+  },
+  "nativeExecutions": 0,
+  "SDK": 0,
+  "SQLite": 0,
+  "keys": 0,
+  "signatures": 0,
+  "sockets": 0,
+  "signals": 0,
+  "nonceSearches": 0,
+  "nodeChildren": 0,
+  "actualPrepare": 0,
+  "payouts": 0,
+  "task": "CLOSED/SUCCESS",
+  "resources": {
+    "taskQuotaBytes": 4194304,
+    "plannedExecutionPeakBytes": 2945699,
+    "sourceInputs": 294,
+    "dataRuntimeInputs": 65,
+    "parserInputs": 2,
+    "reusedParserInputs": 43,
+    "invalidatedParserInputs": 2,
+    "retainedExactRuntimeDataControls": 1307,
+    "reexecutedRelevantDataControls": 26,
+    "sourceOnlyCASLookupsAvoided": 227,
+    "materializedInputs": 67,
+    "sourceOnlyAliasesAvoided": 227,
+    "CASVerifiedReuse": 63,
+    "CASNewImports": 4,
+    "sourceTextArchives": 0,
+    "minimumFreeFloorBytes": 10737418240,
+    "streamAllocationPlan": {
+      "serialCommands": true,
+      "maximumRetainedSuccessfulDataStdoutBytes": 26705,
+      "requiredSuccessfulStderrBytes": 0,
+      "maximumOnePendingStderrBytes": 1048576,
+      "unchangedParserReceiptsReused": 43,
+      "newParserCommands": 2,
+      "sourceAliasBytes": 771369,
+      "newSourceCASBytes": 90451,
+      "allReferencedSourceCASBytes": 771369,
+      "metadataMarginBytes": 262144,
+      "allReferencedCASChargedPerTask": true,
+      "preexistingCASAlsoCharged": true,
+      "serialDataCommands": 2
+    },
+    "serialDataCommands": 2,
+    "failedDataTasksThisTurn": 0,
+    "priorCurrentTurnSuccessfulDataTaskControls": 331,
+    "retainedCurrentTurnRegressionControls": 277,
+    "wholeTurnActualDataCommands": 13,
+    "wholeTurnActualParserCommands": 4,
+    "quotaExpanded": false,
+    "parserBatchAdmission": true,
+    "proofManifestDeduplicated": true
+  },
+  "nativePersistence": "NOT_ESTABLISHED",
+  "nativeAcceptance": "NOT_ESTABLISHED",
+  "externalOwnerFencing": "NOT_ESTABLISHED",
+  "physicalRelease": "NOT_ESTABLISHED",
+  "LinuxAcceptance": "NOT_ESTABLISHED",
+  "current108CISeparate": true,
+  "newControlsIncludedIn108CI": false
+}

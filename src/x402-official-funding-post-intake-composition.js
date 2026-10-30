@@ -7,6 +7,7 @@ import { decodeB64Json, validatePaymentPayloadEnvelope, sameResource, sameRequir
 import { observeServiceCreditOperationDrain } from './service-credit-bounded-operation-drain.js';
 import { ZenonFundingIntakeSqliteStore } from './service-credit-zenon-funding-intake-sqlite-store.js';
 import { createOfficialFundingPostOutcomeCustody } from './official-funding-post-outcome-custody.js';
+import { captureSelectedSettlementServerCallbackRoles } from './x402-selected-settlement-server-bridge.js';
 
 const INTAKE = createZenonFundingIntake, SERVER = createOfficialIssuedFundingPostSelectedSettlementServer;
 const BINDING = createIssuedFundingPostSdkResourceBinding, ROUTE = captureOfficialFundingPostHttpsRoute;
@@ -60,6 +61,7 @@ async function createComposition(options, durable) {
       'observerRoot','observerCatchUp','selection','resourceUrl']);
     const selection = F(exact(i.selection,['offerId','offerVersion','holderId','capabilityCommitment']));
     const sdk = exact(c.official,['localFacilitator','validateChallenge','reconcilePendingSettlement','maxPendingReconciliations']);
+    captureSelectedSettlementServerCallbackRoles(sdk.localFacilitator,sdk.validateChallenge,sdk.reconcilePendingSettlement);
     integer(c.maxIntakeAttempts,1,16); integer(c.closeBudgetMs,1,1000);
     maxAttempts = c.maxIntakeAttempts; budget = c.closeBudgetMs; route = ROUTE(i.resourceUrl);
     let custodyPort = null;
@@ -75,7 +77,10 @@ async function createComposition(options, durable) {
     const selected = BINDING(issuedFrame,i.resourceUrl).selection(); fixed = selected;
     if (durable) custody = createOfficialFundingPostOutcomeCustody(F({ context:F({ issuedFrame:selected.frame,
       resourceUrl:i.resourceUrl,serviceSelection:selection,maximumPendingReconciliations:sdk.maxPendingReconciliations }),port:custodyPort }));
-    official = await SERVER({ ...sdk, issuedFrame:selected.frame, resourceUrl:i.resourceUrl, contextLimit:1 });
+    // Recheck after intake issuance callbacks, immediately before wrapping.
+    captureSelectedSettlementServerCallbackRoles(sdk.localFacilitator,sdk.validateChallenge,sdk.reconcilePendingSettlement);
+    const reservedObserver=custody===null||sdk.reconcilePendingSettlement===null?sdk.reconcilePendingSettlement:custody.bindPendingObserver(sdk.reconcilePendingSettlement);
+    official = await SERVER({ ...sdk, reconcilePendingSettlement:reservedObserver,issuedFrame:selected.frame, resourceUrl:i.resourceUrl, contextLimit:1 });
   } catch {
     if (custody !== null) { try { if (custody.close() !== undefined) fail('construction_close_unknown'); } catch { fail('construction_close_unknown'); } }
     if (intake !== null) {

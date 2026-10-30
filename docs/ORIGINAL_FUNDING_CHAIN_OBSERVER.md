@@ -71,3 +71,8 @@ native binding. SDK, actual journal I/O/CAS, SQLite, sockets, credentials,
 signatures, nonce work and native commands remain unexecuted. Existing passing
 native evidence is bound to its old exact graph; full product, fresh-process,
 Linux and economic acceptance remain OPEN.
+
+The durable intake now also [checks the same reservation at callback entry and
+readback](RESERVED_ORIGINAL_FUNDING_OBSERVATION.md), before this original-only
+chain producer can run. This prevents an unreserved bridge reconciliation from
+bypassing the outer resume method's durable observation counter.

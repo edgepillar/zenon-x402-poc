@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "qualification": "G1_RESERVED_ORIGINAL_FUNDING_OBSERVER_FAILURE_INVENTORY",
+  "status": "NO_NEW_DATA_FAILURE;PREPUBLICATION_ROLE_REVIEW_CORRECTION_PRESERVED",
+  "failures": [],
+  "currentDataFailures": 0,
+  "currentParserFailures": 0,
+  "sourceReviewCorrections": [
+    {
+      "previousRawQualificationSha256": "a6b421cb992eba935cf31f84fb56d1ff5d09245bbf3b45d30bd41215da95e885",
+      "previousStatus": "PASS/CLOSED/SUCCESS",
+      "previousDataControls": 331,
+      "previousNativeParserControls": 2,
+      "previousCurrentGroupControls": 28,
+      "previousCurrentGroupReused": false,
+      "previousSourcePreserved": true,
+      "previousPassReclassifiedAsFailure": false,
+      "sourceGap": "Wrapping before original role admission could hide an observer alias to verifier/first/schema",
+      "correction": "Shared original pairwise role admission before intake and again before wrapping; same function used by the SDK-free bridge",
+      "currentRoleControlCases": 5,
+      "sourceExactPreviousRegressionControlsReused": 277,
+      "affectedPreviousRegressionControlsReexecuted": 26,
+      "previousNativeParserReceiptsCurrent": false,
+      "nativeExecutions": 0
+    }
+  ],
+  "preparationUnknowns": [
+    {
+      "sha256": "9734ac81e4ac35496eb798a7a73078b8549966fc8a8ca3dfe35a95c6d0326390",
+      "status": "UNKNOWN",
+      "managedTaskCreated": false,
+      "dataCommands": 0,
+      "parserCommands": 0,
+      "nativeExecutions": 0
+    },
+    {
+      "sha256": "7d3069609350e8a2d540ca67da9da479a65a1b36afb8aaf0f5731ccdcea036e5",
+      "status": "UNKNOWN",
+      "managedTaskCreated": false,
+      "dataCommands": 0,
+      "parserCommands": 0,
+      "nativeExecutions": 0
+    }
+  ],
+  "priorInventory": {
+    "path": "qualification/original-funding-chain-observer.failure-inventory.json",
+    "sha256": "62a81ee8e476ce13d025ac043c5cab48440a6a2705d13a5c4bd58893723205aa"
+  },
+  "priorFailuresReclassified": false,
+  "nativeExecutions": 0
+}

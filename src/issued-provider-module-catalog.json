@@ -2619,8 +2619,14 @@
     },
     {
       "path": "src/official-funding-post-outcome-custody.js",
-      "bytes": 5876,
-      "sha256": "c192da76d546b0f95ac13fe937389f361f547f22498eb44d2a54e405ce795afe",
+      "bytes": 8874,
+      "sha256": "72293e96d3446eb21df9661cf19f307c5206dd09da90e2a32b8a8d1d05ea6c73",
+      "format": "module"
+    },
+    {
+      "path": "src/official-funding-post-reserved-observation.js",
+      "bytes": 2714,
+      "sha256": "98520cfbef1a7e8425193950785ad950702db829e31891a573664c9124059518",
       "format": "module"
     },
     {
@@ -2895,8 +2901,8 @@
     },
     {
       "path": "src/x402-official-funding-post-intake-composition.js",
-      "bytes": 18548,
-      "sha256": "d6dc4d6468a74ca5177bdd24eac99687c3e7d18947fe9cf39351fb3cdc6ae498",
+      "bytes": 19200,
+      "sha256": "0576f5f723b0e6ddbb09fc9916e4f1d9101c1bfe7dd0a0fe4a2a39edbe0aa0f0",
       "format": "module"
     },
     {
@@ -2919,8 +2925,8 @@
     },
     {
       "path": "src/x402-selected-settlement-server-bridge.js",
-      "bytes": 39943,
-      "sha256": "38f47d24e1dcdd0f632e786054dc2e9544de2f261f74e949e28fee43ed56f40b",
+      "bytes": 40756,
+      "sha256": "63f465f3b6b946c93950c61f4bcc7d7322bd8750fb7f462f7880b1b917711605",
       "format": "module"
     },
     {

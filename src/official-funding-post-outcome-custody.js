@@ -1,4 +1,5 @@
 import { types } from 'node:util';
+import { captureOfficialFundingPostReservedObservation,captureOfficialFundingPostReservedObservationResult } from './official-funding-post-reserved-observation.js';
 import { captureOfficialFundingPostCustodyContext,createOfficialFundingPostEnteredRecord,inspectOfficialFundingPostCustodyRecord,
  requireOfficialFundingPostCustodyContext,createOfficialFundingPostObservationRecord,createOfficialFundingPostOutcomeRecord,
  officialFundingPostCustodyRecordDigest,projectOfficialFundingPostCustodyRecord } from './official-funding-post-custody-record.js';
@@ -21,9 +22,10 @@ export function createOfficialFundingPostOutcomeCustody(options){
  if(arguments.length!==1||!invariant())fail();const c=fields(options,['context','port']),context=captureOfficialFundingPostCustodyContext(c.context),p=fields(c.port,['read','compareAndSwap']);
  for(const fn of Object.values(p))if(typeof fn!=='function'||types.isProxy(fn)||!Object.isFrozen(fn))fail();
  let closed=false,held=false,busy=false,firstClaimed=false,raw=null,proposed=null,reads=0,writes=0,borrowerUnknown=false;
+ let observerBound=false,observing=false,observerCalls=0,lastObservationClaimed=0,pendingObservation=null;
  const opaque=[];
  function hold(value){held=true;borrowerUnknown=true;if(value!==undefined){opaque.push(value);discard(value);}fail();}
- function live(){if(closed||held||busy||!invariant())fail();}
+ function live(){if(closed||held||busy||observing||!invariant())fail();}
  function after(){if(closed||held||!invariant()){held=true;fail();}}
  function operation(work){live();busy=true;try{return work();}finally{busy=false;}}
  function read(){let value;reads++;try{value=A(p.read,undefined,[]);}catch{hold();}
@@ -58,12 +60,49 @@ export function createOfficialFundingPostOutcomeCustody(options){
   if(arguments.length!==0)fail();return operation(()=>{current();const digest=officialFundingPostCustodyRecordDigest(raw);
    return F({...projectOfficialFundingPostCustodyRecord(raw,digest),independentPinRequired:true});});
  });
- const close=F(function close(){if(arguments.length!==0)fail();closed=true;if(busy)held=true;return undefined;});
+ /** Bind once before the first claim. The callback cannot enter until this
+  * same owner has persisted/read back one original observation reservation.
+  * Binding itself performs no read, write, callback or SDK operation.
+  */
+ const bindPendingObserver=F(function bindPendingObserver(callback){
+  if(arguments.length!==1||typeof callback!=='function'||types.isProxy(callback)||!Object.isFrozen(callback))fail();
+  live();if(firstClaimed||observerBound)fail();observerBound=true;
+  return F(function reservedPendingObserver(payload,requirement,challenge){
+   const ticket=promiseCapability();let reservation,claimEntered=false;
+   try{
+    if(arguments.length!==3)fail();operation(()=>{claimEntered=true;const selected=current();
+     reservation=captureOfficialFundingPostReservedObservation(selected,payload,requirement,challenge);
+     if(reservation.observation!==lastObservationClaimed+1)fail();
+     lastObservationClaimed=reservation.observation;observing=true;
+    });
+   }catch{if(claimEntered)held=true;ticket.reject(new TypeError('OFFICIAL_FUNDING_POST_OBSERVATION_REJECTED'));return ticket.promise;}
+   function failed(value){held=true;borrowerUnknown=true;observing=false;if(value!==undefined){opaque.push(value);discard(value);}ticket.reject(new TypeError('OFFICIAL_FUNDING_POST_OBSERVATION_HELD'));}
+   function complete(value){
+    pendingObservation=null;
+    try{after();current();const result=captureOfficialFundingPostReservedObservationResult(value,reservation);after();observing=false;ticket.resolve(result);}
+    catch{failed(value);}
+   }
+   let returned;
+   try{
+    after();observerCalls++;const value=A(callback,undefined,[payload,requirement,challenge]);returned=value;pendingObservation=types.isPromise(value)?value:null;after();
+    if(types.isPromise(value)){
+     if(types.isProxy(value)||Object.getPrototypeOf(value)!==PP||D(value,'then')!==undefined)fail();
+     const constructor=D(value,'constructor');if(constructor!==undefined&&(!O(constructor,'value')||constructor.value!==NP||constructor.enumerable||constructor.writable||constructor.configurable))fail();
+     A(THEN.value,value,[complete,()=>{pendingObservation=null;failed();}]);
+    }else complete(value);
+   }catch{failed(returned);}
+   return ticket.promise;
+  });
+ });
+ const close=F(function close(){if(arguments.length!==0)fail();closed=true;if(busy||observing)held=true;return undefined;});
  const snapshot=F(function snapshot(){if(arguments.length!==0)fail();let selected=null;try{if(raw!==null)selected=inspectOfficialFundingPostCustodyRecord(raw);}catch{held=true;}
   return F({officialFundingPostOutcomeCustodyVersion:1,closed,held,busy,firstClaimed,reads,writes,borrowerUnknown,opaqueReturns:opaque.length,
    phase:selected?.phase??(firstClaimed?'UNKNOWN':'NOT_STARTED'),observations:selected?.observations??0,maximumPendingReconciliations:context.maximumPendingReconciliations,
-   proposedWriteRetained:proposed!==null,logicalBackendRetirementEligible:closed&&!busy&&!held&&!borrowerUnknown,
+   proposedWriteRetained:proposed!==null,logicalBackendRetirementEligible:closed&&!busy&&!observing&&!held&&!borrowerUnknown,
+   ...(observerBound?{reservedObserverBound:true,observerActive:observing,observerCalls,lastObservationClaimed,pendingObservationRetained:pendingObservation!==null}:{}),
    backend:'BORROWED_NOT_CLOSED',authority:'NONE',mayEnterSdk:false,mayStartFunding:false,mayResumeObservation:false,mayActivateGrant:false,mayDispatchService:false,physicalRelease:'NOT_ESTABLISHED'});
  });
- return F({enter,beginObservation,record,assertCurrent,exportRecordedState,close,snapshot});
+ return F({enter,beginObservation,record,assertCurrent,exportRecordedState,bindPendingObserver,close,snapshot});
 }
+
+function promiseCapability(){let resolve,reject;const promise=new NP((yes,no)=>{resolve=yes;reject=no;});Object.defineProperty(promise,'constructor',{value:NP});A(THEN.value,promise,[()=>{},()=>{}]);return {promise,resolve,reject};}
