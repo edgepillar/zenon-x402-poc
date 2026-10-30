@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "qualification": "G1_G2_RECORDED_EXECUTION_BINDING_FAILURE_INVENTORY",
+  "currentDataCaseFailures": 0,
+  "currentParserFailures": 0,
+  "currentFailedQualificationTasks": 0,
+  "unexpectedSkips": 0,
+  "cancellations": 0,
+  "preparationUnknowns": [
+    {
+      "rawQualificationSha256": "10f37e8b52a7d02b45f383e3bf1943f046a0e8bc12f5ac0eb716d38ce570d2b7",
+      "classification": "HARNESS_INPUT_REFERENCE",
+      "status": "UNKNOWN",
+      "managedTaskCreated": false,
+      "dataCommands": 0,
+      "parserCommands": 0
+    },
+    {
+      "rawQualificationSha256": "282ad64756926f63c64fca5a72ff2403d7a96ffd0f2aae3b8e933c88ee507eb5",
+      "classification": "HARNESS_SINGLE_TASK_PLAN_EXCEEDED_QUOTA",
+      "status": "UNKNOWN",
+      "managedTaskCreated": false,
+      "dataCommands": 0,
+      "parserCommands": 0
+    }
+  ],
+  "supersededCurrentTurnDataFailure": {
+    "rawQualificationSha256": "fed1285bd8d34140c45675b83cdbc64314dcc51ee33dc16fc40b8ae14c6bf453",
+    "status": "UNKNOWN",
+    "taskOutcome": "FAILURE",
+    "actualDataCommands": 1,
+    "actualParserCommands": 0,
+    "actualCommandExit": 1,
+    "passed": 17,
+    "failed": 1,
+    "classification": "HARNESS_EXPECTED_GENERIC_EXIT_INSTEAD_OF_ESTABLISHED_CLOSE_UNKNOWN_4",
+    "productionRuntimeChangedAfterFailure": false,
+    "failedGroupReused": false,
+    "originalSourceAndOutputPreserved": true
+  },
+  "retainedPredecessorTaskFailure": {
+    "rawQualificationSha256": "a3f53b8f4ed525f28fa45dbac49c280b23210e23eb8ef3bbcac6dbc224cee52a",
+    "status": "UNKNOWN",
+    "taskOutcome": "FAILURE",
+    "classification": "COMMAND_RECORD_LIMIT",
+    "passedSourceControls": 425,
+    "wholeFailedTaskReclassified": false
+  },
+  "earlierInventoriesPreserved": true,
+  "nativeTestsExecuted": 0,
+  "nativeGates": "OPEN"
+}

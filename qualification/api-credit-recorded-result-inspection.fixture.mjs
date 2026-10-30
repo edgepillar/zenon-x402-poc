@@ -3,6 +3,8 @@
 import assert from 'node:assert/strict';
 import { recordedResultFixture } from './api-credit-recorded-result.fixture.mjs';
 import { InMemoryServiceCreditModel } from '../src/service-credit-model.js';
+import { createServiceCreditExecutionContract, prepareServiceCreditExecution, fenceServiceCreditExecution,
+ completeServiceCreditExecution } from '../src/service-credit-execution-contract.js';
 import { canonicalJson } from '../src/canonical.js';
 import { restoreOriginalPaymentCheckpoint } from '../src/service-credit-pilot-original-payment-checkpoint.js';
 import { createServiceCreditCustodiedBackendRecoveryCore } from '../src/service-credit-custodied-backend-recovery-core.js';
@@ -28,9 +30,19 @@ export async function resultInspectionFixture(options={}){
  const r={raw,text:canonicalJson(raw),input,key,packet,model,originalCounts,local,backendHandle:{},trace:[],localClosed:false,readerClosed:false,
   epochCurrent:true,backendClosed:false,payerCloseCalls:0,backendCloseCalls:0,backendReads:0,localReads:0,checkpointReads:0,ownerReads:0,now:0n,timers:[],writes:[],channelClosed:false,channelCloses:0};
  const checkpoint=restoreOriginalPaymentCheckpoint(packet.serializedCheckpoint,packet.expectedPins);
+ const ledgerRequest=model.getRequest(key),executionRequest={};
+ for(const name of ['modelVersion','grantId','requestId','requestDigest','method','routeId','canonicalBodyDigest','selectedContentType','maxCostUnits','costUnits'])executionRequest[name]=ledgerRequest[name];
+ // Real pure execution-contract transitions over declared memory DATA only.
+ // The result commitment is a declared fixture value, not a SQL checksum proof.
+ const policy=F({policyId:'inspection.execution.fixture',policyVersion:1,maxDurationMs:100});
+ const empty=createServiceCreditExecutionContract({ledgerId:'inspection.execution.fixture',policy,capacity:1});
+ const prepared=prepareServiceCreditExecution({state:empty,request:executionRequest,policy,selectedDurationMs:100,wallClockStartMs:0});
+ const fenced=fenceServiceCreditExecution({state:prepared.state,executionId:prepared.execution.executionId,wallClockNowMs:1}).fenceTransitionCandidate;
+ const completed=completeServiceCreditExecution({state:fenced.state,executionId:fenced.execution.executionId,resultCommitment:'sha256:'+'a'.repeat(64),wallClockNowMs:2});
+ assert.equal(completed.winner,'SUCCEEDED');r.execution=completed.execution;
  r.outcome=()=>{
   const request=model.getRequest(key),status=options.backendStatus??'CACHED_SUCCESS';
-  return F({status,revision:7,originalRequest:request,execution:F({terminalClassification:'SUCCEEDED'}),cachedResult:status==='CACHED_SUCCESS'?request.cachedResult:null,
+  return F({status,revision:7,originalRequest:request,execution:r.execution,cachedResult:status==='CACHED_SUCCESS'?request.cachedResult:null,
    executionAuthorized:false,paymentAuthorized:false,signingAuthorized:false,deliveryStatus:'NOT_ESTABLISHED'});
  };
  r.manifest=()=>{const profile=decodeApiCreditRecoveryInspectionProfile(r.text),c=consumeApiCreditRecoveryInspectionProfile(profile);releaseApiCreditRecoveryInspectionProfile(profile);return c.manifest;};

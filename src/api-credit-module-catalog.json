@@ -2523,8 +2523,8 @@
     },
     {
       "path": "src/api-credit-recorded-result-inspection.js",
-      "bytes": 7316,
-      "sha256": "66793b690a90816fb9242f9b3cc5eea59ffdb0e0382b4e2c6d4f54397c625b3a",
+      "bytes": 7673,
+      "sha256": "5eb8c7ea8c21459d4819624fe034256ec22b77ea4b24b4ae41ae06982a58c701",
       "format": "module"
     },
     {

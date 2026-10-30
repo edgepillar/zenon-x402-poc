@@ -278,3 +278,15 @@ Reentrant expiry, opaque handles and late results cannot publish or repair a
 clean verdict. See the [channel-close contract](API_CREDIT_RECOVERY_CHANNEL_CLOSE.md).
 This source/DATA change does not establish native FIFO, SQL, TLS or release
 acceptance and does not expand history or payment authority.
+
+## Recorded execution identity binding
+
+The existing `--recorded-result-fd` projection releases a cached result only when the ledger request and execution request identify the same retained original. Both records must match the original model version, grant and request IDs, method, route, body digest, content type and cost ceiling. The execution request commitment and charged cost must also match the ledger row. These comparisons precede cache and local-response projection. Missing, foreign, accessor or proxy execution request data withholds the result.
+
+The existing success classification, ledger/cache agreement, exact checkpoint witnesses, no-authority output and payer-before-backend close ordering remain. An unknown backend still yields no cache or response. No query retry, new debit, execution, payment, signing or grant authority is added. The SQL snapshot reader, backend reader, combined read core and pure execution-contract implementation are unchanged. This projection compares their request fields; it does not independently authenticate execution IDs, generations, SQL checksums or provider funding.
+
+[Eighteen new DATA controls](../qualification/recorded-execution-binding.actual-local-result.json) cover all eight original fields, the commitment/cost cross-link, malformed records and the actual read owner/coordinator output boundary. The reference fixture now uses the real pure execution-contract prepare/fence/complete functions over memory DATA. Its result commitment is a declared fixture value, not native SQL checksum proof. The 670 affected controls were rerun; 863 retain exact runtime-input matches. One changed package-reader parser check passed with 46 prior parser receipts reused.
+
+Qualification used two serial successful tasks within the same 4 MiB quota, with four and six commands below the sixteen-command policy. A preceding failed 17/18-case group is retained: the test incorrectly expected exit 1 instead of the existing CLOSE_UNKNOWN / 4 contract. Only that test expectation changed before the complete new qualification; production runtime did not change after the failed run. The initial input-reference and oversized single-task preparation records are also retained.
+
+Native execution remains disabled. These controls do not establish SDK/core/SQLite/HTTPS, proof authentication, a process restart, physical release, Linux support or full G0-G5 acceptance. The approved hosted 108-control profile and its 22 inputs remain separate and exclude the new local cases.

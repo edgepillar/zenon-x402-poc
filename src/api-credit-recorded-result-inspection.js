@@ -52,7 +52,11 @@ export function captureApiCreditRecordedResultInspection(observed,manifest){
    if(local===null||!['CACHED_SUCCESS','CLIENT_RECONCILIATION_REQUIRED'].includes(current))fail();
    const original=data(local,'original'),request=data(backend,'originalRequest'),execution=data(backend,'execution');
    const expected=JSON.parse(data(original,'originalRequestJson'));
-   for(const name of REQUEST)if(data(request,name)!==expected[name])fail();
+   const executedRequest=data(execution,'request');
+   // A cached ledger result and a terminal execution must identify the same
+   // original request before this product projection releases a result.
+   for(const name of REQUEST)if(data(request,name)!==expected[name]||data(executedRequest,name)!==expected[name])fail();
+   for(const name of ['requestDigest','costUnits'])if(data(executedRequest,name)!==data(request,name))fail();
    if(data(request,'state')!=='SUCCEEDED'||data(execution,'terminalClassification')!=='SUCCEEDED')fail();
    cached=cache(data(backend,'cachedResult'));const requestCache=cache(data(request,'cachedResult'));
    if(JSON.stringify(cached)!==JSON.stringify(requestCache))fail();
