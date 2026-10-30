@@ -1,3 +1,4 @@
+import { captureApiCreditPurchaseExpectation } from '../api-credit-purchase-expectation.js';
 import { Buffer } from 'node:buffer';
 import { createApiCreditRecordedServiceResultApplication } from '../api-credit-recorded-service-result.js';
 import { types } from 'node:util';
@@ -59,8 +60,8 @@ function fixedChallengePolicy(header) {
  * These detached DATA and public CA bytes do not create a native selection. */
 export function captureSdk105ApiCreditProductOperatorData(configuration) {
   if (arguments.length !== 1) fail();
-  const c = fields(configuration, ['productProfileVersion', 'paymentRequiredHeader', 'configuration', 'spendingFile', 'spending']);
-  if (c.productProfileVersion !== 1) fail();
+  const c = fields(configuration, ['productProfileVersion', 'paymentRequiredHeader', 'purchaseExpectationJson', 'configuration', 'spendingFile', 'spending']);
+  if (c.productProfileVersion !== 2) fail();
   const fixed = fixedChallengePolicy(c.paymentRequiredHeader), base = fields(c.configuration, ['storeOptions', 'fundingOptions', 'serviceOptions']);
   const f = fields(base.fundingOptions, ['readSessionOptions', 'materialOptions', 'materialWaitMs', 'expectedAddress', 'deadlineMs', 'fundingTransportOptions']);
   const { expectedAddress, ...fundingOptions } = f;
@@ -81,18 +82,19 @@ export function captureSdk105ApiCreditProductOperatorData(configuration) {
   // Funding POST has its separate one-start transport. An exact recorded
   // service replay reads the same V6 history and allocates no new wire request.
   // The minimum service wire/custody budget therefore covers 100 distinct calls.
-  const profile = F({ productProfileVersion: 1, fundingResourceUrl: store.resourceUrl,
+  const purchase = captureApiCreditPurchaseExpectation(c.purchaseExpectationJson, c.paymentRequiredHeader, store.resourceUrl);
+  const profile = F({ productProfileVersion: 2, purchase, fundingResourceUrl: store.resourceUrl,
     serviceResourceUrl: store.custodyPolicy.serviceResourceUrl, network: requirement.network, asset: requirement.asset,
     recipient: requirement.payTo, amount: requirement.amount, providerAuthentication: 'NOT_ESTABLISHED', nativeAcceptance: 'NOT_ESTABLISHED' });
   PROFILES.set(profile, F({ header: c.paymentRequiredHeader, challengeText: fixed.challengeText }));
   return F({ configuration: admitted, walletIdentity: F({ expectedAddress, expectedPublicKey: admitted.fundingOptions.materialOptions.publicKey }),
-    spendingFile: file, spending: F(spending), profile });
+    spendingFile: file, spending: F(spending), purchaseExpectationJson: c.purchaseExpectationJson, profile });
 }
 /** One fixed product selection with an exclusive EXISTING key and day reader.
  * The same keyless admission is used before operator credential acquisition. */
 export function captureSdk105ApiCreditProductSelection(configuration) {
   if (arguments.length !== 1) fail();
-  const c = fields(configuration, ['productProfileVersion', 'paymentRequiredHeader', 'configuration', 'spendingFile', 'spending']);
+  const c = fields(configuration, ['productProfileVersion', 'paymentRequiredHeader', 'purchaseExpectationJson', 'configuration', 'spendingFile', 'spending']);
   const base = fields(c.configuration, ['storeOptions', 'fundingOptions', 'serviceOptions']);
   const f = fields(base.fundingOptions, ['readSessionOptions', 'materialOptions', 'materialWaitMs', 'keyPair', 'expectedAddress', 'deadlineMs', 'fundingTransportOptions']);
   const { keyPair, ...fundingOptions } = f, spending = fields(c.spending, ['paymentId', 'readDay']);

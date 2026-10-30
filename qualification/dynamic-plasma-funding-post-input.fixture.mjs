@@ -24,13 +24,15 @@ function address(byte) {
 const PAYER = address(17), PAYEE = address(34), copy = value => JSON.parse(JSON.stringify(value));
 
 export function fundingPostPreparationInputFixture({
-  resourceUrl = 'https://funding-input.invalid/funding', bodyBase64 = '', contextVersion = 7,
+  resourceUrl = 'https://funding-input.invalid/funding', bodyBase64 = '', contextVersion = 7, paymentRequired = null,
 } = {}) {
-  const accepted = { scheme: 'exact', network: 'zenon:testnet', asset: 'zts1znnxxxxxxxxxxxxx9z4ulx',
+  const fallbackAccepted = { scheme: 'exact', network: 'zenon:testnet', asset: 'zts1znnxxxxxxxxxxxxx9z4ulx',
     amount: '5', payTo: PAYEE, maxTimeoutSeconds: 60, extra: { paymentFlow: 'upfront', poc: true,
       settlement: 'account-block', zenonChain: { version: 1, chainIdentifier: '73404', genesisMomentumHash: '11'.repeat(32) } } };
-  const required = { x402Version: 2, resource: { url: resourceUrl,
-    description: 'Synthetic funding admission DATA', mimeType: 'application/json' }, accepts: [copy(accepted)] };
+  // Form the declared challenge before retaining any original/checkpoint bytes.
+  const required = paymentRequired === null ? { x402Version: 2, resource: { url: resourceUrl,
+    description: 'Synthetic funding admission DATA', mimeType: 'application/json' }, accepts: [copy(fallbackAccepted)] } : copy(paymentRequired);
+  const accepted = copy(required.accepts[0]);
   const header = encodeB64Json(required);
   const input = { plannerContext: { plannerContextVersion: contextVersion, readInput: {
     observedUserSendReadVersion: 3, phase: 'UNSIGNED', paymentRequired: copy(required), accepted: copy(accepted),

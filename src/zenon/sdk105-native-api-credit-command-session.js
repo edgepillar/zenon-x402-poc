@@ -31,11 +31,11 @@ export async function openSdk105NativeApiCreditProductSelectionCommandSession(co
 async function openCommandSession(configuration, product) {
   if (configuration === null || typeof configuration !== 'object' || types.isProxy(configuration)
       || Object.getPrototypeOf(configuration) !== Object.prototype) fail();
-  const names = ['configuration', 'spendingFile', 'spending', 'input', 'output', 'limits', ...(product ? ['productProfileVersion', 'paymentRequiredHeader'] : [])];
+  const names = ['configuration', 'spendingFile', 'spending', 'input', 'output', 'limits', ...(product ? ['productProfileVersion', 'paymentRequiredHeader', 'purchaseExpectationJson'] : [])];
   if (Reflect.ownKeys(configuration).length !== names.length) fail();
   const c = {};
   for (const name of names) { const d = Object.getOwnPropertyDescriptor(configuration, name); if (!d?.enumerable || !Object.hasOwn(d, 'value')) fail(); c[name] = d.value; }
-  const selected = product ? captureSdk105ApiCreditProductSelection({ productProfileVersion: c.productProfileVersion, paymentRequiredHeader: c.paymentRequiredHeader,
+  const selected = product ? captureSdk105ApiCreditProductSelection({ productProfileVersion: c.productProfileVersion, paymentRequiredHeader: c.paymentRequiredHeader, purchaseExpectationJson: c.purchaseExpectationJson,
     configuration: c.configuration, spendingFile: c.spendingFile, spending: c.spending })
     : captureSdk105ApiCreditSelection({ configuration: c.configuration, spendingFile: c.spendingFile, spending: c.spending });
   return openSelectedSession(c, selected, product, null);

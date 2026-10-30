@@ -58,7 +58,8 @@ export function recordedResultFixture({onRead=null,onSubmit=null,requestBudget=1
  }});
  const profileFixture=applications.capturedConfiguration(),config=profileFixture.input.configuration.serviceOptions,{official,...transport}=config;
  profileFixture.input.configuration.serviceOptions={...transport,assetInfo:official.assetInfo,contextLimit:official.contextLimit};
- profileFixture.input.productProfileVersion=1;profileFixture.input.paymentRequiredHeader=h.f.input.challenge.paymentRequiredHeader;
+ profileFixture.input.productProfileVersion=2;profileFixture.input.paymentRequiredHeader=h.f.input.challenge.paymentRequiredHeader;
+ profileFixture.input.purchaseExpectationJson=h.f.purchaseExpectationJson;
  profileFixture.input.configuration.storeOptions.custodyPolicy.maxRequests=requestBudget;
  profileFixture.input.configuration.serviceOptions.transportOptions.maxRequestStarts=requestBudget;
  const selected=captureSdk105ApiCreditProductSelection(profileFixture.input),profile=consumeSdk105ApiCreditProductSelection(selected).profile;

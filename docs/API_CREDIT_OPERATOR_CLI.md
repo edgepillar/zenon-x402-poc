@@ -104,8 +104,8 @@ installed SDK namespace have not run under this source/DATA qualification.
 
 ## Bootstrap DATA
 
-The exact top-level fields are `operatorBootstrapVersion: 1`,
-`productProfileVersion: 1`, `paymentRequiredHeader`, `publicCaPem`,
+The exact top-level fields are `operatorBootstrapVersion: 2`,
+`productProfileVersion: 2`, `paymentRequiredHeader`, `purchaseExpectationJson`, `publicCaPem`,
 `configuration`, `spendingFile`, `spending` and `limits`. Use the repository
 canonical JSON encoding without a trailing newline or duplicate properties.
 The JSON depth/node and public-CA byte limits also apply. PEM framing is source
@@ -310,3 +310,11 @@ The calculation uses empty checkpoint/pin/proof strings and one-character identi
 A shortfall is rejected before the prepared credential state is published and before credential/key/session acquisition. Existing RUN package preflight remains separate. Generic small command selections, the actual codecs/channel/session, signer, spending policy and native launch bindings are unchanged. Rejection does not begin preparation, signing, funding or service work. It does not relax UNKNOWN, original-only recovery or close behavior.
 
 [Eighteen new DATA controls](../qualification/operator-command-byte-budget.actual-local-result.json) include one-below/exact budget boundaries and the actual operator coordinator forwarding a 106-command selection into the actual channel/session/product with declared memory credentials, funding, grants, history, file and native-child ports. That reference scenario returns 100 distinct results and one replay under one declared funding/grant with 100 debits/executions. It is not SDK/core/SQLite/HTTPS, cryptographic key/proof, Linux, persistence, physical-release or native 100-call acceptance. Five hundred affected controls were rerun and 1,073 exact controls retained. One changed package-reader parser check passed with 46 prior receipts retained. All four local commands fit one CLOSED/SUCCESS 4 MiB task under the unchanged sixteen-command policy. The separate hosted 108-control profile and its 22 inputs exclude these new local cases. G0-G5 remain OPEN; native execution remains disabled.
+
+## Fixed purchase terms before credentials
+
+RUN requires `operatorBootstrapVersion: 2`, `productProfileVersion: 2` and canonical `purchaseExpectationJson` from the [fixed-product contract](API_CREDIT_FIXED_PRODUCT_PROFILE.md#explicit-purchase-expectation). Existing outer-JSON, CA, storage, identity, spending, transport and byte limits remain. Mismatched terms reach BOOTSTRAP_REFUSED before reading the credential channel or creating key/session owners. Later binding reuses the captured string, even if the caller object changed. There is no implicit selection, migration, clock or term default.
+
+[Twenty-eight new DATA controls](../qualification/fixed-purchase-expectation.actual-local-result.json) cover the independent public vector, terms/identity/authority/chain/price drift, canonical/version/byte bounds and actual product/bootstrap/coordinator admission with declared memory ports. The 1,229 affected controls were rerun, including the existing 100-distinct-call/reference-grant/exact-replay scenario. Another 388 retain exact runtime-input matches: 1,645 distinct DATA controls, not a full historical/native suite. Thirty DATA and two parser commands used four serialized CLOSED/SUCCESS 4 MiB tasks with 9/1/11/11 commands under the unchanged sixteen-command limit. Both source catalogs are checked: buyer graph170/catalog573, provider graph101/catalog504, with 404 package rows each and nine/four unchanged bare edges. Earlier failure records retain their actual task origins.
+
+No native application, installed SDK/core package, SQLite, socket/TLS/FIFO, key/proof/signature, nonce search, application child, real PREPARE/payment or restart ran. Installed namespace/hooks remain unqualified. The separate hosted 108-control profile and its 22 inputs exclude the new local cases. G0-G5, Linux, native persistence, native 100-call and physical release remain OPEN.

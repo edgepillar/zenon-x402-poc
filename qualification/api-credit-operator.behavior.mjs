@@ -24,8 +24,8 @@ function publicData() {
   const r = fixtures.capturedConfiguration(); roots.push(r.h.root);
   const c = r.input.configuration, { keyPair, ...funding } = c.fundingOptions, { ca: fundingCa, ...ft } = funding.fundingTransportOptions;
   const { official, ...service } = c.serviceOptions, { ca: serviceCa, ...st } = service.transportOptions;
-  return { operatorBootstrapVersion: 1, productProfileVersion: 1,
-    paymentRequiredHeader: r.h.f.input.challenge.paymentRequiredHeader,
+  return { operatorBootstrapVersion: 2, productProfileVersion: 2,
+    paymentRequiredHeader: r.h.f.input.challenge.paymentRequiredHeader, purchaseExpectationJson: r.h.f.purchaseExpectationJson,
     publicCaPem: '-----BEGIN CERTIFICATE-----\nU1lOVEhFVElDLURBVEE=\n-----END CERTIFICATE-----\n',
     configuration: { storeOptions: c.storeOptions, fundingOptions: { ...funding, fundingTransportOptions: ft },
       serviceOptions: { ...service, assetInfo: official.assetInfo, contextLimit: official.contextLimit, transportOptions: st } },
@@ -98,8 +98,8 @@ check('operator-bootstrap-is-canonical-keyless-data-without-an-sdk-or-key-placeh
 });
 check('operator-bootstrap-rejects-noncanonical-json-duplicate-properties-and-version-drift', () => {
   const d = publicData(), text = canonicalJson(d);
-  for (const value of [' ' + text, text + '\n', text.replace('"operatorBootstrapVersion":1', '"operatorBootstrapVersion":1,"operatorBootstrapVersion":1'),
-    text.replace('"operatorBootstrapVersion":1', '"operatorBootstrapVersion":2'), text + '\ud800', 'x'.repeat(262145)]) assert.throws(() => decode(value));
+  for (const value of [' ' + text, text + '\n', text.replace('"operatorBootstrapVersion":2', '"operatorBootstrapVersion":2,"operatorBootstrapVersion":2'),
+    text.replace('"operatorBootstrapVersion":2', '"operatorBootstrapVersion":1'), text + '\ud800', 'x'.repeat(262145)]) assert.throws(() => decode(value));
 });
 check('operator-bootstrap-rejects-secret-loader-clock-validator-and-module-fields', () => {
   for (const edit of [d => { d.module = 'unselected'; }, d => { d.secretPath = 'unselected'; }, d => { d.spending.readDay = 10; },

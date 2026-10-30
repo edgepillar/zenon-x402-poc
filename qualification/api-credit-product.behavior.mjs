@@ -16,7 +16,8 @@ function check(id, run) { checks.push({ id, run }); }
 function fixture() {
   const r = f.capturedConfiguration(), s = r.input.configuration.serviceOptions, { official, ...rest } = s;
   r.input.configuration.serviceOptions = { assetInfo: official.assetInfo, contextLimit: official.contextLimit, ...rest };
-  r.input.productProfileVersion = 1; r.input.paymentRequiredHeader = r.h.f.input.challenge.paymentRequiredHeader;
+  r.input.productProfileVersion = 2; r.input.paymentRequiredHeader = r.h.f.input.challenge.paymentRequiredHeader;
+  r.input.purchaseExpectationJson = r.h.f.purchaseExpectationJson;
   return r;
 }
 async function refused(edit) {
@@ -40,7 +41,7 @@ check('fixed-product-capture-binds-one-origin-network-asset-recipient-and-offer-
   assert.equal(q.providerAuthentication, 'NOT_ESTABLISHED'); assert.equal(r.keyCalls + r.clockCalls, 0); s.release(); await r.h.root.close();
 });
 check('product-version-and-closed-input-shape-are-required', async () => {
-  for (const edit of [r => { r.input.productProfileVersion = 2; }, r => { delete r.input.productProfileVersion; },
+  for (const edit of [r => { r.input.productProfileVersion = 1; }, r => { delete r.input.productProfileVersion; },
     r => { r.input.module = 'unselected'; }, r => { delete r.input.paymentRequiredHeader; }]) await refused(edit);
 });
 check('a-product-caller-cannot-supply-its-own-challenge-validator-or-loader', async () => {

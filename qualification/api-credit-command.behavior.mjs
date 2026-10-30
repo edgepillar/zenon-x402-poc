@@ -14,6 +14,7 @@ import { runBuyerOriginalCommandHost as host } from '../src/buyer-original-comma
 import { createSpendingBoundedSdk105FundingServiceLifecycle as join } from '../src/zenon/sdk105-funding-service-lifecycle.js';
 import { InMemoryServiceCreditModel } from '../src/service-credit-model.js';
 import { retainedOriginalInputFixture } from './dynamic-plasma-retained-input.fixture.mjs';
+import { purchaseExpectationFixture } from './api-credit-purchase-expectation.fixture.mjs';
 import { assembleZenonDynamicPlasmaOriginalFundingDataV2 as assemble } from '../src/zenon/dynamic-plasma-original-funding-data.js';
 
 assert.equal(process.version, 'v24.19.0');
@@ -46,7 +47,10 @@ function service(grantId, id = 'request.1', body = '') { return { grantId, reque
   originalRequestJson: '{"method":"POST","url":"https://service.example.test/api"}', originalBodyBase64: body,
   serviceResourceUrl: 'https://service.example.test/api', authorizationHeader: 'Bearer declared-test-proof' }; }
 function fixture({ pending = false, onWrite = null, createLifecycle = join } = {}) {
-  const f = retainedOriginalInputFixture(), packet = assemble(f.input, f.candidate, f.resourceUrl), counts = {
+  const purchase = purchaseExpectationFixture();
+  const f = { ...retainedOriginalInputFixture({ resourceUrl: purchase.resourceUrl, paymentRequired: purchase.paymentRequired }),
+    purchaseExpectationJson: purchase.purchaseExpectationJson };
+  const packet = assemble(f.input, f.candidate, f.resourceUrl), counts = {
     prepares: 0, funding: 0, grants: 0, handoffs: 0, executions: 0, replays: 0, stops: 0, walletStops: 0,
   };
   const policy = { version: 1, policyId: 'budget.api.synthetic', accountId: f.input.plannerContext.readInput.payerAddress,

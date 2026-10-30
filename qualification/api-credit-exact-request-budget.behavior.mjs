@@ -20,7 +20,8 @@ function check(id,run){checks.push({id,run});}
 function selectedInput(){
  const r=applications.capturedConfiguration(),c=r.input.configuration,{official,...service}=c.serviceOptions;
  c.serviceOptions={...service,assetInfo:official.assetInfo,contextLimit:official.contextLimit};
- r.input.productProfileVersion=1;r.input.paymentRequiredHeader=r.h.f.input.challenge.paymentRequiredHeader;
+ r.input.productProfileVersion=2;r.input.paymentRequiredHeader=r.h.f.input.challenge.paymentRequiredHeader;
+ r.input.purchaseExpectationJson=r.h.f.purchaseExpectationJson;
  c.storeOptions.custodyPolicy.maxRequests=100;c.serviceOptions.transportOptions.maxRequestStarts=100;
  return r;
 }
@@ -45,7 +46,7 @@ check('exact-budget-keyless-operator-admission-preserves-the-same-independent-re
 check('exact-budget-real-keyless-bootstrap-admits-100-starts-and-the-106-command-stream',async()=>{
  const r=selectedInput(),p=publicInput(r),{ca:fc,...funding}=p.configuration.fundingOptions.fundingTransportOptions;
  const {ca:sc,...service}=p.configuration.serviceOptions.transportOptions;
- const raw={operatorBootstrapVersion:1,...p,publicCaPem:'-----BEGIN CERTIFICATE-----\nU1lOVEhFVElDLURBVEE=\n-----END CERTIFICATE-----\n',
+ const raw={operatorBootstrapVersion:2,...p,publicCaPem:'-----BEGIN CERTIFICATE-----\nU1lOVEhFVElDLURBVEE=\n-----END CERTIFICATE-----\n',
   configuration:{...p.configuration,fundingOptions:{...p.configuration.fundingOptions,fundingTransportOptions:funding},
    serviceOptions:{...p.configuration.serviceOptions,transportOptions:service}},limits:{maxCommands:106}};
  const admitted=bootstrap(canonicalJson(raw));assert.equal(admitted.limits.maxCommands,106);assert.equal(admitted.product.nativeAcceptance,'NOT_ESTABLISHED');

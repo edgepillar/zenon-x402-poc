@@ -6,8 +6,9 @@ recipient. It uses the actual existing native API-credit command/application
 owners. The generic API-credit component and legacy argv behavior remain
 separate. This is an implemented source entry, not an accepted native launch.
 
-The product selection requires exactly `productProfileVersion: 1`, an external
-original `paymentRequiredHeader`, `configuration`, `spendingFile` and `spending`.
+The product selection requires exactly `productProfileVersion: 2`, the external
+original `paymentRequiredHeader`, canonical `purchaseExpectationJson`,
+`configuration`, `spendingFile` and `spending`.
 The command entry additionally requires the existing `input`, `output` and
 `limits` ports. The service configuration supplies only `assetInfo`,
 `contextLimit`, `transportOptions` and `deadlineMs`; its challenge validator is
@@ -51,3 +52,13 @@ atomic cross-process owner fencing and physical release remain unqualified.
 Current user instructions disable native execution. DATA application ports are
 declared in memory; native source receives parser checks only. The separate
 required 108-control CI workflow is unchanged.
+
+## Explicit purchase expectation
+
+Before credentials or funding, the fixed buyer compares independently operator-selected public terms with the existing provider funding commitment. `purchaseExpectationJson` is at most 16384 UTF-30 bytes of canonical JSON, with exactly `purchaseExpectationVersion: 1`, `offer`, `selection`, `terms` and `authorityProfile`. The existing closed fixed-funding and provider-authority metadata contracts define all nested fields. Copying an untrusted challenge into the expectation and accepting it automatically does not establish approved terms.
+
+`offer` requires the model/provider/service/resource identities, resource binding, offer identity/version, cost-policy identity and funding-policy identity/version. `selection` requires the same offer identity/version, holder and capability commitment. `terms` requires the funding-policy identity/version, total units, absolute expiry and complete active upfront requirement: exact amount, asset, payee, network, timeout, chain identifier/genesis and minimum confirmations. `authorityProfile` requires profile identity/version, verifier version, authority-record digest, matching network/chain and explicit confirmation policy. The [synthetic fixture and independent hash vector](../qualification/api-credit-purchase-expectation.fixture.mjs) show the exact shape without authentic provider, credential or payment data.
+
+The buyer uses the existing fixed-term validator and provider commitment calculation for public metadata only. Its temporary policy callback is not returned, retained, supplied to an owner/store or used for activation. The complete declared requirement and issued resource tags must match the original header. Missing/changed economics, generic untagged headers, duplicate/noncanonical JSON, inconsistent fields and old versions refuse. The header is never rewritten. At least 100 declared units are necessary for the fixed correctness scenario; this does not authenticate the cost policy or promise 100 delivered calls.
+
+No price, lifetime or confirmation default, clock read or expiry refresh is added. An expired-but-equal absolute timestamp can pass metadata comparison; existing issuance/owner clock rules still decide eligibility. Equality authenticates neither provider/policy/chain nor funding/grant/delivery. Selecting coherent new terms is a new operator choice, not permission to replace retained payment bytes. Both product and operator bootstrap require version 2 with the same immutable expectation string; version 1 refuses without migration. The fixed native command binding forwards it unchanged. Generic non-product entries retain their contracts. No expectation table, durable expectation recovery or new grant authority is introduced. Existing original-header preparation/handoff and checkpoint recovery remain; native/restart acceptance stays OPEN.

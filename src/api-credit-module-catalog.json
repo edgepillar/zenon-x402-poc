@@ -2493,8 +2493,8 @@
     },
     {
       "path": "src/api-credit-operator-bootstrap.js",
-      "bytes": 8907,
-      "sha256": "a341dc3a3530d6a4a714be41cba2d6a2241c5b99342dcec28382712d4ff2bcdb",
+      "bytes": 9094,
+      "sha256": "ce685ca42c7df8a58ffd7bcc4e574c2742599b2c833b7120a6511201f4a4fcd4",
       "format": "module"
     },
     {
@@ -2519,6 +2519,12 @@
       "path": "src/api-credit-original-grant-query-profile.js",
       "bytes": 7740,
       "sha256": "d91091174e614cc825aaf4c0dc4c2d73470d5e2be5385fb4408dba24b28e4cfd",
+      "format": "module"
+    },
+    {
+      "path": "src/api-credit-purchase-expectation.js",
+      "bytes": 3656,
+      "sha256": "20479799027ff8f448b59a80d3f9d8e6a96b8684fd8d75784665f8ab9f14d2e0",
       "format": "module"
     },
     {
@@ -2891,6 +2897,18 @@
       "path": "src/service-credit-sqlite-store.js",
       "bytes": 83873,
       "sha256": "c7a5559685f0ccd130d35804d58879133a2c05101adbdf965f65b5b152b99e40",
+      "format": "module"
+    },
+    {
+      "path": "src/service-credit-zenon-fixed-funding-policy.js",
+      "bytes": 8908,
+      "sha256": "38b01c7f325bd843cba134bd101e3e671145153638292f5bceeb9532697b3126",
+      "format": "module"
+    },
+    {
+      "path": "src/service-credit-zenon-funding-evidence.js",
+      "bytes": 54078,
+      "sha256": "cf21c98b21d9097930ffca9e10c3d94d53c931d365991b7f76fe15f848b88038",
       "format": "module"
     },
     {
@@ -3375,8 +3393,8 @@
     },
     {
       "path": "src/zenon/sdk105-api-credit-product-profile.js",
-      "bytes": 12850,
-      "sha256": "6e9517fdb01389a31a3a83bfee7fc55b35166a52f95d11165600699e793bb435",
+      "bytes": 13186,
+      "sha256": "440320c657568c9b989c9b22b7a96d9e97d6fe9a1c739b666f85637ee7d54034",
       "format": "module"
     },
     {
@@ -3399,8 +3417,8 @@
     },
     {
       "path": "src/zenon/sdk105-native-api-credit-command-session.js",
-      "bytes": 4868,
-      "sha256": "9e487fff48de4dfdf2e9e2b1317f1aad221bbc1dd1f30c46370614c9482c788c",
+      "bytes": 4947,
+      "sha256": "f30eedea1a7fa141f7b2f5e25574c9e49f07c852adb9bd203ef015a26dcb975a",
       "format": "module"
     },
     {
