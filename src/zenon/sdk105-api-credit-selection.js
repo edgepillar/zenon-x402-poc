@@ -1,10 +1,10 @@
 import { Buffer } from 'node:buffer';
 import { createHash } from 'node:crypto';
 import { types } from 'node:util';
-import { captureSdk105FundingServiceConfiguration } from './sdk105-funding-service-lifecycle.js';
+import { captureSdk105FundingServiceConfiguration, captureSdk105NonDpFundingServiceConfiguration } from './sdk105-funding-service-lifecycle.js';
 import { captureSdk105OriginalFundingSpendingConfiguration } from './sdk105-spending-bounded-client.js';
 import { captureOriginalFundingSpendingFileProfile } from '../original-funding-spending-file-profile.js';
-import { captureNativeFundingServiceOperationalConfiguration } from './native-funding-service-configuration.js';
+import { captureNativeFundingServiceOperationalConfiguration, captureNativeNonDpFundingServiceOperationalConfiguration } from './native-funding-service-configuration.js';
 
 const F = Object.freeze, DESC = Object.getOwnPropertyDescriptor, OWN = Object.hasOwn;
 const ARRAY_BUFFER = DESC(Object.getPrototypeOf(Uint8Array.prototype), 'buffer').get;
@@ -22,8 +22,15 @@ function fields(value, names) {
  * only CA byte hashing runs; no key method, clock, SQL, network or signing operation is invoked. */
 export function captureSdk105ApiCreditSelection(configuration) {
   if (arguments.length !== 1) fail();
+  return captureSelection(configuration, false);
+}
+export function captureSdk105NonDpApiCreditSelection(configuration) {
+  if (arguments.length !== 1) fail();
+  return captureSelection(configuration, true);
+}
+function captureSelection(configuration, nonDp) {
   const c = fields(configuration, ['configuration', 'spendingFile', 'spending']);
-  const selected = captureSdk105FundingServiceConfiguration(c.configuration);
+  const selected = (nonDp ? captureSdk105NonDpFundingServiceConfiguration : captureSdk105FundingServiceConfiguration)(c.configuration);
   existingKeyShape(selected.walletOptions.keyPair);
   const file = captureOriginalFundingSpendingFileProfile(c.spendingFile), spending = fields(c.spending, ['paymentId', 'readDay']);
   const policy = file.storageProfile.policy;
@@ -62,12 +69,12 @@ export function captureSdk105ApiCreditSelection(configuration) {
     }
     active.delete(value); return F(out);
   }
-  const state = { released: false, consumed: false, caDigests: null };
+  const state = { released: false, consumed: false, caDigests: null, nonDp };
   function release() { if (arguments.length !== 0) fail(); if (state.released) return; state.released = true; for (const b of copies) Reflect.apply(FILL, b, [0]); }
   try {
     const store = snapshot(selected.storeOptions, 'storeOptions'), funding = snapshot(selected.fundingOptions, 'fundingOptions');
     const service = snapshot(selected.serviceOptions, 'serviceOptions');
-    const admitted = captureNativeFundingServiceOperationalConfiguration({ storeOptions: store, fundingOptions: funding, serviceOptions: service });
+    const admitted = (nonDp ? captureNativeNonDpFundingServiceOperationalConfiguration : captureNativeFundingServiceOperationalConfiguration)({ storeOptions: store, fundingOptions: funding, serviceOptions: service });
     state.caDigests = caDigests(admitted);
     const result = F({ configuration: F({ storeOptions: admitted.storeOptions, fundingOptions: F({ ...admitted.fundingOptions, keyPair: selected.walletOptions.keyPair,
       expectedAddress: selected.walletOptions.expectedAddress }), serviceOptions: admitted.serviceOptions }), spendingFile: file,
@@ -78,11 +85,18 @@ export function captureSdk105ApiCreditSelection(configuration) {
 
 export function consumeSdk105ApiCreditSelection(selection) {
   if (arguments.length !== 1 || selection === null || typeof selection !== 'object' || types.isProxy(selection)) fail();
-  const state = SELECTED.get(selection); if (!state || state.consumed || state.released) fail(); state.consumed = true;
+  return consumeSelection(selection, false);
+}
+export function consumeSdk105NonDpApiCreditSelection(selection) {
+  if (arguments.length !== 1 || selection === null || typeof selection !== 'object' || types.isProxy(selection)) fail();
+  return consumeSelection(selection, true);
+}
+function consumeSelection(selection, nonDp) {
+  const state = SELECTED.get(selection); if (!state || state.nonDp !== nonDp || state.consumed || state.released) fail(); state.consumed = true;
   try {
-    const c = captureSdk105FundingServiceConfiguration(selection.configuration);
+    const c = (nonDp ? captureSdk105NonDpFundingServiceConfiguration : captureSdk105FundingServiceConfiguration)(selection.configuration);
     existingKeyShape(c.walletOptions.keyPair);
-    const admitted = captureNativeFundingServiceOperationalConfiguration({ storeOptions: c.storeOptions, fundingOptions: c.fundingOptions, serviceOptions: c.serviceOptions });
+    const admitted = (nonDp ? captureNativeNonDpFundingServiceOperationalConfiguration : captureNativeFundingServiceOperationalConfiguration)({ storeOptions: c.storeOptions, fundingOptions: c.fundingOptions, serviceOptions: c.serviceOptions });
     const current = caDigests(admitted);
     if (current[0] !== state.caDigests[0] || current[1] !== state.caDigests[1]) fail();
     return selection;

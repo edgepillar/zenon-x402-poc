@@ -1,7 +1,7 @@
 // SOURCE ONLY; no default argv/stdio or secret-loading behavior is changed.
 import { types } from 'node:util';
 import { captureSdk105ApiCreditSelection } from './sdk105-api-credit-selection.js';
-import { captureSdk105ApiCreditProductSelection, assertSdk105ApiCreditProductSelection } from './sdk105-api-credit-product-profile.js';
+import { captureSdk105ApiCreditProductSelection, assertSdk105ApiCreditProductSelection, assertSdk105NonDpApiCreditProductSelection } from './sdk105-api-credit-product-profile.js';
 import { openBuyerApiCreditFundingOwnedStreamSession } from '../buyer-funding-owned-stream-session.js';
 
 const F = Object.freeze;
@@ -53,7 +53,7 @@ export async function openSdk105NativeNonDpApiCreditProductSelectionCommandSessi
   if (arguments.length !== 2 || typeof requireOperatorOpening !== 'function' || types.isProxy(requireOperatorOpening)
       || !Object.isFrozen(requireOperatorOpening)) fail();
   const c = fields(configuration, ['selection', 'input', 'output', 'limits']);
-  const selected = assertSdk105ApiCreditProductSelection(c.selection);
+  const selected = assertSdk105NonDpApiCreditProductSelection(c.selection);
   return openSelectedSession(c, selected, true, requireOperatorOpening, true);
 }
 async function openSelectedSession(c, selected, product, requireOperatorOpening, nonDp = false) {

@@ -52,17 +52,31 @@ function reads(value, local) {
  * second argument; the public API-credit selector always uses PUBLIC. */
 export function captureNativeFundingServiceOperationalConfiguration(configuration, mode = 'PUBLIC') {
   if (arguments.length < 1 || arguments.length > 2 || !['PUBLIC', 'LOCAL_QUALIFICATION'].includes(mode)) fail();
+  return captureOperational(configuration, mode, false);
+}
+/** Explicit source selection; no work/nonce/wait field is accepted or synthesized. */
+export function captureNativeNonDpFundingServiceOperationalConfiguration(configuration) {
+  if (arguments.length !== 1) fail();
+  return captureOperational(configuration, 'PUBLIC', true);
+}
+function captureOperational(configuration, mode, nonDp) {
   const c = fields(configuration, ['storeOptions', 'fundingOptions', 'serviceOptions']);
   const store = fields(c.storeOptions, ['databasePath', 'allowedRoot', 'resourceUrl', 'custodyPolicy']);
   path(store.databasePath); path(store.allowedRoot); if (dirname(store.databasePath) !== store.allowedRoot) fail();
   captureFundingPostCheckpointRoute(store.resourceUrl);
   const policy = snapshotOriginalServiceRequestCustodyPolicy(store.custodyPolicy, store.resourceUrl);
-  const f = fields(c.fundingOptions, ['readSessionOptions', 'materialOptions', 'materialWaitMs', 'deadlineMs', 'fundingTransportOptions']);
-  const material = fields(f.materialOptions, ['publicKey', 'startNonce', 'limits']), limits = fields(material.limits, ['maxAttempts', 'maxDifficulty']);
-  integer(limits.maxAttempts, 0, 4096); integer(limits.maxDifficulty, 0, Number.MAX_SAFE_INTEGER);
-  if (typeof material.publicKey !== 'string' || material.publicKey.length !== 44 || !/^[A-Za-z0-9+/]{43}=$/.test(material.publicKey)
-      || Buffer.from(material.publicKey, 'base64').length !== 32 || Buffer.from(material.publicKey, 'base64').toString('base64') !== material.publicKey
-      || typeof material.startNonce !== 'string' || material.startNonce.length !== 16 || !/^[0-9a-f]{16}$/.test(material.startNonce)) fail();
+  const f = fields(c.fundingOptions, nonDp
+    ? ['readSessionOptions', 'expectedPublicKey', 'deadlineMs', 'fundingTransportOptions']
+    : ['readSessionOptions', 'materialOptions', 'materialWaitMs', 'deadlineMs', 'fundingTransportOptions']);
+  let material = null, limits = null;
+  if (!nonDp) {
+    material = fields(f.materialOptions, ['publicKey', 'startNonce', 'limits']); limits = fields(material.limits, ['maxAttempts', 'maxDifficulty']);
+    integer(limits.maxAttempts, 0, 4096); integer(limits.maxDifficulty, 0, Number.MAX_SAFE_INTEGER);
+    if (typeof material.startNonce !== 'string' || material.startNonce.length !== 16 || !/^[0-9a-f]{16}$/.test(material.startNonce)) fail();
+  }
+  const publicKey = nonDp ? f.expectedPublicKey : material.publicKey;
+  if (typeof publicKey !== 'string' || publicKey.length !== 44 || !/^[A-Za-z0-9+/]{43}=$/.test(publicKey)
+      || Buffer.from(publicKey, 'base64').length !== 32 || Buffer.from(publicKey, 'base64').toString('base64') !== publicKey) fail();
   const funding = fields(f.fundingTransportOptions, ['resourceUrl', 'ca', 'maxRequestStarts', 'requestDeadlineMs', 'handshakeDeadlineMs', 'closeGraceMs']);
   const service = fields(c.serviceOptions, ['official', 'transportOptions', 'deadlineMs']);
   const transport = fields(service.transportOptions, ['origin', 'ca', 'maxRequestStarts', 'maxConcurrentRequests', 'requestDeadlineMs', 'handshakeDeadlineMs', 'closeGraceMs']);
@@ -70,7 +84,8 @@ export function captureNativeFundingServiceOperationalConfiguration(configuratio
   if (typeof official.validateChallenge !== 'function' || types.isProxy(official.validateChallenge) || Object.getPrototypeOf(official.validateChallenge) !== Function.prototype
       || typeof asset.asset !== 'string' || asset.asset.length < 1 || asset.asset.length > 256 || typeof asset.symbol !== 'string' || /^[\x21-\x7e]{1,32}$/.exec(asset.symbol)?.[0] !== asset.symbol) fail();
   integer(asset.decimals, 0, 18); integer(official.contextLimit, 1, 64);
-  integer(f.materialWaitMs, 1, 60000); integer(f.deadlineMs, 1, 60000); integer(service.deadlineMs, 1, 60000);
+  if (!nonDp) integer(f.materialWaitMs, 1, 60000);
+  integer(f.deadlineMs, 1, 60000); integer(service.deadlineMs, 1, 60000);
   integer(funding.requestDeadlineMs, 1, 60000); integer(funding.handshakeDeadlineMs, 1, funding.requestDeadlineMs); integer(funding.closeGraceMs, 1, Math.min(f.deadlineMs, 1000));
   integer(transport.maxRequestStarts, 1, 256); integer(transport.requestDeadlineMs, 1, 30000);
   integer(transport.handshakeDeadlineMs, 1, transport.requestDeadlineMs); integer(transport.closeGraceMs, 1, Math.min(service.deadlineMs, 1000));
@@ -80,7 +95,8 @@ export function captureNativeFundingServiceOperationalConfiguration(configuratio
   const length = caBytes(funding.ca); if (caBytes(transport.ca) !== length) fail();
   for (let i = 0; i < length; i++) if (funding.ca[i] !== transport.ca[i]) fail();
   const readSessionOptions = reads(f.readSessionOptions, mode === 'LOCAL_QUALIFICATION');
-  return F({ storeOptions: F({ ...store, custodyPolicy: policy }), fundingOptions: F({ ...f, readSessionOptions,
-    materialOptions: F({ ...material, limits: F(limits) }), fundingTransportOptions: F(funding) }),
+  const fundingOptions = { ...f, readSessionOptions, fundingTransportOptions: F(funding) };
+  if (!nonDp) fundingOptions.materialOptions = F({ ...material, limits: F(limits) });
+  return F({ storeOptions: F({ ...store, custodyPolicy: policy }), fundingOptions: F(fundingOptions),
     serviceOptions: F({ ...service, official: F({ ...official, assetInfo: F(asset) }), transportOptions: F(transport) }) });
 }

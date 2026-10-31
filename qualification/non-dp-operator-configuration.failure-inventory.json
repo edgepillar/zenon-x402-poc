@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "currentDataFailures": 0,
+  "currentParserFailures": 0,
+  "unexpectedSkips": 0,
+  "correctedSourceFinding": "THE_NAMED_NON_DP_PRODUCT_PREVIOUSLY_REQUIRED_UNUSED_DP_NONCE_WORK_AND_WAIT_CONFIGURATION",
+  "originalSourceAndEvidencePreserved": true,
+  "inheritedInventory": {
+    "path": "qualification/non-dp-native-original-binding.failure-inventory.json",
+    "bytes": 1798,
+    "sha256": "600d0680f987f44b360b03f6928b9d67ab3a0b179041f061ec3d5663ffef1887"
+  },
+  "historicalParserWrappersPreserved": true,
+  "parserReferencesNowBindVerifiedCommandOrigins": true,
+  "metadataBuilderCompileRefusalPreserved": true,
+  "DATAOrCIRepeatedForMetadataError": false,
+  "unchanged1341CasesRepeated": false,
+  "earlierFailedAndUnknownEvidenceReclassified": false
+}

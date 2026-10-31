@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "selection": "FIXED_NAMED_NON_DP_SOURCE_PATH",
+  "nonDpCoordinator": "createNonDpApiCreditOperatorCoordinator",
+  "bootstrap": "decodeNonDpApiCreditOperatorBootstrap",
+  "productAdmission": "captureSdk105NonDpApiCreditProductOperatorData",
+  "productSelection": "captureSdk105NonDpApiCreditProductSelection",
+  "genericSelection": "captureSdk105NonDpApiCreditSelection",
+  "configuration": "captureNativeNonDpFundingServiceOperationalConfiguration",
+  "fundingDataFields": [
+    "readSessionOptions",
+    "expectedPublicKey",
+    "deadlineMs",
+    "fundingTransportOptions"
+  ],
+  "noMaterialNonceDifficultyAttemptOrWaitFieldRequiredOrSynthesized": true,
+  "wrongLaneRefusedBeforeConsumption": true,
+  "selectionTagsPrivate": true,
+  "noJSONLaneOrFactorySelector": true,
+  "profileAdmittedBeforeCredentialRead": true,
+  "sameExistingKeyIdentityAndCAReleaseOwner": true,
+  "sameWireStoreReadAndSignerOwners": true,
+  "oneFundingStartAnd100ServiceFloorUnchanged": true,
+  "existingNamedDPGrammarPreserved": true,
+  "nonDpPreparationStillRequiresExplicitResourcePolicyAndObservedPreDp": true,
+  "nativeQualification": "NOT_EXECUTED",
+  "G0G5": "OPEN"
+}

@@ -2493,8 +2493,8 @@
     },
     {
       "path": "src/api-credit-operator-bootstrap.js",
-      "bytes": 9094,
-      "sha256": "ce685ca42c7df8a58ffd7bcc4e574c2742599b2c833b7120a6511201f4a4fcd4",
+      "bytes": 9730,
+      "sha256": "54a1053993964d4516f182915631f7419b4e88bfd302c962744df5675932251a",
       "format": "module"
     },
     {
@@ -2505,8 +2505,8 @@
     },
     {
       "path": "src/api-credit-operator-coordinator.js",
-      "bytes": 17517,
-      "sha256": "a387138e3bb4ccb561d6fba7e6b48040458f52e70b30f821449ae604065aa601",
+      "bytes": 17892,
+      "sha256": "539c703bcfb75abc83a8935ae3619e261dad69e59bfe0530a2a9fdf422924083",
       "format": "module"
     },
     {
@@ -3081,8 +3081,8 @@
     },
     {
       "path": "src/zenon/dynamic-plasma-native-funding-service-client.js",
-      "bytes": 35276,
-      "sha256": "1e73ac28157e3baca00b3b45694c84a0c58baf1afaff165291dc9502a04796e6",
+      "bytes": 35568,
+      "sha256": "59397b25c9db37ab8aca661e397c020ef49c09db2480c224195c7698ca740760",
       "format": "module"
     },
     {
@@ -3303,8 +3303,8 @@
     },
     {
       "path": "src/zenon/native-api-credit-operator-launcher.js",
-      "bytes": 5546,
-      "sha256": "99019ad480fbf03f9e128890c1c33c66efea8634b782daaf4dccc67a512b361a",
+      "bytes": 5556,
+      "sha256": "2c04505db7efb4a1fa36f451cb19c902446a2cde5a121a17fec205ffc8aec5bc",
       "format": "module"
     },
     {
@@ -3333,8 +3333,8 @@
     },
     {
       "path": "src/zenon/native-funding-service-configuration.js",
-      "bytes": 8114,
-      "sha256": "9f3bffc2870dac45bfed53f572a468a0f184eaf99084a81d4508d2738a16994b",
+      "bytes": 8772,
+      "sha256": "c438358cfa811ad21d63772184f80c5f1c1af9f0a24752d9b615bbc38b68c5d2",
       "format": "module"
     },
     {
@@ -3435,32 +3435,32 @@
     },
     {
       "path": "src/zenon/sdk105-api-credit-product-profile.js",
-      "bytes": 13319,
-      "sha256": "16ced99b26a3f459fc7c125d66f8e0ca4be152e1c6eaa25b216a198c9848a482",
+      "bytes": 15186,
+      "sha256": "3b4a8bf736148f35d020d43753d6dd2d086424b8afed58d333621bf324b565b7",
       "format": "module"
     },
     {
       "path": "src/zenon/sdk105-api-credit-selection.js",
-      "bytes": 7719,
-      "sha256": "6deda550cc1b6a1a2054c61b113fe688967e6ab46096bb70c4224be98e1d2891",
+      "bytes": 8695,
+      "sha256": "0a28beb05302009f61fe6dc0c32399c0f5f6783bce07dfbc264d8108303d4e95",
       "format": "module"
     },
     {
       "path": "src/zenon/sdk105-funding-service-lifecycle.js",
-      "bytes": 17346,
-      "sha256": "604cc9f4f0f0df8c2034b1607f5be523f409cebc90682f103990ab442caeb32e",
+      "bytes": 18085,
+      "sha256": "864fa53505d96522bd263a0b227413dfbe31a1e235de753f48696a6b08ebb52a",
       "format": "module"
     },
     {
       "path": "src/zenon/sdk105-native-api-credit-application.js",
-      "bytes": 10171,
-      "sha256": "834b4ba1fb60704d8687412bb3b737690fc5aae8990b4faef834c9c0c256e046",
+      "bytes": 10413,
+      "sha256": "5222eb42e60058dcf5ef83f9c19556915b057e57ee24960673cf570a8ae6c9dd",
       "format": "module"
     },
     {
       "path": "src/zenon/sdk105-native-api-credit-command-session.js",
-      "bytes": 5678,
-      "sha256": "2c0b8a847d91ab6df4d9a9c2928358f25c60efb01e1720986f26d964dd78a9d3",
+      "bytes": 5727,
+      "sha256": "c4768d532b4a60f178d29d990017672b39127d966bf95bb55c2ad7f738c5962b",
       "format": "module"
     },
     {

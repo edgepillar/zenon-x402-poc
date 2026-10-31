@@ -14,17 +14,30 @@ const THEN_DESC=DESC(PROMISE,'then'),CTOR=DESC(PROMISE,'constructor'),SPECIES=DE
  * The native entry hardwires its actual client and wallet constructors. */
 export function captureSdk105FundingServiceConfiguration(configuration) {
   if(arguments.length!==1||!invariant())fail('configuration_rejected');
+  return captureFundingConfiguration(configuration,false);
+}
+/** Same existing-key ownership; explicit non-DP DATA contains no work configuration. */
+export function captureSdk105NonDpFundingServiceConfiguration(configuration) {
+  if(arguments.length!==1||!invariant())fail('configuration_rejected');
+  return captureFundingConfiguration(configuration,true);
+}
+function captureFundingConfiguration(configuration,nonDp) {
   const c=record(configuration,['storeOptions','fundingOptions','serviceOptions']);
   const store=record(c.storeOptions,['databasePath','allowedRoot','resourceUrl','custodyPolicy']);
   ROUTE(store.resourceUrl);
-  const f=record(c.fundingOptions,['readSessionOptions','materialOptions','materialWaitMs','keyPair','expectedAddress','deadlineMs','fundingTransportOptions']);
-  const material=record(f.materialOptions,['publicKey','startNonce','limits']);
-  material.limits=F(record(material.limits,['maxAttempts','maxDifficulty']));
+  const f=record(c.fundingOptions,nonDp
+    ?['readSessionOptions','expectedPublicKey','keyPair','expectedAddress','deadlineMs','fundingTransportOptions']
+    :['readSessionOptions','materialOptions','materialWaitMs','keyPair','expectedAddress','deadlineMs','fundingTransportOptions']);
+  let material=null;
+  if(!nonDp){material=record(f.materialOptions,['publicKey','startNonce','limits']);
+    material.limits=F(record(material.limits,['maxAttempts','maxDifficulty']));}
+  const fundingOptions={readSessionOptions:f.readSessionOptions,deadlineMs:f.deadlineMs,fundingTransportOptions:f.fundingTransportOptions};
+  if(nonDp)fundingOptions.expectedPublicKey=f.expectedPublicKey;
+  else {fundingOptions.materialOptions=F(material);fundingOptions.materialWaitMs=f.materialWaitMs;}
   const service=record(c.serviceOptions,['official','transportOptions','deadlineMs']);
   return F({storeOptions:F(store),serviceOptions:F(service),
-    walletOptions:F({keyPair:f.keyPair,expectedAddress:f.expectedAddress,expectedPublicKey:material.publicKey}),
-    fundingOptions:F({readSessionOptions:f.readSessionOptions,materialOptions:F(material),
-      materialWaitMs:f.materialWaitMs,deadlineMs:f.deadlineMs,fundingTransportOptions:f.fundingTransportOptions})});
+    walletOptions:F({keyPair:f.keyPair,expectedAddress:f.expectedAddress,expectedPublicKey:nonDp?f.expectedPublicKey:material.publicKey}),
+    fundingOptions:F(fundingOptions)});
 }
 
 /**

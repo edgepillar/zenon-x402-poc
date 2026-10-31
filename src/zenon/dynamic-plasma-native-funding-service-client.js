@@ -17,7 +17,7 @@ import { captureOriginalFundingServiceHandoffRequest } from './dynamic-plasma-or
 import { openNativeOfficialV6FundingPostOriginalPaymentClientWithFundingHandoffGuard, openNativeOfficialV6FundingPostOriginalPaymentClientWithFundingAndApiCreditWireOwner } from '../x402-native-v6-funding-post-client.js';
 import { observeServiceCreditOperationDrain } from '../service-credit-bounded-operation-drain.js';
 import { createServiceCreditBoundedCloseCompletion } from '../service-credit-bounded-close-completion.js';
-import { captureNativeFundingServiceOperationalConfiguration } from './native-funding-service-configuration.js';
+import { captureNativeFundingServiceOperationalConfiguration, captureNativeNonDpFundingServiceOperationalConfiguration } from './native-funding-service-configuration.js';
 import { bindWalletOriginalFundingPreparation } from './original-funding-signer-context-bridge.js';
 
 const OPEN_STORE = openZenonFundingPayerRecoveryOriginalPaymentSqliteStoreV6;
@@ -99,7 +99,7 @@ export async function openZenonDynamicPlasmaNativeFundingServiceClientForLocalQu
 }
 
 /** Explicit SOURCE ONLY non-DP lane, with the same actual wire/store owner.
- * Legacy operational material limits remain captured but no material producer
+ * No material/nonce/work/wait fields are admitted and no material producer
  * is constructed. New native execution/qualification is not implied. */
 export async function openZenonNonDpNativeFundingServiceClientWithApiCreditWireOwner(configuration, wireOwner) {
   if (arguments.length !== 2) fail('configuration_or_owner_unavailable'); validateApiCreditWireOwnerGuard(wireOwner);
@@ -171,13 +171,16 @@ async function openClient(configuration, localReadOptions, localQualification, w
   });
   try {
     const c = exact(configuration, ['storeOptions','fundingOptions','serviceOptions']);
-    const incomingFunding = exact(c.fundingOptions, ['readSessionOptions','materialOptions','materialWaitMs','wallet','deadlineMs','fundingTransportOptions']);
+    const incomingFunding = exact(c.fundingOptions, nonDp
+      ? ['readSessionOptions','expectedPublicKey','wallet','deadlineMs','fundingTransportOptions']
+      : ['readSessionOptions','materialOptions','materialWaitMs','wallet','deadlineMs','fundingTransportOptions']);
     const { wallet, ...operationalFunding } = incomingFunding;
-    const selected = captureNativeFundingServiceOperationalConfiguration({ storeOptions: c.storeOptions,
-      fundingOptions: operationalFunding, serviceOptions: c.serviceOptions }, localQualification ? 'LOCAL_QUALIFICATION' : 'PUBLIC');
+    const operational = { storeOptions: c.storeOptions, fundingOptions: operationalFunding, serviceOptions: c.serviceOptions };
+    const selected = nonDp ? captureNativeNonDpFundingServiceOperationalConfiguration(operational)
+      : captureNativeFundingServiceOperationalConfiguration(operational, localQualification ? 'LOCAL_QUALIFICATION' : 'PUBLIC');
     storeOptions = selected.storeOptions; policy = storeOptions.custodyPolicy;
     fundingOptions = { ...selected.fundingOptions, wallet };
-    serviceOptions = selected.serviceOptions; materialOptions = fundingOptions.materialOptions;
+    serviceOptions = selected.serviceOptions; materialOptions = nonDp ? null : fundingOptions.materialOptions;
     fundingTransportOptions = fundingOptions.fundingTransportOptions;
     let serviceTransport = serviceOptions.transportOptions;
     // Inert reservation before native/store construction, not a timer or permit.
@@ -223,7 +226,7 @@ async function openClient(configuration, localReadOptions, localQualification, w
       const walletView = fundingOptions.wallet.inspect(), publicView = data(walletView, 'wallet');
       if (data(walletView, 'sdk105WalletOwnerVersion') !== 1 || data(walletView, 'held') !== false
           || data(walletView, 'closeRequested') !== false
-          || data(publicView, 'expectedPublicKey') !== fundingOptions.materialOptions.publicKey) fail('funding_unavailable');
+          || data(publicView, 'expectedPublicKey') !== fundingOptions.expectedPublicKey) fail('funding_unavailable');
       requireCurrent();
       preparerOptions = F({ readOptions: session.readSession.readOptions, requireCurrent,
         walletOwner: fundingOptions.wallet, expectedAddress: data(publicView, 'expectedAddress'),

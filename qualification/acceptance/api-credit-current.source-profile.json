@@ -1,7 +1,7 @@
 {
   "profileVersion": 1,
   "profileId": "API_CREDIT_CURRENT_SOURCE_V1",
-  "sourceBaseline": "2969d941eb9dc0d2c3d9e6a38198a0f214426051",
+  "sourceBaseline": "3f13412a7191b4331ce6c9f20b863e26f7c7bae1",
   "application": {
     "buyerEntry": "src/api-credit-cli.js",
     "providerEntry": "src/issued-provider-cli.js"
@@ -11,7 +11,7 @@
       "role": "buyer",
       "path": "src/api-credit-module-catalog.json",
       "bytes": 120732,
-      "sha256": "c62a85ccccaaed209d217f2eb9ee91785de135351a0c79f259bc58e34b56c077",
+      "sha256": "2ad7cb10298362ee30b7674bf36b50576672e960617a83862965ebfdfb483bc6",
       "sourceRows": 175,
       "packageRows": 404,
       "bareEdges": 9
@@ -30,7 +30,7 @@
     {
       "path": "src/api-credit-native-package-admission.js",
       "bytes": 6414,
-      "sha256": "e5f65abf9da52d3b89a61de7f628901ebaef990b99c4bdb4ce6f34341f2aab9a",
+      "sha256": "58365e318cc194df29f35ec7255fce3bd01be706f620bbde502c70c5a62608d6",
       "format": "module"
     },
     {
@@ -48,19 +48,19 @@
   ],
   "dataQualification": {
     "sourceProfile": {
-      "path": "qualification/profiles/api-credit-application-source-v77.json",
-      "bytes": 6388,
-      "sha256": "efeff6b600ebb38d0c74123dea16d66dc950be1929594849bfc24b25901576df"
+      "path": "qualification/profiles/api-credit-application-source-v78.json",
+      "bytes": 6722,
+      "sha256": "7f6a33c57834cd4b6aa2a7d17e6d8dd32bf1d9efb23c8f1b323c0b2b079a6eac"
     },
     "result": {
-      "path": "qualification/non-dp-native-original-binding.actual-local-result.json",
-      "bytes": 11055,
-      "sha256": "fe9225d74851248b7ae3c1e6cd14060845b33bb95d2ead04ef4920532da2541a"
+      "path": "qualification/non-dp-operator-configuration.actual-local-result.json",
+      "bytes": 98754,
+      "sha256": "52baa891f11ec297cf6e53e3ab7f4c0326d7f27991a1c71e4b43d5712e6e0aee"
     },
-    "sourceBoundControls": 2101,
-    "executedControls": 76,
-    "retainedControls": 2025,
-    "expectedResultQualification": "G1_NON_DP_RETAINED_NATIVE_OPTIONS_DATA"
+    "sourceBoundControls": 2130,
+    "executedControls": 789,
+    "retainedControls": 1341,
+    "expectedResultQualification": "G1_NON_DP_OPERATOR_CONFIGURATION_DATA"
   },
   "runtime": {
     "nodeVersion": "24.19.0",

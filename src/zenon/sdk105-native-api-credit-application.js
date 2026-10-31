@@ -7,9 +7,9 @@ import { createApiCreditOpeningFailureCustody } from '../api-credit-opening-fail
 import { createApiCreditReturnedOpeningCustody } from '../api-credit-returned-opening-custody.js';
 import { hrtime } from 'node:process';
 import { claimSdk105ApiCreditExistingKeyLease, bindSdk105ApiCreditExistingKeyLeaseOwner } from './sdk105-api-credit-existing-key-lease.js';
-import { consumeSdk105ApiCreditSelection } from './sdk105-api-credit-selection.js';
-import { consumeSdk105ApiCreditProductSelection, bindSdk105ApiCreditProductLifecycleWithRecordedResults } from './sdk105-api-credit-product-profile.js';
-import { captureSdk105FundingServiceConfiguration } from './sdk105-funding-service-lifecycle.js';
+import { consumeSdk105ApiCreditSelection, consumeSdk105NonDpApiCreditSelection } from './sdk105-api-credit-selection.js';
+import { consumeSdk105ApiCreditProductSelection, consumeSdk105NonDpApiCreditProductSelection, bindSdk105ApiCreditProductLifecycleWithRecordedResults } from './sdk105-api-credit-product-profile.js';
+import { captureSdk105FundingServiceConfiguration, captureSdk105NonDpFundingServiceConfiguration } from './sdk105-funding-service-lifecycle.js';
 import { createSdk105AgeBoundSignerContextWalletOwner } from './sdk105-prepared-hash-wallet-owner.js';
 import { openOriginalFundingSpendingSignerContextFileOwner, openOriginalFundingSpendingGrantRecoveryFileOwner } from '../original-funding-spending-file-owner.js';
 import { createSdk105ApiCreditApplicationLifecycle } from './sdk105-api-credit-application-lifecycle.js';
@@ -51,17 +51,17 @@ export async function openSdk105NativeNonDpApiCreditApplication(selection, requi
 export async function openSdk105NativeNonDpApiCreditProductApplication(selection, requireCurrentOpening) {
   if (arguments.length !== 2 || failedApplication !== null || typeof requireCurrentOpening !== 'function'
       || types.isProxy(requireCurrentOpening) || !Object.isFrozen(requireCurrentOpening)) fail();
-  const product = consumeSdk105ApiCreditProductSelection(selection);
+  const product = consumeSdk105NonDpApiCreditProductSelection(selection);
   return openApplication(product.selection, requireCurrentOpening, product.profile, true);
 }
 async function openApplication(selection, requireCurrentOpening, productProfile, nonDp = false) {
   if (failedApplication !== null || typeof requireCurrentOpening !== 'function'
       || types.isProxy(requireCurrentOpening) || !Object.isFrozen(requireCurrentOpening)) fail();
-  const selected = consumeSdk105ApiCreditSelection(selection);
+  const selected = (nonDp ? consumeSdk105NonDpApiCreditSelection : consumeSdk105ApiCreditSelection)(selection);
   let c, file = null, wallet = null, client = null, application = null, wireOwner = null;
   let walletOpeningEntered = false, clientOpeningEntered = false;
   try {
-    c = captureSdk105FundingServiceConfiguration(selected.configuration);
+    c = (nonDp ? captureSdk105NonDpFundingServiceConfiguration : captureSdk105FundingServiceConfiguration)(selected.configuration);
     const lookupPolicy=productProfile===null?null:F({caBase64:c.serviceOptions.transportOptions.ca.toString('base64'),maxTotalMs:c.serviceOptions.deadlineMs});
     requireCurrentOpening();
     file = (productProfile === null ? openOriginalFundingSpendingSignerContextFileOwner : openOriginalFundingSpendingGrantRecoveryFileOwner)({ storageProfile: selected.spendingFile.storageProfile,

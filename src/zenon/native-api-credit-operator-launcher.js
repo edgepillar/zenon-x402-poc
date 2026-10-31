@@ -2,7 +2,7 @@
 import { Readable, Writable } from 'node:stream';
 import process, { hrtime } from 'node:process';
 import { setTimeout, clearTimeout } from 'node:timers';
-import { createApiCreditOperatorCoordinator } from '../api-credit-operator-coordinator.js';
+import { createNonDpApiCreditOperatorCoordinator } from '../api-credit-operator-coordinator.js';
 import { captureApiCreditOperatorUtcDay } from '../api-credit-operator-clock.js';
 import { runBuyerOriginalCommandHost } from '../buyer-original-command-host.js';
 import { createNativeApiCreditOperatorPipes } from './native-api-credit-operator-pipes.js';
@@ -88,7 +88,7 @@ export async function runNativeApiCreditOperator(argumentsData) {
     }
     if (frame.stopRequested) fail();
     frame.pipesEntered = true; pipes = createNativeApiCreditOperatorPipes(argumentsData); frame.pipes = pipes;
-    frame.coordinator = createApiCreditOperatorCoordinator({ arguments: argumentsData, ports });
+    frame.coordinator = createNonDpApiCreditOperatorCoordinator({ arguments: argumentsData, ports });
     if (frame.stopRequested) frame.coordinator.requestStop();
     result = await frame.coordinator.run();
   } catch { FAILED.add(frame); fail(); }

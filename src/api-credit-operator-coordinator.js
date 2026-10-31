@@ -1,6 +1,6 @@
 import { Buffer } from 'node:buffer';
 import { types } from 'node:util';
-import { decodeApiCreditOperatorBootstrap, bindApiCreditOperatorBootstrap } from './api-credit-operator-bootstrap.js';
+import { decodeApiCreditOperatorBootstrap, decodeNonDpApiCreditOperatorBootstrap, bindApiCreditOperatorBootstrap } from './api-credit-operator-bootstrap.js';
 
 const F = Object.freeze, NP = Promise, PP = NP.prototype, THEN = PP.then, DESC = Object.getOwnPropertyDescriptor, OWN = Object.hasOwn;
 const FILL = Buffer.prototype.fill, TEXT = Buffer.prototype.toString, EQUALS = Buffer.prototype.equals;
@@ -35,6 +35,13 @@ function wipe(value) { if (value !== null && typeof value === 'object' && !types
  * from replies and no prepare/funding/service operation is generated here. */
 export function createApiCreditOperatorCoordinator(configuration) {
   if (arguments.length !== 1 || FAILED.size >= 16) fail();
+  return createCoordinator(configuration, false);
+}
+export function createNonDpApiCreditOperatorCoordinator(configuration) {
+  if (arguments.length !== 1 || FAILED.size >= 16) fail();
+  return createCoordinator(configuration, true);
+}
+function createCoordinator(configuration, nonDp) {
   const c = fields(configuration, ['arguments', 'ports']);
   const a = fields(c.arguments, ['mode', 'profileFd', 'keyFd', 'inputFd', 'outputFd', 'bootstrapMs']);
   if (a.mode !== 'RUN' || !Number.isSafeInteger(a.bootstrapMs) || a.bootstrapMs < 1 || a.bootstrapMs > 60000) fail();
@@ -185,7 +192,7 @@ export function createApiCreditOperatorCoordinator(configuration) {
       if (types.isProxy(frame.profileBytes) || !Buffer.isBuffer(frame.profileBytes) || Object.getPrototypeOf(frame.profileBytes) !== Buffer.prototype
           || Reflect.apply(LENGTH, frame.profileBytes, []) > 262144 || types.isSharedArrayBuffer(Reflect.apply(ARRAY_BUFFER, frame.profileBytes, []))) fail();
       const text = Reflect.apply(TEXT, frame.profileBytes, ['utf8']); if (!Reflect.apply(EQUALS, Buffer.from(text), [frame.profileBytes])) fail();
-      frame.prepared = decodeApiCreditOperatorBootstrap(text); wipe(frame.profileBytes); frame.profileBytes = null;
+      frame.prepared = (nonDp ? decodeNonDpApiCreditOperatorBootstrap : decodeApiCreditOperatorBootstrap)(text); wipe(frame.profileBytes); frame.profileBytes = null;
       frame.stage = 'CREDENTIAL'; await opening('CREDENTIAL', stageGuard => p.readCredential(stageGuard)); frame.credential = frame.observed; frame.observed = null; guard();
       if (types.isProxy(frame.credential) || !Buffer.isBuffer(frame.credential) || Object.getPrototypeOf(frame.credential) !== Buffer.prototype
           || Reflect.apply(LENGTH, frame.credential, []) !== 32 || types.isSharedArrayBuffer(Reflect.apply(ARRAY_BUFFER, frame.credential, []))) fail();

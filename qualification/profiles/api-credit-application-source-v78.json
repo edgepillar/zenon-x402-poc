@@ -1,0 +1,179 @@
+{
+  "version": 78,
+  "status": "SOURCE_AND_DECLARED_MEMORY_DATA_CANDIDATE",
+  "sourceMain": "3f13412a7191b4331ce6c9f20b863e26f7c7bae1",
+  "sourceMainTree": "0d36587cfb4e64c8414b295f58498947540f715d",
+  "predecessorProfile": {
+    "path": "qualification/profiles/api-credit-application-source-v77.json",
+    "bytes": 6388,
+    "sha256": "efeff6b600ebb38d0c74123dea16d66dc950be1929594849bfc24b25901576df"
+  },
+  "profileStorage": "EXACT_PREDECESSOR_REFERENCE_WITH_EXPLICIT_CONFIGURATION_DELTA",
+  "product": "ONE_FUNDING_ONE_GRANT_MANY_METERED_CALLS_ORIGINAL_REPLAY_RECOVERY",
+  "nonDpOperatorConfiguration": {
+    "path": "qualification/non-dp-operator-configuration.source-contract.json",
+    "bytes": 1170,
+    "sha256": "cd0385b0e1e5d88c21195574ac903cc9f88aba77d7bc66ddf04ee626559c8481"
+  },
+  "proofManifest": {
+    "path": "qualification/non-dp-operator-configuration.proof-manifest.json",
+    "bytes": 317902,
+    "sha256": "9f8160b694f6e628cc6d4b02b689be9fa8428cf0fc875113c94a63f9a04bb530"
+  },
+  "failureInventory": {
+    "path": "qualification/non-dp-operator-configuration.failure-inventory.json",
+    "bytes": 773,
+    "sha256": "5b8c0454212d2bce7d6de00fc50c0331398bafb0fbb2ff243ecb0bbe87138132"
+  },
+  "sourceDelta": [
+    {
+      "path": "qualification/non-dp-configuration.behavior.mjs",
+      "bytes": 17317,
+      "sha256": "d19bea7185bdb57cada093ccd589b28a13827f42a516822f89736874e341391b",
+      "gitBlob": "cc2af95a6fec731030c33bff06566b41ce3eb502"
+    },
+    {
+      "path": "src/api-credit-module-catalog.json",
+      "bytes": 120732,
+      "sha256": "2ad7cb10298362ee30b7674bf36b50576672e960617a83862965ebfdfb483bc6",
+      "gitBlob": "42ca9b0436dd021e36f9a7b8190814c82dc1729c"
+    },
+    {
+      "path": "src/api-credit-native-package-admission.js",
+      "bytes": 6414,
+      "sha256": "58365e318cc194df29f35ec7255fce3bd01be706f620bbde502c70c5a62608d6",
+      "gitBlob": "d45b7f28299c318c2c062c5f688a619c52796e8e"
+    },
+    {
+      "path": "src/api-credit-operator-bootstrap.js",
+      "bytes": 9730,
+      "sha256": "54a1053993964d4516f182915631f7419b4e88bfd302c962744df5675932251a",
+      "gitBlob": "b4699fa34c595119426f7711a79c22886aa174f0"
+    },
+    {
+      "path": "src/api-credit-operator-coordinator.js",
+      "bytes": 17892,
+      "sha256": "539c703bcfb75abc83a8935ae3619e261dad69e59bfe0530a2a9fdf422924083",
+      "gitBlob": "951bc567411459debd43a58dbfa7efd4226c44c3"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-native-funding-service-client.js",
+      "bytes": 35568,
+      "sha256": "59397b25c9db37ab8aca661e397c020ef49c09db2480c224195c7698ca740760",
+      "gitBlob": "034e5c0f9c504ae4f49d64104b4d484596f4687e"
+    },
+    {
+      "path": "src/zenon/native-api-credit-operator-launcher.js",
+      "bytes": 5556,
+      "sha256": "2c04505db7efb4a1fa36f451cb19c902446a2cde5a121a17fec205ffc8aec5bc",
+      "gitBlob": "f47fd5734022c34a1cf8753846e13e63b35ad2d9"
+    },
+    {
+      "path": "src/zenon/native-funding-service-configuration.js",
+      "bytes": 8772,
+      "sha256": "c438358cfa811ad21d63772184f80c5f1c1af9f0a24752d9b615bbc38b68c5d2",
+      "gitBlob": "002711e319d206393c98a8ddc5924c3a6bcb2311"
+    },
+    {
+      "path": "src/zenon/sdk105-api-credit-product-profile.js",
+      "bytes": 15186,
+      "sha256": "3b4a8bf736148f35d020d43753d6dd2d086424b8afed58d333621bf324b565b7",
+      "gitBlob": "b54fcd38d69636a42024b5a81af39912723fbc74"
+    },
+    {
+      "path": "src/zenon/sdk105-api-credit-selection.js",
+      "bytes": 8695,
+      "sha256": "0a28beb05302009f61fe6dc0c32399c0f5f6783bce07dfbc264d8108303d4e95",
+      "gitBlob": "b07a8d3a9895222959ab5757b1c97a8e16bfde8b"
+    },
+    {
+      "path": "src/zenon/sdk105-funding-service-lifecycle.js",
+      "bytes": 18085,
+      "sha256": "864fa53505d96522bd263a0b227413dfbe31a1e235de753f48696a6b08ebb52a",
+      "gitBlob": "6426cde7bc558205f8c4d72f9852b99f04cde38b"
+    },
+    {
+      "path": "src/zenon/sdk105-native-api-credit-application.js",
+      "bytes": 10413,
+      "sha256": "5222eb42e60058dcf5ef83f9c19556915b057e57ee24960673cf570a8ae6c9dd",
+      "gitBlob": "99d4991395166fcffb98b1b3db382e7b4f8f1437"
+    },
+    {
+      "path": "src/zenon/sdk105-native-api-credit-command-session.js",
+      "bytes": 5727,
+      "sha256": "c4768d532b4a60f178d29d990017672b39127d966bf95bb55c2ad7f738c5962b",
+      "gitBlob": "31fefdb786425b74747faa723d7986f34216fec8"
+    }
+  ],
+  "buyerCatalog": {
+    "role": "buyer",
+    "sourceGraph": 177,
+    "catalogRows": 580,
+    "sourceRows": 175,
+    "packageRows": 404,
+    "bareEdges": 9,
+    "addedSourceRows": [],
+    "changedSourceRows": [
+      "src/api-credit-operator-bootstrap.js",
+      "src/api-credit-operator-coordinator.js",
+      "src/zenon/dynamic-plasma-native-funding-service-client.js",
+      "src/zenon/native-api-credit-operator-launcher.js",
+      "src/zenon/native-funding-service-configuration.js",
+      "src/zenon/sdk105-api-credit-product-profile.js",
+      "src/zenon/sdk105-api-credit-selection.js",
+      "src/zenon/sdk105-funding-service-lifecycle.js",
+      "src/zenon/sdk105-native-api-credit-application.js",
+      "src/zenon/sdk105-native-api-credit-command-session.js"
+    ],
+    "removedSourceRows": [],
+    "catalog": {
+      "path": "src/api-credit-module-catalog.json",
+      "bytes": 120732,
+      "sha256": "2ad7cb10298362ee30b7674bf36b50576672e960617a83862965ebfdfb483bc6"
+    },
+    "admission": {
+      "path": "src/api-credit-native-package-admission.js",
+      "bytes": 6414,
+      "sha256": "58365e318cc194df29f35ec7255fce3bd01be706f620bbde502c70c5a62608d6"
+    },
+    "catalogUnchanged": false
+  },
+  "providerCatalog": {
+    "role": "provider",
+    "sourceGraph": 104,
+    "catalogRows": 507,
+    "sourceRows": 102,
+    "packageRows": 404,
+    "bareEdges": 4,
+    "addedSourceRows": [],
+    "changedSourceRows": [],
+    "removedSourceRows": [],
+    "catalog": {
+      "path": "src/issued-provider-module-catalog.json",
+      "bytes": 104412,
+      "sha256": "e2fea2d5a2378fa2d078eb75d618867d7bc193e89a23f6ec41ed9e0320218286"
+    },
+    "admission": {
+      "path": "src/issued-provider-native-package-admission.js",
+      "bytes": 6429,
+      "sha256": "80b1b96a27f0ff0503adf1841c831d42ddac6bbc782b4f276ffcd90c95e3c768"
+    },
+    "catalogUnchanged": true
+  },
+  "packagePinsAndBareEdgesUnchanged": true,
+  "currentLocalData": {
+    "new": 29,
+    "reexecuted": 760,
+    "retainedExact": 1341,
+    "sourceBoundDistinct": 2130,
+    "newDATACommands": 16,
+    "newParserCommands": 5,
+    "parserSourceProofs": 51
+  },
+  "selectedHostedCIControls": 108,
+  "selectedHostedCISourceInputs": 22,
+  "hostedSelectionChanged": false,
+  "newCasesIncludedInHostedCI": false,
+  "nativeQualification": "NOT_EXECUTED",
+  "G0G5Acceptance": "OPEN"
+}
