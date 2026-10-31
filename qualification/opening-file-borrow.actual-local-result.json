@@ -1,0 +1,271 @@
+{
+  "qualification": "G2_OPENING_FILE_BORROW_CURRENT_SOURCE_DATA",
+  "status": "PASS",
+  "recordedAtUTC": "2026-10-31T21:39:41.659120+00:00",
+  "passed": 52,
+  "failed": 0,
+  "cases": [
+    {
+      "id": "opening-file-borrow-wallet-held-during-file-view-blocks-physical-close",
+      "status": "PASS"
+    },
+    {
+      "id": "opening-file-borrow-wallet-operation-during-file-view-blocks-physical-close",
+      "status": "PASS"
+    },
+    {
+      "id": "opening-file-borrow-clearing-receipt-drift-during-file-view-blocks-physical-close",
+      "status": "PASS"
+    },
+    {
+      "id": "opening-file-borrow-wallet-lifecycle-drift-during-file-view-blocks-physical-close",
+      "status": "PASS"
+    },
+    {
+      "id": "opening-file-borrow-unknown-wallet-view-after-file-view-retains-both-owners",
+      "status": "PASS"
+    },
+    {
+      "id": "opening-file-borrow-late-wallet-repair-cannot-retry-a-refused-close",
+      "status": "PASS"
+    },
+    {
+      "id": "opening-file-borrow-clean-wallet-is-observed-after-file-view-and-before-one-close",
+      "status": "PASS"
+    },
+    {
+      "id": "opening-file-borrow-pre-wallet-file-close-keeps-its-existing-order-and-no-wallet-call",
+      "status": "PASS"
+    },
+    {
+      "id": "opening-file-borrow-unreturned-client-stays-held-with-no-competing-wallet-stop",
+      "status": "PASS"
+    },
+    {
+      "id": "opening-file-borrow-real-void-close-return-is-preserved-when-post-close-wallet-view-drifts",
+      "status": "PASS"
+    },
+    {
+      "id": "opening-file-borrow-reentrant-same-owner-join-cannot-repeat-any-stop",
+      "status": "PASS"
+    },
+    {
+      "id": "opening-file-borrow-controller-remains-observation-only-after-refusal",
+      "status": "PASS"
+    },
+    {
+      "id": "opening-custody-unreturned-native-client-revokes-without-physical-close-or-competing-wallet-stop",
+      "status": "PASS"
+    },
+    {
+      "id": "opening-custody-entered-wallet-constructor-with-no-returned-owner-retains-its-budget-file",
+      "status": "PASS"
+    },
+    {
+      "id": "opening-custody-pre-borrower-refusal-closes-the-exclusive-file-after-revoke-and-fresh-view",
+      "status": "PASS"
+    },
+    {
+      "id": "opening-custody-returned-wallet-before-client-entry-stops-before-any-file-close",
+      "status": "PASS"
+    },
+    {
+      "id": "opening-custody-caller-joining-the-wallet-cached-stop-does-not-repeat-the-physical-clear",
+      "status": "PASS"
+    },
+    {
+      "id": "opening-custody-repeated-same-claim-joins-the-original-observation-without-new-stops",
+      "status": "PASS"
+    },
+    {
+      "id": "opening-custody-a-held-claim-cannot-be-rebound-to-a-less-conservative-phase",
+      "status": "PASS"
+    },
+    {
+      "id": "opening-custody-revoke-throw-retains-unknown-even-after-the-known-wallet-stops-late",
+      "status": "PASS"
+    },
+    {
+      "id": "opening-custody-nonvoid-revoke-is-retained-without-reading-a-thenable",
+      "status": "PASS"
+    },
+    {
+      "id": "opening-custody-rejected-wallet-stop-never-closes-or-reopens-the-file",
+      "status": "PASS"
+    },
+    {
+      "id": "opening-custody-nonvoid-wallet-stop-cannot-become-a-release-receipt",
+      "status": "PASS"
+    },
+    {
+      "id": "opening-custody-unobservable-wallet-stop-is-retained-without-thenable-assimilation",
+      "status": "PASS"
+    },
+    {
+      "id": "opening-custody-void-stop-still-requires-a-current-clean-wallet-view",
+      "status": "PASS"
+    },
+    {
+      "id": "opening-custody-a-newly-held-file-view-blocks-physical-close-after-wallet-stop",
+      "status": "PASS"
+    },
+    {
+      "id": "opening-custody-file-close-throw-is-one-attempt-and-does-not-reset-the-original-failure",
+      "status": "PASS"
+    },
+    {
+      "id": "opening-custody-void-file-close-keeps-its-fact-when-the-post-close-view-is-unknown",
+      "status": "PASS"
+    },
+    {
+      "id": "opening-custody-nonvoid-file-close-is-unknown-and-never-retried",
+      "status": "PASS"
+    },
+    {
+      "id": "opening-custody-reentrant-same-file-claim-joins-before-any-port-is-invoked-twice",
+      "status": "PASS"
+    },
+    {
+      "id": "opening-custody-invalid-stage-or-accessor-input-cannot-request-any-cleanup",
+      "status": "PASS"
+    },
+    {
+      "id": "opening-custody-clean-observation-is-bounded-history-without-restart-or-operation-capabilities",
+      "status": "PASS"
+    },
+    {
+      "id": "opening-current-close-clean-file-rechecks-without-repeating-cleanup",
+      "status": "PASS"
+    },
+    {
+      "id": "opening-current-close-returned-wallet-rechecks-both-original-owners",
+      "status": "PASS"
+    },
+    {
+      "id": "opening-current-close-late-held-file-preserves-historical-void-return",
+      "status": "PASS"
+    },
+    {
+      "id": "opening-current-close-late-open-database-is-held",
+      "status": "PASS"
+    },
+    {
+      "id": "opening-current-close-late-busy-file-is-held",
+      "status": "PASS"
+    },
+    {
+      "id": "opening-current-close-missing-backend-revocation-is-held",
+      "status": "PASS"
+    },
+    {
+      "id": "opening-current-close-missing-physical-close-entry-is-held",
+      "status": "PASS"
+    },
+    {
+      "id": "opening-current-close-missing-current-physical-close-return-is-held",
+      "status": "PASS"
+    },
+    {
+      "id": "opening-current-close-late-held-wallet-is-held",
+      "status": "PASS"
+    },
+    {
+      "id": "opening-current-close-late-wallet-operation-is-held",
+      "status": "PASS"
+    },
+    {
+      "id": "opening-current-close-late-wallet-clear-uncertainty-is-held",
+      "status": "PASS"
+    },
+    {
+      "id": "opening-current-close-file-view-exception-is-held-without-retry",
+      "status": "PASS"
+    },
+    {
+      "id": "opening-current-close-wallet-view-exception-is-held-without-retry",
+      "status": "PASS"
+    },
+    {
+      "id": "opening-current-close-proxy-file-view-runs-no-proxy-hooks",
+      "status": "PASS"
+    },
+    {
+      "id": "opening-current-close-accessor-wallet-view-runs-no-value-hooks",
+      "status": "PASS"
+    },
+    {
+      "id": "opening-current-close-file-inspection-reentry-latches-held",
+      "status": "PASS"
+    },
+    {
+      "id": "opening-current-close-wallet-inspection-reentry-latches-held",
+      "status": "PASS"
+    },
+    {
+      "id": "opening-current-close-opaque-thenable-view-is-not-assimilated",
+      "status": "PASS"
+    },
+    {
+      "id": "opening-current-close-unchanged-retention-cap-keeps-earlier-clean-claim-identity",
+      "status": "PASS"
+    },
+    {
+      "id": "opening-current-close-held-history-cannot-be-repaired-by-clean-late-views",
+      "status": "PASS"
+    }
+  ],
+  "newControls": 12,
+  "reexecutedRelevantControls": 40,
+  "retainedExactControls": 2125,
+  "sourceBoundDistinctControls": 2177,
+  "actualDataNodeCommands": 3,
+  "actualParserNodeCommands": 1,
+  "currentParserSourceProofs": 51,
+  "nodeVersion": "24.19.0",
+  "platform": "darwin-arm64",
+  "nodeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25",
+  "sourceProfile": {
+    "path": "qualification/profiles/api-credit-application-source-v81.json",
+    "bytes": 3992,
+    "sha256": "039e0d701c4492c79b6027a68c05c8aeb204d5310b043e47646d79e4bb8589dc"
+  },
+  "sourceContract": {
+    "path": "qualification/opening-file-borrow.source-contract.json",
+    "bytes": 694,
+    "sha256": "ae05e6df24efb84a43a6c6d60c006e0af00b7b4537fabcd2b5033d681e0152c6"
+  },
+  "proofManifest": {
+    "path": "qualification/opening-file-borrow.proof-manifest.json",
+    "bytes": 329423,
+    "sha256": "1ebb993f077aaf0ac5d145df3c64d630dedf5eb50ef0b01c7256c31220286d2e"
+  },
+  "failureInventory": {
+    "path": "qualification/opening-file-borrow.failure-inventory.json",
+    "bytes": 1029,
+    "sha256": "e159d4eba49d7ea06d96437238d0fddd785b9a4ed3d2d76820e82d95f5aeb2d0"
+  },
+  "taskQuotaBytes": 4194304,
+  "allSelectedPassingTasksClosedSuccess": true,
+  "unqualifiedHistoricalCASObjectsConsumed": false,
+  "actualPureOpeningFailureCustodyOwner": true,
+  "fileWalletAndStopPorts": "DECLARED_DATA_ONLY",
+  "newOwnerJournalTimerOrStop": false,
+  "nativeFilesEvaluated": 0,
+  "nativeExecutions": 0,
+  "SDK": 0,
+  "SQLite": 0,
+  "keys": 0,
+  "signatures": 0,
+  "sockets": 0,
+  "nonceSearches": 0,
+  "nodeChildren": 0,
+  "actualPrepare": 0,
+  "payouts": 0,
+  "nativeQualification": "NOT_EXECUTED",
+  "chainAuthentication": "NOT_ESTABLISHED",
+  "physicalRelease": "NOT_ESTABLISHED",
+  "freshProcessReopen": "NOT_EXECUTED",
+  "LinuxAcceptance": "NOT_ESTABLISHED",
+  "G0G5Acceptance": "OPEN",
+  "newCasesIncludedIn108CI": false
+}

@@ -68,11 +68,14 @@ export function createApiCreditOpeningFailureCustody(configuration) {
         || frame.clientEntered || frame.walletEntered && frame.wallet === null) return;
     frame.busy = true;
     try {
-      if (!invariant() || frame.wallet !== null && (!frame.walletStopReturned || !walletStopped())) fail();
+      if (!invariant() || frame.wallet !== null && !frame.walletStopReturned) fail();
       const before = fileView();
       if (frame.held || data(before, 'lifecycle') !== 'REVOKED' || data(before, 'held') !== false || data(before, 'busy') !== false
           || data(before, 'backendClosed') !== true || data(before, 'databaseOpen') !== true
-          || data(before, 'physicalCloseEntered') !== false || data(before, 'physicalCloseReturned') !== false) fail();
+          || data(before, 'physicalCloseEntered') !== false || data(before, 'physicalCloseReturned') !== false
+          // The borrowed file view can invalidate a former wallet observation.
+          // Require the same returned wallet at the actual close boundary.
+          || frame.wallet !== null && !walletStopped() || !invariant() || frame.held) fail();
       frame.closeEntered = true;
       frame.closeResult = APPLY(CLOSE, frame.file, []); frame.closeReturned = frame.closeResult === undefined;
       if (!frame.closeReturned || !invariant()) { discard(frame.closeResult); fail(); }

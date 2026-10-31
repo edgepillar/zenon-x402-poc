@@ -1,0 +1,116 @@
+{
+  "version": 81,
+  "status": "SOURCE_AND_DECLARED_MEMORY_DATA_CANDIDATE",
+  "sourceMain": "85dd268643a37801ec957da80fa8ae5b26f6ea75",
+  "sourceMainTree": "cc9e997f7d0cbb2bac528e7c5f61627384914aa8",
+  "predecessorProfile": {
+    "path": "qualification/profiles/api-credit-application-source-v80.json",
+    "bytes": 4066,
+    "sha256": "88a48f5af927f19bb52b86254fbb3d74756b709d72d2c8732ed8107047b81a2c"
+  },
+  "profileStorage": "EXACT_PREDECESSOR_REFERENCE_WITH_CURRENT_CLOSE_WALLET_DELTA",
+  "product": "ONE_FUNDING_ONE_GRANT_MANY_METERED_CALLS_ORIGINAL_REPLAY_RECOVERY",
+  "openingFailureWalletAfterBorrow": {
+    "path": "qualification/opening-file-borrow.source-contract.json",
+    "bytes": 694,
+    "sha256": "ae05e6df24efb84a43a6c6d60c006e0af00b7b4537fabcd2b5033d681e0152c6"
+  },
+  "proofManifest": {
+    "path": "qualification/opening-file-borrow.proof-manifest.json",
+    "bytes": 329423,
+    "sha256": "1ebb993f077aaf0ac5d145df3c64d630dedf5eb50ef0b01c7256c31220286d2e"
+  },
+  "failureInventory": {
+    "path": "qualification/opening-file-borrow.failure-inventory.json",
+    "bytes": 1029,
+    "sha256": "e159d4eba49d7ea06d96437238d0fddd785b9a4ed3d2d76820e82d95f5aeb2d0"
+  },
+  "sourceDelta": [
+    {
+      "path": "qualification/opening-file-borrow.behavior.mjs",
+      "bytes": 7349,
+      "sha256": "53b67468f636f1be04455c27bf0f7aac6c0e678a2ca2a20ba7ddd9d011cfa989",
+      "gitBlob": "5515d8dacf34a308c9f03f8b31b23cac0feb1c35"
+    },
+    {
+      "path": "src/api-credit-module-catalog.json",
+      "bytes": 120934,
+      "sha256": "7f2979b2429727d2a4b50101f3757e4b526e8b50c51a25220f205b81f6ee6e6c",
+      "gitBlob": "d8a2b33a30947bb5942213f259b08e69f3a20832"
+    },
+    {
+      "path": "src/api-credit-native-package-admission.js",
+      "bytes": 6414,
+      "sha256": "0618d3b8afaaaf5ff262bee963e41c220b552733be1292594beea07c95efd61f",
+      "gitBlob": "aa9f6b734f92531169e4213b02f457d58a78cd39"
+    },
+    {
+      "path": "src/api-credit-opening-failure-custody.js",
+      "bytes": 8905,
+      "sha256": "ba0d9684cb8bdcc8d232131ee4e1eb5cccc0782c1e728d4440b107941c29cef8",
+      "gitBlob": "bf2ae71b5b06708aaddfde872001667935bcb91f"
+    }
+  ],
+  "buyerCatalog": {
+    "role": "buyer",
+    "sourceGraph": 178,
+    "catalogRows": 581,
+    "sourceRows": 176,
+    "packageRows": 404,
+    "bareEdges": 9,
+    "addedSourceRows": [],
+    "changedSourceRows": [
+      "src/api-credit-opening-failure-custody.js"
+    ],
+    "removedSourceRows": [],
+    "catalog": {
+      "path": "src/api-credit-module-catalog.json",
+      "bytes": 120934,
+      "sha256": "7f2979b2429727d2a4b50101f3757e4b526e8b50c51a25220f205b81f6ee6e6c"
+    },
+    "admission": {
+      "path": "src/api-credit-native-package-admission.js",
+      "bytes": 6414,
+      "sha256": "0618d3b8afaaaf5ff262bee963e41c220b552733be1292594beea07c95efd61f"
+    },
+    "catalogUnchanged": false
+  },
+  "providerCatalog": {
+    "role": "provider",
+    "sourceGraph": 104,
+    "catalogRows": 507,
+    "sourceRows": 102,
+    "packageRows": 404,
+    "bareEdges": 4,
+    "addedSourceRows": [],
+    "changedSourceRows": [],
+    "removedSourceRows": [],
+    "catalog": {
+      "path": "src/issued-provider-module-catalog.json",
+      "bytes": 104412,
+      "sha256": "e2fea2d5a2378fa2d078eb75d618867d7bc193e89a23f6ec41ed9e0320218286"
+    },
+    "admission": {
+      "path": "src/issued-provider-native-package-admission.js",
+      "bytes": 6429,
+      "sha256": "80b1b96a27f0ff0503adf1841c831d42ddac6bbc782b4f276ffcd90c95e3c768"
+    },
+    "catalogUnchanged": true
+  },
+  "packagePinsAndBareEdgesUnchanged": true,
+  "currentLocalData": {
+    "new": 12,
+    "reexecuted": 40,
+    "retainedExact": 2125,
+    "sourceBoundDistinct": 2177,
+    "newDATACommands": 3,
+    "newParserCommands": 1,
+    "parserSourceProofs": 51
+  },
+  "selectedHostedCIControls": 108,
+  "selectedHostedCISourceInputs": 22,
+  "hostedSelectionChanged": false,
+  "newCasesIncludedInHostedCI": false,
+  "nativeQualification": "NOT_EXECUTED",
+  "G0G5Acceptance": "OPEN"
+}

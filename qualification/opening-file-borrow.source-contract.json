@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "selection": "OPENING_FAILURE_CURRENT_WALLET_AFTER_BORROWED_FILE_VIEW",
+  "sameExistingFileWalletCustodyAndStopOwners": true,
+  "knownWalletStopRequiredBeforeFileView": true,
+  "currentWalletObservedAfterFileViewBeforeClose": true,
+  "heldActiveReopenedDifferentClearOrUnknownWalletRefusesCloseEntry": true,
+  "lateWalletRepairCannotRetryPhysicalClose": true,
+  "preWalletOrderAndUnreturnedBorrowerRulesPreserved": true,
+  "actualVoidCloseReturnPreservedAfterLaterUnknown": true,
+  "reentrantSameOwnerClaimJoinsOriginalController": true,
+  "newOwnerJournalTimerOrStop": false,
+  "observationOnlyController": true,
+  "nativeQualification": "NOT_EXECUTED",
+  "G0G5": "OPEN"
+}

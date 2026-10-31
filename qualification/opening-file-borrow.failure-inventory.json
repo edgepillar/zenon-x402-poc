@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "currentDataFailures": 0,
+  "currentParserFailures": 0,
+  "unexpectedSkips": 0,
+  "correctedSourceFinding": "WALLET_VIEW_BEFORE_A_BORROWED_FILE_VIEW_COULD_BE_STALE_AT_PHYSICAL_CLOSE_ENTRY",
+  "findingScope": "ACTUAL_PURE_CUSTODY_WITH_DECLARED_FILE_WALLET_CALLBACKS_NOT_NATIVE_RUNTIME",
+  "inheritedInventory": {
+    "path": "qualification/original-offer-preclaim-admission.failure-inventory.json",
+    "bytes": 2107,
+    "sha256": "0ff355474a636d60c99a1f13fb72be0e33ccafd876527b85ff2b8c5cd404e316"
+  },
+  "baseline": {
+    "rawQualificationSha256": "dfac4c1a7363ab28f39119a06fe2743133956dd51a0f619dbc2cf57727396767",
+    "passed": 4,
+    "failed": 8,
+    "actualExit": 1,
+    "reportStatus": "BASELINE_FAILED_AS_OBSERVED",
+    "taskOutcome": "FAILURE",
+    "passingQualification": false,
+    "reclassified": false
+  },
+  "affectedExistingControlsReexecuted": 40,
+  "unchangedControlsNotReexecuted": 2125,
+  "completedDATAOrCIRepeatedForMetadata": false,
+  "originalEvidenceAndFailedOutcomesPreserved": true
+}

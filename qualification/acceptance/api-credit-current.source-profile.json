@@ -1,7 +1,7 @@
 {
   "profileVersion": 1,
   "profileId": "API_CREDIT_CURRENT_SOURCE_V1",
-  "sourceBaseline": "3e02c7003d747069138a33220b4f9de0a8646f2f",
+  "sourceBaseline": "85dd268643a37801ec957da80fa8ae5b26f6ea75",
   "application": {
     "buyerEntry": "src/api-credit-cli.js",
     "providerEntry": "src/issued-provider-cli.js"
@@ -11,7 +11,7 @@
       "role": "buyer",
       "path": "src/api-credit-module-catalog.json",
       "bytes": 120934,
-      "sha256": "3df12750d0908c186fcb7faa2411e227250fa986212c8c03e8cff9d89e832f96",
+      "sha256": "7f2979b2429727d2a4b50101f3757e4b526e8b50c51a25220f205b81f6ee6e6c",
       "sourceRows": 176,
       "packageRows": 404,
       "bareEdges": 9
@@ -30,7 +30,7 @@
     {
       "path": "src/api-credit-native-package-admission.js",
       "bytes": 6414,
-      "sha256": "2eefbf2782999040dc154911f310c504896af45ef315189d351a606091ecdd9b",
+      "sha256": "0618d3b8afaaaf5ff262bee963e41c220b552733be1292594beea07c95efd61f",
       "format": "module"
     },
     {
@@ -48,19 +48,19 @@
   ],
   "dataQualification": {
     "sourceProfile": {
-      "path": "qualification/profiles/api-credit-application-source-v80.json",
-      "bytes": 4066,
-      "sha256": "88a48f5af927f19bb52b86254fbb3d74756b709d72d2c8732ed8107047b81a2c"
+      "path": "qualification/profiles/api-credit-application-source-v81.json",
+      "bytes": 3992,
+      "sha256": "039e0d701c4492c79b6027a68c05c8aeb204d5310b043e47646d79e4bb8589dc"
     },
     "result": {
-      "path": "qualification/original-offer-preclaim-admission.actual-local-result.json",
-      "bytes": 4347,
-      "sha256": "9d382a368671280f5d9623d0f71f3fcbea8e829df231c164c32093d2cca57999"
+      "path": "qualification/opening-file-borrow.actual-local-result.json",
+      "bytes": 8535,
+      "sha256": "2152a9caa94fb1e27b9cdddbb516bd477dd601f730219d070e581c4a1eca4602"
     },
-    "sourceBoundControls": 2165,
-    "executedControls": 16,
-    "retainedControls": 2149,
-    "expectedResultQualification": "G1_ORIGINAL_OFFER_PRECLAIM_ADMISSION_DATA"
+    "sourceBoundControls": 2177,
+    "executedControls": 52,
+    "retainedControls": 2125,
+    "expectedResultQualification": "G2_OPENING_FILE_BORROW_CURRENT_SOURCE_DATA"
   },
   "runtime": {
     "nodeVersion": "24.19.0",
