@@ -146,7 +146,18 @@ function projectedFrontier(m) { return F({ height: m.height, hash: m.hash, versi
  * Native non-DP entry/signer/spending/funding/grant/recovery binding is separate.
  */
 export function createNonDpObservedUserSendReadAdapter(options) {
-  invariant(); if (arguments.length !== 1) fail();
+  if (arguments.length !== 1) fail(); return createAdapter(options, false);
+}
+
+/** Explicit original-only extra reads. These compare the captured ORIGINAL
+ * unsigned projection after external signing and immediately before custody;
+ * they never consume a signed block, create new material or authorize signing.
+ * The original input phase is historical DATA, not current signer state. */
+export function createNonDpObservedOriginalReadAdapter(options) {
+  if (arguments.length !== 1) fail(); return createAdapter(options, true);
+}
+function createAdapter(options, originalReads) {
+  invariant();
   const o = record(options, ['transports', 'accountExchange', 'requireCurrent'], true);
   if (!Array.isArray(o.transports) || types.isProxy(o.transports) || P(o.transports) !== AP
       || !Object.isFrozen(o.transports) || K(o.transports).length !== 3 || o.transports.length !== 2) fail();
@@ -222,13 +233,13 @@ export function createNonDpObservedUserSendReadAdapter(options) {
       observedQuoteRequest: stable.request.quoteRequest, policy: c.policy, runtimeContextDigest: c.runtimeContextDigest });
   }
   async function execute(kind, args) {
-    if (active || held || stage !== { quote: 'NEW', assemble: 'QUOTED', validate: 'ASSEMBLED' }[kind]) fail();
+    if (active || held || stage !== { quote: 'NEW', assemble: 'QUOTED', validate: 'ASSEMBLED', originalAfter: 'VALIDATED', originalBefore: 'ORIGINAL_AFTER_SIGNING_READ' }[kind]) fail();
     invariant();
-    if (args.length !== { quote: 1, assemble: 2, validate: 3 }[kind]) fail();
+    if (args.length !== (kind === 'quote' ? 1 : kind === 'assemble' ? 2 : 3)) fail();
     const stable = input(args[0]);
     if (kind !== 'quote' && (types.isProxy(args[1]) || PLANS.get(args[1]) !== owner || args[1] !== plan
         || !equal(stable.c, original.stable.c))) fail();
-    if (kind === 'validate') {
+    if (kind === 'validate' || kind === 'originalAfter' || kind === 'originalBefore') {
       const incoming = validateZenonUnsignedUserSendHash(args[2]);
       if (!equal(incoming.accountBlock, block)) fail();
     }
@@ -240,6 +251,21 @@ export function createNonDpObservedUserSendReadAdapter(options) {
         compiledSporkIds: stable.c.compiledSporkIds, accountFrontier: observed.frontier,
         momentumAcknowledged: F({ height: observed.observation.beforeFrontier.height, hash: observed.observation.beforeFrontier.hash }) }) : plan.subject;
       const c = context(stable, observed, subject);
+      if (kind === 'originalAfter' || kind === 'originalBefore') {
+        // Read-only comparison of the already captured original. Do not invoke
+        // the UNSIGNED strategy again or treat a late quote as new authority.
+        const q = plan.quote, now = observed.observation.beforeFrontier, origin = q.frontier;
+        const advances = now.height - origin.height, rpc = observed.observation.rpcObservation;
+        if (advances < 0 || advances > q.policy.maxMomentumAdvances || advances === 0 && now.hash !== origin.hash
+            || rpc.basePlasma !== q.selected.fusedPlasma || rpc.availablePlasma < q.selected.fusedPlasma
+            || rpc.requiredDifficulty !== 0) fail();
+        validateZenonUnsignedUserSendHash(block); current();
+        stage = kind === 'originalAfter' ? 'ORIGINAL_AFTER_SIGNING_READ' : 'ORIGINAL_BEFORE_CUSTODY_READ';
+        return F({ nonDpOriginalReadVersion: 1, scope: 'DECLARED_CURRENT_READ_OF_CAPTURED_ORIGINAL_ONLY',
+          originalPlan: plan, originalUnsignedBlock: block, originalHash: block.hash,
+          reassembly: 'NONE', signingAuthorization: 'NONE', afterSigningAction: 'ORIGINAL_ONLY_NO_REPLACEMENT',
+          chainAuthentication: 'NOT_ESTABLISHED', authority: 'NONE' });
+      }
       if (kind === 'quote') {
         const selected = await join(strategy.quote(c)); current(); if (!selected.ok) fail();
         plan = F({ nonDpObservedUserSendPlanVersion: 1, subject, quote: selected.value, authority: 'NONE' });
@@ -259,7 +285,10 @@ export function createNonDpObservedUserSendReadAdapter(options) {
     } catch { if (entered) held = true; fail(); } finally { active = false; }
   }
   const owner = F({ quote: (...args) => execute('quote', args), assemble: (...args) => execute('assemble', args),
-    validateUnsigned: (...args) => execute('validate', args), inspect: () => F({ stage, active, held, cycles,
+    validateUnsigned: (...args) => execute('validate', args),
+    ...(originalReads ? { readOriginalAfterSigning: (...args) => execute('originalAfter', args),
+      readOriginalBeforeCustody: (...args) => execute('originalBefore', args) } : {}),
+    inspect: () => F({ stage, active, held, cycles,
       reads: F([...reads]), ownershipGuardCalls: guards, borrowedReadRelease: 'PARENT_OWNED_NOT_ESTABLISHED',
       nativeEntryBinding: 'NOT_IMPLEMENTED', authority: 'NONE' }) });
   return owner;

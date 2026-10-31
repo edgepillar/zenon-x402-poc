@@ -34,7 +34,7 @@ function account(c) {
     changesHash: ZERO, publicKey: '', signature: '', token: null, confirmationDetail: null, pairedAccountBlock: null };
 }
 function fixture(hooks = {}) {
-  const c = data(), requests = [], frontiers = [0, 0], reads = [0, 0, 0]; let guardCalls = 0, accountCalls = 0;
+  const c = hooks.input ?? data(), requests = [], frontiers = [0, 0], reads = [0, 0, 0]; let guardCalls = 0, accountCalls = 0;
   const list = [{ id: c.compiledSporkIds.libp2pId, name: 'libp2p', description: '', activated: true, enforcementHeight: 1 },
     { id: c.compiledSporkIds.dynamicPlasmaId, name: 'Dynamic Plasma', description: '', activated: false, enforcementHeight: 0 }];
   function wire(index) {
@@ -60,8 +60,9 @@ function fixture(hooks = {}) {
     return hooks.accountPending ? hooks.accountPending(response, accountCalls) : success(response);
   };
   const requireCurrent = () => { guardCalls++; if (hooks.guard) return hooks.guard(guardCalls, c); };
-  const adapter = create(F({ transports: hooks.transports ?? transports, accountExchange, requireCurrent }));
-  return { c, adapter, requests, list, reads, guards: () => guardCalls };
+  const options = F({ transports: hooks.transports ?? transports, accountExchange, requireCurrent });
+  const adapter = (hooks.adapterFactory ?? create)(options);
+  return { c, adapter, options, requests, list, reads, guards: () => guardCalls };
 }
 function check(id, run) { checks.push(F({ id, run })); }
 async function rejectedQuote(hooks, edit = () => {}) {
@@ -282,6 +283,8 @@ check('non-dp-read-constructor-rejects-proxy-and-extra-capability-options', () =
   assert.throws(() => create(new Proxy(options, { ownKeys() { traps++; } }))); assert.equal(traps, 0);
   assert.throws(() => create(F({ ...options, close() {} }))); assert.throws(() => create(options, options));
 });
+
+export function nonDpReadDataFixture(hooks = {}) { return fixture(hooks); }
 
 export const nonDpObservedUserSendReadDataCases = F([...checks]);
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
