@@ -2553,8 +2553,8 @@
     },
     {
       "path": "src/api-credit-recovery-inspection-coordinator.js",
-      "bytes": 13076,
-      "sha256": "ab3f8583074440b7e70f3e698f3728214c391d0c5a18ea8fea939bfdf3bc85b4",
+      "bytes": 15311,
+      "sha256": "729b9dbfd1f85bb017d27634e3c2d42662820390478cb7fba24f1a5f51b8316b",
       "format": "module"
     },
     {
@@ -3321,8 +3321,8 @@
     },
     {
       "path": "src/zenon/native-api-credit-recovery-inspection-launcher.js",
-      "bytes": 5545,
-      "sha256": "62a6a9b2fa38b01c8168550c29d7c8d278a061bfb1cb73f702533ac2fcb6a03b",
+      "bytes": 6565,
+      "sha256": "09631c9b0af637e78d828a804d2ac059452b6fd7be28178c290b021efc10eb4e",
       "format": "module"
     },
     {

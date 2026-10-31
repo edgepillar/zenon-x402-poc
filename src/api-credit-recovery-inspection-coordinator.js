@@ -32,21 +32,38 @@ function signal() { let resolve, reject; const promise = new Promise((a, b) => {
  * startup budget includes EOF, admission, native inspection and result write.
  * Expiry is observation, never cancellation or a competing store close. */
 export async function runApiCreditRecoveryInspectionCoordinator(configuration) {
-  if (arguments.length !== 1) fail(); return coordinate(configuration, false);
+  if (arguments.length !== 1) fail(); return createCoordinator(configuration, false).run();
 }
 export async function runApiCreditSignerInspectionCoordinator(configuration) {
-  if (arguments.length !== 1) fail(); return coordinate(configuration, true);
+  if (arguments.length !== 1) fail(); return createCoordinator(configuration, true).run();
 }
 export async function runApiCreditRecordedResultInspectionCoordinator(configuration) {
-  if (arguments.length !== 1) fail(); return coordinate(configuration, false, true);
+  if (arguments.length !== 1) fail(); return createCoordinator(configuration, false, true).run();
 }
 export async function runApiCreditFundingInspectionCoordinator(configuration) {
-  if (arguments.length !== 1) fail(); return coordinate(configuration, false, false, true);
+  if (arguments.length !== 1) fail(); return createCoordinator(configuration, false, false, true).run();
 }
 export async function runApiCreditOriginalGrantQueryCoordinator(configuration) {
-  if (arguments.length !== 1) fail(); return coordinate(configuration, false, false, false, true);
+  if (arguments.length !== 1) fail(); return createCoordinator(configuration, false, false, false, true).run();
 }
-async function coordinate(configuration, signer, recorded = false, funding = false, grantQuery = false) {
+/** The same coordinator frame with a cached run and an immediate stop guard.
+ * No extra store, owner, timer window, inspection, output retry or authority. */
+export function createApiCreditRecoveryInspectionCoordinator(configuration) {
+  if (arguments.length !== 1) fail(); return createCoordinator(configuration, false);
+}
+export function createApiCreditSignerInspectionCoordinator(configuration) {
+  if (arguments.length !== 1) fail(); return createCoordinator(configuration, true);
+}
+export function createApiCreditRecordedResultInspectionCoordinator(configuration) {
+  if (arguments.length !== 1) fail(); return createCoordinator(configuration, false, true);
+}
+export function createApiCreditFundingInspectionCoordinator(configuration) {
+  if (arguments.length !== 1) fail(); return createCoordinator(configuration, false, false, true);
+}
+export function createApiCreditOriginalGrantQueryCoordinator(configuration) {
+  if (arguments.length !== 1) fail(); return createCoordinator(configuration, false, false, false, true);
+}
+function createCoordinator(configuration, signer, recorded = false, funding = false, grantQuery = false) {
   if (FAILED.size >= 16) fail();
   const fd = grantQuery ? 'originalGrantQueryFd' : funding ? 'fundingInspectionFd' : signer ? 'signerInspectionFd' : recorded ? 'recordedResultFd' : 'inspectionFd', mode = grantQuery ? 'ORIGINAL_GRANT_QUERY' : funding ? 'FUNDING_INSPECT' : signer ? 'SIGNER_INSPECT' : recorded ? 'RECORDED_RESULT' : 'INSPECT';
   const c = fields(configuration, ['arguments', 'ports']), a = fields(c.arguments, ['mode', fd, 'outputFd', 'bootstrapMs']);
@@ -58,7 +75,8 @@ async function coordinate(configuration, signer, recorded = false, funding = fal
   for (const fn of Object.values(p)) if (typeof fn !== 'function' || types.isProxy(fn) || !Object.isFrozen(fn)) fail();
   const frame = { stage: 'PROFILE', prepared: null, inspectionEntered: false, outputWritten: false, opening: true, unknown: false,
     current: null, value: null, deadline: null, last: null, timer: null, timerCancelHandle: null, opaque: [],
-    closeDeadline: null, closeRequested: false, closeReceipt: null, closeTimer: null, closed: false };
+    closeDeadline: null, closeRequested: false, closeReceipt: null, closeTimer: null, closed: false,
+    runReceipt: null, stopRequested: false, terminal: false };
   function clock() { const n = p.clock(); if (typeof n !== 'bigint' || frame.last !== null && n < frame.last) fail(); frame.last = n; return n; }
   function expire() { if (!frame.opening) return; frame.opening = false; frame.unknown = true;
     if (frame.current !== null) frame.current.reject(Error('inspection expired')); FAILED.add(frame); }
@@ -146,8 +164,11 @@ async function coordinate(configuration, signer, recorded = false, funding = fal
     }
     return out.promise;
   }
+  async function execute() {
   try {
+    if (frame.stopRequested) fail();
     frame.deadline = clock() + BigInt(a.bootstrapMs) * 1000000n;
+    if (frame.stopRequested) fail();
     try { frame.timer = p.armTimer(a.bootstrapMs, F(expire)); timerToken(frame.timer); }
     catch { frame.unknown = true; frame.timer = null; throw Error('timer arm unknown'); }
     await stage(g => p.readProfile(g)); const text = frame.value; frame.value = null;
@@ -178,9 +199,30 @@ async function coordinate(configuration, signer, recorded = false, funding = fal
   }
   const clean = frame.closed && !frame.unknown, success = clean && frame.outputWritten;
   if (!clean) FAILED.add(frame);
-  return F({ ...(grantQuery ? { apiCreditOriginalGrantQueryVersion: 1 } : funding ? { apiCreditFundingInspectionVersion: 1 } : signer ? { apiCreditSignerInspectionVersion: 1 } : recorded ? { apiCreditRecordedResultInspectionVersion: 1 } : { apiCreditRecoveryInspectionVersion: 1 }), status: success ? 'CLOSED' : clean ? 'BOOTSTRAP_REFUSED' : 'CLOSE_UNKNOWN',
+  const result = F({ ...(grantQuery ? { apiCreditOriginalGrantQueryVersion: 1 } : funding ? { apiCreditFundingInspectionVersion: 1 } : signer ? { apiCreditSignerInspectionVersion: 1 } : recorded ? { apiCreditRecordedResultInspectionVersion: 1 } : { apiCreditRecoveryInspectionVersion: 1 }), status: success ? 'CLOSED' : clean ? 'BOOTSTRAP_REFUSED' : 'CLOSE_UNKNOWN',
     exitCode: success ? 0 : clean ? 1 : 4, stage: frame.stage, inspectionEntered: frame.inspectionEntered,
     outputWriteObserved: frame.outputWritten, channelClosedObserved: frame.closed, historicalObservation: true,
     authority: 'NONE', mayDispatchService: false, mayStartPayment: false, maySignPayment: false,
     nativeResourceRelease: 'NOT_ESTABLISHED', serviceDelivery: 'NOT_ESTABLISHED', automaticRetry: false });
+  frame.terminal = true; return result;
+  }
+  function stop() {
+    if (frame.terminal) return;
+    frame.stopRequested = true; frame.unknown = true; FAILED.add(frame); expire();
+  }
+  const run = F(function run() {
+    if (arguments.length !== 0) fail();
+    if (frame.runReceipt !== null) return frame.runReceipt;
+    // Reserve the one run BEFORE clock, timer or inspection port reentry.
+    const out = signal(); frame.runReceipt = out.promise; let execution;
+    try {
+      execution = execute();
+      observe(execution, value => out.resolve(value), () => {
+        frame.terminal = true; frame.unknown = true; FAILED.add(frame); out.reject(Error('inspection unknown'));
+      });
+    } catch { stop(); if (execution !== undefined) keepOpaque(execution); out.reject(Error('inspection unknown')); }
+    return out.promise;
+  });
+  const requestStop = F(function requestStop() { if (arguments.length !== 0) fail(); stop(); });
+  return F({ run, requestStop });
 }

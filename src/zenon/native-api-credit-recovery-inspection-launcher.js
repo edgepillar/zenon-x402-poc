@@ -1,12 +1,12 @@
 // SOURCE ONLY. Native process/reopen/release acceptance remains OPEN.
-import { hrtime } from 'node:process';
+import process, { hrtime } from 'node:process';
 import { Buffer } from 'node:buffer';
 import { setTimeout, clearTimeout } from 'node:timers';
 import { createBuyerOwnedPipeStreams } from '../buyer-owned-pipe-streams.js';
 import { createBuyerCommandLineChannel } from '../buyer-command-line-channel.js';
-import { runApiCreditRecoveryInspectionCoordinator, runApiCreditSignerInspectionCoordinator, runApiCreditRecordedResultInspectionCoordinator, runApiCreditFundingInspectionCoordinator, runApiCreditOriginalGrantQueryCoordinator } from '../api-credit-recovery-inspection-coordinator.js';
+import { createApiCreditRecoveryInspectionCoordinator, createApiCreditSignerInspectionCoordinator, createApiCreditRecordedResultInspectionCoordinator, createApiCreditFundingInspectionCoordinator, createApiCreditOriginalGrantQueryCoordinator } from '../api-credit-recovery-inspection-coordinator.js';
 
-const F = Object.freeze, CLOCK = hrtime.bigint, FAILED = new Set();
+const F = Object.freeze, CLOCK = hrtime.bigint, SIGNAL_ON = process.on, SIGNAL_OFF = process.off, FAILED = new Set();
 let entered = false;
 function fail() { throw new TypeError('API_CREDIT_NATIVE_RECOVERY_INSPECTION_UNKNOWN'); }
 /** Same operator entry, no wallet/key pipe or funding/service dispatch input.
@@ -28,8 +28,20 @@ export async function runNativeApiCreditOriginalGrantQuery(args) {
 }
 async function runInspection(args, signer, recorded = false, funding = false, grantQuery = false) {
   if (entered || FAILED.size !== 0 || args.mode !== (grantQuery ? 'ORIGINAL_GRANT_QUERY' : funding ? 'FUNDING_INSPECT' : signer ? 'SIGNER_INSPECT' : recorded ? 'RECORDED_RESULT' : 'INSPECT')) fail(); entered = true;
-  const frame = { streams: null, channel: null, inspectionEntered: false };
+  const frame = { streams: null, channel: null, inspectionEntered: false,
+    coordinator: null, stopRequested: false, signalUnknown: false, signals: [] };
+  const onSignal = F(() => {
+    frame.stopRequested = true;
+    try { if (frame.coordinator !== null) frame.coordinator.requestStop(); }
+    catch { frame.signalUnknown = true; FAILED.add(frame); }
+  });
+  let result;
   try {
+    // Subscribe before descriptor adoption; retain each matching removal.
+    for (const name of ['SIGINT', 'SIGTERM']) {
+      frame.signals.push(name); Reflect.apply(SIGNAL_ON, process, [name, onSignal]);
+    }
+    if (frame.stopRequested) fail();
     frame.streams = createBuyerOwnedPipeStreams({ inputFd: grantQuery ? args.originalGrantQueryFd : funding ? args.fundingInspectionFd : signer ? args.signerInspectionFd : recorded ? args.recordedResultFd : args.inspectionFd, outputFd: args.outputFd });
     frame.channel = createBuyerCommandLineChannel({ ...frame.streams, limits: signer
       ? { maxCommands: 2, maxLineBytes: 16384, maxInputBytes: 16385, maxOutputBytes: 131072, closeWaitMs: 1000 }
@@ -66,8 +78,18 @@ async function runInspection(args, signer, recorded = false, funding = false, gr
       clock: F(() => Reflect.apply(CLOCK, hrtime, [])), armTimer: F((budget, callback) => setTimeout(callback, budget)),
       cancelTimer: F(token => { clearTimeout(token); })
     });
-    return await (grantQuery ? runApiCreditOriginalGrantQueryCoordinator : funding ? runApiCreditFundingInspectionCoordinator : signer ? runApiCreditSignerInspectionCoordinator : recorded ? runApiCreditRecordedResultInspectionCoordinator : runApiCreditRecoveryInspectionCoordinator)({ arguments: args, ports });
+    frame.coordinator = (grantQuery ? createApiCreditOriginalGrantQueryCoordinator : funding ? createApiCreditFundingInspectionCoordinator : signer ? createApiCreditSignerInspectionCoordinator : recorded ? createApiCreditRecordedResultInspectionCoordinator : createApiCreditRecoveryInspectionCoordinator)({ arguments: args, ports });
+    if (frame.stopRequested) frame.coordinator.requestStop();
+    result = await frame.coordinator.run();
   } catch { FAILED.add(frame); fail(); }
+  finally {
+    for (const name of frame.signals) {
+      try { Reflect.apply(SIGNAL_OFF, process, [name, onSignal]); }
+      catch { frame.signalUnknown = true; FAILED.add(frame); }
+    }
+  }
+  if (frame.signalUnknown) { FAILED.add(frame); fail(); }
+  return result;
   // A constructor that returned no channel retains its own quarantine. Never
   // compete with an entered constructor by raw-closing/reusing its descriptors.
 }

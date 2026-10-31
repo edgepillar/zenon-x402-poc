@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "selection": "SAME_RUN_STOP_FOR_FIVE_EXISTING_INSPECTION_MODES",
+  "sameCoordinatorFrameAndCloseOwners": true,
+  "cachedRunReservedBeforePortReentry": true,
+  "legacyAsyncRunExportsPreserved": true,
+  "preEntryStopPreventsProfileRead": true,
+  "clockStopPreventsStartupTimerEntry": true,
+  "armingStopRetiresActualReturnedHandleOnce": true,
+  "pendingStageGuardRevokedSynchronously": true,
+  "lateResultsCannotStartAnotherStageOrUpgradeUnknown": true,
+  "existingSingleAbsoluteCloseWindowPreserved": true,
+  "stopWhileClosingRemainsUnknown": true,
+  "terminalReceiptRemainsHistorical": true,
+  "nativeSignalSubscriptionsBeforePipeAdoption": true,
+  "matchingSignalRemovalsRetained": true,
+  "unknownSignalBindingRetainsFailedFrame": true,
+  "existingProfileModeAndOutputSchemasPreserved": true,
+  "noRawStoreCloseRetryOrPaymentAuthority": true,
+  "newStoreJournalOrTimerWindow": false,
+  "nativeQualification": "NOT_EXECUTED",
+  "G0G5": "OPEN"
+}

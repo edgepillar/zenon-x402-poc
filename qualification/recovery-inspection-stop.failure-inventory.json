@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "currentDataFailures": 0,
+  "currentParserFailures": 0,
+  "unexpectedSkips": 0,
+  "sourceConnection": "FIVE_FIXED_INSPECTION_MODES_USE_THE_EXISTING_COORDINATOR_FRAME_AND_STOP_GUARD",
+  "findingScope": "FIXED_SOURCE_SIGNAL_WIRING_AND_DECLARED_PORT_CONTROLS_NOT_NATIVE_SIGNAL_EXECUTION",
+  "inheritedInventory": {
+    "path": "qualification/opening-file-borrow.failure-inventory.json",
+    "bytes": 1029,
+    "sha256": "e159d4eba49d7ea06d96437238d0fddd785b9a4ed3d2d76820e82d95f5aeb2d0"
+  },
+  "newDataCommands": 1,
+  "affectedDataCommands": 12,
+  "affectedExistingControlsReexecuted": 772,
+  "unchangedControlsNotReexecuted": 1405,
+  "preservedMetadataGeneratorRefusal": {
+    "rawQualificationSha256": "84e389f53e86a4c595f3489cb3448665302d98f6a9f674d42da4fb5d88e9356a",
+    "actualDATACommands": 0,
+    "actualParserCommands": 0,
+    "sourceOrCIRepeated": false,
+    "reclassified": false
+  },
+  "completedDATAOrCIRepeatedForMetadata": false,
+  "originalEvidenceAndFailedOutcomesPreserved": true
+}
