@@ -17,7 +17,7 @@ const EMPTY='sha256:'+createHash('sha256').update('').digest('hex');
 const digest=c=>'sha256:'+c.repeat(64);
 const responseDigest=(domain,text)=>'sha256:'+createHash('sha256').update(domain).update('\0').update(text,'utf8').digest('hex');
 export function deferred(){let resolve,reject;const promise=new Promise((a,b)=>{resolve=a;reject=b;});return{promise,resolve,reject};}
-export function recordedResultFixture({onRead=null,onSubmit=null,requestBudget=128}={}){
+export function recordedResultFixture({onRead=null,onSubmit=null,requestBudget=128,wrapDeclaredApplication=null,wrapDeclaredReadState=null}={}){
  let h,s;
  h=commands.fixture({createLifecycle(c){
   s={current:true,closed:false,held:false,currentCalls:0,reads:0,submissions:0,reserves:0,begins:0,completes:0,records:new Map(),onRead,onSubmit};
@@ -65,7 +65,8 @@ export function recordedResultFixture({onRead=null,onSubmit=null,requestBudget=1
  const selected=captureSdk105ApiCreditProductSelection(profileFixture.input),profile=consumeSdk105ApiCreditProductSelection(selected).profile;
  s.readState=F(key=>{s.owner.assertCurrent();s.reads++;if(key.grantId!==h.grant?.grantId)throw Error('declared foreign grant');
   let value=s.records.get(key.requestId)??null;if(s.onRead)value=s.onRead(value,key,s);s.owner.assertCurrent();return value;});
- s.h=h;s.profile=profile;s.base=h.root;s.profileFixture=profileFixture;s.selection=selected;
+ if(wrapDeclaredReadState)s.readState=wrapDeclaredReadState(s,s.readState);
+ s.h=h;s.profile=profile;s.base=wrapDeclaredApplication?wrapDeclaredApplication(s,h.root):h.root;s.profileFixture=profileFixture;s.selection=selected;
  s.bind=()=>bindSdk105ApiCreditProductLifecycleWithRecordedResults(s.base,profile,s.readState);
  h.root=s.bind();s.root=h.root;
  s.request=(id='request.1',changes={})=>{

@@ -1,7 +1,7 @@
 {
   "profileVersion": 1,
   "profileId": "API_CREDIT_CURRENT_SOURCE_V1",
-  "sourceBaseline": "8cfed1278446e9412d0dd447da3a488e308d8f36",
+  "sourceBaseline": "a1efab2b5a9d97a495400a7c1d5f1356d415b917",
   "application": {
     "buyerEntry": "src/api-credit-cli.js",
     "providerEntry": "src/issued-provider-cli.js"
@@ -11,7 +11,7 @@
       "role": "buyer",
       "path": "src/api-credit-module-catalog.json",
       "bytes": 120106,
-      "sha256": "53504c0bda032c50cd373935667e4334c4b6fe396a77e868f3b4d6f186cb5282",
+      "sha256": "410dc48e89e44f11f926aa12316df8eb1aa832d1962a750681ededd04091c628",
       "sourceRows": 172,
       "packageRows": 404,
       "bareEdges": 9
@@ -20,7 +20,7 @@
       "role": "provider",
       "path": "src/issued-provider-module-catalog.json",
       "bytes": 104412,
-      "sha256": "d377ca8c98a1860090d49480a7bc119232f1ad11a73fc9f8d17c37be2296ee71",
+      "sha256": "68fad030b4a6967fa22879d2931a0547c066f325b4cdf25994939f7fe7ce954e",
       "sourceRows": 102,
       "packageRows": 404,
       "bareEdges": 4
@@ -30,13 +30,13 @@
     {
       "path": "src/api-credit-native-package-admission.js",
       "bytes": 6414,
-      "sha256": "e15fa38c05fd0fc341a28f35565175b3ddf380360cbea2ba859388946768cace",
+      "sha256": "fed96392fc5f191fcb1e55ae957032079f7819bf4471de6d6d5d11ba39103a7e",
       "format": "module"
     },
     {
       "path": "src/issued-provider-native-package-admission.js",
       "bytes": 6429,
-      "sha256": "7c75df5d16061d31c96aeb9ad03e3ec9f443b76be3aed17894d89a09f7aa9132",
+      "sha256": "c79bfa82c814c8613a68a736b8e97d7a0618cdaf3b175f9d9cf81c055ac0690c",
       "format": "module"
     },
     {
@@ -48,19 +48,19 @@
   ],
   "dataQualification": {
     "sourceProfile": {
-      "path": "qualification/profiles/api-credit-application-source-v71.json",
-      "bytes": 4422,
-      "sha256": "b1513dd507c608eed1d72094031c0d4039beab0e85afc660f321fcbb6b5a9c2a"
+      "path": "qualification/profiles/api-credit-application-source-v72.json",
+      "bytes": 4896,
+      "sha256": "929aa36be247ccc29b7ec160a480c483912ac6889b5cd01aa8693b67d95f7299"
     },
     "result": {
-      "path": "qualification/recovery-application-admission.actual-local-result.json",
-      "bytes": 91749,
-      "sha256": "4c3e98c6bb7a0bfc16e3e80fc9b1e7d3c5e810fdbac633b612c89c578eb75fba"
+      "path": "qualification/recorded-result-borrows.actual-local-result.json",
+      "bytes": 191665,
+      "sha256": "2b2e9670dc0f9ee13b6b547799b66446938f35dc6ac4c2289b7566f84b0318a7"
     },
-    "sourceBoundControls": 1943,
-    "executedControls": 733,
-    "retainedControls": 1210,
-    "expectedResultQualification": "G2_RECOVERY_APPLICATION_ADMISSION_DATA"
+    "sourceBoundControls": 1958,
+    "executedControls": 1549,
+    "retainedControls": 409,
+    "expectedResultQualification": "G2_RECORDED_RESULT_BORROWS_DATA"
   },
   "runtime": {
     "nodeVersion": "24.19.0",

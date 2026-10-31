@@ -1,0 +1,66 @@
+{
+  "qualification": "G0_RECORDED_BORROWS_CURRENT_PROFILE_PLAN",
+  "status": "PLAN_REFERENCES_MATCH",
+  "profileSha256": "1245736fb74b6e631e96e60d67c59a3a34a9626c0469bd9b56f572109eac1762",
+  "sourceBaseline": "a1efab2b5a9d97a495400a7c1d5f1356d415b917",
+  "sourceSetSha256": "6a158f06daade9dfc34a9f3eb1c398bf9790f0e482c54a1425b0d383a3966f86",
+  "plannedApplicationSources": 240,
+  "plannedApplicationSourceBytes": 3336404,
+  "sourceBoundApplicationControls": 1958,
+  "profileReferenceFilesRead": 5,
+  "applicationSourceFilesRead": 0,
+  "installedPackageFilesRead": 0,
+  "sourceChecksExecuted": 0,
+  "fullSourceCoverageReexecuted": false,
+  "nativeExecutions": 0,
+  "authority": "NONE",
+  "G0G5Acceptance": "OPEN",
+  "rawQualificationSha256": "3cf8bd78f6f332697126d7cb188227c3dc7499e30c0bd740918d252b7adc546a",
+  "actualMetadataNodeCommands": 1,
+  "runtimeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25",
+  "sourceReferences": [
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f"
+    },
+    {
+      "path": "qualification/acceptance/api-credit-current.source-profile.json",
+      "bytes": 2433,
+      "sha256": "1245736fb74b6e631e96e60d67c59a3a34a9626c0469bd9b56f572109eac1762"
+    },
+    {
+      "path": "qualification/acceptance/current-source-profile-core.js",
+      "bytes": 15509,
+      "sha256": "11a055270d9787d270cc2f660a529bf6b0b56853d69f05ec43fafd6ae8f65b53"
+    },
+    {
+      "path": "qualification/profiles/api-credit-application-source-v72.json",
+      "bytes": 4896,
+      "sha256": "929aa36be247ccc29b7ec160a480c483912ac6889b5cd01aa8693b67d95f7299"
+    },
+    {
+      "path": "qualification/recorded-borrows-current-profile-plan.mjs",
+      "bytes": 2358,
+      "sha256": "840a137cc3ee807557f8f99aeb064b2be949270895f896a703bf9fc81a4c6c47"
+    },
+    {
+      "path": "qualification/recorded-result-borrows.actual-local-result.json",
+      "bytes": 191665,
+      "sha256": "2b2e9670dc0f9ee13b6b547799b66446938f35dc6ac4c2289b7566f84b0318a7"
+    },
+    {
+      "path": "src/api-credit-module-catalog.json",
+      "bytes": 120106,
+      "sha256": "410dc48e89e44f11f926aa12316df8eb1aa832d1962a750681ededd04091c628"
+    },
+    {
+      "path": "src/issued-provider-module-catalog.json",
+      "bytes": 104412,
+      "sha256": "68fad030b4a6967fa22879d2931a0547c066f325b4cdf25994939f7fe7ce954e"
+    }
+  ],
+  "managedTaskState": "CLOSED",
+  "managedTaskOutcome": "SUCCESS",
+  "fullSourceObservationRepeated": false
+}

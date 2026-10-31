@@ -2547,8 +2547,8 @@
     },
     {
       "path": "src/api-credit-recorded-service-result.js",
-      "bytes": 13507,
-      "sha256": "e3705ff7bb8fc4e58e9b5c75954a7824728348367ee75cc507a4758e06ae266f",
+      "bytes": 14773,
+      "sha256": "86098cffef228a90700fabba27e7ff5b5a1a01cad4856866f7ffc2049df935bb",
       "format": "module"
     },
     {

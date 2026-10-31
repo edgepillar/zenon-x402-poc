@@ -74,12 +74,28 @@ export function createApiCreditRecordedServiceResultApplication(configuration){
   ||typeof c.network!=='string'||c.network.length<1||c.network.length>128
   ||typeof c.fundingResourceUrl!=='string'||typeof c.serviceResourceUrl!=='string')fail('INPUT');
  const READ=c.readState,FUNDING=c.fundingResourceUrl,SERVICE=c.serviceResourceUrl,NETWORK=c.network;
- let active=false,held=false,closed=false,closing=null,baseCloseTerminal=false,baseCloseClean=false;
+ let active=false,held=false,closed=false,closing=null,baseCloseRequested=false,baseCloseTerminal=false,baseCloseClean=false;
+ let borrowers=0,borrowUnknown=false;const opaqueReceipts=[];
  let submissionCallbacksEntered=0,recordedResults=0,replaysReturned=0;
- function available(){if(!invariant()||held||closed||active)fail('UNAVAILABLE');}
+ function available(){if(!invariant()||held||closed||active||borrowers!==0)fail('UNAVAILABLE');}
+ function borrow(fn,receiver,args,nullable=false){
+  if(borrowers!==0)fail('UNAVAILABLE');borrowers++;let receipt,known=false;
+  try{
+   receipt=APPLY(fn,receiver,args);
+   if(receipt!==null||!nullable){
+    record(receipt);
+    for(const key of Reflect.ownKeys(receipt)){
+     const d=D(receipt,key);if(typeof key!=='string'||key==='then'||!d.enumerable||!OWN(d,'value'))fail();
+    }
+   }
+   known=true;return receipt;
+  }catch(caught){
+   if(!known){held=true;borrowUnknown=true;if(receipt!==undefined)opaqueReceipts.push(receipt);discard(receipt);}throw caught;
+  }finally{borrowers--;requestBaseClose();finishClose();}
+ }
  function liveService(){
-  const view=APPLY(methods.inspect,app,[]);discard(view);
-  if(own(view,'lifecycle')!=='OPEN'||own(view,'held')!==false||own(view,'publicOperationActive')!==false
+  const view=borrow(methods.inspect,app,[]);
+  if(closed||held||!invariant()||own(view,'lifecycle')!=='OPEN'||own(view,'held')!==false||own(view,'publicOperationActive')!==false
    ||own(view,'closeRequested')!==false||own(view,'phase')!=='SERVICE')fail('UNAVAILABLE');
  }
  function candidate(input){
@@ -92,7 +108,8 @@ export function createApiCreditRecordedServiceResultApplication(configuration){
    originalRequestJson:selected.originalRequestJson,originalBodyBase64:'',serviceResourceUrl:SERVICE})};
  }
  function lookup(expected){
-  let view;try{view=APPLY(READ,undefined,[F({grantId:expected.grantId,requestId:expected.requestId})]);discard(view);}catch{fail();}
+  const view=borrow(READ,undefined,[F({grantId:expected.grantId,requestId:expected.requestId})],true);
+  if(closed||held||!invariant())fail();
   if(view===null)return null;
   const original=own(view,'original'),funding=own(view,'funding'),uncertainty=own(view,'uncertainty');
   for(const key of ['grantId','requestId','originalRequestJson','originalBodyBase64','serviceResourceUrl']){
@@ -117,8 +134,18 @@ export function createApiCreditRecordedServiceResultApplication(configuration){
   const text=own(response,'responseJson');if(own(response,'resultCode')!==responseCode(text))fail();return text;
  }
  function finishClose(){
-  if(closing===null||!baseCloseTerminal||active)return;
+  if(closing===null||active||borrowers!==0)return;
+  if(borrowUnknown){closing.reject(error('CLOSE_UNKNOWN'));return;}
+  if(!baseCloseTerminal)return;
   if(held||!baseCloseClean)closing.reject(error('CLOSE_UNKNOWN'));else closing.resolve(undefined);
+ }
+ function requestBaseClose(){
+  if(closing===null||baseCloseRequested||borrowers!==0||borrowUnknown)return;
+  // Reserve the same stop before entering the child. A missing borrow receipt
+  // keeps that owner retained; a late result never authorizes another stop.
+  baseCloseRequested=true;
+  try{observe(APPLY(methods.close,app,[]),value=>{baseCloseTerminal=true;baseCloseClean=value===undefined;if(!baseCloseClean)held=true;finishClose();},()=>{baseCloseTerminal=true;held=true;finishClose();});}
+  catch{baseCloseTerminal=true;held=true;finishClose();}
  }
  function finish(out,value,caught){
   active=false;
@@ -155,16 +182,16 @@ export function createApiCreditRecordedServiceResultApplication(configuration){
   try{available();return APPLY(methods[key],app,[input]);}catch{return NP.reject(error('UNAVAILABLE'));}
  });
  out.inspect=F(function inspect(){
-  if(arguments.length!==0||!invariant())fail('INPUT');const view=APPLY(methods.inspect,app,[]);record(view);const copy={};
+  if(arguments.length!==0||!invariant())fail('INPUT');const view=borrow(methods.inspect,app,[]),copy={};
   for(const key of Reflect.ownKeys(view)){if(typeof key!=='string'||key==='recordedServiceResults')fail();Object.defineProperty(copy,key,{value:own(view,key),enumerable:true,configurable:true});}
   if(held){Object.defineProperty(copy,'held',{value:true,enumerable:true});Object.defineProperty(copy,'lifecycle',{value:'HELD',enumerable:true});}
+  else if(closed&&copy.lifecycle!=='CLOSED')Object.defineProperty(copy,'lifecycle',{value:'CLOSING',enumerable:true});
   Object.defineProperty(copy,'recordedServiceResults',{value:F({version:1,active,held,closed,submissionCallbacksEntered,recordedResults,replaysReturned,
    authority:'NONE',nativeAcceptance:'NOT_ESTABLISHED'}),enumerable:true});return F(copy);
  });
  out.close=F(function close(){
   if(arguments.length!==0)return NP.reject(error('INPUT'));if(closing!==null)return closing.promise;
   closing=capability();closed=true;
-  try{observe(APPLY(methods.close,app,[]),value=>{baseCloseTerminal=true;baseCloseClean=value===undefined;if(!baseCloseClean)held=true;finishClose();},()=>{baseCloseTerminal=true;held=true;finishClose();});}
-  catch{baseCloseTerminal=true;held=true;finishClose();}finishClose();return closing.promise;
+  requestBaseClose();finishClose();return closing.promise;
  });return F(out);
 }

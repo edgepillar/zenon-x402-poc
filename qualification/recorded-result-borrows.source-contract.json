@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "owner": "src/api-credit-recorded-service-result.js",
+  "inspectionAndReadTrackedBeforeCallback": true,
+  "newWorkDeniedDuringBorrow": true,
+  "childStopDeferredUntilSynchronousReturn": true,
+  "postInspectionAndPostReadAdmissionRechecked": true,
+  "unknownReceiptRetainedWithoutCompetingStop": true,
+  "thenablesNotAssimilated": true,
+  "lateResultCannotRepairUnknown": true,
+  "oneOriginalCachedChildStop": true,
+  "originalConflictNonfatal": true,
+  "originalResponseAndLedgerPreserved": true,
+  "configurationAndResultSchemasUnchanged": true,
+  "CLIAndBudgetsUnchanged": true,
+  "noReplacementRetryOrNewAuthority": true,
+  "authority": "NONE",
+  "nativeExecutions": 0,
+  "physicalRelease": "NOT_ESTABLISHED",
+  "G0G5": "OPEN"
+}

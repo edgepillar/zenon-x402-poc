@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "currentDataFailures": 0,
+  "currentParserFailures": 0,
+  "unexpectedSkips": 0,
+  "sourcePreparationRefusals": [
+    {
+      "stage": "fixture-copy",
+      "status": "ASSERTION_BEFORE_WRITE",
+      "tasksCreated": 0,
+      "DATACommands": 0
+    },
+    {
+      "stage": "catalog-role-guard",
+      "status": "SOURCE_ONLY_ASSERTION",
+      "reason": "THE_SHARED_WRAPPER_CHANGES_BOTH_BUYER_AND_PROVIDER_SOURCE_ROWS",
+      "tasksCreated": 0,
+      "DATACommands": 0,
+      "originalDriverPreserved": true
+    }
+  ],
+  "inheritedInventory": {
+    "path": "qualification/recovery-application-admission.failure-inventory.json",
+    "bytes": 1003,
+    "sha256": "59a0a0c541925d51a4dcbe1fcd1ec35383e8beb6e5f2c1133e8871ca5150bc1b"
+  },
+  "earlierFailedAndUnknownEvidencePreserved": true
+}
