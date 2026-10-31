@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "currentDataFailures": 0,
+  "currentParserFailures": 0,
+  "unexpectedSkips": 0,
+  "inheritedInventory": {
+    "path": "qualification/provider-wire-route.failure-inventory.json",
+    "bytes": 802,
+    "sha256": "b3dfc3ec8bed5879d26dd6157a68ec8f18bca1fdc1a0c4e6b1bf512fff668a1a"
+  },
+  "earlierFailedAndUnknownEvidencePreserved": true,
+  "sourceOnlySDKInspection": {
+    "keyPairSourceMatchedCurrentCatalog": true,
+    "constructorCopiesInput": true,
+    "synchronousPublicKeyGetter": true,
+    "clearMethodPresent": true,
+    "SDKExecuted": false,
+    "applicationChangeNeeded": false
+  }
+}

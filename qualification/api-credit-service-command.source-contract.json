@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "owner": "src/api-credit-service-command.js",
+  "commandOperation": "submitService",
+  "actualCommandCodecAndWireGrammar": true,
+  "grantAndRequestIdsFromOriginalRequest": true,
+  "emptyBodyFixed": true,
+  "originalRequestProofAndURLBytesPreserved": true,
+  "replayChangesOnlyCommandCorrelationId": true,
+  "replayRequiresActualCapturedPreparation": true,
+  "explicitSelectedLineByteLimitPreserved": true,
+  "privateProofNotDiagnostic": true,
+  "proofAuthentication": "NOT_ESTABLISHED",
+  "dispatchAuthority": "NONE",
+  "nativeEntriesAndCatalogsUnchanged": true,
+  "SDKExecuted": false,
+  "nativeExecutions": 0,
+  "G0G5": "OPEN"
+}
