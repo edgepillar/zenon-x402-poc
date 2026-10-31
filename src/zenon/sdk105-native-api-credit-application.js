@@ -8,7 +8,7 @@ import { createApiCreditReturnedOpeningCustody } from '../api-credit-returned-op
 import { hrtime } from 'node:process';
 import { claimSdk105ApiCreditExistingKeyLease, bindSdk105ApiCreditExistingKeyLeaseOwner } from './sdk105-api-credit-existing-key-lease.js';
 import { consumeSdk105ApiCreditSelection, consumeSdk105NonDpApiCreditSelection } from './sdk105-api-credit-selection.js';
-import { consumeSdk105ApiCreditProductSelection, consumeSdk105NonDpApiCreditProductSelection, bindSdk105ApiCreditProductLifecycleWithRecordedResults } from './sdk105-api-credit-product-profile.js';
+import { consumeSdk105ApiCreditProductSelection, consumeSdk105NonDpApiCreditProductSelection, bindSdk105ApiCreditProductLifecycle, bindSdk105ApiCreditProductLifecycleWithRecordedResults } from './sdk105-api-credit-product-profile.js';
 import { captureSdk105FundingServiceConfiguration, captureSdk105NonDpFundingServiceConfiguration } from './sdk105-funding-service-lifecycle.js';
 import { createSdk105AgeBoundSignerContextWalletOwner } from './sdk105-prepared-hash-wallet-owner.js';
 import { openOriginalFundingSpendingSignerContextFileOwner, openOriginalFundingSpendingGrantRecoveryFileOwner } from '../original-funding-spending-file-owner.js';
@@ -109,6 +109,10 @@ async function openApplication(selection, requireCurrentOpening, productProfile,
       application = (nonDp ? createApiCreditNonDpPurchasedGrantRecoveryApplication : createApiCreditPurchasedGrantRecoveryApplication)(F({ application: product,
         custody: file.grantQueryCustody, paymentId: selected.spending.paymentId, fundingResourceUrl: c.storeOptions.resourceUrl,
         purchase: productProfile.purchase, inspectGrant, lookupPolicy }));
+      // Keep the same stateful recovery/result/close owners. The stateless
+      // fixed-offer gate also fences their outer preparation admission, so a
+      // coherent foreign offer cannot consume the original recovery claim.
+      application = bindSdk105ApiCreditProductLifecycle(application, productProfile);
     }
     requireCurrentOpening(); return application;
   } catch {

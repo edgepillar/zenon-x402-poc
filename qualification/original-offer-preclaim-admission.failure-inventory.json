@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "currentDataFailures": 0,
+  "currentParserFailures": 0,
+  "unexpectedSkips": 0,
+  "correctedSourceFinding": "THE_FIXED_OFFER_GATE_WAS_NESTED_INSIDE_THE_RECOVERY_PREPARATION_CLAIM",
+  "findingScope": "SOURCE_ORDER_AND_EXPLICIT_DECLARED_MEMORY_COUNTEREXAMPLE_NOT_NATIVE_RUNTIME",
+  "inheritedInventory": {
+    "path": "qualification/non-dp-preparation-admission.failure-inventory.json",
+    "bytes": 2146,
+    "sha256": "71004bbde7aa7e8ff58790f98afb5ba0ad5b3395d960fe8fbe0a961e7426b7de"
+  },
+  "preservedDataAttempts": [
+    {
+      "rawQualificationSha256": "8d3204cdf682db11f43fa9517d6c3456969a44ef0aae892be07db3c2c07cfc57",
+      "passed": 9,
+      "failed": 1,
+      "reportStatus": "UNKNOWN",
+      "taskOutcome": "FAILURE",
+      "correction": "Select the same non-DP policy in both supplied input and declared child expectation; retain the exact equality assertion.",
+      "runtimeSourceChangedByCorrection": false,
+      "reclassified": false
+    },
+    {
+      "rawQualificationSha256": "871909d565a27ca3bcb5381a976b9441c2daec3877177e05da0ef4a4f56a547d",
+      "passed": 13,
+      "failed": 1,
+      "reportStatus": "UNKNOWN",
+      "taskOutcome": "FAILURE",
+      "correction": "Submit explicit empty refused handoff DATA after unknown funding; do not derive fixture defaults from an absent grant.",
+      "runtimeSourceChangedByCorrection": false,
+      "reclassified": false
+    }
+  ],
+  "preservedPreTaskMetadataRefusal": {
+    "rawQualificationSha256": "eb1a4a003d6ae0392f03c75a3b339e186f42fb04bfdd8ea22fe0f1d5c3eb18cf",
+    "actualDATACommands": 0,
+    "actualParserCommands": 0,
+    "reclassified": false
+  },
+  "preservedEvidenceAssemblyReadRefusal": {
+    "rawQualificationSha256": "d83b98ad0c23962df38d8ee02ae15834aec307a92c5136d52a6a7763ac71ffa3",
+    "exactHistoricalParserLeavesExceededNewReaderCap": true,
+    "previousReviewedReadCapRestored": true,
+    "DATAParserOrCIRepeated": false,
+    "reclassified": false
+  },
+  "prior2149DataControlsRepeated": false,
+  "completedDATAOrCIRepeatedForMetadata": false,
+  "originalEvidenceAndFailedOutcomesPreserved": true
+}

@@ -1,0 +1,128 @@
+{
+  "qualification": "G1_ORIGINAL_OFFER_PRECLAIM_ADMISSION_DATA",
+  "status": "PASS",
+  "recordedAtUTC": "2026-10-31T21:10:26.452156+00:00",
+  "passed": 16,
+  "failed": 0,
+  "cases": [
+    {
+      "id": "original-offer-legacy-order-reproducer-claims-before-its-inner-fixed-gate-refuses",
+      "status": "PASS"
+    },
+    {
+      "id": "original-offer-cheaper-price-refuses-before-recovery-spending-or-query-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "original-offer-higher-price-refuses-before-recovery-spending-or-query-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "original-offer-changed-product-description-refuses-before-recovery-spending-or-query-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "original-offer-equivalent-header-reencoding-is-not-the-original-byte-selection",
+      "status": "PASS"
+    },
+    {
+      "id": "original-offer-valid-correction-keeps-one-claimed-preparation-and-identical-digest",
+      "status": "PASS"
+    },
+    {
+      "id": "original-offer-rejection-after-valid-preparation-does-not-destroy-its-existing-commit",
+      "status": "PASS"
+    },
+    {
+      "id": "original-offer-getters-and-proxies-enter-no-caller-code-or-recovery-claim",
+      "status": "PASS"
+    },
+    {
+      "id": "original-offer-parent-and-all-original-field-admission-stays-inert-at-construction",
+      "status": "PASS"
+    },
+    {
+      "id": "original-offer-non-dp-recovery-also-rejects-a-foreign-price-before-its-policy-claim",
+      "status": "PASS"
+    },
+    {
+      "id": "original-offer-non-dp-policy-refusal-still-leaves-the-same-original-attempt-available",
+      "status": "PASS"
+    },
+    {
+      "id": "original-offer-admitted-child-refusal-remains-held-and-never-authorizes-retry",
+      "status": "PASS"
+    },
+    {
+      "id": "original-offer-one-funding-query-grant-100-distinct-results-and-exact-replay-survive-preclaim-refusal",
+      "status": "PASS"
+    },
+    {
+      "id": "original-offer-unknown-funding-retains-held-and-enters-no-grant-query-or-service",
+      "status": "PASS"
+    },
+    {
+      "id": "original-offer-fixed-gate-forwards-the-same-one-shot-close-promise",
+      "status": "PASS"
+    },
+    {
+      "id": "original-offer-close-while-grant-query-is-borrowing-keeps-the-existing-held-boundary",
+      "status": "PASS"
+    }
+  ],
+  "newControls": 16,
+  "reexecutedRelevantControls": 0,
+  "retainedExactControls": 2149,
+  "sourceBoundDistinctControls": 2165,
+  "actualDataNodeCommands": 1,
+  "actualParserNodeCommands": 2,
+  "currentParserSourceProofs": 51,
+  "nodeVersion": "24.19.0",
+  "platform": "darwin-arm64",
+  "nodeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25",
+  "sourceProfile": {
+    "path": "qualification/profiles/api-credit-application-source-v80.json",
+    "bytes": 4066,
+    "sha256": "88a48f5af927f19bb52b86254fbb3d74756b709d72d2c8732ed8107047b81a2c"
+  },
+  "sourceContract": {
+    "path": "qualification/original-offer-preclaim-admission.source-contract.json",
+    "bytes": 1138,
+    "sha256": "4d4dde799b06e1bf531a78a7c0c572150164ff9274c7473fd0dca3f5772025bf"
+  },
+  "proofManifest": {
+    "path": "qualification/original-offer-preclaim-admission.proof-manifest.json",
+    "bytes": 328367,
+    "sha256": "8077337c6e57357affdd63a1a8f11afab18c58f49342e705f1fef893dc785b1b"
+  },
+  "failureInventory": {
+    "path": "qualification/original-offer-preclaim-admission.failure-inventory.json",
+    "bytes": 2107,
+    "sha256": "0ff355474a636d60c99a1f13fb72be0e33ccafd876527b85ff2b8c5cd404e316"
+  },
+  "taskQuotaBytes": 4194304,
+  "allSelectedPassingTasksClosedSuccess": true,
+  "unqualifiedHistoricalCASObjectsConsumed": false,
+  "actualPureOfferRecoveryResultAndQueryOwners": true,
+  "declaredMemoryFundingHistoryAndMockGrant": true,
+  "explicitLegacyOrderCounterexample": true,
+  "oneDeclaredFundingGrantAnd100CallModelScenario": true,
+  "nativeFilesEvaluated": 0,
+  "nativeExecutions": 0,
+  "SDK": 0,
+  "SQLite": 0,
+  "keys": 0,
+  "signatures": 0,
+  "sockets": 0,
+  "nonceSearches": 0,
+  "nodeChildren": 0,
+  "actualPrepare": 0,
+  "payouts": 0,
+  "nativeQualification": "NOT_EXECUTED",
+  "chainAuthentication": "NOT_ESTABLISHED",
+  "physicalRelease": "NOT_ESTABLISHED",
+  "freshProcessReopen": "NOT_EXECUTED",
+  "LinuxAcceptance": "NOT_ESTABLISHED",
+  "G0G5Acceptance": "OPEN",
+  "newCasesIncludedIn108CI": false
+}

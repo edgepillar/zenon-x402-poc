@@ -1,7 +1,7 @@
 {
   "profileVersion": 1,
   "profileId": "API_CREDIT_CURRENT_SOURCE_V1",
-  "sourceBaseline": "4702ff9b7ebc047f69d342a20c8ca8d5b095123b",
+  "sourceBaseline": "3e02c7003d747069138a33220b4f9de0a8646f2f",
   "application": {
     "buyerEntry": "src/api-credit-cli.js",
     "providerEntry": "src/issued-provider-cli.js"
@@ -11,7 +11,7 @@
       "role": "buyer",
       "path": "src/api-credit-module-catalog.json",
       "bytes": 120934,
-      "sha256": "dec240fb2a29c1728d30a75589a4e83b900ede52f4e480fb1e23871658d1d0b3",
+      "sha256": "3df12750d0908c186fcb7faa2411e227250fa986212c8c03e8cff9d89e832f96",
       "sourceRows": 176,
       "packageRows": 404,
       "bareEdges": 9
@@ -30,7 +30,7 @@
     {
       "path": "src/api-credit-native-package-admission.js",
       "bytes": 6414,
-      "sha256": "0e4032ed5671904c9678e2222fb5b819e40456d517c158f8ad1d033dcb9550bc",
+      "sha256": "2eefbf2782999040dc154911f310c504896af45ef315189d351a606091ecdd9b",
       "format": "module"
     },
     {
@@ -48,19 +48,19 @@
   ],
   "dataQualification": {
     "sourceProfile": {
-      "path": "qualification/profiles/api-credit-application-source-v79.json",
-      "bytes": 5850,
-      "sha256": "ed85cf23af397ee97c23b09dc21622dd9f900660653469c4a32f97352a31d10d"
+      "path": "qualification/profiles/api-credit-application-source-v80.json",
+      "bytes": 4066,
+      "sha256": "88a48f5af927f19bb52b86254fbb3d74756b709d72d2c8732ed8107047b81a2c"
     },
     "result": {
-      "path": "qualification/non-dp-preparation-admission.actual-local-result.json",
-      "bytes": 190504,
-      "sha256": "06628e469f263d97d70dae6c894880b8f5b5ebcd9a8aa55462c6d8a20210fbbe"
+      "path": "qualification/original-offer-preclaim-admission.actual-local-result.json",
+      "bytes": 4347,
+      "sha256": "9d382a368671280f5d9623d0f71f3fcbea8e829df231c164c32093d2cca57999"
     },
-    "sourceBoundControls": 2149,
-    "executedControls": 1545,
-    "retainedControls": 604,
-    "expectedResultQualification": "G1_NON_DP_PREPARATION_ADMISSION_DATA"
+    "sourceBoundControls": 2165,
+    "executedControls": 16,
+    "retainedControls": 2149,
+    "expectedResultQualification": "G1_ORIGINAL_OFFER_PRECLAIM_ADMISSION_DATA"
   },
   "runtime": {
     "nodeVersion": "24.19.0",

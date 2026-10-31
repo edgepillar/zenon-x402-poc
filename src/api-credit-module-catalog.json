@@ -3459,8 +3459,8 @@
     },
     {
       "path": "src/zenon/sdk105-native-api-credit-application.js",
-      "bytes": 10534,
-      "sha256": "b6a8b8cbc2c9113e6f8ef4509b493a84f4d6c1b7e089c7f1559536826b724d20",
+      "bytes": 10887,
+      "sha256": "3135dbb84008eca8b4918e9e86ba06b21293b1ff92806c11f4f8a9ea19de9299",
       "format": "module"
     },
     {

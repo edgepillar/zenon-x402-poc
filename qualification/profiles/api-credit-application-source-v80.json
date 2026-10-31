@@ -1,0 +1,116 @@
+{
+  "version": 80,
+  "status": "SOURCE_AND_DECLARED_MEMORY_DATA_CANDIDATE",
+  "sourceMain": "3e02c7003d747069138a33220b4f9de0a8646f2f",
+  "sourceMainTree": "ef7df377b4c087f97c6d31bd8fcfa3052c514f8c",
+  "predecessorProfile": {
+    "path": "qualification/profiles/api-credit-application-source-v79.json",
+    "bytes": 5850,
+    "sha256": "ed85cf23af397ee97c23b09dc21622dd9f900660653469c4a32f97352a31d10d"
+  },
+  "profileStorage": "EXACT_PREDECESSOR_REFERENCE_WITH_EXPLICIT_OUTER_OFFER_ADMISSION_DELTA",
+  "product": "ONE_FUNDING_ONE_GRANT_MANY_METERED_CALLS_ORIGINAL_REPLAY_RECOVERY",
+  "originalOfferPreclaimAdmission": {
+    "path": "qualification/original-offer-preclaim-admission.source-contract.json",
+    "bytes": 1138,
+    "sha256": "4d4dde799b06e1bf531a78a7c0c572150164ff9274c7473fd0dca3f5772025bf"
+  },
+  "proofManifest": {
+    "path": "qualification/original-offer-preclaim-admission.proof-manifest.json",
+    "bytes": 328367,
+    "sha256": "8077337c6e57357affdd63a1a8f11afab18c58f49342e705f1fef893dc785b1b"
+  },
+  "failureInventory": {
+    "path": "qualification/original-offer-preclaim-admission.failure-inventory.json",
+    "bytes": 2107,
+    "sha256": "0ff355474a636d60c99a1f13fb72be0e33ccafd876527b85ff2b8c5cd404e316"
+  },
+  "sourceDelta": [
+    {
+      "path": "qualification/original-offer-admission.behavior.mjs",
+      "bytes": 11940,
+      "sha256": "024411b09bf22150141310068116cac803222e5c2c6cc17d7fe7e5ac7ea68676",
+      "gitBlob": "f8e6e244daed6f02b76f608a1846c1f6ace9eb39"
+    },
+    {
+      "path": "src/api-credit-module-catalog.json",
+      "bytes": 120934,
+      "sha256": "3df12750d0908c186fcb7faa2411e227250fa986212c8c03e8cff9d89e832f96",
+      "gitBlob": "061de23365a8af68cb7c02a288182ee9c8350cdc"
+    },
+    {
+      "path": "src/api-credit-native-package-admission.js",
+      "bytes": 6414,
+      "sha256": "2eefbf2782999040dc154911f310c504896af45ef315189d351a606091ecdd9b",
+      "gitBlob": "c4121594f626469586795435608f3c7fe4411b27"
+    },
+    {
+      "path": "src/zenon/sdk105-native-api-credit-application.js",
+      "bytes": 10887,
+      "sha256": "3135dbb84008eca8b4918e9e86ba06b21293b1ff92806c11f4f8a9ea19de9299",
+      "gitBlob": "35d4c18fc88b2dd3e9b8ae92c8293c68ee38a16f"
+    }
+  ],
+  "buyerCatalog": {
+    "role": "buyer",
+    "sourceGraph": 178,
+    "catalogRows": 581,
+    "sourceRows": 176,
+    "packageRows": 404,
+    "bareEdges": 9,
+    "addedSourceRows": [],
+    "changedSourceRows": [
+      "src/zenon/sdk105-native-api-credit-application.js"
+    ],
+    "removedSourceRows": [],
+    "catalog": {
+      "path": "src/api-credit-module-catalog.json",
+      "bytes": 120934,
+      "sha256": "3df12750d0908c186fcb7faa2411e227250fa986212c8c03e8cff9d89e832f96"
+    },
+    "admission": {
+      "path": "src/api-credit-native-package-admission.js",
+      "bytes": 6414,
+      "sha256": "2eefbf2782999040dc154911f310c504896af45ef315189d351a606091ecdd9b"
+    },
+    "catalogUnchanged": false
+  },
+  "providerCatalog": {
+    "role": "provider",
+    "sourceGraph": 104,
+    "catalogRows": 507,
+    "sourceRows": 102,
+    "packageRows": 404,
+    "bareEdges": 4,
+    "addedSourceRows": [],
+    "changedSourceRows": [],
+    "removedSourceRows": [],
+    "catalog": {
+      "path": "src/issued-provider-module-catalog.json",
+      "bytes": 104412,
+      "sha256": "e2fea2d5a2378fa2d078eb75d618867d7bc193e89a23f6ec41ed9e0320218286"
+    },
+    "admission": {
+      "path": "src/issued-provider-native-package-admission.js",
+      "bytes": 6429,
+      "sha256": "80b1b96a27f0ff0503adf1841c831d42ddac6bbc782b4f276ffcd90c95e3c768"
+    },
+    "catalogUnchanged": true
+  },
+  "packagePinsAndBareEdgesUnchanged": true,
+  "currentLocalData": {
+    "new": 16,
+    "reexecuted": 0,
+    "retainedExact": 2149,
+    "sourceBoundDistinct": 2165,
+    "newDATACommands": 1,
+    "newParserCommands": 2,
+    "parserSourceProofs": 51
+  },
+  "selectedHostedCIControls": 108,
+  "selectedHostedCISourceInputs": 22,
+  "hostedSelectionChanged": false,
+  "newCasesIncludedInHostedCI": false,
+  "nativeQualification": "NOT_EXECUTED",
+  "G0G5Acceptance": "OPEN"
+}
