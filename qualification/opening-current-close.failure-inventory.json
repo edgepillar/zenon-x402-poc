@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "currentDataFailures": 0,
+  "currentParserFailures": 0,
+  "currentQualifiedTaskFailures": 0,
+  "unexpectedSkips": 0,
+  "cancellations": 0,
+  "inheritedInventory": {
+    "path": "qualification/execution-revision-owner.failure-inventory.json",
+    "bytes": 1213,
+    "sha256": "c0dc59ab8039998bc1f6a5e1f2e70b5fc99d54381a2e4888ef2afa6f3500ec3d"
+  },
+  "earlierFailedAndUnknownRecordsPreserved": true,
+  "wholeFailedTaskReclassified": false,
+  "oldCASObjectsConsumed": false,
+  "nativeExecution": 0
+}

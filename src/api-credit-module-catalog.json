@@ -2487,8 +2487,8 @@
     },
     {
       "path": "src/api-credit-opening-failure-custody.js",
-      "bytes": 8072,
-      "sha256": "576130ad22d64d399723efcfdc2727a5fd4d62e13a7d3c2a3ded2d9ee91cbbbe",
+      "bytes": 8686,
+      "sha256": "307e242d05cfc69b157e389235f20c15b261732fd68982fa10981cf0a77ac9c4",
       "format": "module"
     },
     {

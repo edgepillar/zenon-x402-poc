@@ -1,0 +1,120 @@
+{
+  "version": 67,
+  "status": "SOURCE_AND_DECLARED_MEMORY_DATA_CANDIDATE",
+  "sourceMain": "78dd5f645486f85ecf712cbcbd78b33a72fe23b6",
+  "sourceMainTree": "6485a47d7e26c73376c738d055b9842ddbb27e05",
+  "predecessorProfile": {
+    "path": "qualification/profiles/api-credit-application-source-v66.json",
+    "bytes": 6090,
+    "sha256": "ae22f94bcb3922412db76c2437696484de26c865e13d82d4b58b0475d146ac1f"
+  },
+  "profileStorage": "EXACT_PREDECESSOR_REFERENCE_WITH_EXPLICIT_CURRENT_DELTA",
+  "product": "ONE_FUNDING_ONE_GRANT_MANY_METERED_CALLS_ORIGINAL_REPLAY_RECOVERY",
+  "openingCurrentClose": {
+    "version": 1,
+    "scope": "CURRENT_CLOSE_OBSERVATION_AFTER_FAILED_BUYER_OPENING_SOURCE_AND_DATA",
+    "owner": "src/api-credit-opening-failure-custody.js",
+    "fixedNativeBinding": "src/zenon/sdk105-native-api-credit-application.js",
+    "nativeBindingUnchanged": true,
+    "originalHistoricalVoidReturnImmutable": true,
+    "currentFileClosedViewRequired": true,
+    "currentReturnedWalletStoppedViewRequired": true,
+    "reentryAndOpaqueViewLatchHeld": true,
+    "laterCleanViewsDoNotRepairHeld": true,
+    "revokeStopClearOrCloseNotRepeated": true,
+    "unreturnedBorrowerStillHeldWithoutPhysicalClose": true,
+    "sameControllerClaimIdentityPreserved": true,
+    "existingRetentionAdmissionCap": 16,
+    "outputKeysAndVersionUnchanged": true,
+    "controllerMethods": [
+      "inspect"
+    ],
+    "openingMayResume": false,
+    "authority": "NONE",
+    "buyerGraph": 174,
+    "buyerCatalogRows": 577,
+    "providerGraph": 104,
+    "providerCatalogRows": 507,
+    "providerCatalogUnchanged": true,
+    "packageRowsPerCatalog": 404,
+    "packagePinsAndBareEdgesUnchanged": true,
+    "nativeOpening": "NOT_EXECUTED",
+    "nativePhysicalRelease": "NOT_ESTABLISHED",
+    "crossProcessOwnerFencing": "NOT_ESTABLISHED",
+    "LinuxAcceptance": "NOT_ESTABLISHED",
+    "G0G5": "OPEN"
+  },
+  "contract": {
+    "path": "qualification/opening-current-close.source-contract.json",
+    "bytes": 1224,
+    "sha256": "f46bfe9a424b7a5cf2753550ffdf65cf02c72662ad58e3e8f89ee7461adec811"
+  },
+  "proofManifest": {
+    "path": "qualification/opening-current-close.proof-manifest.json",
+    "bytes": 282046,
+    "sha256": "ef59f19580d47cd9b61c2684c50ddb593bc26745c7da6c6dc47ec7eeae3cc98e"
+  },
+  "failureInventory": {
+    "path": "qualification/opening-current-close.failure-inventory.json",
+    "bytes": 517,
+    "sha256": "238384c9034d3d85bedf0567f0ad3cb047c2b270416d666e635dff75f517e59a"
+  },
+  "sourceDelta": [
+    {
+      "path": "qualification/api-credit-opening-failure-custody.behavior.mjs",
+      "bytes": 12643,
+      "sha256": "d87774ea6cc7dadd00a838c05c4fc198f6f34576662aee43513ec82db209ad61",
+      "gitBlob": "632c7c22c444156f641d5695b976d83c2d6d5656"
+    },
+    {
+      "path": "qualification/opening-current-close.behavior.mjs",
+      "bytes": 8592,
+      "sha256": "43c1c9016b20c708c007e5c4c5ff7d5060d995fcc136db93387b917e8a75ce60",
+      "gitBlob": "e6a201693edded8e02f9ddab1a1eb459f088fd58"
+    },
+    {
+      "path": "src/api-credit-module-catalog.json",
+      "bytes": 120106,
+      "sha256": "e685ea517fd60424fbdc5a503564cb70f741a3e0e95751fd986a73585c4d7037",
+      "gitBlob": "1c03324a0d4893ecc93e30983447ae2ad94396f4"
+    },
+    {
+      "path": "src/api-credit-native-package-admission.js",
+      "bytes": 6414,
+      "sha256": "7e5b96cf3040801e45f05ebc53714a3c0e6fe1f6eb8045552ed476132370776a",
+      "gitBlob": "3ff27a6329256bc2c15f42c6a984bcab3b592833"
+    },
+    {
+      "path": "src/api-credit-opening-failure-custody.js",
+      "bytes": 8686,
+      "sha256": "307e242d05cfc69b157e389235f20c15b261732fd68982fa10981cf0a77ac9c4",
+      "gitBlob": "46a7ad8e9405f8be9c33ec732b7775b816941088"
+    }
+  ],
+  "buyerSourceGraphUnchanged": true,
+  "providerSourceGraphAndCatalogUnchanged": true,
+  "buyerCatalog": {
+    "path": "src/api-credit-module-catalog.json",
+    "bytes": 120106,
+    "sha256": "e685ea517fd60424fbdc5a503564cb70f741a3e0e95751fd986a73585c4d7037",
+    "graph": 174,
+    "rows": 577,
+    "packageRows": 404,
+    "bareEdges": 9
+  },
+  "currentLocalData": {
+    "new": 20,
+    "reexecuted": 20,
+    "retainedExact": 1829,
+    "sourceBoundDistinct": 1869,
+    "newDATACommands": 2,
+    "newParserCommands": 1,
+    "parserSourceProofs": 49
+  },
+  "selectedHostedCIControls": 108,
+  "selectedHostedCISourceInputs": 22,
+  "hostedSelectionChanged": false,
+  "newCasesIncludedInHostedCI": false,
+  "nativeQualification": "NOT_EXECUTED",
+  "G0G5Acceptance": "OPEN"
+}

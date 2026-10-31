@@ -49,7 +49,7 @@ check('opening-custody-entered-wallet-constructor-with-no-returned-owner-retains
 check('opening-custody-pre-borrower-refusal-closes-the-exclusive-file-after-revoke-and-fresh-view', () => {
   const f = fixture(), controller = own(f.config(false, false, false)), view = controller.inspect();
   assert.equal(view.lifecycle, 'CLOSED'); assert.equal(view.fileCloseReturned, true); assert.equal(view.fileOwnerRetained, false);
-  assert.deepEqual(f.events, ['file.revoke', 'file.view', 'file.close', 'file.view']); assert.equal(f.state.closes, 1);
+  assert.deepEqual(f.events.slice(0, 4), ['file.revoke', 'file.view', 'file.close', 'file.view']); assert.ok(f.events.lastIndexOf('file.view') > f.events.indexOf('file.close')); assert.equal(f.state.closes, 1);
 });
 check('opening-custody-returned-wallet-before-client-entry-stops-before-any-file-close', async () => {
   const f = fixture(), controller = own(f.config());

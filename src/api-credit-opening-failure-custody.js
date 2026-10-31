@@ -49,7 +49,7 @@ export function createApiCreditOpeningFailureCustody(configuration) {
   }
   if (HELD.size >= 16) fail();
   const frame = { file: c.fileOwner, wallet: c.walletOwner, walletEntered: c.walletOpeningEntered, clientEntered: c.clientOpeningEntered,
-    held: false, busy: false, revokeEntered: false, revokeReturned: false, revokeResult: null, walletStopEntered: false,
+    held: false, busy: false, checking: false, revokeEntered: false, revokeReturned: false, revokeResult: null, walletStopEntered: false,
     walletStop: null, walletStopReturned: false, closeEntered: false, closeReturned: false, closeResult: null, controller: null };
   function hold() { frame.held = true; HELD.add(frame); }
   function fileView() { const value = APPLY(VIEW, frame.file, []); if (data(value, 'spendingFileOwnerVersion') !== 1) fail(); return value; }
@@ -83,6 +83,20 @@ export function createApiCreditOpeningFailureCustody(configuration) {
   }
   const inspect = F(function inspect() {
     if (arguments.length !== 0) fail();
+    // The close method's historical void receipt is immutable. A new read
+    // still needs the same returned owners' current closed observations; it
+    // never repeats cleanup or creates permission to resume opening.
+    if (frame.closeReturned && !frame.held) {
+      if (frame.checking || frame.busy) hold();
+      else {
+        frame.checking = true;
+        try {
+          if (!invariant() || !fileStopped(fileView())
+              || frame.wallet !== null && !walletStopped() || frame.held) fail();
+        } catch { hold(); }
+        finally { frame.checking = false; }
+      }
+    }
     return F({ apiCreditOpeningFailureCustodyVersion: 1, lifecycle: frame.held ? 'HELD' : frame.closeReturned ? 'CLOSED' : 'CLOSING',
       held: frame.held, walletOpeningEntered: frame.walletEntered, clientOpeningEntered: frame.clientEntered,
       unreturnedBorrower: frame.clientEntered || frame.walletEntered && frame.wallet === null,
