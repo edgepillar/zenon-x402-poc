@@ -5,13 +5,13 @@ import { openZenonFundingPayerRecoveryOriginalPaymentSqliteStoreV6,
   openZenonFundingPayerRecoveryOriginalPaymentSqliteStoreV6WithApiCreditStoreOwner,
   ZenonFundingPayerRecoverySqliteStore } from '../service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js';
 import { createFundingPostNativeHttpsTransport, createFundingPostNativeHttpsTransportWithApiCreditWireOwner } from '../service-credit-funding-post-native-https-transport.js';
-import { validateApiCreditWireOwnerGuard, inspectApiCreditWireOwnerGuard, createApiCreditStoreOwnerAdmission, requireApiCreditStoreOwnerStage, inspectApiCreditStoreOwnerAdmission } from '../api-credit-wire-owner-guard.js';
+import { validateApiCreditWireOwnerGuard, inspectApiCreditWireOwnerGuard, createApiCreditStoreOwnerAdmission, requireApiCreditStoreOwnerStage, inspectApiCreditStoreOwnerAdmission, requireCurrentApiCreditWireOwner } from '../api-credit-wire-owner-guard.js';
 import { createRetainedDynamicPlasmaHttpsReadSessionV2,
   createRetainedDynamicPlasmaHttpsReadSessionForLocalQualification } from './dynamic-plasma-retained-https-read-session.js';
 import { captureNativeFundingServiceLoopbackReadSelection } from './native-funding-service-loopback-read-selection.js';
 import { createNativeOriginalFundingCloseSession } from './dynamic-plasma-native-funding-close-session.js';
 import { createBoundedNonceDynamicPlasmaMaterialExchange } from './dynamic-plasma-bounded-material-exchange.js';
-import { createZenonDynamicPlasmaOriginalFundingSubmissionV4 } from './dynamic-plasma-original-funding-submission.js';
+import { createZenonDynamicPlasmaOriginalFundingSubmissionV4, createZenonNonDpOriginalFundingSubmission } from './dynamic-plasma-original-funding-submission.js';
 import { captureZenonDynamicPlasmaFundingPostPreparationInput } from './dynamic-plasma-funding-post-preparation-input.js';
 import { captureOriginalFundingServiceHandoffRequest } from './dynamic-plasma-original-funding-service-handoff-request.js';
 import { openNativeOfficialV6FundingPostOriginalPaymentClientWithFundingHandoffGuard, openNativeOfficialV6FundingPostOriginalPaymentClientWithFundingAndApiCreditWireOwner } from '../x402-native-v6-funding-post-client.js';
@@ -98,8 +98,24 @@ export async function openZenonDynamicPlasmaNativeFundingServiceClientForLocalQu
   return openClient(configuration, localReadOptions, true);
 }
 
-async function openClient(configuration, localReadOptions, localQualification, wireOwner = null, storeAdmission = null) {
-  if (!invariant() || applicationSlot !== null) fail('configuration_or_owner_unavailable');
+/** Explicit SOURCE ONLY non-DP lane, with the same actual wire/store owner.
+ * Legacy operational material limits remain captured but no material producer
+ * is constructed. New native execution/qualification is not implied. */
+export async function openZenonNonDpNativeFundingServiceClientWithApiCreditWireOwner(configuration, wireOwner) {
+  if (arguments.length !== 2) fail('configuration_or_owner_unavailable'); validateApiCreditWireOwnerGuard(wireOwner);
+  const admission = createApiCreditStoreOwnerAdmission(wireOwner, 1000);
+  try {
+    const client = await openClient(configuration, null, false, wireOwner, admission, true);
+    requireApiCreditStoreOwnerStage(admission, 'CLIENT_RETURN'); return client;
+  } catch (caught) {
+    if (applicationSlot !== null && applicationSlot.storeAdmission === admission
+        && inspectApiCreditWireOwnerGuard(wireOwner).held) applicationSlot.holdApiCreditOwner();
+    throw caught;
+  }
+}
+
+async function openClient(configuration, localReadOptions, localQualification, wireOwner = null, storeAdmission = null, nonDp = false) {
+  if (!invariant() || applicationSlot !== null || nonDp && (wireOwner === null || localQualification)) fail('configuration_or_owner_unavailable');
   let storeOptions, fundingOptions, serviceOptions, policy, materialOptions, fundingTransportOptions;
   let reads = null, post = null, session = null, funder = null, service = null, store = null;
   let fileIdentity = null, openingStore = false, transferred = false, held = false, checking = false;
@@ -182,7 +198,7 @@ async function openClient(configuration, localReadOptions, localQualification, w
     fundingTransportOptions = F({ ...fundingTransportOptions, ca: privateCa });
     serviceOptions = F({ ...serviceOptions, transportOptions: serviceTransport });
     applicationSlot = slot; // No await before claiming this module's application owner.
-    const material = MATERIAL(materialOptions); // Inert; no search/signing.
+    const material = nonDp ? null : MATERIAL(materialOptions); // No producer in the explicit non-DP lane.
     post = wireOwner === null ? FUNDING(fundingTransportOptions) : OWNED_FUNDING(fundingTransportOptions, wireOwner); slot.post = post;
     try {
       reads = localQualification ? LOCAL_READS(fundingOptions.readSessionOptions, localReadSelection)
@@ -197,9 +213,25 @@ async function openClient(configuration, localReadOptions, localQualification, w
     // The genuine payer can consume a store-object claim even on construction
     // failure. After this boundary only that actual owner may close/quarantine it.
     transferred = true;
-    funder = SUBMISSION({
-      preparerOptions: { readOptions: session.readSession.readOptions, materialExchange: material,
-        materialWaitMs: fundingOptions.materialWaitMs, wallet: fundingOptions.wallet },
+    let preparerOptions;
+    if (nonDp) {
+      const requireCurrent = F(function requireCurrentNonDpOriginalOwner() {
+        if (arguments.length !== 0 || lifecycle !== 'OPEN' || closing !== null || held) fail('funding_unavailable');
+        requireCurrentApiCreditWireOwner(wireOwner, Math.min(fundingOptions.deadlineMs, 1000));
+      });
+      requireCurrent();
+      const walletView = fundingOptions.wallet.inspect(), publicView = data(walletView, 'wallet');
+      if (data(walletView, 'sdk105WalletOwnerVersion') !== 1 || data(walletView, 'held') !== false
+          || data(walletView, 'closeRequested') !== false
+          || data(publicView, 'expectedPublicKey') !== fundingOptions.materialOptions.publicKey) fail('funding_unavailable');
+      requireCurrent();
+      preparerOptions = F({ readOptions: session.readSession.readOptions, requireCurrent,
+        walletOwner: fundingOptions.wallet, expectedAddress: data(publicView, 'expectedAddress'),
+        expectedPublicKey: data(publicView, 'expectedPublicKey') });
+    } else preparerOptions = { readOptions: session.readSession.readOptions, materialExchange: material,
+      materialWaitMs: fundingOptions.materialWaitMs, wallet: fundingOptions.wallet };
+    funder = (nonDp ? createZenonNonDpOriginalFundingSubmission : SUBMISSION)({
+      preparerOptions,
       store, fundingResourceUrl: storeOptions.resourceUrl, deadlineMs: fundingOptions.deadlineMs,
       fetchImpl: post.fetchImpl, readSession: session.readSession,
       nativeResourceCloseGuard: F(function currentFundingNativeGuard() { return fundingNativeClean(); }),
@@ -266,7 +298,7 @@ async function openClient(configuration, localReadOptions, localQualification, w
     // This DATA capture is not another current read or a renewed work budget.
     if (original.challenge.paymentRequired.accepts[0].asset !== serviceOptions.official.assetInfo.asset)
       fail('funding_unavailable');
-    bindWalletOriginalFundingPreparation(fundingOptions.wallet, original, storeOptions.resourceUrl);
+    if (!nonDp) bindWalletOriginalFundingPreparation(fundingOptions.wallet, original, storeOptions.resourceUrl);
     const value = await operation('prepareOriginalFunding', original);
     if (data(value, 'phase') !== 'AWAITING_INDEPENDENT_PINS') fail('funding_unavailable');
     packet = data(value, 'packet');

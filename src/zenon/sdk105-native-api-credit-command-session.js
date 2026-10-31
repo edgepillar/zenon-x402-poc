@@ -47,7 +47,16 @@ function fields(value, names) {
   for (const name of names) { const d = Object.getOwnPropertyDescriptor(value, name); if (!d?.enumerable || !Object.hasOwn(d, 'value')) fail(); out[name] = d.value; }
   return out;
 }
-async function openSelectedSession(c, selected, product, requireOperatorOpening) {
+/** Fixed first-product non-DP source selection. Public command DATA cannot
+ * choose a different factory or fall back to DP. Existing entries stay DP. */
+export async function openSdk105NativeNonDpApiCreditProductSelectionCommandSession(configuration, requireOperatorOpening) {
+  if (arguments.length !== 2 || typeof requireOperatorOpening !== 'function' || types.isProxy(requireOperatorOpening)
+      || !Object.isFrozen(requireOperatorOpening)) fail();
+  const c = fields(configuration, ['selection', 'input', 'output', 'limits']);
+  const selected = assertSdk105ApiCreditProductSelection(c.selection);
+  return openSelectedSession(c, selected, true, requireOperatorOpening, true);
+}
+async function openSelectedSession(c, selected, product, requireOperatorOpening, nonDp = false) {
   let entered = false;
   try {
     if (requireOperatorOpening !== null) requireOperatorOpening();
@@ -62,10 +71,11 @@ async function openSelectedSession(c, selected, product, requireOperatorOpening)
             if (requireOperatorOpening !== null) requireOperatorOpening();
           });
           guard();
-          const { openSdk105NativeApiCreditApplication, openSdk105NativeApiCreditProductApplication } = await import('./sdk105-native-api-credit-application.js');
+          const native = await import('./sdk105-native-api-credit-application.js');
+          const openApplication = nonDp ? native.openSdk105NativeNonDpApiCreditProductApplication
+            : product ? native.openSdk105NativeApiCreditProductApplication : native.openSdk105NativeApiCreditApplication;
           guard();
-          return product ? await openSdk105NativeApiCreditProductApplication(selected, guard)
-            : await openSdk105NativeApiCreditApplication(selected, guard);
+          return await openApplication(selected, guard);
         } finally { selected.release(); }
       }) });
   } catch { fail(); }

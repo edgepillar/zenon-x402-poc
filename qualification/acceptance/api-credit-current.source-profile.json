@@ -1,7 +1,7 @@
 {
   "profileVersion": 1,
   "profileId": "API_CREDIT_CURRENT_SOURCE_V1",
-  "sourceBaseline": "ee15549d11f7389c3b5142ce3346d6f5bd87c887",
+  "sourceBaseline": "2969d941eb9dc0d2c3d9e6a38198a0f214426051",
   "application": {
     "buyerEntry": "src/api-credit-cli.js",
     "providerEntry": "src/issued-provider-cli.js"
@@ -10,9 +10,9 @@
     {
       "role": "buyer",
       "path": "src/api-credit-module-catalog.json",
-      "bytes": 120106,
-      "sha256": "7de98737fa689e23ec14b41544b9fa4dc6e28fa4964e4d51076ac0ae384af87d",
-      "sourceRows": 172,
+      "bytes": 120732,
+      "sha256": "c62a85ccccaaed209d217f2eb9ee91785de135351a0c79f259bc58e34b56c077",
+      "sourceRows": 175,
       "packageRows": 404,
       "bareEdges": 9
     },
@@ -30,7 +30,7 @@
     {
       "path": "src/api-credit-native-package-admission.js",
       "bytes": 6414,
-      "sha256": "2f70b6a9b1877763c268db8443b986acb9b2f16bbb0cc2cf7f4ed8c98b29bd03",
+      "sha256": "e5f65abf9da52d3b89a61de7f628901ebaef990b99c4bdb4ce6f34341f2aab9a",
       "format": "module"
     },
     {
@@ -48,19 +48,19 @@
   ],
   "dataQualification": {
     "sourceProfile": {
-      "path": "qualification/profiles/api-credit-application-source-v76.json",
-      "bytes": 3635,
-      "sha256": "c0f64e8f1ba3186d4b032bd453536aff0ffc546f2371edfe4f1579d43d510585"
+      "path": "qualification/profiles/api-credit-application-source-v77.json",
+      "bytes": 6388,
+      "sha256": "efeff6b600ebb38d0c74123dea16d66dc950be1929594849bfc24b25901576df"
     },
     "result": {
-      "path": "qualification/non-dp-fused-strategy.actual-local-result.json",
-      "bytes": 5415,
-      "sha256": "1f19604ded5d44eb7e48d12003e551105c573a357de2579560441e3121711e08"
+      "path": "qualification/non-dp-native-original-binding.actual-local-result.json",
+      "bytes": 11055,
+      "sha256": "fe9225d74851248b7ae3c1e6cd14060845b33bb95d2ead04ef4920532da2541a"
     },
-    "sourceBoundControls": 2025,
-    "executedControls": 24,
-    "retainedControls": 2001,
-    "expectedResultQualification": "G1_NON_DP_FUSED_STRATEGY_DATA"
+    "sourceBoundControls": 2101,
+    "executedControls": 76,
+    "retainedControls": 2025,
+    "expectedResultQualification": "G1_NON_DP_RETAINED_NATIVE_OPTIONS_DATA"
   },
   "runtime": {
     "nodeVersion": "24.19.0",

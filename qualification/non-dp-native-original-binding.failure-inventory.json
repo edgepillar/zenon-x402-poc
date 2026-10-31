@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "currentDataFailures": 0,
+  "currentParserFailures": 0,
+  "historicalParserOriginsNotEstablished": 5,
+  "unresolvedHistoricalOriginsReplacedByNewParserReceipts": true,
+  "metadataPreparationRefusals": [
+    {
+      "rawMetadataReportSha256": "ab0885e4aec04fe8218c137f158a3b51b03d65b2b41281161211eeef5d4f6603",
+      "metadataOnly": true,
+      "applicationNativeCommands": 0,
+      "reclassified": false
+    },
+    {
+      "rawMetadataReportSha256": "aa4c630d8592986f21012c15a03af57252cbd1dbfcb75f213f03a6381fa31d2c",
+      "metadataOnly": true,
+      "applicationNativeCommands": 0,
+      "reclassified": false
+    },
+    {
+      "rawMetadataReportSha256": "0eac591525df1129d53414f49fbfb762de9a56538c90cf6aef8c0605ab8e9e47",
+      "metadataOnly": true,
+      "applicationNativeCommands": 0,
+      "reclassified": false
+    },
+    {
+      "rawMetadataReportSha256": "7d22d11afae8b1fb5191e441abdac51cca693a53224d0d4e8965ea2a307a7755",
+      "metadataOnly": true,
+      "applicationNativeCommands": 0,
+      "reclassified": false
+    },
+    {
+      "rawMetadataReportSha256": "b0bdcc7b323221e89d4bddcf9b2caa2fbd4609197a77c48572442a8a43b40c9e",
+      "metadataOnly": true,
+      "applicationNativeCommands": 0,
+      "reclassified": false
+    },
+    {
+      "rawMetadataReportSha256": "9556922807fd0824f73314934c4350a317f39edebfe0dec560700db39e70e73c",
+      "metadataOnly": true,
+      "applicationNativeCommands": 0,
+      "reclassified": false
+    }
+  ],
+  "unchangedDataOrCIRepeatedForMetadataErrors": false,
+  "inheritedEvidence": {
+    "path": "qualification/non-dp-custodied-original-candidate.proof-manifest.json",
+    "bytes": 8832,
+    "sha256": "97a706f401f6175ae229daaa0270ab173f53d57f54b378e8baf19f6d9d6c86d3"
+  },
+  "earlierFailedAndUnknownEvidencePreserved": true
+}

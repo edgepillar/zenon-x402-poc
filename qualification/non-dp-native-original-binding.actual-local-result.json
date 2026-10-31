@@ -1,0 +1,364 @@
+{
+  "qualification": "G1_NON_DP_RETAINED_NATIVE_OPTIONS_DATA",
+  "status": "PASS",
+  "recordedAtUTC": "2026-10-31T18:25:43.726752+00:00",
+  "passed": 76,
+  "failed": 0,
+  "cases": [
+    {
+      "id": "non-dp-read-construction-is-inert-and-borrows-parent-ownership",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-read-quote-binds-actual-account-and-independent-full-request",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-read-never-requests-dp-variables-or-work",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-read-three-stage-pipeline-preserves-original-block-hash-and-ack",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-read-no-stage-replay-or-second-economic-original",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-read-invalid-input-is-rejected-before-any-guard-or-read",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-read-accessor-and-proxy-inputs-are-not-entered",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-read-snapshot-precedes-first-ownership-callback",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-read-pending-operation-rejects-overlapping-stage",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-read-expired-owner-after-pending-read-never-returns-a-plan",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-read-ownership-guard-must-return-undefined",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-read-null-frontier-is-never-inferred-as-empty-account",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-read-account-bracket-must-retain-same-frontier",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-read-original-frontier-is-rechecked-before-later-balance",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-read-missing-or-insufficient-selected-balance-refuses-before-rule-reads",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-read-account-height-and-token-must-match-selected-frontier",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-read-genesis-and-chain-profile-are-independently-compared",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-read-endpoints-must-agree-on-full-resource-quote",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-read-dp-momentum-is-refused-even-with-zero-difficulty",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-read-enforced-dp-spork-refuses-legacy-version-one",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-read-incomplete-rule-list-is-not-absence-evidence",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-read-duplicate-rule-identifiers-are-refused",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-read-full-eight-page-rule-list-is-collected-with-bounded-requests",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-read-rule-page-count-drift-and-endpoint-order-drift-are-refused",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-read-numeric-lexemes-cannot-round-or-coerce-rule-and-quote-fields",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-read-existing-bounded-scanner-rejects-duplicate-json-keys",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-read-missing-and-extra-native-result-fields-are-not-guessed",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-read-momentum-bracket-change-is-refused",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-read-later-base-cost-change-never-requotes-or-assembles",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-read-later-fusion-loss-or-work-demand-refuses-without-fallback",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-read-later-momentum-window-rollback-and-same-height-fork-refuse",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-read-final-rule-activation-cannot-authorize-original-unsigned-block",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-read-input-policy-runtime-or-key-change-refuses-before-new-read",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-read-copied-or-cross-owner-plan-is-powerless",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-read-modified-even-self-consistent-block-cannot-replace-original",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-read-signed-or-malformed-block-cannot-enter-final-read",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-read-port-rejection-permanently-holds-without-reset",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-read-thenable-port-is-not-assimilated",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-read-unsettled-port-has-no-fake-timeout-or-release",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-read-constructor-rejects-proxy-and-extra-capability-options",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-custody-construction-does-not-enter-wallet-read-clock-or-close-ports",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-custody-actual-owner-records-intent-before-one-declared-sign-and-result-before-return",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-custody-shared-capsule-retains-actual-non-dp-quote-and-full-original-input",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-custody-final-custody-read-returns-identical-candidate-and-encoded-packet",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-custody-no-second-preparation-read-reset-or-second-sign-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-custody-shared-original-record-projects-identical-recovery-bytes-without-signing",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-custody-revoked-parent-before-entry-refuses-all-borrowed-work",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-custody-invalid-original-route-or-body-consumes-no-owner-attempt",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-custody-does-not-silently-downgrade-a-dp-resource-policy",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-custody-foreign-payer-refuses-before-owner-binding",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-custody-proxies-and-getters-are-not-entered-during-original-capture",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-custody-original-capture-precedes-first-parent-callback",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-custody-expired-final-pre-sign-read-never-enters-intent-or-signer",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-custody-clock-expiry-after-intent-preserves-intent-and-refuses-before-signer",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-custody-current-signer-owner-is-rechecked-after-intent",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-custody-lost-intent-ack-retains-original-without-any-sign-retry",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-custody-opaque-async-sdk-result-remains-held-without-assimilation-or-retry",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-custody-lost-result-ack-retains-exact-signed-record-for-read-only-recovery",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-custody-malformed-synchronous-signature-result-retains-uncertainty",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-custody-post-sign-frontier-change-keeps-signed-record-without-replacement",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-custody-pre-custody-resource-loss-keeps-the-same-candidate-and-record-held",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-custody-pending-post-sign-read-observes-parent-revocation-without-closing-its-owner",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-custody-overlap-is-rejected-without-another-borrow-or-attempt",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-custody-candidate-is-immutable-and-no-caller-args-can-replace-the-custody-read",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-retained-native-construction-preserves-the-exact-session-read-options",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-retained-native-construction-is-inert-for-all-original-owners",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-retained-native-full-declared-flow-keeps-one-signer-and-one-identical-packet",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-retained-native-revoked-parent-prevents-all-key-and-read-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-retained-native-void-current-guard-is-required",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-retained-native-unfrozen-or-extra-guard-contracts-are-refused-inertly",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-retained-native-accessor-options-are-not-invoked",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-retained-native-proxy-session-or-configuration-is-not-inspected",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-retained-native-guard-is-not-installed-into-the-parent-session-object",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-retained-native-input-must-still-match-the-original-empty-funding-route",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-retained-native-intent-ack-loss-does-not-acquire-another-sign-attempt",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-retained-native-late-revocation-keeps-signed-record-and-borrowed-owner",
+      "status": "PASS"
+    }
+  ],
+  "newControls": 12,
+  "reexecutedRelevantControls": 64,
+  "retainedExactControls": 2025,
+  "sourceBoundDistinctControls": 2101,
+  "actualDataNodeCommands": 1,
+  "actualParserNodeCommands": 12,
+  "currentParserSourceProofs": 51,
+  "nodeVersion": "24.19.0",
+  "platform": "darwin-arm64",
+  "nodeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25",
+  "sourceContract": {
+    "path": "qualification/non-dp-native-original-binding.source-contract.json",
+    "bytes": 1328,
+    "sha256": "257afcbd98d390447e99f0b509cda3d0c3116ff5e72c19fef0504392ee506160"
+  },
+  "sourceProfile": {
+    "path": "qualification/profiles/api-credit-application-source-v77.json",
+    "bytes": 6388,
+    "sha256": "efeff6b600ebb38d0c74123dea16d66dc950be1929594849bfc24b25901576df"
+  },
+  "proofManifest": {
+    "path": "qualification/non-dp-native-original-binding.proof-manifest.json",
+    "bytes": 317931,
+    "sha256": "274ac89e21f0fa7938f533d1aeca0f755cd6c5da079700cedb83a1b38164794d"
+  },
+  "failureInventory": {
+    "path": "qualification/non-dp-native-original-binding.failure-inventory.json",
+    "bytes": 1798,
+    "sha256": "600d0680f987f44b360b03f6928b9d67ab3a0b179041f061ec3d5663ffef1887"
+  },
+  "declaredSdkProtocolPortEntries": null,
+  "signatureShapedFixturesDeliberatelyInvalid": true,
+  "cryptographicSignatureAlgorithms": 0,
+  "nativeFilesEvaluated": 0,
+  "nativeExecutions": 0,
+  "SDK": 0,
+  "SQLite": 0,
+  "keys": 0,
+  "signatures": 0,
+  "sockets": 0,
+  "nonceSearches": 0,
+  "nodeChildren": 0,
+  "actualPrepare": 0,
+  "payouts": 0,
+  "nativeQualification": "NOT_EXECUTED",
+  "chainAuthentication": "NOT_ESTABLISHED",
+  "physicalRelease": "NOT_ESTABLISHED",
+  "LinuxAcceptance": "NOT_ESTABLISHED",
+  "G0G5Acceptance": "OPEN",
+  "approvedHostedCISeparate": true,
+  "newCasesIncludedIn108CI": false
+}

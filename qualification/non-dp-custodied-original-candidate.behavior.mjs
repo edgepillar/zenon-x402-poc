@@ -194,6 +194,8 @@ check('non-dp-custody-candidate-is-immutable-and-no-caller-args-can-replace-the-
   assert.equal((await r.preparer.revalidateSignedOriginal()).packet, r.candidate.packet); assert.equal(r.clearCalls, 0);
 });
 
+export function nonDpCustodiedCandidateDataFixture(options = {}) { return fixture(options); }
+
 export const nonDpCustodiedOriginalCandidateDataCases = F([...checks]);
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const cases = [];

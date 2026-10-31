@@ -3081,8 +3081,8 @@
     },
     {
       "path": "src/zenon/dynamic-plasma-native-funding-service-client.js",
-      "bytes": 33039,
-      "sha256": "7bc4816019c63cf69d9703bf5473eedee16565682d8c21c40afa6b0d8613e4ed",
+      "bytes": 35276,
+      "sha256": "1e73ac28157e3baca00b3b45694c84a0c58baf1afaff165291dc9502a04796e6",
       "format": "module"
     },
     {
@@ -3147,8 +3147,8 @@
     },
     {
       "path": "src/zenon/dynamic-plasma-original-funding-preparation.js",
-      "bytes": 15618,
-      "sha256": "0e1eb8bb94ecd4da8d4dc8f9b384510e8c2764601ba22e228126ba9ed01368c6",
+      "bytes": 16921,
+      "sha256": "dd111c7a0f2d950bb2551e719afd00c759d56cd5e546d5d6aba89128933fde42",
       "format": "module"
     },
     {
@@ -3171,8 +3171,8 @@
     },
     {
       "path": "src/zenon/dynamic-plasma-original-funding-submission.js",
-      "bytes": 22507,
-      "sha256": "666551930bcf481d136c773de12d00228822c0f2a810d5c92aafa401acf80c68",
+      "bytes": 22991,
+      "sha256": "c503cb6e525031fac7ec9fd87911141215aaa635009fffc0e167f66b4b0aad24",
       "format": "module"
     },
     {
@@ -3303,8 +3303,8 @@
     },
     {
       "path": "src/zenon/native-api-credit-operator-launcher.js",
-      "bytes": 5522,
-      "sha256": "bd1af070e2a8431aea9bfaa2d3f8adad16130e612ec1f809bbf78100bd4054cb",
+      "bytes": 5546,
+      "sha256": "99019ad480fbf03f9e128890c1c33c66efea8634b782daaf4dccc67a512b361a",
       "format": "module"
     },
     {
@@ -3365,6 +3365,24 @@
       "path": "src/zenon/native-read-retired-error-latch.js",
       "bytes": 994,
       "sha256": "a7c2c242f2df97e8f6fcd6171d0f24b3ec048f25115135dcb08dd83a21f48d84",
+      "format": "module"
+    },
+    {
+      "path": "src/zenon/non-dp-custodied-original-candidate.js",
+      "bytes": 10544,
+      "sha256": "35affef51e98aac283a29600114df3dce0f16c242fcdf69605786530110fe902",
+      "format": "module"
+    },
+    {
+      "path": "src/zenon/non-dp-fused-plasma-strategy.js",
+      "bytes": 8198,
+      "sha256": "ee6031b65428b2d5923680bf323d79af23898c380553cce31f924ff8413d39ad",
+      "format": "module"
+    },
+    {
+      "path": "src/zenon/non-dp-observed-user-send-read-adapter.js",
+      "bytes": 19573,
+      "sha256": "44521cca0c7b8968d85a4bee68c5967c011ccad515bc1e6989dbc5806388723a",
       "format": "module"
     },
     {
@@ -3435,14 +3453,14 @@
     },
     {
       "path": "src/zenon/sdk105-native-api-credit-application.js",
-      "bytes": 9232,
-      "sha256": "410261a6c2056153d361922df701f8ba71bd973bfcbb51a06d86905488e3eff5",
+      "bytes": 10171,
+      "sha256": "834b4ba1fb60704d8687412bb3b737690fc5aae8990b4faef834c9c0c256e046",
       "format": "module"
     },
     {
       "path": "src/zenon/sdk105-native-api-credit-command-session.js",
-      "bytes": 4947,
-      "sha256": "f30eedea1a7fa141f7b2f5e25574c9e49f07c852adb9bd203ef015a26dcb975a",
+      "bytes": 5678,
+      "sha256": "2c0b8a847d91ab6df4d9a9c2928358f25c60efb01e1720986f26d964dd78a9d3",
       "format": "module"
     },
     {

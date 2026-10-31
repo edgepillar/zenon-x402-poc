@@ -45,6 +45,18 @@ function integer(value, min, max = Number.MAX_SAFE_INTEGER) {
  * preflight, V6 custody writer, dispatcher or service authority. Actual native
  * SDK/signature/SQLite/HTTPS composition remains unqualified and unwired.
  */
+/** Preserve the native retained-session readOptions identity at its outer
+ * submission boundary. Only add the captured void guard to a private borrower
+ * view; transport/account function identities and budgets stay unchanged. */
+export function createNonDpCustodiedOriginalCandidateForRetainedReads(configuration) {
+  invariant(); if (arguments.length !== 1) fail();
+  const c = record(configuration, ['readOptions', 'requireCurrent', 'walletOwner', 'expectedAddress', 'expectedPublicKey'], true);
+  const reads = record(c.readOptions, ['transports', 'accountExchange'], true);
+  if (typeof c.requireCurrent !== 'function' || types.isProxy(c.requireCurrent) || !Object.isFrozen(c.requireCurrent)) fail();
+  return createNonDpCustodiedOriginalCandidate(F({ readOptions: F({ ...reads, requireCurrent: c.requireCurrent }),
+    walletOwner: c.walletOwner, expectedAddress: c.expectedAddress, expectedPublicKey: c.expectedPublicKey }));
+}
+
 export function createNonDpCustodiedOriginalCandidate(configuration) {
   invariant(); if (arguments.length !== 1) fail();
   const c = record(configuration, ['readOptions', 'walletOwner', 'expectedAddress', 'expectedPublicKey'], true);

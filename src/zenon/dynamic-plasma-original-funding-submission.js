@@ -2,6 +2,7 @@ import { types as utilTypes } from 'node:util';
 import {
   createZenonDynamicPlasmaOriginalFundingPreparation,
   createZenonDynamicPlasmaOriginalFundingPreparationV2,
+  createZenonNonDpOriginalFundingPreparation,
 } from './dynamic-plasma-original-funding-preparation.js';
 import { snapshotZenonDynamicPlasmaOriginalFundingPins } from './dynamic-plasma-original-funding-data.js';
 import { createZenonFundingPostV1PayerRecoveryOwner,
@@ -121,8 +122,15 @@ export function createZenonDynamicPlasmaOriginalFundingSubmissionV4(configuratio
   return createSubmission(configuration, true, true, true);
 }
 
+/** SOURCE ONLY non-DP selection through the SAME V4 guarded payer and close
+ * join. Named source selection, never inferred from a zero-difficulty reply. */
+export function createZenonNonDpOriginalFundingSubmission(configuration) {
+  if (arguments.length !== 1) fail('configuration_rejected');
+  return createSubmission(configuration, true, true, true, true);
+}
+
 function createSubmission(configuration, retainedValidationEnabled, joinedReadCloseEnabled = false,
-  guardedNativeCloseEnabled = false) {
+  guardedNativeCloseEnabled = false, nonDp = false) {
   let preparer, payer, store, resource, readSessionClose = null, nativeCloseGuard = null;
   let nativeCloseJoin = null, closeBudgetMs = null;
   try {
@@ -150,7 +158,8 @@ function createSubmission(configuration, retainedValidationEnabled, joinedReadCl
         || APPLY(RESOURCE, store, []) !== resource
         || !Number.isSafeInteger(input.deadlineMs) || input.deadlineMs < 1 || input.deadlineMs > 60000
         || typeof input.fetchImpl !== 'function' || IS_PROXY(input.fetchImpl)) fail('configuration_rejected');
-    preparer = (retainedValidationEnabled ? PREPARATION_V2 : PREPARATION)({
+    preparer = (nonDp ? createZenonNonDpOriginalFundingPreparation
+      : retainedValidationEnabled ? PREPARATION_V2 : PREPARATION)({
       preparerOptions: input.preparerOptions, store, fundingResourceUrl: resource,
     });
     closeBudgetMs = guardedNativeCloseEnabled ? Math.min(input.deadlineMs, 1000) : null;

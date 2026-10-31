@@ -1,4 +1,5 @@
 import { types as utilTypes } from 'node:util';
+import { createNonDpCustodiedOriginalCandidateForRetainedReads } from './non-dp-custodied-original-candidate.js';
 import { canonicalJson } from '../canonical.js';
 import { preflightZenonPayment } from '../zenon-payment.js';
 import { ZenonFundingPayerRecoverySqliteStore } from '../service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js';
@@ -94,7 +95,15 @@ export function createZenonDynamicPlasmaOriginalFundingPreparationV2(configurati
   return createPreparation(configuration, true);
 }
 
-function createPreparation(configuration, retainedValidationEnabled) {
+/** Named SOURCE ONLY non-DP preparation. Same genuine V6 claim, real payment
+ * preflight, independent pins and atomic commit; no substituted store/validator.
+ * The new candidate owns preparation-context binding exactly once. */
+export function createZenonNonDpOriginalFundingPreparation(configuration) {
+  if (arguments.length !== 1) fail('configuration_rejected');
+  return createPreparation(configuration, true, true);
+}
+
+function createPreparation(configuration, retainedValidationEnabled, nonDp = false) {
   let preparer, resource, store;
   try {
     if (!invariant()) fail('configuration_rejected');
@@ -107,19 +116,20 @@ function createPreparation(configuration, retainedValidationEnabled) {
       if (typeof method !== 'function' || IS_PROXY(method)) fail('configuration_rejected');
     resource = APPLY(STORE_RESOURCE, store, []);
     if (resource !== input.fundingResourceUrl) fail('configuration_rejected');
-    preparer = (retainedValidationEnabled ? CREATE_RETAINED_PREPARER : CREATE_PREPARER)(input.preparerOptions);
+    preparer = nonDp ? createNonDpCustodiedOriginalCandidateForRetainedReads(input.preparerOptions)
+      : (retainedValidationEnabled ? CREATE_RETAINED_PREPARER : CREATE_PREPARER)(input.preparerOptions);
     // Finish non-operational checks first; no reset or released claim exists.
     CLAIM_STORE(store);
   } catch { fail('configuration_rejected'); }
   const STORE = store, RESOURCE = resource;
-  const PREPARE_CANDIDATE = preparer.prepareSignedCandidate;
-  const INSPECT_CANDIDATE = preparer.getSignedOriginalData;
+  const PREPARE_CANDIDATE = nonDp ? preparer.prepareOriginalFunding : preparer.prepareSignedCandidate;
+  const INSPECT_CANDIDATE = nonDp ? preparer.inspect : preparer.getSignedOriginalData;
   const REVALIDATE_CANDIDATE = retainedValidationEnabled ? preparer.revalidateSignedOriginal : null;
   const CAPTURE_INPUT = retainedValidationEnabled ? CAPTURE_V2 : CAPTURE;
   const ASSEMBLE_DATA = retainedValidationEnabled ? ASSEMBLE_V2 : ASSEMBLE;
   let used = false, active = false, phase = 'IDLE', packet = null, originals = null;
   let preflightPassed = false, commitAttempts = 0, storeEntered = false, storeReturned = false;
-  let originalUnsignedJson = null, preSignCheckpointJson = null;
+  let originalUnsignedJson = null, preSignCheckpointJson = null, retainedNonDpCandidate = null;
   let preCustodyRevalidationAttempts = 0, preCustodyRevalidationPassed = false;
   configuration = null; store = null; resource = null; preparer = null;
 
@@ -133,11 +143,17 @@ function createPreparation(configuration, retainedValidationEnabled) {
       originals = CAPTURE_INPUT(incoming, RESOURCE);
       await undefined;
       if (!invariant() || APPLY(STORE_LOAD, STORE, []) !== null) fail('occupied_or_unusable_store');
-      const candidate = await APPLY(PREPARE_CANDIDATE, undefined, [originals.plannerContext]);
+      const candidate = await APPLY(PREPARE_CANDIDATE, undefined, nonDp ? [originals, RESOURCE] : [originals.plannerContext]);
       if (!invariant()) fail('operation_rejected');
-      packet = ASSEMBLE_DATA(originals, {
-        originalUnsignedBlock: candidate.originalUnsignedBlock, accountBlock: candidate.accountBlock,
-      }, RESOURCE);
+      if (nonDp) {
+        if (value(candidate, 'nonDpCustodiedOriginalCandidateVersion') !== 1) fail('operation_rejected');
+        retainedNonDpCandidate = candidate; packet = value(candidate, 'packet');
+        if (value(packet, 'originalFundingDataVersion') !== 2) fail('operation_rejected');
+      } else {
+        packet = ASSEMBLE_DATA(originals, {
+          originalUnsignedBlock: candidate.originalUnsignedBlock, accountBlock: candidate.accountBlock,
+        }, RESOURCE);
+      }
       if (retainedValidationEnabled) {
         originalUnsignedJson = CANONICAL(value(candidate, 'originalUnsignedBlock'));
         preSignCheckpointJson = value(candidate, 'preSignCheckpointJson');
@@ -168,10 +184,13 @@ function createPreparation(configuration, retainedValidationEnabled) {
       if (retainedValidationEnabled) {
         preCustodyRevalidationAttempts = 1; phase = 'REVALIDATING_BEFORE_COMMIT';
         const checked = await APPLY(REVALIDATE_CANDIDATE, undefined, []);
-        if (!invariant() || value(checked, 'observedSignedCandidateVersion') !== 2
-            || value(checked, 'validationPurpose') !== 'BEFORE_ORIGINAL_SIGNED_CUSTODY'
-            || value(checked, 'signing') !== 'NOT_INVOKED'
-            || value(checked, 'candidateFieldValidation') !== 'MATCHES_CAPTURED_ORIGINAL'
+        if (!invariant() || (nonDp
+            ? checked !== retainedNonDpCandidate || value(checked, 'nonDpCustodiedOriginalCandidateVersion') !== 1
+              || value(checked, 'packet') !== packet
+            : value(checked, 'observedSignedCandidateVersion') !== 2
+              || value(checked, 'validationPurpose') !== 'BEFORE_ORIGINAL_SIGNED_CUSTODY'
+              || value(checked, 'signing') !== 'NOT_INVOKED'
+              || value(checked, 'candidateFieldValidation') !== 'MATCHES_CAPTURED_ORIGINAL')
             || value(checked, 'preSignCheckpointJson') !== preSignCheckpointJson
             || CANONICAL(value(checked, 'originalUnsignedBlock')) !== originalUnsignedJson
             || CANONICAL(value(checked, 'accountBlock')) !== CANONICAL(packet.paymentPayload.payload.transaction))

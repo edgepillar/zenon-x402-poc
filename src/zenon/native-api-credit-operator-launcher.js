@@ -1,4 +1,4 @@
-// SOURCE ONLY. Fixed native binding; no runtime acceptance is established.
+// SOURCE ONLY. Fixed first-product non-DP binding; no runtime acceptance is established.
 import { Readable, Writable } from 'node:stream';
 import process, { hrtime } from 'node:process';
 import { setTimeout, clearTimeout } from 'node:timers';
@@ -7,7 +7,7 @@ import { captureApiCreditOperatorUtcDay } from '../api-credit-operator-clock.js'
 import { runBuyerOriginalCommandHost } from '../buyer-original-command-host.js';
 import { createNativeApiCreditOperatorPipes } from './native-api-credit-operator-pipes.js';
 import { createNativeApiCreditOperatorKeyLease } from './native-api-credit-operator-key.js';
-import { openSdk105NativeApiCreditProductSelectionCommandSession } from './sdk105-native-api-credit-command-session.js';
+import { openSdk105NativeNonDpApiCreditProductSelectionCommandSession } from './sdk105-native-api-credit-command-session.js';
 
 const F = Object.freeze, ON = Readable.prototype.on, RD = Readable.prototype.destroy, WD = Writable.prototype.destroy;
 const NOW = Date.now, DATE = Date, CLOCK = hrtime.bigint, SIGNAL_ON = process.on, SIGNAL_OFF = process.off;
@@ -53,7 +53,7 @@ export async function runNativeApiCreditOperator(argumentsData) {
       try {
         guard(); frame.commands = pipes.adoptCommands(guard); guard();
         frame.sessionEntered = true;
-        return await openSdk105NativeApiCreditProductSelectionCommandSession({ selection,
+        return await openSdk105NativeNonDpApiCreditProductSelectionCommandSession({ selection,
           input: frame.commands.input, output: frame.commands.output, limits }, guard);
       } catch {
         if (!frame.sessionEntered) {

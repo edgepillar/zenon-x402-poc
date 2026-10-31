@@ -1,0 +1,169 @@
+{
+  "version": 77,
+  "status": "SOURCE_AND_DECLARED_MEMORY_DATA_CANDIDATE",
+  "sourceMain": "2969d941eb9dc0d2c3d9e6a38198a0f214426051",
+  "sourceMainTree": "3f5bdc6a249c3073001f62ec0a964583a7a2fb31",
+  "predecessorProfile": {
+    "path": "qualification/profiles/api-credit-application-source-v76.json",
+    "bytes": 3635,
+    "sha256": "c0f64e8f1ba3186d4b032bd453536aff0ffc546f2371edfe4f1579d43d510585"
+  },
+  "profileStorage": "EXACT_PREDECESSOR_REFERENCE_WITH_EXPLICIT_NATIVE_SOURCE_DELTA",
+  "product": "ONE_FUNDING_ONE_GRANT_MANY_METERED_CALLS_ORIGINAL_REPLAY_RECOVERY",
+  "nativeNonDpSourceBinding": {
+    "path": "qualification/non-dp-native-original-binding.source-contract.json",
+    "bytes": 1328,
+    "sha256": "257afcbd98d390447e99f0b509cda3d0c3116ff5e72c19fef0504392ee506160"
+  },
+  "proofManifest": {
+    "path": "qualification/non-dp-native-original-binding.proof-manifest.json",
+    "bytes": 317931,
+    "sha256": "274ac89e21f0fa7938f533d1aeca0f755cd6c5da079700cedb83a1b38164794d"
+  },
+  "failureInventory": {
+    "path": "qualification/non-dp-native-original-binding.failure-inventory.json",
+    "bytes": 1798,
+    "sha256": "600d0680f987f44b360b03f6928b9d67ab3a0b179041f061ec3d5663ffef1887"
+  },
+  "sourceDelta": [
+    {
+      "path": "qualification/non-dp-custodied-original-candidate.behavior.mjs",
+      "bytes": 19152,
+      "sha256": "e15a43baa9884cfe31fd4e862f3957686aec8989fe3a455bd449624e91a2dfb2",
+      "gitBlob": "0894ba0426ef1b02f2bfcf36546feaec767cb50f"
+    },
+    {
+      "path": "qualification/non-dp-retained-native-options.behavior.mjs",
+      "bytes": 6834,
+      "sha256": "1e10e63e6c39ea41bac4b704bf69bef5ad77e6ffb3bed9d156f7edcc739f9dcc",
+      "gitBlob": "f8c199a941f0f1c88218a11b86534678b4a07e57"
+    },
+    {
+      "path": "src/api-credit-module-catalog.json",
+      "bytes": 120732,
+      "sha256": "c62a85ccccaaed209d217f2eb9ee91785de135351a0c79f259bc58e34b56c077",
+      "gitBlob": "aa8216ad1cbf84ec323fd0e776f173dd9124dbb5"
+    },
+    {
+      "path": "src/api-credit-native-package-admission.js",
+      "bytes": 6414,
+      "sha256": "e5f65abf9da52d3b89a61de7f628901ebaef990b99c4bdb4ce6f34341f2aab9a",
+      "gitBlob": "b7193aa0104a25c491a9f09e673ac34033b68ba2"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-native-funding-service-client.js",
+      "bytes": 35276,
+      "sha256": "1e73ac28157e3baca00b3b45694c84a0c58baf1afaff165291dc9502a04796e6",
+      "gitBlob": "18b264c24ca23090b59a993aed4d180e6fe1dd8f"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-original-funding-preparation.js",
+      "bytes": 16921,
+      "sha256": "dd111c7a0f2d950bb2551e719afd00c759d56cd5e546d5d6aba89128933fde42",
+      "gitBlob": "a372b8e80e67775f22a32201a45255a52400e7e4"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-original-funding-submission.js",
+      "bytes": 22991,
+      "sha256": "c503cb6e525031fac7ec9fd87911141215aaa635009fffc0e167f66b4b0aad24",
+      "gitBlob": "e76088279e2d7e91de61e3a41f58a8977ceb55c9"
+    },
+    {
+      "path": "src/zenon/native-api-credit-operator-launcher.js",
+      "bytes": 5546,
+      "sha256": "99019ad480fbf03f9e128890c1c33c66efea8634b782daaf4dccc67a512b361a",
+      "gitBlob": "d8c17a0ef45feb9d2d2bd6ab7b6d683cd8507bb6"
+    },
+    {
+      "path": "src/zenon/non-dp-custodied-original-candidate.js",
+      "bytes": 10544,
+      "sha256": "35affef51e98aac283a29600114df3dce0f16c242fcdf69605786530110fe902",
+      "gitBlob": "123ea01b0aedba24b590ca45ad3ff03d0a9cd8d3"
+    },
+    {
+      "path": "src/zenon/sdk105-native-api-credit-application.js",
+      "bytes": 10171,
+      "sha256": "834b4ba1fb60704d8687412bb3b737690fc5aae8990b4faef834c9c0c256e046",
+      "gitBlob": "a8dc55ce695ebf1c87de406d2e5f9db36436f1e7"
+    },
+    {
+      "path": "src/zenon/sdk105-native-api-credit-command-session.js",
+      "bytes": 5678,
+      "sha256": "2c0b8a847d91ab6df4d9a9c2928358f25c60efb01e1720986f26d964dd78a9d3",
+      "gitBlob": "6000e7061ba6a73c3b9705ab0ad4425b25c32d96"
+    }
+  ],
+  "buyerCatalog": {
+    "role": "buyer",
+    "sourceGraph": 177,
+    "catalogRows": 580,
+    "sourceRows": 175,
+    "packageRows": 404,
+    "bareEdges": 9,
+    "addedSourceRows": [
+      "src/zenon/non-dp-custodied-original-candidate.js",
+      "src/zenon/non-dp-fused-plasma-strategy.js",
+      "src/zenon/non-dp-observed-user-send-read-adapter.js"
+    ],
+    "changedSourceRows": [
+      "src/zenon/dynamic-plasma-native-funding-service-client.js",
+      "src/zenon/dynamic-plasma-original-funding-preparation.js",
+      "src/zenon/dynamic-plasma-original-funding-submission.js",
+      "src/zenon/native-api-credit-operator-launcher.js",
+      "src/zenon/sdk105-native-api-credit-application.js",
+      "src/zenon/sdk105-native-api-credit-command-session.js"
+    ],
+    "removedSourceRows": [],
+    "catalog": {
+      "path": "src/api-credit-module-catalog.json",
+      "bytes": 120732,
+      "sha256": "c62a85ccccaaed209d217f2eb9ee91785de135351a0c79f259bc58e34b56c077"
+    },
+    "admission": {
+      "path": "src/api-credit-native-package-admission.js",
+      "bytes": 6414,
+      "sha256": "e5f65abf9da52d3b89a61de7f628901ebaef990b99c4bdb4ce6f34341f2aab9a"
+    },
+    "catalogUnchanged": false
+  },
+  "providerCatalog": {
+    "role": "provider",
+    "sourceGraph": 104,
+    "catalogRows": 507,
+    "sourceRows": 102,
+    "packageRows": 404,
+    "bareEdges": 4,
+    "addedSourceRows": [],
+    "changedSourceRows": [],
+    "removedSourceRows": [],
+    "catalog": {
+      "path": "src/issued-provider-module-catalog.json",
+      "bytes": 104412,
+      "sha256": "e2fea2d5a2378fa2d078eb75d618867d7bc193e89a23f6ec41ed9e0320218286"
+    },
+    "admission": {
+      "path": "src/issued-provider-native-package-admission.js",
+      "bytes": 6429,
+      "sha256": "80b1b96a27f0ff0503adf1841c831d42ddac6bbc782b4f276ffcd90c95e3c768"
+    },
+    "catalogUnchanged": true
+  },
+  "nativeGraphIncludesNonDpComponents": true,
+  "packagePinsAndBareEdgesUnchanged": true,
+  "currentLocalData": {
+    "new": 12,
+    "reexecuted": 64,
+    "retainedExact": 2025,
+    "sourceBoundDistinct": 2101,
+    "newDATACommands": 1,
+    "newParserCommands": 12,
+    "parserSourceProofs": 51
+  },
+  "selectedHostedCIControls": 108,
+  "selectedHostedCISourceInputs": 22,
+  "hostedSelectionChanged": false,
+  "newCasesIncludedInHostedCI": false,
+  "nativeQualification": "NOT_EXECUTED",
+  "installedNamespace": "NOT_ESTABLISHED",
+  "G0G5Acceptance": "OPEN"
+}

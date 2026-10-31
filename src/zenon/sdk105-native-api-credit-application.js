@@ -42,7 +42,19 @@ export async function openSdk105NativeApiCreditProductApplication(selection, req
   const product = consumeSdk105ApiCreditProductSelection(selection);
   return openApplication(product.selection, requireCurrentOpening, product.profile);
 }
-async function openApplication(selection, requireCurrentOpening, productProfile) {
+/** Explicit non-DP source entries. Existing named DP entries stay unchanged;
+ * no difficulty reply, JSON module name or runtime fallback selects this lane. */
+export async function openSdk105NativeNonDpApiCreditApplication(selection, requireCurrentOpening) {
+  if (arguments.length !== 2) fail();
+  return openApplication(selection, requireCurrentOpening, null, true);
+}
+export async function openSdk105NativeNonDpApiCreditProductApplication(selection, requireCurrentOpening) {
+  if (arguments.length !== 2 || failedApplication !== null || typeof requireCurrentOpening !== 'function'
+      || types.isProxy(requireCurrentOpening) || !Object.isFrozen(requireCurrentOpening)) fail();
+  const product = consumeSdk105ApiCreditProductSelection(selection);
+  return openApplication(product.selection, requireCurrentOpening, product.profile, true);
+}
+async function openApplication(selection, requireCurrentOpening, productProfile, nonDp = false) {
   if (failedApplication !== null || typeof requireCurrentOpening !== 'function'
       || types.isProxy(requireCurrentOpening) || !Object.isFrozen(requireCurrentOpening)) fail();
   const selected = consumeSdk105ApiCreditSelection(selection);
@@ -56,7 +68,9 @@ async function openApplication(selection, requireCurrentOpening, productProfile)
       allowedRoot: selected.spendingFile.allowedRoot, filePolicy: selected.spendingFile.filePolicy });
     requireCurrentOpening();
     wireOwner = createApiCreditWireOwnerGuard({ fileOwner: file, clock: SIGNER_ENTRY.clock });
-    const { openZenonDynamicPlasmaNativeFundingServiceClientWithApiCreditWireOwner } = await import('./dynamic-plasma-native-funding-service-client.js');
+    const nativeClient = await import('./dynamic-plasma-native-funding-service-client.js');
+    const openClient = nonDp ? nativeClient.openZenonNonDpNativeFundingServiceClientWithApiCreditWireOwner
+      : nativeClient.openZenonDynamicPlasmaNativeFundingServiceClientWithApiCreditWireOwner;
     // No new key capability is entered after an expired module-loading budget.
     requireCurrentOpening();
     claimSdk105ApiCreditExistingKeyLease(c.walletOptions.keyPair);
@@ -65,7 +79,7 @@ async function openApplication(selection, requireCurrentOpening, productProfile)
     bindSdk105ApiCreditExistingKeyLeaseOwner(c.walletOptions.keyPair, wallet);
     requireCurrentOpening();
     clientOpeningEntered = true;
-    client = await openZenonDynamicPlasmaNativeFundingServiceClientWithApiCreditWireOwner({ storeOptions: c.storeOptions,
+    client = await openClient({ storeOptions: c.storeOptions,
       fundingOptions: { ...c.fundingOptions, wallet }, serviceOptions: c.serviceOptions }, wireOwner);
     // Ownership of the returned native client/key is now known. A refusal
     // after this point must stop both of those original owners once.
