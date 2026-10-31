@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "currentDataFailures": 0,
+  "currentParserFailures": 0,
+  "unexpectedSkips": 0,
+  "sourcePreparationRefusals": [
+    {
+      "stage": "catalog-role-guard",
+      "status": "SOURCE_ONLY_ASSERTION",
+      "reason": "BUYER_IMPORTS_PROJECTION_AND_SHARED_VALIDATOR_PROVIDER_IMPORTS_ONLY_SHARED_VALIDATOR",
+      "tasksCreated": 0,
+      "DATACommands": 0,
+      "originalDriverPreserved": true
+    }
+  ],
+  "inheritedInventory": {
+    "path": "qualification/recorded-result-borrows.failure-inventory.json",
+    "bytes": 800,
+    "sha256": "17e8567ed974cfccf99e4088faa1d820a917dcb52e7ef9590aed7ca492e3f6e3"
+  },
+  "earlierFailedAndUnknownEvidencePreserved": true
+}

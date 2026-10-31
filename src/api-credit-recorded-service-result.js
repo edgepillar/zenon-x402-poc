@@ -45,7 +45,9 @@ function responseCode(text){
  if(parsed.ok!==true||JSON.stringify({ok:true,resultCode:code})!==text)fail();return code;
 }
 function responseDigest(domain,text){return 'sha256:'+createHash('sha256').update(domain).update('\0').update(text,'utf8').digest('hex');}
-function bindRecordedResponse(original,funding,intent,response){
+/** Shared pure output check. It supplies no store or execution authority. */
+export function validateApiCreditRecordedResponseBinding(original,funding,intent,response){
+ if(arguments.length!==4||new.target!==undefined)fail('INPUT');
  // Reuse the retained-original and intent byte contracts at the output boundary.
  // The same owned V6 reader still supplies the local observation and funding.
  const retained=validateOriginalServiceRequestCustody(original);
@@ -130,7 +132,7 @@ export function createApiCreditRecordedServiceResultApplication(configuration){
   for(const key of ['grantId','requestId'])if(own(response,key)!==expected[key]||own(intent,key)!==expected[key])fail();
   for(const key of ['paymentHash','network','fundingResourceUrl'])if(own(response,key)!==own(funding,key)||own(intent,key)!==own(funding,key))fail();
   if(own(response,'fundingRevision')!==own(funding,'revision')||own(intent,'fundingRevision')!==own(funding,'revision'))fail();
-  bindRecordedResponse(original,funding,intent,response);
+  validateApiCreditRecordedResponseBinding(original,funding,intent,response);
   const text=own(response,'responseJson');if(own(response,'resultCode')!==responseCode(text))fail();return text;
  }
  function finishClose(){

@@ -2541,14 +2541,14 @@
     },
     {
       "path": "src/api-credit-recorded-result-inspection.js",
-      "bytes": 7673,
-      "sha256": "5eb8c7ea8c21459d4819624fe034256ec22b77ea4b24b4ae41ae06982a58c701",
+      "bytes": 7982,
+      "sha256": "04ce2e0593be4f7cc51a577b0ca43063cefce53c045ea2f72583d43eb5c656fd",
       "format": "module"
     },
     {
       "path": "src/api-credit-recorded-service-result.js",
-      "bytes": 14773,
-      "sha256": "86098cffef228a90700fabba27e7ff5b5a1a01cad4856866f7ffc2049df935bb",
+      "bytes": 14962,
+      "sha256": "e28f107574ccb983a6cac5d2117bce7a77ac429fe47e6d409766c94f458a85b6",
       "format": "module"
     },
     {

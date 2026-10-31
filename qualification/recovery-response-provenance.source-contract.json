@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "owner": "src/api-credit-recorded-result-inspection.js",
+  "sharedValidator": "validateApiCreditRecordedResponseBinding",
+  "samePureValidationInNormalAndRecoveryResults": true,
+  "retainedOriginalValidated": true,
+  "expectedDispatchIntentReconstructed": true,
+  "exactSerializedIntentRequired": true,
+  "responseOriginalAndIntentDigestsRequired": true,
+  "malformedBindingWithholdsProjection": true,
+  "backendOnlyHistoryUnchanged": true,
+  "unknownBackendDoesNotReadLocalResponse": true,
+  "existingProjectionErrorEnvelopePreserved": true,
+  "readOwnerCloseOrderingUnchanged": true,
+  "noAdditionalQueryRetryDebitOrExecution": true,
+  "configurationAndResultSchemasUnchanged": true,
+  "CLIAndBudgetsUnchanged": true,
+  "authority": "NONE",
+  "nativeReaderBypass": "NOT_ESTABLISHED",
+  "nativeExecutions": 0,
+  "physicalRelease": "NOT_ESTABLISHED",
+  "G0G5": "OPEN"
+}

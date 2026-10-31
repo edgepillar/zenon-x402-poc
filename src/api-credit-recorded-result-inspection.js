@@ -1,7 +1,7 @@
 import { Buffer } from 'node:buffer';
 import { types } from 'node:util';
 import { snapshotOriginalServiceRequestCustodyKey, validateOriginalServiceRequestCustody } from './service-credit-original-request-custody-contract.js';
-import { captureApiCreditRecordedServiceResult } from './api-credit-recorded-service-result.js';
+import { captureApiCreditRecordedServiceResult, validateApiCreditRecordedResponseBinding } from './api-credit-recorded-service-result.js';
 
 const F=Object.freeze,D=Object.getOwnPropertyDescriptor,OWN=Object.hasOwn;
 const OUTPUT=['recordedResultInspectionVersion','grantId','requestId','status','backendStatus','resultAvailable','cachedResult','responseJson','source',
@@ -28,6 +28,9 @@ function localResponse(local,key,cached){
  for(const name of ['grantId','requestId'])if(data(response,name)!==key[name])fail();
  for(const name of ['paymentHash','fundingResourceUrl','network'])if(data(response,name)!==data(original,name)||data(response,name)!==data(funding,name))fail();
  if(data(response,'fundingRevision')!==data(funding,'revision')||data(response,'resultCode')!==cached.resultCode)fail();
+ // Reuse the normal product's exact original/intent byte binding before
+ // projecting local response bytes. Backend-only history remains separate.
+ try{validateApiCreditRecordedResponseBinding(original,funding,data(local,'dispatchIntent'),response);}catch{fail();}
  const text=data(response,'responseJson');
  captureApiCreditRecordedServiceResult(F({apiCreditServiceResultVersion:1,...key,responseJson:text,resultCode:cached.resultCode,replayed:true,
   source:'LOCAL_RECORDED_RESPONSE',newDispatchRequested:false,authority:'NONE',serviceDelivery:'NOT_ESTABLISHED'}));
