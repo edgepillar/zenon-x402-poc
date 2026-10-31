@@ -1,0 +1,1916 @@
+{
+  "version": 1,
+  "qualification": "G0_CURRENT_SOURCE_PROFILE_DATA_AND_METADATA",
+  "status": "PASS",
+  "recordedAtUTC": "2026-10-31T10:22:02.144488+00:00",
+  "sourceMain": "1928215ecd5aba6eef768cf3b6a5323e994d9968",
+  "passed": 44,
+  "failed": 0,
+  "cases": [
+    {
+      "id": "full-source-match-keeps-all-gates-open",
+      "status": "PASS"
+    },
+    {
+      "id": "shards-combine-in-any-order-with-exact-union",
+      "status": "PASS"
+    },
+    {
+      "id": "manifest-digest-mismatch-before-callback",
+      "status": "PASS"
+    },
+    {
+      "id": "manifest-proxy-byte-input-no-hooks",
+      "status": "PASS"
+    },
+    {
+      "id": "byte-input-own-conversion-hooks-not-entered",
+      "status": "PASS"
+    },
+    {
+      "id": "shared-byte-storage-rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "resizable-byte-storage-rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "malformed-utf8-rejected-after-digest",
+      "status": "PASS"
+    },
+    {
+      "id": "malformed-json-rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "extra-manifest-fields-rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "runtime-version-drift-rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "supported-profile-claim-rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "native-promotion-rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "catalog-role-swap-rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "supplement-traversal-rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "qualification-count-mismatch-rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "catalog-byte-drift-rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "catalog-row-count-mismatch-rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "case-alias-catalog-rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "conflicting-source-rows-rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "cross-catalog-case-alias-rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "conflicting-dependency-catalog-rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "unknown-bare-edge-target-rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "duplicate-bare-edge-rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "native-evidence-flag-rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "callback-must-be-frozen-and-not-proxy",
+      "status": "PASS"
+    },
+    {
+      "id": "opaque-thenable-is-not-entered",
+      "status": "PASS"
+    },
+    {
+      "id": "promise-rejection-observed-without-byte-admission",
+      "status": "PASS"
+    },
+    {
+      "id": "callback-throw-sanitized-and-attempt-consumed",
+      "status": "PASS"
+    },
+    {
+      "id": "source-drift-consumes-failed-shard",
+      "status": "PASS"
+    },
+    {
+      "id": "copied-plan-is-unbranded",
+      "status": "PASS"
+    },
+    {
+      "id": "invalid-shard-ranges-rejected-before-source-read",
+      "status": "PASS"
+    },
+    {
+      "id": "shard-mode-cannot-change-after-attempt",
+      "status": "PASS"
+    },
+    {
+      "id": "missing-shard-does-not-promote-full-match",
+      "status": "PASS"
+    },
+    {
+      "id": "duplicate-shard-rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "foreign-profile-receipt-rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "foreign-source-set-receipt-rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "receipt-coverage-edit-rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "receipt-authority-or-native-claim-rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "receipt-getters-not-entered",
+      "status": "PASS"
+    },
+    {
+      "id": "receipt-array-proxy-not-entered",
+      "status": "PASS"
+    },
+    {
+      "id": "argument-full-and-shard-and-merge-modes",
+      "status": "PASS"
+    },
+    {
+      "id": "argument-ambiguity-and-traversal-rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "prototype-json-hook-prevents-observation",
+      "status": "PASS"
+    }
+  ],
+  "sourceResult": {
+    "kind": "API_CREDIT_CURRENT_SOURCE_CHECK",
+    "status": "SOURCE_MATCH",
+    "profileSha256": "5a04a6bb346cc908edb329cb24ee0a4a9ff92cfac6af206afae6c258ccdbc432",
+    "sourceBaseline": "1928215ecd5aba6eef768cf3b6a5323e994d9968",
+    "sourceSetSha256": "16695c4813d7dc70fbfc2bb59b19f257a9bf056d94473a1048c0b964c9f6b08d",
+    "checkedSources": 240,
+    "checkedSourceBytes": 3330336,
+    "observedShards": 8,
+    "packageCatalogRows": 404,
+    "packageSourceFilesRead": 0,
+    "sourceBoundControls": 1893,
+    "installedNamespace": "NOT_ESTABLISHED",
+    "runtimeQualification": "NOT_ESTABLISHED",
+    "snapshotAtomic": false,
+    "productAcceptance": "NOT_ESTABLISHED",
+    "gates": [
+      {
+        "id": "G0",
+        "status": "OPEN"
+      },
+      {
+        "id": "G1",
+        "status": "OPEN"
+      },
+      {
+        "id": "G2",
+        "status": "OPEN"
+      },
+      {
+        "id": "G3a",
+        "status": "OPEN"
+      },
+      {
+        "id": "G3b",
+        "status": "OPEN"
+      },
+      {
+        "id": "G4",
+        "status": "OPEN"
+      },
+      {
+        "id": "G5",
+        "status": "OPEN"
+      }
+    ],
+    "nativeExecutions": 0,
+    "applicationProgramsExecuted": 0,
+    "filesWritten": 0,
+    "authority": "NONE"
+  },
+  "actualShardReceipts": [
+    {
+      "kind": "API_CREDIT_SOURCE_CHECK_SHARD",
+      "status": "SOURCE_MATCH",
+      "profileSha256": "5a04a6bb346cc908edb329cb24ee0a4a9ff92cfac6af206afae6c258ccdbc432",
+      "sourceBaseline": "1928215ecd5aba6eef768cf3b6a5323e994d9968",
+      "sourceSetSha256": "16695c4813d7dc70fbfc2bb59b19f257a9bf056d94473a1048c0b964c9f6b08d",
+      "shard": {
+        "index": 0,
+        "count": 8
+      },
+      "checkedSources": [
+        {
+          "path": "package.json",
+          "bytes": 2677,
+          "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+          "format": "json"
+        },
+        {
+          "path": "src/api-credit-funding-inspection-profile.js",
+          "bytes": 5258,
+          "sha256": "b76e6ec054ecef7bc2f2a82c9f91e3b26bdcc39a722933dfc0fc3570e0348339",
+          "format": "module"
+        },
+        {
+          "path": "src/api-credit-original-grant-query-owner.js",
+          "bytes": 11319,
+          "sha256": "399f4d66d136a13b644816f60bb9076b4c2caae3992348e9124c22854ceb0d32",
+          "format": "module"
+        },
+        {
+          "path": "src/api-credit-recovery-inspection-profile.js",
+          "bytes": 6220,
+          "sha256": "14048bdef0b8c37281e2fcd2c2333c532c87e1de8d329ce316829d88bfb90b5e",
+          "format": "module"
+        },
+        {
+          "path": "src/buyer-original-command-host.js",
+          "bytes": 8998,
+          "sha256": "57b6b85f9de7c122e8d200ef3544096e9032f9228359a0c6ec500382f4f7e182",
+          "format": "module"
+        },
+        {
+          "path": "src/issued-expired-funding-retention.js",
+          "bytes": 5259,
+          "sha256": "1b6d4034ddae777068576dc10139911e71fb05ed0cdae989d7afa91043e28788",
+          "format": "module"
+        },
+        {
+          "path": "src/issued-provider-funding-resource-admission.js",
+          "bytes": 4690,
+          "sha256": "d07adb3426645893d1cc6cbf8e0948d31daf70e5c0e90768637579c8375450f8",
+          "format": "module"
+        },
+        {
+          "path": "src/issued-provider-operator-control.js",
+          "bytes": 12904,
+          "sha256": "3f083f0291e60b7e36b72e9dd7771c3cada26a9b433c2800a0fae55b67b3ab4b",
+          "format": "module"
+        },
+        {
+          "path": "src/live-runtime.js",
+          "bytes": 8126,
+          "sha256": "354b70662ff501ccc173ab20742f5efcd0e581f784245a1bf2ba51786f2dae7a",
+          "format": "module"
+        },
+        {
+          "path": "src/original-funding-chain-observer.js",
+          "bytes": 11206,
+          "sha256": "0e612f9ab03a544f261479ee41ba1b3975c801af2d4166298d0d88027dd4369b",
+          "format": "module"
+        },
+        {
+          "path": "src/original-funding-spending-sqlite-store.js",
+          "bytes": 17223,
+          "sha256": "4b46a7c7d59b1bb80f036a81e028d16d442b3b7792bd34776e1ab67d031db764",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-custodied-backend-recovery-client.js",
+          "bytes": 25033,
+          "sha256": "c588141db56295a4770f0b1392a7c5b541b9b01bd8140fd036c8d883f98128a7",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-custodied-sqlite-recovery-reader.js",
+          "bytes": 7754,
+          "sha256": "e3ac726602edd3d06137212a566772b5f66fde5d4b4b71c14b2b28d76b1f28fe",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-funding-post-native-response.js",
+          "bytes": 8219,
+          "sha256": "459a92037fd817a5d9eca1500d32cf789818c5bee255ed7e76b1fac97fd9914f",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-original-funding-grant-native-reader.js",
+          "bytes": 1827,
+          "sha256": "7cddb71cdb81b45898046326fba259a5d3aace65ddd18299a38f07b1bf46e40e",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-pilot-client-plan.js",
+          "bytes": 7483,
+          "sha256": "73ee3d739de85150039e733234cd0761c228d68de040d1e126902e808a259ac6",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-zenon-funding-composition.js",
+          "bytes": 32475,
+          "sha256": "ea598edfebcb13e6f32203a5b594190389fa376e5baf8aeceb4a37e138a8a278",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+          "bytes": 86623,
+          "sha256": "458d8d396c594a0c7f75a2d9285cfb2965d3bcae20f64bca7b1df013d32d95ba",
+          "format": "module"
+        },
+        {
+          "path": "src/x402-issued-funding-grant-native-journal-recovery.js",
+          "bytes": 5819,
+          "sha256": "e1a0ba77139104dd74fd772d5562900cb41bff49b7978c24ede95eb74a0848f3",
+          "format": "module"
+        },
+        {
+          "path": "src/x402-official-funding-post-https-request-binding.js",
+          "bytes": 4154,
+          "sha256": "ce7af7ffe5cb9bf002eb596a4cc8093081ce880687cffd44d2d7c7c56871cc37",
+          "format": "module"
+        },
+        {
+          "path": "src/x402-selected-settlement-context.js",
+          "bytes": 16818,
+          "sha256": "afb6e16603023dd58d6a71cff5790a802dcfa4b98bc9d380b51ccc3d58e10991",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/bounded-json-rpc-read-core.js",
+          "bytes": 22116,
+          "sha256": "1d8873868274045825717ee70b9a402d91cd6235fdaf410d93ddb365fc2d7ca3",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-native-funding-service-client.js",
+          "bytes": 33039,
+          "sha256": "7bc4816019c63cf69d9703bf5473eedee16565682d8c21c40afa6b0d8613e4ed",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-observed-user-send-subject.js",
+          "bytes": 5105,
+          "sha256": "bbcc1d718bcb1353f46e0650723e35c218db94754328103d4bce1d5765e13cd8",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-price-policy.js",
+          "bytes": 16224,
+          "sha256": "eba3225c4d26cbb6e0be575ac4fd5073bc8b0c4454eb51e2bea4d91856d0c65e",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-unsigned-original-checkpoint.js",
+          "bytes": 9301,
+          "sha256": "506551e4292491a905a27f56695c30642af6a0e6a85158586379649999f8da47",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-user-send-work-input.js",
+          "bytes": 2853,
+          "sha256": "2ff9c089e5903c059746d0a1c38688a2849f94d04d429279811fbbfbb40450a4",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/native-api-credit-recovery-inspection-launcher.js",
+          "bytes": 5545,
+          "sha256": "62a6a9b2fa38b01c8168550c29d7c8d278a061bfb1cb73f702533ac2fcb6a03b",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/operator-trusted-chain-policy.js",
+          "bytes": 5337,
+          "sha256": "12715f104784f541493ac1d23f92b3e15ce120d0e8287e954eaf1151763d509d",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/sdk105-api-credit-product-profile.js",
+          "bytes": 13319,
+          "sha256": "16ced99b26a3f459fc7c125d66f8e0ca4be152e1c6eaa25b216a198c9848a482",
+          "format": "module"
+        }
+      ],
+      "totalSources": 240,
+      "totalSourceBytes": 3330336,
+      "packageCatalogRows": 404,
+      "packageSourceFilesRead": 0,
+      "installedNamespace": "NOT_ESTABLISHED",
+      "runtimeQualification": "NOT_ESTABLISHED",
+      "sourceBoundControls": 1893,
+      "nativeExecutions": 0,
+      "applicationProgramsExecuted": 0,
+      "filesWritten": 0,
+      "productAcceptance": "NOT_ESTABLISHED",
+      "authority": "NONE"
+    },
+    {
+      "kind": "API_CREDIT_SOURCE_CHECK_SHARD",
+      "status": "SOURCE_MATCH",
+      "profileSha256": "5a04a6bb346cc908edb329cb24ee0a4a9ff92cfac6af206afae6c258ccdbc432",
+      "sourceBaseline": "1928215ecd5aba6eef768cf3b6a5323e994d9968",
+      "sourceSetSha256": "16695c4813d7dc70fbfc2bb59b19f257a9bf056d94473a1048c0b964c9f6b08d",
+      "shard": {
+        "index": 1,
+        "count": 8
+      },
+      "checkedSources": [
+        {
+          "path": "src/api-credit-cli-arguments.js",
+          "bytes": 2580,
+          "sha256": "86a69f720c568f719df3ba49475b726acb56b544b1cd8f72b57ea7e8fe89933e",
+          "format": "module"
+        },
+        {
+          "path": "src/api-credit-module-source-guard.js",
+          "bytes": 9649,
+          "sha256": "158bbc788502bf35394ce6972c619308ade70fc1584d52e1cd907f25acd2364a",
+          "format": "module"
+        },
+        {
+          "path": "src/api-credit-original-grant-query-profile.js",
+          "bytes": 7836,
+          "sha256": "a142e7eda26517ac51d7257726993da5c46d2e30b3955fab22254dba963aa489",
+          "format": "module"
+        },
+        {
+          "path": "src/api-credit-returned-opening-custody.js",
+          "bytes": 8483,
+          "sha256": "7ae82c161f22c3eb1f202c6cf46d0bfed7eb24a116ea08b11841dad42f49fc22",
+          "format": "module"
+        },
+        {
+          "path": "src/buyer-original-funding-command-session.js",
+          "bytes": 15549,
+          "sha256": "515739eee9b2e6c181ac0d13f9d3a6e4b0f2d9be6f4ff69bb2166f93d6ae9ef2",
+          "format": "module"
+        },
+        {
+          "path": "src/issued-funding-grant-activation-owner.js",
+          "bytes": 15214,
+          "sha256": "a6e78e83bfbb22cb234aae4c3824b34b30c580e13926c8eb324493de3a857315",
+          "format": "module"
+        },
+        {
+          "path": "src/issued-provider-journal-setup.js",
+          "bytes": 7898,
+          "sha256": "e87513cb8374ea1c1edb8f4b715db6c550247a4b63c2012da3fc5ff92d4deee1",
+          "format": "module"
+        },
+        {
+          "path": "src/issued-provider-owned-configuration.js",
+          "bytes": 8445,
+          "sha256": "7edc44e725cef67e420c014d4da03e0ef81dd73b4d7eb5bfce075cc136f5dff8",
+          "format": "module"
+        },
+        {
+          "path": "src/native-funding-transition-witness.js",
+          "bytes": 8373,
+          "sha256": "c7679eb77d201c3e073ea57f86c2b57c621870477d511ae1cdb7a4c7ddcd9ff6",
+          "format": "module"
+        },
+        {
+          "path": "src/original-funding-signer-context-custody.js",
+          "bytes": 9439,
+          "sha256": "75ef6f91edf7d521f3c115ad5f67dcd8b6374ab573a604817390639a6be468e9",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-backend-original-outcome-reader.js",
+          "bytes": 7738,
+          "sha256": "dadd9cbfbdcc2ff4bb24252fed85a135d2ce17397e713b1917a109eb6b28938d",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-custodied-backend-recovery-core.js",
+          "bytes": 11433,
+          "sha256": "dd6d5d67c965371b3818c4c4f80273a582bbc5a17eefbff63e013d9062355fbc",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-custodied-sqlite-sequential-runner.js",
+          "bytes": 24572,
+          "sha256": "3448e5ee1c8408d47aa6ecdce9c7e133ee6515ba9ca929476ab5f433fb8f847d",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-funding-post-readable-flow.js",
+          "bytes": 1568,
+          "sha256": "e624b56cabfb72aed927f0fb78d866b90da2bde5aefdadd71a16f65159e48d4e",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-original-funding-grant-reader-core.js",
+          "bytes": 5236,
+          "sha256": "1cd5da104ea30503cb48e3951b09b3b00b593236f02a5b70dea332943ec6e7a6",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-pilot-original-payment-checkpoint.js",
+          "bytes": 4003,
+          "sha256": "930905f31824a6cadc16dfb84572cd4dc38a81e2fce4569b73b6bef29dec97d1",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-zenon-funding-evidence.js",
+          "bytes": 56046,
+          "sha256": "bbe35586b07c5d890402e62feb26545ebbe8dede69eab466896a3c4b7ce7a95f",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-zenon-funding-provider-attestation.js",
+          "bytes": 33736,
+          "sha256": "87329f823d9459539246974909e8974db0792f047724f2a3d55c239af080cbdc",
+          "format": "module"
+        },
+        {
+          "path": "src/x402-issued-funding-grant-native-recovery-application.js",
+          "bytes": 7895,
+          "sha256": "db412a891069f33a49290f8a2a0a09500655ab43f8bc543a2468d0fbe93e48cb",
+          "format": "module"
+        },
+        {
+          "path": "src/x402-official-funding-post-intake-composition.js",
+          "bytes": 19200,
+          "sha256": "0576f5f723b0e6ddbb09fc9916e4f1d9101c1bfe7dd0a0fe4a2a39edbe0aa0f0",
+          "format": "module"
+        },
+        {
+          "path": "src/x402-selected-settlement-server-bridge.js",
+          "bytes": 40756,
+          "sha256": "63f465f3b6b946c93950c61f4bcc7d7322bd8750fb7f462f7880b1b917711605",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-account-frontier-read.js",
+          "bytes": 7417,
+          "sha256": "283209685a41aed5647c87e33d046d1f81b3a6820ea6ea307c11d2f99b91020d",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-observation-collector.js",
+          "bytes": 38492,
+          "sha256": "6bb665dd97e4b262941ed11fb7a9fb5c6d7a162004a39fcbfbfa8cd7b3f82d98",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-original-funding-bounded-read-close.js",
+          "bytes": 10732,
+          "sha256": "69fe92b9460aba5f5ecb671a4befe059f0686f4ca2e50ffeaf468e25893f0f9c",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-required-fused-policy-adapter.js",
+          "bytes": 12024,
+          "sha256": "e2b693d4df9065d44ba590f4d0c8dffeb8e55187668eedfa396b4026c9905c3e",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-user-send-assembly.js",
+          "bytes": 7772,
+          "sha256": "05012a2a983ceca018674c4d1f63823f3f7ed53b0970a4b4bd486c4278832b04",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-user-send-work-request.js",
+          "bytes": 2564,
+          "sha256": "bc66c7d629eae230c46f62c88fa97960860d94b5d65d3c5611612ccae13fe9ce",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/native-api-credit-signer-inspection.js",
+          "bytes": 1633,
+          "sha256": "d9c6c3817df610789c9364b5d105b809198c7ea4b19d41b1d26a02849c0c72d6",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/operator-trusted-local-devnet-profile.js",
+          "bytes": 31832,
+          "sha256": "3882a76b699fa177cada93e055e9a05b4afe31fe1c3d0b3accbcc84e6dc7a9ec",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/sdk105-api-credit-selection.js",
+          "bytes": 7719,
+          "sha256": "6deda550cc1b6a1a2054c61b113fe688967e6ab46096bb70c4224be98e1d2891",
+          "format": "module"
+        }
+      ],
+      "totalSources": 240,
+      "totalSourceBytes": 3330336,
+      "packageCatalogRows": 404,
+      "packageSourceFilesRead": 0,
+      "installedNamespace": "NOT_ESTABLISHED",
+      "runtimeQualification": "NOT_ESTABLISHED",
+      "sourceBoundControls": 1893,
+      "nativeExecutions": 0,
+      "applicationProgramsExecuted": 0,
+      "filesWritten": 0,
+      "productAcceptance": "NOT_ESTABLISHED",
+      "authority": "NONE"
+    },
+    {
+      "kind": "API_CREDIT_SOURCE_CHECK_SHARD",
+      "status": "SOURCE_MATCH",
+      "profileSha256": "5a04a6bb346cc908edb329cb24ee0a4a9ff92cfac6af206afae6c258ccdbc432",
+      "sourceBaseline": "1928215ecd5aba6eef768cf3b6a5323e994d9968",
+      "sourceSetSha256": "16695c4813d7dc70fbfc2bb59b19f257a9bf056d94473a1048c0b964c9f6b08d",
+      "shard": {
+        "index": 2,
+        "count": 8
+      },
+      "checkedSources": [
+        {
+          "path": "src/api-credit-cli-execution-context.js",
+          "bytes": 1742,
+          "sha256": "50e365f38989d98bdd4532da4a5ab96418a006ef2a42d461a7dbcfcdec01e8df",
+          "format": "module"
+        },
+        {
+          "path": "src/api-credit-native-package-admission.js",
+          "bytes": 6414,
+          "sha256": "60c27b33ce060cbe36ed022e79ad783dae2ed49d2ece5de995cf1915adca2239",
+          "format": "module"
+        },
+        {
+          "path": "src/api-credit-purchase-expectation.js",
+          "bytes": 3656,
+          "sha256": "20479799027ff8f448b59a80d3f9d8e6a96b8684fd8d75784665f8ab9f14d2e0",
+          "format": "module"
+        },
+        {
+          "path": "src/api-credit-signer-inspection-profile.js",
+          "bytes": 3942,
+          "sha256": "c13564d0af16b3209077f0d2093deb8c46d2b929c620e05a8a7ddf47d05c991d",
+          "format": "module"
+        },
+        {
+          "path": "src/buyer-original-funding-command.js",
+          "bytes": 16306,
+          "sha256": "32039c05d9e0bc0ae935b6e6d92801adf2f57016ef9bdf14a0921728d7ff3a6a",
+          "format": "module"
+        },
+        {
+          "path": "src/issued-original-grant-admission-owner.js",
+          "bytes": 14892,
+          "sha256": "e224979ee19511acf7a1a8bacb1481c5584ee637aafb6e93242d30b443c32010",
+          "format": "module"
+        },
+        {
+          "path": "src/issued-provider-native-funding-roles.js",
+          "bytes": 5947,
+          "sha256": "6a7133c9fa8d5245e99321636cc891fef9c43b695d0e8561a0edf4da57d78e09",
+          "format": "module"
+        },
+        {
+          "path": "src/issued-provider-selected-journal-observer.js",
+          "bytes": 4933,
+          "sha256": "063a7fd50b3e38e0e2b1b1b025b2536655a9a648e5b43260d42d93354c98985d",
+          "format": "module"
+        },
+        {
+          "path": "src/native-private-directory-identity.js",
+          "bytes": 1927,
+          "sha256": "f3945ab75a86fd2d5f8f53baddf6fbd684ee55c68139f9c4f061c3d13b9cc844",
+          "format": "module"
+        },
+        {
+          "path": "src/original-funding-signer-custody.js",
+          "bytes": 5853,
+          "sha256": "67ad485e1df7e54aef455f63e4d10ed38cfc3cc07ee0bfc71b86fa6093cbc0bf",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-bounded-close-completion.js",
+          "bytes": 6020,
+          "sha256": "1d59ec72cf9b8877947ba766316746be1e2ca5b82029c9b656757c2953ff7e5e",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-custodied-http-client.js",
+          "bytes": 12646,
+          "sha256": "35997f41c9a5162fe29ed56776181a1691c0a0a69c7dbdfe8b61785af3998145",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-durable-execution-owner.js",
+          "bytes": 42057,
+          "sha256": "7297635966f70320ecc70a8f826709e941583b97202dc0e056668848e92f9168",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-http-execute-dispatch.js",
+          "bytes": 30091,
+          "sha256": "5800c082cc9f5311cc5a70aa67fb44eafe50fec85a39cc9736848420acd51601",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-original-funding-grant.js",
+          "bytes": 7995,
+          "sha256": "61fd9aee09949462ae6fa0e1a0c0fd4e67f15f8c7be78612bfe9928559b6be70",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-pilot-status-view.js",
+          "bytes": 3202,
+          "sha256": "cf3822d8b9ec4eb4772452ed1888b96d398fd87c1ead44cd155a5acc1a6b66ed",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-zenon-funding-intake-sqlite-store.js",
+          "bytes": 40557,
+          "sha256": "54db0b31c61f84d5e77e81f01e7aac0e753740207d2d442e7caee29f8e43fe77",
+          "format": "module"
+        },
+        {
+          "path": "src/settlement-journal.js",
+          "bytes": 66619,
+          "sha256": "29cce1c48105d9fc71fa9ff626b2cac4f8697dc3e3b29f3ba04c165c2ccb0cb5",
+          "format": "module"
+        },
+        {
+          "path": "src/x402-issued-funding-grant-owned-native-application.js",
+          "bytes": 7187,
+          "sha256": "f1e37bec2f9513010db8ae4e385cad052d4dba33fa9787c6c32ea0506e222e5b",
+          "format": "module"
+        },
+        {
+          "path": "src/x402-official-https-request-binding.js",
+          "bytes": 5085,
+          "sha256": "dabf215408887bd0d2ba346085c5ab2df13f724e8759b7a98b71b09c8dc8d692",
+          "format": "module"
+        },
+        {
+          "path": "src/x402-verification-bound-settlement-context.js",
+          "bytes": 11311,
+          "sha256": "b3ad2fd33dae7e77a77f069cbc1259bf77e18a2bf383aa30f41bcc19221656f5",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-account-state-read-transport.js",
+          "bytes": 3632,
+          "sha256": "9aa818dabdacf0baec60ca570e854cc8a327e554ba5e5a76c670eb5ed02b29b8",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-observation-normalizer.js",
+          "bytes": 28398,
+          "sha256": "2c3f7d42ded21a5513ff26c23a00a35a53aa334f053d10930f1571a020286897",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-original-funding-data.js",
+          "bytes": 16557,
+          "sha256": "8a416a548e827dc71bc6f87e675e265d01c20d6e8147de8617d47b8b8b8b0770",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-required-fused-quote.js",
+          "bytes": 5416,
+          "sha256": "f5e10ff2dbfff3b6b63d87f0abadd0bb52b5d6b8fe0ead6a55fc5ea14207b730",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-user-send-balance-read.js",
+          "bytes": 7542,
+          "sha256": "ae1f3e5d309be0dc196fb6b35324d4c8287345b50a108d5030c1058645d2ed39",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/internal/legacy-sdk-1-0-5-signed-composite.js",
+          "bytes": 692,
+          "sha256": "9473d48ca372d5616f3006cfd2866af2b897f374b169c3511876bf1bc079620f",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/native-funding-service-configuration.js",
+          "bytes": 8114,
+          "sha256": "9f3bffc2870dac45bfed53f572a468a0f184eaf99084a81d4508d2738a16994b",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/operator-trusted-testnet-profile.js",
+          "bytes": 43153,
+          "sha256": "ec30bbcfc6b443b7839d1306eaae8d7bd25dbbbf616fafd64afcaefa8af1e526",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/sdk105-funding-service-lifecycle.js",
+          "bytes": 17346,
+          "sha256": "604cc9f4f0f0df8c2034b1607f5be523f409cebc90682f103990ab442caeb32e",
+          "format": "module"
+        }
+      ],
+      "totalSources": 240,
+      "totalSourceBytes": 3330336,
+      "packageCatalogRows": 404,
+      "packageSourceFilesRead": 0,
+      "installedNamespace": "NOT_ESTABLISHED",
+      "runtimeQualification": "NOT_ESTABLISHED",
+      "sourceBoundControls": 1893,
+      "nativeExecutions": 0,
+      "applicationProgramsExecuted": 0,
+      "filesWritten": 0,
+      "productAcceptance": "NOT_ESTABLISHED",
+      "authority": "NONE"
+    },
+    {
+      "kind": "API_CREDIT_SOURCE_CHECK_SHARD",
+      "status": "SOURCE_MATCH",
+      "profileSha256": "5a04a6bb346cc908edb329cb24ee0a4a9ff92cfac6af206afae6c258ccdbc432",
+      "sourceBaseline": "1928215ecd5aba6eef768cf3b6a5323e994d9968",
+      "sourceSetSha256": "16695c4813d7dc70fbfc2bb59b19f257a9bf056d94473a1048c0b964c9f6b08d",
+      "shard": {
+        "index": 3,
+        "count": 8
+      },
+      "checkedSources": [
+        {
+          "path": "src/api-credit-cli-invocation.js",
+          "bytes": 939,
+          "sha256": "f9bc799176ae9ef5e6f82a8a746df786914bbd3e297f7c47603905e9dfc203d6",
+          "format": "module"
+        },
+        {
+          "path": "src/api-credit-native-package-entries.js",
+          "bytes": 410,
+          "sha256": "8ead14ffdd8a9a65b77226603c1a55664a3e6040c9719f14127f1e204f346894",
+          "format": "module"
+        },
+        {
+          "path": "src/api-credit-purchased-grant-handoff.js",
+          "bytes": 5838,
+          "sha256": "9eb53765c1f185f8f8460587dae8f4ebf9c6b87c1d164b77f29cf5b676ef28fe",
+          "format": "module"
+        },
+        {
+          "path": "src/api-credit-stored-grant-query-owner.js",
+          "bytes": 8775,
+          "sha256": "6e2c28c8613f5242ddf4201652e4640fdd8dbd17293ecb45af6f47464ade685e",
+          "format": "module"
+        },
+        {
+          "path": "src/buyer-original-recovery-client.js",
+          "bytes": 23301,
+          "sha256": "0657a0052270fa3f61b8d54a01309374622968ceb168d0e57cf464294ad6d8e4",
+          "format": "module"
+        },
+        {
+          "path": "src/issued-provider-chain-selection.js",
+          "bytes": 3561,
+          "sha256": "271435d2a6a58bb1d764e546a7ea0d51a902b07c8a42f55e6362594b05169450",
+          "format": "module"
+        },
+        {
+          "path": "src/issued-provider-native-journal-setup.js",
+          "bytes": 11709,
+          "sha256": "32a04df87fdf1dd80537822f59da012d21bd58bd57f1ffc9e0142bd21560748b",
+          "format": "module"
+        },
+        {
+          "path": "src/issued-provider-startup-stop.js",
+          "bytes": 3304,
+          "sha256": "826330cc39a851354e2abcbf49a97438a798e5ceaf226de95cc98a29c31ac132",
+          "format": "module"
+        },
+        {
+          "path": "src/official-funding-post-custody-record.js",
+          "bytes": 15211,
+          "sha256": "01e4d22ba96b4bed7c8d77e28ea26af360db40a5d94c519203cfd1b9a3ea5f60",
+          "format": "module"
+        },
+        {
+          "path": "src/original-funding-signer-inspection-owner.js",
+          "bytes": 9304,
+          "sha256": "5bce47aef10cce566625f742673ccd955657bf996027dbc5309b38d751bff9a8",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-bounded-https-ingress-limits.js",
+          "bytes": 2661,
+          "sha256": "35e2cc603398a929979b2f939f558d43002079038922d6248cc654c425eafb68",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-custodied-recovery-collection-core.js",
+          "bytes": 13794,
+          "sha256": "51d06da70ecccd0cf8b38d650367d1ae903ea86010a5ebeadb682af98e4b890b",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-durable-http-session.js",
+          "bytes": 15235,
+          "sha256": "8b5ca80539144619cf0be9a7f5594187aff6536f8003666cb3746db2684fc6bb",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-http.js",
+          "bytes": 32432,
+          "sha256": "c76a7f1864bdfcd0c26916bf28fba615c8aecf899d53e69467e3ebe7d3353d0d",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-original-grant-http-binding.js",
+          "bytes": 7866,
+          "sha256": "23f27e79a16a32459dc3929ec0a8446d219324f616fd7027820540f3aaff8bac",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-recorded-http-session-core.js",
+          "bytes": 7918,
+          "sha256": "ff848fb69e433da59b9220ceed1264d39def6be16fa0bfff45fd085028496d4b",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-zenon-funding-intake.js",
+          "bytes": 19392,
+          "sha256": "52d1bddeb240fe6885abdc3a1cfcf44fe94735947b69d4c6a45510ee65102a1c",
+          "format": "module"
+        },
+        {
+          "path": "src/x402-funding-post-checkpoint-route.js",
+          "bytes": 1310,
+          "sha256": "157e80e9f14b41c8cacc05423a7acd8616a6f759adac377f04f1fca21869831e",
+          "format": "module"
+        },
+        {
+          "path": "src/x402-issued-funding-grant-recovery.js",
+          "bytes": 9885,
+          "sha256": "e52a053513fbbaaf86b181ee33fc323023f07c78d834b44293ad3a95cb8c1b74",
+          "format": "module"
+        },
+        {
+          "path": "src/x402-official-selected-payment-client.js",
+          "bytes": 9226,
+          "sha256": "6103703a48ab93b33e1d322d01da367d9552d1e37c9d983326f6e58d1e77693c",
+          "format": "module"
+        },
+        {
+          "path": "src/x402-wire.js",
+          "bytes": 39886,
+          "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-bounded-material-exchange.js",
+          "bytes": 11992,
+          "sha256": "6773c946991834dfe3b01943bdb9bad7513ef0cbbb15b31e607b095bab42b28b",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-observed-balance-deferred-material-planner.js",
+          "bytes": 29819,
+          "sha256": "83da52a87e313cfbd6ffcaab390f81e25b5f04447236c0df105bf7b42a79bd65",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-original-funding-preparation.js",
+          "bytes": 15618,
+          "sha256": "0e1eb8bb94ecd4da8d4dc8f9b384510e8c2764601ba22e228126ba9ed01368c6",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-retained-account-exchange-gate.js",
+          "bytes": 4659,
+          "sha256": "3304fee96333a0544c9ad3be0c5d465ff6d2377ae3ae657ac11f84482bb357f9",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-user-send-fixed-work.js",
+          "bytes": 3475,
+          "sha256": "4ee83870df0b25c34d35c0f0d0ceb894ca9dab8c047f81b34a48dd816f1fbf38",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/native-api-credit-funding-inspection.js",
+          "bytes": 1790,
+          "sha256": "59af0c6c382e68dc10b5c7218f96991c7e8acf26db4f6c3889619026dbc1d206",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/native-funding-service-loopback-read-selection.js",
+          "bytes": 1927,
+          "sha256": "fc97d86db3b24ef17572ff2cf14ac0620c422d8a7164de953f7e95b74656ac7c",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/original-funding-signer-context-bridge.js",
+          "bytes": 2901,
+          "sha256": "3eba430c103cd846eb033b5e2bdaabbad60ddd705a9431ea2266deb18615615a",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/sdk105-native-api-credit-application.js",
+          "bytes": 9232,
+          "sha256": "410261a6c2056153d361922df701f8ba71bd973bfcbb51a06d86905488e3eff5",
+          "format": "module"
+        }
+      ],
+      "totalSources": 240,
+      "totalSourceBytes": 3330336,
+      "packageCatalogRows": 404,
+      "packageSourceFilesRead": 0,
+      "installedNamespace": "NOT_ESTABLISHED",
+      "runtimeQualification": "NOT_ESTABLISHED",
+      "sourceBoundControls": 1893,
+      "nativeExecutions": 0,
+      "applicationProgramsExecuted": 0,
+      "filesWritten": 0,
+      "productAcceptance": "NOT_ESTABLISHED",
+      "authority": "NONE"
+    },
+    {
+      "kind": "API_CREDIT_SOURCE_CHECK_SHARD",
+      "status": "SOURCE_MATCH",
+      "profileSha256": "5a04a6bb346cc908edb329cb24ee0a4a9ff92cfac6af206afae6c258ccdbc432",
+      "sourceBaseline": "1928215ecd5aba6eef768cf3b6a5323e994d9968",
+      "sourceSetSha256": "16695c4813d7dc70fbfc2bb59b19f257a9bf056d94473a1048c0b964c9f6b08d",
+      "shard": {
+        "index": 4,
+        "count": 8
+      },
+      "checkedSources": [
+        {
+          "path": "src/api-credit-cli.js",
+          "bytes": 6128,
+          "sha256": "83dc9504f96b852b71ebea799257a80b7b4945d659f74dd8a486701d88df10cf",
+          "format": "module"
+        },
+        {
+          "path": "src/api-credit-opening-failure-custody.js",
+          "bytes": 8686,
+          "sha256": "307e242d05cfc69b157e389235f20c15b261732fd68982fa10981cf0a77ac9c4",
+          "format": "module"
+        },
+        {
+          "path": "src/api-credit-purchased-grant-recovery.js",
+          "bytes": 5946,
+          "sha256": "ae9c2564ab4baa2171c09fb364a7f549ec846101b67cc3c1dedcd3fcd6999c5b",
+          "format": "module"
+        },
+        {
+          "path": "src/api-credit-stored-grant-query-profile.js",
+          "bytes": 5095,
+          "sha256": "518f4cd96197f82a840b5de06628b7406c22542dda637cd8bb2b398c6a12cdc0",
+          "format": "module"
+        },
+        {
+          "path": "src/buyer-owned-pipe-streams.js",
+          "bytes": 4516,
+          "sha256": "8a32be8a2dd63f4c8681aafb39ac335595380102c19958697a003cbf1cc9e65e",
+          "format": "module"
+        },
+        {
+          "path": "src/issued-provider-cli-invocation.js",
+          "bytes": 1716,
+          "sha256": "ec0c8994a44304fcffc184c00adbaf3a545210164c5ff9a15d13d59831c99944",
+          "format": "module"
+        },
+        {
+          "path": "src/issued-provider-native-operator.js",
+          "bytes": 14909,
+          "sha256": "111cd6eaf052920b83819304061f20ad4e0ae319ba953726257e368a5a41c860",
+          "format": "module"
+        },
+        {
+          "path": "src/issued-provider-store-owner.js",
+          "bytes": 10703,
+          "sha256": "72122948214dc64d1764b836fcb622c017c52d2a4716765047136b36c248eed0",
+          "format": "module"
+        },
+        {
+          "path": "src/official-funding-post-original-journal-observation.js",
+          "bytes": 20227,
+          "sha256": "435c9b83af017069a7f7e3121a054202c15f5de4a07b7a4bb9e74876e82ab7f1",
+          "format": "module"
+        },
+        {
+          "path": "src/original-funding-spending-file-owner.js",
+          "bytes": 11303,
+          "sha256": "4c28b8789f48dd9eb094828e44d14de4a3b585956954d43d4b2fd7342729e90d",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-bounded-https-ingress-owner.js",
+          "bytes": 143261,
+          "sha256": "88f31af7493ebc4f622b72845ce7c33a7ffa3b6cb8e4b8ae78dddd10d8787a45",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-custodied-recovery-observation-collection-core.js",
+          "bytes": 8579,
+          "sha256": "36b7cece2d436cbfcac5f4299dd6bd30e5eede6ebb2ebe769ae7bf3a6f1a72b4",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-durable-session-close.js",
+          "bytes": 2470,
+          "sha256": "5aae36a7da39ce5b7b9a8da8e9fbda88465cb1e4853dc791520a1df0ab87ede7",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-model.js",
+          "bytes": 56835,
+          "sha256": "f8e57c6e4b576c4b4c650d757ab9c86580c5bc4e7d457440092668b2894cefda",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-original-grant-http-downstream-core.js",
+          "bytes": 3917,
+          "sha256": "fecb06c76668df84d3b1f302219e379b952c5c8e349fb3368859e9a96fa3e935",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-recovery-inspect-cli.js",
+          "bytes": 16234,
+          "sha256": "75284ade7fe8bb28b46a84dd5bc7d4a5223e0592c69792e1971ba20acd5ac8c1",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-zenon-funding-observer-sqlite-store.js",
+          "bytes": 87075,
+          "sha256": "899a79ce7b3003b1f32ef7c23adcf06e55a74486abc4bd1cb63cb44f1c087d0c",
+          "format": "module"
+        },
+        {
+          "path": "src/x402-issued-application-response-writer.js",
+          "bytes": 3143,
+          "sha256": "929e619c4261befeba8a583a0096688df5ad6ed1cadee774a89aa579a5a60d95",
+          "format": "module"
+        },
+        {
+          "path": "src/x402-issued-funding-grant-request-binding.js",
+          "bytes": 3202,
+          "sha256": "63779ce5c838064892a5beaa578e11c0eda6ff956cf395f0cde2e61fd7919ba1",
+          "format": "module"
+        },
+        {
+          "path": "src/x402-official-selected-settlement-server.js",
+          "bytes": 18480,
+          "sha256": "bb3b1f4897f86a2deb709ad2da03d3e86fbad4880e7add1a8e3ab7d9180db0c0",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon-payment.js",
+          "bytes": 135577,
+          "sha256": "ed62ceb8314c7ac2f70f8970080f515cf5eae26b4f5b60ed4c6dc642d5c912d5",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-compatibility.js",
+          "bytes": 7732,
+          "sha256": "b3989ce15e5f2e9d07b0ed035fe96bcce9f22cac93f5e497fdca5c37bf7618dd",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-observed-balance-user-send-attempt.js",
+          "bytes": 7377,
+          "sha256": "5111ef500bf33c19113f7ffabadc8980792bc9b5fa388cf6095a3f89a5f69e7a",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-original-funding-read-close.js",
+          "bytes": 9801,
+          "sha256": "b7b33770b774a506b09cef81550a5b39d62480968f1a3c567ad9bc018ad79470",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-retained-https-read-owners.js",
+          "bytes": 6241,
+          "sha256": "48ed2db2e36a12a93c106d76315f376a56f186cbf591ac544cb02c51f203c64d",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-user-send-key-binding.js",
+          "bytes": 4237,
+          "sha256": "37ad7e74b038801297e4bffb0cb8ba92cbd79009ed32c4ae5b134fe2cb154be2",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/native-api-credit-operator-key.js",
+          "bytes": 4401,
+          "sha256": "e1f744465e917a71690d6821607a215291ddefde0888d2928ff8e79a970026c9",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/native-public-https-read-route.js",
+          "bytes": 4610,
+          "sha256": "ef22eb550626ace3766ff75e048df09d1d1bb0ebeb9177c60d4ff9598a2f3fc0",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/plasma-strategy.js",
+          "bytes": 974,
+          "sha256": "1c597d4e169ba8a5e6d2b7852c4ffa3a8ec9b854332fe354b9b013c36ebae093",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/sdk105-native-api-credit-command-session.js",
+          "bytes": 4947,
+          "sha256": "f30eedea1a7fa141f7b2f5e25574c9e49f07c852adb9bd203ef015a26dcb975a",
+          "format": "module"
+        }
+      ],
+      "totalSources": 240,
+      "totalSourceBytes": 3330336,
+      "packageCatalogRows": 404,
+      "packageSourceFilesRead": 0,
+      "installedNamespace": "NOT_ESTABLISHED",
+      "runtimeQualification": "NOT_ESTABLISHED",
+      "sourceBoundControls": 1893,
+      "nativeExecutions": 0,
+      "applicationProgramsExecuted": 0,
+      "filesWritten": 0,
+      "productAcceptance": "NOT_ESTABLISHED",
+      "authority": "NONE"
+    },
+    {
+      "kind": "API_CREDIT_SOURCE_CHECK_SHARD",
+      "status": "SOURCE_MATCH",
+      "profileSha256": "5a04a6bb346cc908edb329cb24ee0a4a9ff92cfac6af206afae6c258ccdbc432",
+      "sourceBaseline": "1928215ecd5aba6eef768cf3b6a5323e994d9968",
+      "sourceSetSha256": "16695c4813d7dc70fbfc2bb59b19f257a9bf056d94473a1048c0b964c9f6b08d",
+      "shard": {
+        "index": 5,
+        "count": 8
+      },
+      "checkedSources": [
+        {
+          "path": "src/api-credit-funding-grant-recovery-application.js",
+          "bytes": 15452,
+          "sha256": "e1c989f67d2fab0bc4cb772d5f981289703f588fd7343ecab4731ca87619cd90",
+          "format": "module"
+        },
+        {
+          "path": "src/api-credit-operator-bootstrap.js",
+          "bytes": 9094,
+          "sha256": "ce685ca42c7df8a58ffd7bcc4e574c2742599b2c833b7120a6511201f4a4fcd4",
+          "format": "module"
+        },
+        {
+          "path": "src/api-credit-recorded-result-inspection.js",
+          "bytes": 7673,
+          "sha256": "5eb8c7ea8c21459d4819624fe034256ec22b77ea4b24b4ae41ae06982a58c701",
+          "format": "module"
+        },
+        {
+          "path": "src/api-credit-wire-owner-guard.js",
+          "bytes": 7541,
+          "sha256": "0f94c3137722cc7b49643acbbd62dbc34a2c60397329563fe7438822368381fb",
+          "format": "module"
+        },
+        {
+          "path": "src/canonical.js",
+          "bytes": 967,
+          "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+          "format": "module"
+        },
+        {
+          "path": "src/issued-provider-cli.js",
+          "bytes": 2846,
+          "sha256": "9826a3819001667459d5d0e082499cefedaee5259fa39d966ad9232587b1970f",
+          "format": "module"
+        },
+        {
+          "path": "src/issued-provider-native-package-admission.js",
+          "bytes": 6429,
+          "sha256": "7c75df5d16061d31c96aeb9ad03e3ec9f443b76be3aed17894d89a09f7aa9132",
+          "format": "module"
+        },
+        {
+          "path": "src/issued-recorded-result-grant-binding.js",
+          "bytes": 4614,
+          "sha256": "3902ab6b8c114da92980bded34d77904ac9147c5258a206de30590b5a5f6b266",
+          "format": "module"
+        },
+        {
+          "path": "src/official-funding-post-outcome-custody.js",
+          "bytes": 9187,
+          "sha256": "3efd47e692080d7857cdae162880e84f97d1a39631cf0b01d7d7804b4c2311fd",
+          "format": "module"
+        },
+        {
+          "path": "src/original-funding-spending-file-profile.js",
+          "bytes": 3091,
+          "sha256": "59c82255d6974e2f65e898038ee215ed39c0b01e62e14bf80b6bb8cfc775ed10",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-bounded-node-https-server-factory.js",
+          "bytes": 26968,
+          "sha256": "aead901ba154c39ea25e5cdcc363ea91ed6749841f6e8945cd01debc52cae387",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-custodied-request-owner.js",
+          "bytes": 55155,
+          "sha256": "2ba222760d4a922bf0466d95fd2671076b9d19b8c5fa4ea2cb3c66b1338562eb",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-execution-contract.js",
+          "bytes": 30258,
+          "sha256": "298f8e74885e1c507953c0fcf7874832f815296746e6bacbdac97a425f1a6c73",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-native-client-close-owner.js",
+          "bytes": 7750,
+          "sha256": "519809b2cc6b2bf2d37cf6048e68847255f75dc9869a1fc1119bae310462fbd7",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-original-grant-http-reader-core.js",
+          "bytes": 3039,
+          "sha256": "0ead9229abd1574601d8a29ae2d66930122cd844a13798f3e9291827ff6f9a7e",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-recovery-inspection-owner.js",
+          "bytes": 10887,
+          "sha256": "4114d63ec8a0b0a43dde8f156356d6e2c132f216272b4f771b40bb1d3347b680",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-zenon-funding-observer-state.js",
+          "bytes": 58614,
+          "sha256": "8f8f4e4b7bcbb95229eecc62cd82638e4adbcfda0ad54a3a7a089273457f5d8a",
+          "format": "module"
+        },
+        {
+          "path": "src/x402-issued-funding-grant-application-core.js",
+          "bytes": 26675,
+          "sha256": "b112769b5920e2389ed22a2fa5e9b7dd406dfcb1e8166999267164d0dad6b6af",
+          "format": "module"
+        },
+        {
+          "path": "src/x402-issued-funding-post-application-binding.js",
+          "bytes": 9788,
+          "sha256": "e5ff9d77cb6ad590b26591ef559ac35523f0a60ade40accc775ea2bf128bea48",
+          "format": "module"
+        },
+        {
+          "path": "src/x402-official-v6-original-payment-client.js",
+          "bytes": 15247,
+          "sha256": "c87a58dafd852e429674398cd68c6cfb5f4e8d44574432459cccccad16e9ca49",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/bounded-dynamic-plasma-strategy.js",
+          "bytes": 15729,
+          "sha256": "7b82560bdeb25e573912090a2fe8de7b45912500a7a7c4434fe06dcf94e06d62",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-funding-post-preparation-input.js",
+          "bytes": 2029,
+          "sha256": "d45623eca3536309de46df816cafb05db14ec25a13a7b2e9a52625591d5a9972",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-observed-balance-user-send-read-adapter.js",
+          "bytes": 29569,
+          "sha256": "36f40b8bac1359d8e1986ed75714ccb7c94912829181a03fa6b479ad262a2184",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-original-funding-service-handoff-request.js",
+          "bytes": 4584,
+          "sha256": "07affc3e40d785406fea54794ee694c03e31ab49fc8857369cdf52e33a331cab",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-retained-https-read-session.js",
+          "bytes": 8464,
+          "sha256": "791d2c74a81a18d4e3b4478d9ca569db1ec971f5c1e0540ddac02eb3a79938b7",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-user-send-nonce-search.js",
+          "bytes": 8437,
+          "sha256": "8eda71acf12265b65015ad6db20c1c7b357b207874c8e4c8b72e2889bf86f318",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/native-api-credit-operator-launcher.js",
+          "bytes": 4348,
+          "sha256": "6b3b0ea62a231549837230f882ce0fd8cd155b29caa55a8f22aa57c638b8ef31",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/native-read-generation-handles-closed.js",
+          "bytes": 1194,
+          "sha256": "136c4088341d71d10ec8a4f07fbfbf959607c6a6676a2f6a86b56f6d3ac92de5",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/prepared-hash-wallet-adapter.js",
+          "bytes": 9266,
+          "sha256": "113c275a38aaec45a347666b28fdc43c70704973b8d1c20956ebacad18db3e25",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/sdk105-prepared-hash-wallet-owner.js",
+          "bytes": 21496,
+          "sha256": "6c39d1da6ce33437644d12cae35f7f3eb4167fd1d3abf818e23714f0532a4e3a",
+          "format": "module"
+        }
+      ],
+      "totalSources": 240,
+      "totalSourceBytes": 3330336,
+      "packageCatalogRows": 404,
+      "packageSourceFilesRead": 0,
+      "installedNamespace": "NOT_ESTABLISHED",
+      "runtimeQualification": "NOT_ESTABLISHED",
+      "sourceBoundControls": 1893,
+      "nativeExecutions": 0,
+      "applicationProgramsExecuted": 0,
+      "filesWritten": 0,
+      "productAcceptance": "NOT_ESTABLISHED",
+      "authority": "NONE"
+    },
+    {
+      "kind": "API_CREDIT_SOURCE_CHECK_SHARD",
+      "status": "SOURCE_MATCH",
+      "profileSha256": "5a04a6bb346cc908edb329cb24ee0a4a9ff92cfac6af206afae6c258ccdbc432",
+      "sourceBaseline": "1928215ecd5aba6eef768cf3b6a5323e994d9968",
+      "sourceSetSha256": "16695c4813d7dc70fbfc2bb59b19f257a9bf056d94473a1048c0b964c9f6b08d",
+      "shard": {
+        "index": 6,
+        "count": 8
+      },
+      "checkedSources": [
+        {
+          "path": "src/api-credit-funding-grant-recovery-record.js",
+          "bytes": 7161,
+          "sha256": "15ee09dcb45659c49a7bb18157d8fba394d246ed34a0b336dc8fa7b21ec9d3d7",
+          "format": "module"
+        },
+        {
+          "path": "src/api-credit-operator-clock.js",
+          "bytes": 508,
+          "sha256": "8c62e0dcf33f27d988c8467ef5d456c33269a744aaa1577a66aabf6d0b074618",
+          "format": "module"
+        },
+        {
+          "path": "src/api-credit-recorded-service-result.js",
+          "bytes": 13507,
+          "sha256": "e3705ff7bb8fc4e58e9b5c75954a7824728348367ee75cc507a4758e06ae266f",
+          "format": "module"
+        },
+        {
+          "path": "src/buyer-command-line-channel.js",
+          "bytes": 11874,
+          "sha256": "ccbb7bb59d57d7e39186ab8ebf5431b519295591e5a9de81e98865c4fd8b7e1c",
+          "format": "module"
+        },
+        {
+          "path": "src/issued-expired-funding-preparation.js",
+          "bytes": 6239,
+          "sha256": "c0d397f72af0c23e32601cad3631b70ae87188cdf5428d6a21ec8fdcdf29cd6b",
+          "format": "module"
+        },
+        {
+          "path": "src/issued-provider-close-observation.js",
+          "bytes": 1998,
+          "sha256": "3843045e78f0e211cdc7a19db5ee8effbea4b0e634f733285a7c8cac64d74561",
+          "format": "module"
+        },
+        {
+          "path": "src/issued-provider-native-pipes.js",
+          "bytes": 9378,
+          "sha256": "0b707e89f6fa61abd2da2a40e83cf774459befd2e7a57609dd993d4a333afe9e",
+          "format": "module"
+        },
+        {
+          "path": "src/journal-momentum-confirmation-advance.js",
+          "bytes": 1607,
+          "sha256": "5deb0a7c1d2a279d949d9e13ad46d724d6e9360c795a4d887e48810f2834e2e9",
+          "format": "module"
+        },
+        {
+          "path": "src/official-funding-post-reserved-observation.js",
+          "bytes": 2714,
+          "sha256": "98520cfbef1a7e8425193950785ad950702db829e31891a573664c9124059518",
+          "format": "module"
+        },
+        {
+          "path": "src/original-funding-spending-reservations.js",
+          "bytes": 13357,
+          "sha256": "8334f0a0f5c3d436b7096786322d4f25a12afeba250223a7fb07b1e0d4fcb135",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-bounded-operation-drain.js",
+          "bytes": 5474,
+          "sha256": "4ea81e010451f91bb8f0ca668dd6bd3966763ea23385bdd0d511c200e4b3eecd",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-custodied-sequential-runner-core.js",
+          "bytes": 15983,
+          "sha256": "044477cb1300453f10bacf070037db175d08deec1d488549b34a5cb92e6328bd",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-execution-revision-owner.js",
+          "bytes": 7762,
+          "sha256": "78a8f777b27f6569a6da81be2d441c640f30dc64e89dbc2ab5f37fabb425e6d6",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-native-guarded-store-close.js",
+          "bytes": 4295,
+          "sha256": "9110b9127388c893163f153a7bbea373955a44a49bc5f0ca595e6b179389e885",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-original-grant-native-http-downstream.js",
+          "bytes": 3080,
+          "sha256": "2841e33b1d098226c6794656f535c7fe6127fc7ba25361e661ae141407c6ba84",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-sqlite-store.js",
+          "bytes": 85768,
+          "sha256": "d990402f712bc2db1fa979f50401371a2ded7c9bb9a1011a3e70479ec3d2ca2f",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-zenon-funding-post-v1-client.js",
+          "bytes": 26077,
+          "sha256": "49ea2adbea7a26a2e87b05a5f96e6bb01230853f91922c531b4fdaf7da3fc22d",
+          "format": "module"
+        },
+        {
+          "path": "src/x402-issued-funding-grant-native-activation.js",
+          "bytes": 8147,
+          "sha256": "287ee3688be391f414dc0bab36c6b1ce694284eba0f99ef856d0af56450c0e9e",
+          "format": "module"
+        },
+        {
+          "path": "src/x402-issued-funding-post-sdk-resource.js",
+          "bytes": 7469,
+          "sha256": "b4500c461d61b742a4bf6f6bbfb6f6c83b478a976f1300b8c07bf2db1543e681",
+          "format": "module"
+        },
+        {
+          "path": "src/x402-original-payment-checkpoint-client.js",
+          "bytes": 13457,
+          "sha256": "bba2439e40a2decb75b330440919d8d1ea1fea53f6e684f77b57a9bb66129af1",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/bounded-json-rpc-https-exchange-owner.js",
+          "bytes": 45050,
+          "sha256": "80aa78c36ab525bfa0fb25ef8d93925bac4530f5f3dc31a1ebf36f3870b990d0",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-json-rpc-read-transport.js",
+          "bytes": 10832,
+          "sha256": "fd03b2ad87d16660aa61d3961c163d724d5f89cd6d4bb9c4391d739566d5e5ca",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-observed-original-checkpoint.js",
+          "bytes": 10343,
+          "sha256": "f0b485e3970bda3af3aa27f8d46d22a54322d7a893dbda3fa121d23c90d9d30b",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-original-funding-store-claim.js",
+          "bytes": 2640,
+          "sha256": "b5aa2b5d2e1b213d89622d11500fa674e536025317bee2f41740ee040c753945",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-retained-read-session-core.js",
+          "bytes": 10450,
+          "sha256": "a0f91046c47cfa770f30bf299f620086351ee15977f669d9ec6016dd08d65794",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-user-send-pre-work-key-binding.js",
+          "bytes": 3783,
+          "sha256": "81c0b84174d045baac9b3cc8915e3a079ecf60590cbe43230bff287ce37d8bd9",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/native-api-credit-operator-pipes.js",
+          "bytes": 7639,
+          "sha256": "c6e68f3234aee9d4c9275f3b2e5a1b0be7200751aa3e06a308a07a6b736a4618",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/native-read-loopback-qualification-configuration.js",
+          "bytes": 4126,
+          "sha256": "1d8c20410d5ab8786c1fbf2dc1ef9c8346bc2b30c1c8146f16e46ff231cd0427",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/sdk105-api-credit-application-lifecycle.js",
+          "bytes": 7045,
+          "sha256": "e71d3bbadeb9810c155d86d521517ff0b362dc23ac0a0064d95583830a2e88b2",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/sdk105-spending-bounded-client.js",
+          "bytes": 9008,
+          "sha256": "1187f735240983212c3cfb53219e402894bfe51ae9cb1d276a8fd711f1124575",
+          "format": "module"
+        }
+      ],
+      "totalSources": 240,
+      "totalSourceBytes": 3330336,
+      "packageCatalogRows": 404,
+      "packageSourceFilesRead": 0,
+      "installedNamespace": "NOT_ESTABLISHED",
+      "runtimeQualification": "NOT_ESTABLISHED",
+      "sourceBoundControls": 1893,
+      "nativeExecutions": 0,
+      "applicationProgramsExecuted": 0,
+      "filesWritten": 0,
+      "productAcceptance": "NOT_ESTABLISHED",
+      "authority": "NONE"
+    },
+    {
+      "kind": "API_CREDIT_SOURCE_CHECK_SHARD",
+      "status": "SOURCE_MATCH",
+      "profileSha256": "5a04a6bb346cc908edb329cb24ee0a4a9ff92cfac6af206afae6c258ccdbc432",
+      "sourceBaseline": "1928215ecd5aba6eef768cf3b6a5323e994d9968",
+      "sourceSetSha256": "16695c4813d7dc70fbfc2bb59b19f257a9bf056d94473a1048c0b964c9f6b08d",
+      "shard": {
+        "index": 7,
+        "count": 8
+      },
+      "checkedSources": [
+        {
+          "path": "src/api-credit-funding-inspection-owner.js",
+          "bytes": 10204,
+          "sha256": "b74e24113f74712c12c13b6ad30f640f4e10adab3889c37921bdeee0d575fdba",
+          "format": "module"
+        },
+        {
+          "path": "src/api-credit-operator-coordinator.js",
+          "bytes": 14258,
+          "sha256": "c9445611a703ea9cc0f6d1b9c6744cf25a92497846ba9c6a77d81f616c08bd3e",
+          "format": "module"
+        },
+        {
+          "path": "src/api-credit-recovery-inspection-coordinator.js",
+          "bytes": 13076,
+          "sha256": "ab3f8583074440b7e70f3e698f3728214c391d0c5a18ea8fea939bfdf3bc85b4",
+          "format": "module"
+        },
+        {
+          "path": "src/buyer-funding-owned-stream-session.js",
+          "bytes": 12690,
+          "sha256": "a6b76c8a0ef210934c5b55ca4f44cdbe2f4504f63057b2ff27da065bc6500d75",
+          "format": "module"
+        },
+        {
+          "path": "src/issued-expired-funding-receipt.js",
+          "bytes": 2509,
+          "sha256": "b4ce190574c656476f9092c975890f1b6d7576391351c9860f47058a87ffd644",
+          "format": "module"
+        },
+        {
+          "path": "src/issued-provider-execution-setup.js",
+          "bytes": 4484,
+          "sha256": "21240ebbc0277976f3985274b961c12121f59ab6c82fad44435ee8b88baa8d77",
+          "format": "module"
+        },
+        {
+          "path": "src/issued-provider-operator-bootstrap.js",
+          "bytes": 12930,
+          "sha256": "415ca6262fbc19ff7a7bc439961e7c4fbf8506b2bb1e66bdaef5c4b972bea645",
+          "format": "module"
+        },
+        {
+          "path": "src/live-observation.js",
+          "bytes": 12389,
+          "sha256": "36ce902ffb667b17eaf3e2ac94beb287be1401b34d83f8253407a93d286328c4",
+          "format": "module"
+        },
+        {
+          "path": "src/official-funding-post-transition-witness.js",
+          "bytes": 15064,
+          "sha256": "fc28583cb307ac5809a9a5f22bee8e730550e96ee800294a0d5a036df60079c4",
+          "format": "module"
+        },
+        {
+          "path": "src/original-funding-spending-sqlite-profile.js",
+          "bytes": 4062,
+          "sha256": "5853fb482bd45bc2dd21bdc5d82237730fd8ad276ded94e8b0760d4f68ef6b65",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-capability.js",
+          "bytes": 8284,
+          "sha256": "cb2b96d9a2e56c132dd1b4aca8f1c065b244ecd0e7e92f41ea3f4a8c969d17c3",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-custodied-sqlite-http-client.js",
+          "bytes": 26255,
+          "sha256": "1f2c12f79e84cd95acafcb1266dc9592b798232232bcb0460bb6ba38febcaa35",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-funding-post-native-https-transport.js",
+          "bytes": 22113,
+          "sha256": "1be2701c96fa7ed9188ab989ceeaaae726dbbe78d61abf10487b5ae4b0f2b21d",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-native-https-client-transport.js",
+          "bytes": 13002,
+          "sha256": "dfa3c6989facb2c25eae6d3018206d9aa440962ad93030b937743954c70b776b",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-original-request-custody-contract.js",
+          "bytes": 15100,
+          "sha256": "483d20e90d78ba95a8c5d5458dd201910e8d42aecbdc0dc03812e7044a464054",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-zenon-fixed-funding-policy.js",
+          "bytes": 8908,
+          "sha256": "38b01c7f325bd843cba134bd101e3e671145153638292f5bceeb9532697b3126",
+          "format": "module"
+        },
+        {
+          "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-owner.js",
+          "bytes": 22581,
+          "sha256": "d62450b462a5412c35dfa474cbf7cac1e5aad88ecd6fc04106e36a67f8459a80",
+          "format": "module"
+        },
+        {
+          "path": "src/x402-issued-funding-grant-native-application.js",
+          "bytes": 6359,
+          "sha256": "bbc28584fe2bf78e36e3518714db2616fafb7a72ebe010b2fa041524c56d6d11",
+          "format": "module"
+        },
+        {
+          "path": "src/x402-native-v6-funding-post-client.js",
+          "bytes": 21195,
+          "sha256": "c52992598439e3648650a6742e801f90efa61779ef5353ef7c5c8b01c992e396",
+          "format": "module"
+        },
+        {
+          "path": "src/x402-selected-payment-client-bridge.js",
+          "bytes": 19446,
+          "sha256": "d8252e421240005f51b1627ab97b624496325403508d57b030be423e871a5083",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/bounded-json-rpc-read-admission.js",
+          "bytes": 2627,
+          "sha256": "0b0b0806487c2e648a83367a9ebcd48a3a92493158ebca23abe8d6d6849d9ff3",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-native-funding-close-session.js",
+          "bytes": 11968,
+          "sha256": "642ba6edf4983818145b973116638e63f15eaa0fcc4fe342052d927a096d2bc7",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-observed-user-send-adapter.js",
+          "bytes": 8149,
+          "sha256": "8526519aa6bf5006c572447127680d3cc871ee4eee1b9046b4ea09f9ad9e1653",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-original-funding-submission.js",
+          "bytes": 22507,
+          "sha256": "666551930bcf481d136c773de12d00228822c0f2a810d5c92aafa401acf80c68",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-signed-original-handoff.js",
+          "bytes": 8843,
+          "sha256": "bb592312c8d8cd3f4f80817b84bb9273a9232fe843f5ffeb66ac5266bd13ed9a",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-user-send-work-binding.js",
+          "bytes": 1940,
+          "sha256": "79eba29a05427128ae3a12346fd3ee7cbaa526d6f39eb36ed58d388640638266",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/native-api-credit-original-grant-query.js",
+          "bytes": 3626,
+          "sha256": "d93807d2af373da2cf3c7fb34cc38043eadc97449966b86a90ff6c14dabddf86",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/native-read-retired-error-latch.js",
+          "bytes": 994,
+          "sha256": "a7c2c242f2df97e8f6fcd6171d0f24b3ec048f25115135dcb08dd83a21f48d84",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/sdk105-api-credit-existing-key-lease.js",
+          "bytes": 9318,
+          "sha256": "48527a74d9284a12a73a40d9edc75bd55ee0ff05669c830f399866b63af946e6",
+          "format": "module"
+        },
+        {
+          "path": "src/zenon/transaction-planner.js",
+          "bytes": 22611,
+          "sha256": "079fe8da938e08e33a20ca1076492a829afa6fce3ae7f9b9f68d3bf4bff94233",
+          "format": "module"
+        }
+      ],
+      "totalSources": 240,
+      "totalSourceBytes": 3330336,
+      "packageCatalogRows": 404,
+      "packageSourceFilesRead": 0,
+      "installedNamespace": "NOT_ESTABLISHED",
+      "runtimeQualification": "NOT_ESTABLISHED",
+      "sourceBoundControls": 1893,
+      "nativeExecutions": 0,
+      "applicationProgramsExecuted": 0,
+      "filesWritten": 0,
+      "productAcceptance": "NOT_ESTABLISHED",
+      "authority": "NONE"
+    }
+  ],
+  "actualPureDataCommands": 1,
+  "actualParserCommands": 3,
+  "actualSourceByteCommands": 8,
+  "actualReceiptCombinationCommands": 1,
+  "qualifiedTasks": 7,
+  "taskQuotaBytes": 4194304,
+  "maximumPlannedPeakBytes": 3957226,
+  "runtimeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25",
+  "nodeVersion": "24.19.0",
+  "platform": "darwin-arm64",
+  "applicationDATAReexecuted": 0,
+  "retainedApplicationDATACount": 1893,
+  "proofManifest": {
+    "path": "qualification/current-source-profile.proof-manifest.json",
+    "bytes": 2481,
+    "sha256": "dbbe9e228bf42b5ab4f88b67f6b9ea09c3be146afccc035785573fcd7f4d97bd"
+  },
+  "failureInventory": {
+    "path": "qualification/current-source-profile.failure-inventory.json",
+    "bytes": 674,
+    "sha256": "849e673631a376cbb792161cf0e4ee8fb1062b37f9860e668a13f3765aa36d55"
+  },
+  "nativeExecutions": 0,
+  "applicationProgramsExecuted": 0,
+  "installedPackageFilesRead": 0,
+  "applicationSQLite": 0,
+  "keys": 0,
+  "signatures": 0,
+  "sockets": 0,
+  "nonceSearches": 0,
+  "nodeChildren": 0,
+  "actualPrepare": 0,
+  "payouts": 0,
+  "sourceSnapshotsAtomic": false,
+  "authority": "NONE",
+  "G0G5Acceptance": "OPEN"
+}

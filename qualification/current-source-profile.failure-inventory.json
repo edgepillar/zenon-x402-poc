@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "currentDataFailures": 0,
+  "currentParserFailures": 0,
+  "currentMetadataCLICommandFailures": 0,
+  "preTaskToolingRefusals": [
+    {
+      "rawSha256": "f2e6422b5e77d9c053edd31e2c4665d52e16383aa6138e4af52952c7ed2d0c83",
+      "status": "UNKNOWN",
+      "NodeCommands": 0,
+      "tasksCreated": 0,
+      "reason": "RUNTIME_SIZE_DESCRIPTOR_TYPE"
+    },
+    {
+      "rawSha256": "f82292aac15d890beeeb345b113213e69ec4a1b1146db091aff638db9ff85581",
+      "status": "UNKNOWN",
+      "NodeCommands": 0,
+      "tasksCreated": 0,
+      "reason": "MANAGER_PROJECT_IDENTIFIER"
+    }
+  ],
+  "reclassified": false,
+  "historicalApplicationEvidenceUnchanged": true
+}

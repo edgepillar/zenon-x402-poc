@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "sourceMain": "1928215ecd5aba6eef768cf3b6a5323e994d9968",
+  "runtimeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25",
+  "rawQualificationSha256": "e8de3e53bbde588d9a174a2923dbef3b99e675ce8d302b4ad965707f668ed99b",
+  "sourcePins": [
+    {
+      "path": "qualification/acceptance/api-credit-current.source-profile.json",
+      "bytes": 2425,
+      "sha256": "5a04a6bb346cc908edb329cb24ee0a4a9ff92cfac6af206afae6c258ccdbc432",
+      "gitBlob": "6d8cb9f81f83f3a9fdcc8a91f95360cc5b9a8524"
+    },
+    {
+      "path": "qualification/acceptance/current-source-profile-core.js",
+      "bytes": 15509,
+      "sha256": "11a055270d9787d270cc2f660a529bf6b0b56853d69f05ec43fafd6ae8f65b53",
+      "gitBlob": "f312b1f6128969521907f7d71fc1ae0435826b57"
+    },
+    {
+      "path": "qualification/acceptance/current-source-profile.behavior.mjs",
+      "bytes": 12447,
+      "sha256": "2d4ee839f20726c31dc901714b1e44d0ccb0cd57e97f328206600def9584a985",
+      "gitBlob": "9ec7b75b70b3bf938f58a8a4229b1d703515bf67"
+    },
+    {
+      "path": "scripts/report-current-api-credit-profile.mjs",
+      "bytes": 4157,
+      "sha256": "e74024dc2789464032a40d7ef20c88c1ba2e0afaad3ccaf5e0304279e8c36a3f",
+      "gitBlob": "69cefbfeeb722e7d51bea965bb8ee1576d444f4a"
+    }
+  ],
+  "manifestSha256": "5a04a6bb346cc908edb329cb24ee0a4a9ff92cfac6af206afae6c258ccdbc432",
+  "observedSourceSetSha256": "16695c4813d7dc70fbfc2bb59b19f257a9bf056d94473a1048c0b964c9f6b08d",
+  "applicationDataReferences": {
+    "sourceProfile": {
+      "path": "qualification/profiles/api-credit-application-source-v68.json",
+      "bytes": 4533,
+      "sha256": "7314f0ac8281d3b95ba4a125ff1350766566a5646497cb4595b59786c6540b0e"
+    },
+    "result": {
+      "path": "qualification/query-opening-guard.actual-local-result.json",
+      "bytes": 177817,
+      "sha256": "798f4c8cc4d079213c7de306cea2daf6fb1966263e812bc619556d03318a28e0"
+    },
+    "sourceBoundControls": 1893,
+    "executedControls": 1434,
+    "retainedControls": 459,
+    "expectedResultQualification": "G2_QUERY_OPENING_GUARD_DATA"
+  },
+  "applicationSourceCatalogsUnchanged": true,
+  "applicationDataReexecuted": 0,
+  "parserPaths": [
+    "qualification/acceptance/current-source-profile-core.js",
+    "qualification/acceptance/current-source-profile.behavior.mjs",
+    "scripts/report-current-api-credit-profile.mjs"
+  ],
+  "hosted108SelectionAnd22InputsUnchanged": true,
+  "scope": "PURE_DATA_PARSER_AND_SOURCE_BYTES_ONLY"
+}
