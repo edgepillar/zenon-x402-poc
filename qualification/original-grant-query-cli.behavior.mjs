@@ -2,6 +2,7 @@
 // timers and FIFO ports are declared DATA. Existing signature-shaped fields
 // are deliberately unauthenticated; no native or signature operation runs.
 import assert from 'node:assert/strict';
+import { fileURLToPath } from 'node:url';
 import { Buffer } from 'node:buffer';
 import { createHash } from 'node:crypto';
 import { canonicalJson, paymentIntentDigest } from '../src/canonical.js';
@@ -66,7 +67,8 @@ function fixture(options = {}, captured = null, outerGuard = null) {
     armTimer: F((budget, callback) => { const t = { budget, callback }; s.timers.push(t); if (options.arm) return options.arm(s, t); return t; }),
     cancelTimer: F(t => { s.cancelled++; t.cancelled = true; if (options.cancel) return options.cancel(s, t); }),
   });
-  const guard = outerGuard ?? F(() => { if (s.externalExpired) throw Error('declared expiry'); });
+  const baseGuard = outerGuard ?? F(() => { if (s.externalExpired) throw Error('declared expiry'); });
+  const guard = options.guardResult ? F(() => { baseGuard(); return options.guardResult(s); }) : baseGuard;
   return { c, s, result, read, close, ports, run: () => owner(F({ profile: c, ports, requireOpening: guard })) };
 }
 function powerless(result) {
@@ -204,6 +206,10 @@ check('grant-query-coordinator-expiry-keeps-pending-query-and-discards-late-hist
   f.r.owned.read.resolve(f.r.owned.result); await flush(); assert.equal(f.r.owned.s.closes, 1); assert.equal(f.r.writes.length, 0);
 });
 
+export const originalGrantQueryDataFixture = fixture;
+export const originalGrantQueryCoordinatorDataFixture = coordinator;
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+
 const cases = [];
 for (const { id, run } of checks) {
   try { await run(); cases.push({ id, status: 'PASS' }); }
@@ -215,3 +221,5 @@ console.log(JSON.stringify({ qualification: 'G2_ORIGINAL_GRANT_QUERY_CLI_DATA', 
   nativeExecutions: 0, SDK: 0, SQLite: 0, keys: 0, signatures: 0, sockets: 0, nonceSearches: 0, nodeChildren: 0, actualPrepare: 0, payouts: 0,
   nativePhysicalRelease: 'NOT_ESTABLISHED', LinuxAcceptance: 'NOT_ESTABLISHED' }));
 if (failed) process.exitCode = 1;
+
+}

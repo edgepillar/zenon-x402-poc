@@ -1,0 +1,120 @@
+{
+  "version": 68,
+  "status": "SOURCE_AND_DECLARED_MEMORY_DATA_CANDIDATE",
+  "sourceMain": "e20b08192975579794444ff97177e2310ea9b618",
+  "sourceMainTree": "c18571b3f1706793d2608945cde36937d357096b",
+  "predecessorProfile": {
+    "path": "qualification/profiles/api-credit-application-source-v67.json",
+    "bytes": 4480,
+    "sha256": "e5ee4eedde167d6125ac8b9619dd2159b639f699a9832d3b6f118f333a4216e0"
+  },
+  "profileStorage": "EXACT_PREDECESSOR_REFERENCE_WITH_EXPLICIT_CURRENT_DELTA",
+  "product": "ONE_FUNDING_ONE_GRANT_MANY_METERED_CALLS_ORIGINAL_REPLAY_RECOVERY",
+  "queryOpeningGuard": {
+    "version": 1,
+    "scope": "ORIGINAL_GRANT_QUERY_OPENING_GUARD_SOURCE_AND_DATA",
+    "owner": "src/api-credit-original-grant-query-owner.js",
+    "requiresSynchronousVoidGuard": true,
+    "guardReceiptRetainedPrivately": true,
+    "genuinePromiseObservationIsNotJoinedAdmission": true,
+    "thenableAndProxyHooksNotEntered": true,
+    "postGuardAndPostClockHeldTerminalIntrinsicChecks": true,
+    "nonnegativeNonregressingBigintClock": true,
+    "additionalGuardOrClockCalls": 0,
+    "maximumQueryEntries": 1,
+    "maximumKnownTransportCloses": 1,
+    "noCompetingCloseForPendingReadOrUnknownOpener": true,
+    "lateGuardCompletionDoesNotRepairHeldOrConsumeAgain": true,
+    "profileStillOneUse": true,
+    "wireKeysAndOutputLimitUnchanged": true,
+    "originalCheckpointQueryAndHistoryBindingUnchanged": true,
+    "spendingReservation": "UNCHANGED",
+    "authority": "NONE",
+    "buyerGraph": 174,
+    "buyerCatalogRows": 577,
+    "providerGraph": 104,
+    "providerCatalogRows": 507,
+    "providerCatalogUnchanged": true,
+    "packageRowsPerCatalog": 404,
+    "packagePinsAndBareEdgesUnchanged": true,
+    "cooperativeCallbacksNotAnOSSandbox": true,
+    "nativeQuery": "NOT_EXECUTED",
+    "nativePhysicalRelease": "NOT_ESTABLISHED",
+    "crossProcessOwnerFencing": "NOT_ESTABLISHED",
+    "LinuxAcceptance": "NOT_ESTABLISHED",
+    "G0G5": "OPEN"
+  },
+  "contract": {
+    "path": "qualification/query-opening-guard.source-contract.json",
+    "bytes": 1291,
+    "sha256": "9361477ba39ea231a3448a39e476dbc76e15f35e67424b643cc4fc62f6b31fdb"
+  },
+  "proofManifest": {
+    "path": "qualification/query-opening-guard.proof-manifest.json",
+    "bytes": 147810,
+    "sha256": "cb0a35952f34743167e3038f2450649be14e5f4c1d576d89f2ccb11f2c60cf89"
+  },
+  "failureInventory": {
+    "path": "qualification/query-opening-guard.failure-inventory.json",
+    "bytes": 513,
+    "sha256": "40a20d74421606f6db7fa564f91d10c854edfccd6e731f2ead9fa446931ec8b7"
+  },
+  "sourceDelta": [
+    {
+      "path": "qualification/original-grant-query-cli.behavior.mjs",
+      "bytes": 22972,
+      "sha256": "ac3005770f8397669ae20beb70f3f0658feecaefe8b8a0d2a944d1df11805fcb",
+      "gitBlob": "919f9aca788bf879cfa5fc5e81a725986755f7e0"
+    },
+    {
+      "path": "qualification/query-opening-guard.behavior.mjs",
+      "bytes": 8519,
+      "sha256": "2358ffe5b4d61a63a5571548e93c6558f48e5c75ec321f70d61dd953316deb6b",
+      "gitBlob": "c66354121f422c46327dbadd73caeb75af21267e"
+    },
+    {
+      "path": "src/api-credit-module-catalog.json",
+      "bytes": 120106,
+      "sha256": "e011e9a699a8d8b8c89aaede50533cecac61976d991d7f95e05aa919c61aaf2d",
+      "gitBlob": "62ff0924faf22b9cd4882b7952da503c71db5ea9"
+    },
+    {
+      "path": "src/api-credit-native-package-admission.js",
+      "bytes": 6414,
+      "sha256": "60c27b33ce060cbe36ed022e79ad783dae2ed49d2ece5de995cf1915adca2239",
+      "gitBlob": "9c685c799e71686c998891ffd6be28340764f1d9"
+    },
+    {
+      "path": "src/api-credit-original-grant-query-owner.js",
+      "bytes": 11319,
+      "sha256": "399f4d66d136a13b644816f60bb9076b4c2caae3992348e9124c22854ceb0d32",
+      "gitBlob": "56554f44a7d8636ad10e02c185a368ea7e0ff977"
+    }
+  ],
+  "buyerSourceGraphUnchanged": true,
+  "providerSourceGraphAndCatalogUnchanged": true,
+  "buyerCatalog": {
+    "path": "src/api-credit-module-catalog.json",
+    "bytes": 120106,
+    "sha256": "e011e9a699a8d8b8c89aaede50533cecac61976d991d7f95e05aa919c61aaf2d",
+    "graph": 174,
+    "rows": 577,
+    "packageRows": 404,
+    "bareEdges": 9
+  },
+  "currentLocalData": {
+    "new": 24,
+    "reexecuted": 1410,
+    "retainedExact": 459,
+    "sourceBoundDistinct": 1893,
+    "newDATACommands": 34,
+    "newParserCommands": 1,
+    "parserSourceProofs": 49
+  },
+  "selectedHostedCIControls": 108,
+  "selectedHostedCISourceInputs": 22,
+  "hostedSelectionChanged": false,
+  "newCasesIncludedInHostedCI": false,
+  "nativeQualification": "NOT_EXECUTED",
+  "G0G5Acceptance": "OPEN"
+}

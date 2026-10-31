@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "currentDataFailures": 0,
+  "currentParserFailures": 0,
+  "currentQualifiedTaskFailures": 0,
+  "unexpectedSkips": 0,
+  "cancellations": 0,
+  "inheritedInventory": {
+    "path": "qualification/opening-current-close.failure-inventory.json",
+    "bytes": 517,
+    "sha256": "238384c9034d3d85bedf0567f0ad3cb047c2b270416d666e635dff75f517e59a"
+  },
+  "earlierFailedAndUnknownRecordsPreserved": true,
+  "wholeFailedTaskReclassified": false,
+  "oldCASObjectsConsumed": false,
+  "nativeExecution": 0
+}

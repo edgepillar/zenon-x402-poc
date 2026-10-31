@@ -60,16 +60,27 @@ export function runApiCreditOriginalGrantQueryOwner(configuration) {
       || t.requestDeadlineMs > 60000 || t.handshakeDeadlineMs > t.requestDeadlineMs || t.closeGraceMs > 30000
       || t.requestDeadlineMs + t.closeGraceMs > 60000) fail(); USED.add(c.profile);
   const out = capability(), frame = { profile: c.profile, transport: null, opaqueOpen: null, readReceipt: null, closeReceipt: null,
-    readEntered: false, readSettled: false, closeEntered: false, candidate: null, timer: null, timerCancelled: false,
+    readEntered: false, readSettled: false, closeEntered: false, candidate: null, guardReceipt: null, timer: null, timerCancelled: false,
     last: null, deadline: null, held: false, terminal: false };
   function hold() {
     frame.held = true; frame.candidate = null; HELD.add(frame);
     if (!frame.terminal) { frame.terminal = true; out.reject(new TypeError('API_CREDIT_ORIGINAL_GRANT_QUERY_UNKNOWN')); }
   }
-  function clock() { const now = p.clock(); if (typeof now !== 'bigint' || frame.last !== null && now < frame.last) fail(); frame.last = now; return now; }
+  function clock() { const now = p.clock(); if (typeof now !== 'bigint' || now < 0n || frame.last !== null && now < frame.last) fail(); frame.last = now; return now; }
   function guard() {
-    if (frame.held || frame.terminal || !invariant()) fail(); c.requireOpening();
-    if (clock() >= frame.deadline) fail();
+    if (frame.held || frame.terminal || !invariant()) fail();
+    const receipt = A(c.requireOpening, undefined, []);
+    if (receipt !== undefined) {
+      // Retain an unjoined guard result without assimilating thenables or
+      // reading diagnostics. A late result never repairs opening authority.
+      frame.guardReceipt = receipt;
+      try { observe(receipt, () => {}, () => {}); } catch {}
+      fail();
+    }
+    // Either borrowed callback may synchronously revoke this operation. No
+    // transport/read/output entry may rely only on its pre-callback state.
+    if (frame.held || frame.terminal || !invariant()) fail();
+    if (clock() >= frame.deadline || frame.held || frame.terminal || !invariant()) fail();
   }
   function cancelTimer() {
     if (frame.timer === null || frame.timerCancelled) return; frame.timerCancelled = true;
