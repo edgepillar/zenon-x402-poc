@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import { selectServiceCreditExecutionOwnershipClaim } from './service-credit-execution-revision-owner.js';
 import {
   closeSync,
   constants as fsConstants,
@@ -1346,6 +1347,36 @@ export class ServiceCreditSqliteStore {
             executionState: candidate,
           }),
         };
+      });
+      return outcome.result;
+    });
+  }
+
+  /** Reserve the current revision for one runtime without changing credit,
+   * execution, generation or policy state. A lost receipt never permits a
+   * read-based claim repair. Runtime fencing still requires the fixed owner. */
+  claimDurableExecutionOwnership(options) {
+    if (arguments.length !== 1) failStore('SERVICE_CREDIT_STORE_INVALID_EXECUTION_INPUT');
+    return this.#runPublicOperation(() => {
+      const input = captureDurableObject(options, ['expectedRevision']);
+      const expectedRevision = captureExpectedRevision(input.expectedRevision);
+      const outcome = this.#runTransaction('claimDurableExecutionOwnership', () => {
+        this.#validateDatabase();
+        const { executionState, physicalEnvelope } = this.#readLedger();
+        const claim = selectServiceCreditExecutionOwnershipClaim(OBJECT_FREEZE({
+          revision: physicalEnvelope.revision, ledgerState: physicalEnvelope.ledgerState,
+          executionState,
+        }), expectedRevision);
+        if (claim.disposition === 'STALE') {
+          return { changed: false, result: receipt({ disposition: 'STALE',
+            revision: physicalEnvelope.revision, executionState: null }) };
+        }
+        if (claim.disposition === 'DISABLED') failStore('SERVICE_CREDIT_STORE_DURABLE_EXECUTION_DISABLED');
+        if (claim.disposition !== 'APPLIED') failStore('SERVICE_CREDIT_STORE_INVARIANT_VIOLATION');
+        const next = this.#persistCompound(physicalEnvelope, claim.ledgerState, claim.executionState);
+        if (next.revision !== claim.nextRevision) failStore('SERVICE_CREDIT_STORE_INVARIANT_VIOLATION');
+        return { changed: true, result: receipt({ disposition: 'APPLIED',
+          revision: next.revision, executionState }) };
       });
       return outcome.result;
     });

@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "currentDataFailures": 0,
+  "currentParserFailures": 0,
+  "currentQualifiedTaskFailures": 0,
+  "unexpectedSkips": 0,
+  "cancellations": 0,
+  "retainedSourceAuditCountFailure": {
+    "status": "UNKNOWN",
+    "actualNodeCommands": 0,
+    "rawQualificationSha256": "41983df78f54897f25d606d8eb37948e65795014c59debbd4370fdfe14b476d9",
+    "correction": "49_CURRENT_PARSER_SOURCES_THREE_REPLACED_ONE_NEW",
+    "originalRecordReclassified": false,
+    "completedDataRepeated": false
+  },
+  "preDATAAdmissionRefusal": {
+    "status": "UNKNOWN",
+    "taskOutcome": "FAILURE",
+    "actualNodeCommands": 0,
+    "rawQualificationSha256": "73bb271790581e73b366bf85da7805b85738bfce0f92d67415e2d36e4df3fdc6",
+    "reason": "METADATA_OPEN_REPLACED",
+    "sourceObjectsReusedOnlyAfterOwnershipVerification": true,
+    "wholeTaskReclassified": false
+  },
+  "inheritedInventory": {
+    "path": "qualification/expired-funding-history.failure-inventory.json",
+    "bytes": 518,
+    "sha256": "dc6596d1dcd1c5c4115a4007dfe667a41653bc87b236a13e2de9be84d07fd44c"
+  },
+  "earlierFailedAndUnknownRecordsPreserved": true,
+  "wholeFailedTaskReclassified": false,
+  "oldCASObjectsConsumed": false,
+  "nativeExecution": 0
+}

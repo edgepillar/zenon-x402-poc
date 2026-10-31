@@ -9,8 +9,8 @@ import { createApiCreditModuleSourceGuard } from './api-credit-module-source-gua
 
 const F = Object.freeze, HASH = v => createHash('sha256').update(v).digest('hex');
 const CATALOG = 'src/issued-provider-module-catalog.json';
-const CATALOG_BYTES = 104205; // Generated from the reviewed source selection.
-const CATALOG_SHA256 = '6d0e7052d9b1a041e16254fcfb9551994bab40ca28f9de0728571cac77c1f37b';
+const CATALOG_BYTES = 104412; // Generated from the reviewed source selection.
+const CATALOG_SHA256 = 'd377ca8c98a1860090d49480a7bc119232f1ad11a73fc9f8d17c37be2296ee71';
 const REFUSED = F({ mode: 'REFUSED' }), UNKNOWN = F({ mode: 'UNKNOWN' });
 const HELD = new Set(), DIRECTORIES = new Map();
 const rootUrl = new URL('../', import.meta.url).href, root = fileURLToPath(rootUrl);

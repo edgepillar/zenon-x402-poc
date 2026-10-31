@@ -1,0 +1,157 @@
+{
+  "version": 66,
+  "status": "SOURCE_AND_DECLARED_MEMORY_DATA_CANDIDATE",
+  "sourceMain": "18d74228be19c735cf831269fd1f072cf719a785",
+  "sourceMainTree": "c0e02db0eee135aecfba3131155889d26956d0b2",
+  "predecessorProfile": {
+    "path": "qualification/profiles/api-credit-application-source-v65.json",
+    "bytes": 4530,
+    "sha256": "c89b08304f8b88403a243f675e8cc42625f9503cff29ad5167b7644f04fb4902"
+  },
+  "profileStorage": "EXACT_PREDECESSOR_REFERENCE_WITH_EXPLICIT_CURRENT_DELTA",
+  "product": "ONE_FUNDING_ONE_GRANT_MANY_METERED_CALLS_ORIGINAL_REPLAY_RECOVERY",
+  "executionRevisionOwnership": {
+    "version": 1,
+    "scope": "EXECUTION_RUNTIME_REVISION_OWNERSHIP_SOURCE_AND_DECLARED_MEMORY_DATA",
+    "controller": "src/service-credit-execution-revision-owner.js",
+    "nativeStore": "src/service-credit-sqlite-store.js",
+    "nativeOwner": "src/service-credit-durable-execution-owner.js",
+    "sharedPureClaimSelector": true,
+    "constructionInert": true,
+    "lazyClaimBeforeFirstInitializedSnapshot": true,
+    "claimUsesExistingStrictRevisionCAS": true,
+    "claimChangesOnlyCompoundRevision": true,
+    "ledgerAndExecutionObjectsPreserved": true,
+    "creditAndGenerationUnchanged": true,
+    "schemaTablePhysicalEnvelopeAndChecksumDomainUnchanged": true,
+    "uninitializedExecutionNotInitialized": true,
+    "ownAppliedAckAdvancesExactlyOne": true,
+    "unchangedAckPreservesRevision": true,
+    "foreignSnapshotStaleAndUnknownRemainHeld": true,
+    "readBasedClaimOrWriteRepair": false,
+    "automaticReclaim": false,
+    "writerCASHasNoAdditionalFullSnapshotReads": true,
+    "readOnlyRequestFencedBeforeAndAfter": true,
+    "fixedNativeAssertionBeforeApplicationCallback": true,
+    "knownUnchangedRefusalNeedsCurrentRevision": true,
+    "applicationCallbackAuthority": "NONE",
+    "fundingAndSigningOwnership": "OUT_OF_SCOPE",
+    "legacyOrIndependentWriters": "NOT_FENCED_BY_THIS_PROTOCOL",
+    "supportedRuntimeRequiresExactGuardedSourceGraph": true,
+    "alreadyStartedExternalEffects": "NOT_CANCELLED_OR_REAUTHORIZED",
+    "buyerGraph": 174,
+    "buyerCatalogRows": 577,
+    "providerGraph": 104,
+    "providerCatalogRows": 507,
+    "packageRowsPerCatalog": 404,
+    "bareEdgesBuyer": 9,
+    "bareEdgesProvider": 4,
+    "packagePinsAndBareEdgesUnchanged": true,
+    "nativeSQLClaim": "NOT_ESTABLISHED",
+    "nativeOwnerBinding": "NOT_ESTABLISHED",
+    "crossProcessOwnerFencing": "NOT_ESTABLISHED",
+    "physicalRelease": "NOT_ESTABLISHED",
+    "LinuxAcceptance": "NOT_ESTABLISHED",
+    "G0G5": "OPEN"
+  },
+  "contract": {
+    "path": "qualification/execution-revision-owner.source-contract.json",
+    "bytes": 1844,
+    "sha256": "26e4ad172c1e0713246fb5214b17328b3d96e73d24774a64703a6d9886736a91"
+  },
+  "proofManifest": {
+    "path": "qualification/execution-revision-owner.proof-manifest.json",
+    "bytes": 277611,
+    "sha256": "190037cf448d0a33f572bb2aae4e863982ad180d25c62402b13ee5b1b9840f56"
+  },
+  "failureInventory": {
+    "path": "qualification/execution-revision-owner.failure-inventory.json",
+    "bytes": 1213,
+    "sha256": "c0dc59ab8039998bc1f6a5e1f2e70b5fc99d54381a2e4888ef2afa6f3500ec3d"
+  },
+  "sourceDelta": [
+    {
+      "path": "qualification/execution-revision-owner.behavior.mjs",
+      "bytes": 16514,
+      "sha256": "faeea7cecbfcaa53c50daa03010dba616ac80f2f60caaf567bf53662cb2bf211",
+      "gitBlob": "67e050ad1b36152e48352b92219581454ed47f3b"
+    },
+    {
+      "path": "src/api-credit-module-catalog.json",
+      "bytes": 120106,
+      "sha256": "4fcd4758b26adb115f1cb6c4755d904cf1072e1b2c04fcbef31546b26a9a6a59",
+      "gitBlob": "d8e8b08ca0186adf44da0f2dfe21b6ba885d7caa"
+    },
+    {
+      "path": "src/api-credit-native-package-admission.js",
+      "bytes": 6414,
+      "sha256": "3a1ebd2ade2526821373afef9d2732f0b04ed27683c5074d74b361a74a8ca2a6",
+      "gitBlob": "498a7e020e1880fe6b46ee74fbdcdeeea29cce1e"
+    },
+    {
+      "path": "src/issued-provider-module-catalog.json",
+      "bytes": 104412,
+      "sha256": "d377ca8c98a1860090d49480a7bc119232f1ad11a73fc9f8d17c37be2296ee71",
+      "gitBlob": "34c38e1be84fb6470f0151386dc61d1bddd547a3"
+    },
+    {
+      "path": "src/issued-provider-native-package-admission.js",
+      "bytes": 6429,
+      "sha256": "7c75df5d16061d31c96aeb9ad03e3ec9f443b76be3aed17894d89a09f7aa9132",
+      "gitBlob": "6a5f6e80a093ba9ab6551d16112bd6294364fcd3"
+    },
+    {
+      "path": "src/service-credit-durable-execution-owner.js",
+      "bytes": 42057,
+      "sha256": "7297635966f70320ecc70a8f826709e941583b97202dc0e056668848e92f9168",
+      "gitBlob": "d6aaac919a0d8098d2bf3abbc6ccce777e293fa6"
+    },
+    {
+      "path": "src/service-credit-execution-revision-owner.js",
+      "bytes": 7762,
+      "sha256": "78a8f777b27f6569a6da81be2d441c640f30dc64e89dbc2ab5f37fabb425e6d6",
+      "gitBlob": "da0124a2bd32fb6482058c36637154411ac3564a"
+    },
+    {
+      "path": "src/service-credit-sqlite-store.js",
+      "bytes": 85768,
+      "sha256": "d990402f712bc2db1fa979f50401371a2ded7c9bb9a1011a3e70479ec3d2ca2f",
+      "gitBlob": "19a98a26f459261a06454d8a6754c5dab07f8d8b"
+    }
+  ],
+  "buyerSourceGraphChanged": true,
+  "providerSourceGraphChanged": true,
+  "buyerCatalog": {
+    "path": "src/api-credit-module-catalog.json",
+    "bytes": 120106,
+    "sha256": "4fcd4758b26adb115f1cb6c4755d904cf1072e1b2c04fcbef31546b26a9a6a59",
+    "graph": 174,
+    "rows": 577,
+    "packageRows": 404,
+    "bareEdges": 9
+  },
+  "providerCatalog": {
+    "path": "src/issued-provider-module-catalog.json",
+    "bytes": 104412,
+    "sha256": "d377ca8c98a1860090d49480a7bc119232f1ad11a73fc9f8d17c37be2296ee71",
+    "graph": 104,
+    "rows": 507,
+    "packageRows": 404,
+    "bareEdges": 4
+  },
+  "currentLocalData": {
+    "new": 36,
+    "reexecuted": 0,
+    "retainedExact": 1813,
+    "sourceBoundDistinct": 1849,
+    "newDATACommands": 1,
+    "newParserCommands": 4,
+    "parserSourceProofs": 49
+  },
+  "selectedHostedCIControls": 108,
+  "selectedHostedCISourceInputs": 22,
+  "hostedSelectionChanged": false,
+  "newCasesIncludedInHostedCI": false,
+  "nativeQualification": "NOT_EXECUTED",
+  "G0G5Acceptance": "OPEN"
+}

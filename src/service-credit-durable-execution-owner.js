@@ -1,5 +1,6 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { types as utilTypes } from 'node:util';
+import { createServiceCreditExecutionRevisionOwner } from './service-credit-execution-revision-owner.js';
 
 import {
   ServiceCreditSqliteStore,
@@ -137,6 +138,7 @@ const ABORT_REASON = 'SERVICE_CREDIT_DURABLE_EXECUTION_OUTCOME_UNKNOWN';
 
 const STORE_METHOD_NAMES = OBJECT_FREEZE([
   'getDurableExecutionSnapshot',
+  'claimDurableExecutionOwnership',
   'prepareDurableExecution',
   'persistDurableExecutionFence',
   'completeDurableExecution',
@@ -575,8 +577,28 @@ export function createDurableServiceCreditExecutionOwner(options) {
     throw ownerFailure(QUARANTINED);
   }
 
-  function callStore(name, args) {
+  function rawCallStore(name, args) {
     return REFLECT_APPLY(STORE_METHODS[name], store, args);
+  }
+
+  const revisionOwner = createServiceCreditExecutionRevisionOwner(OBJECT_FREEZE({
+    readSnapshot: OBJECT_FREEZE(() => rawCallStore('getDurableExecutionSnapshot', [])),
+    claim: OBJECT_FREEZE(input => rawCallStore('claimDurableExecutionOwnership', [input])),
+    invoke: OBJECT_FREEZE((name, args) => rawCallStore(name, args)),
+    knownRefusal: OBJECT_FREEZE(error => {
+      if (errorCode(error, ServiceCreditModelError.prototype) !== null) return true;
+      const code = errorCode(error, ServiceCreditSqliteStoreError.prototype);
+      return code === 'SERVICE_CREDIT_STORE_INVALID_EXECUTION_INPUT'
+        || code === 'SERVICE_CREDIT_STORE_EXECUTION_CONFLICT'
+        || code === 'SERVICE_CREDIT_STORE_EXECUTION_GENERATION_SEALED'
+        || code === 'SERVICE_CREDIT_STORE_CAPACITY_EXCEEDED'
+        || code === 'SERVICE_CREDIT_STORE_DURABLE_EXECUTION_DISABLED'
+        || code === 'SERVICE_CREDIT_STORE_EXECUTION_INVALID_TRANSITION';
+    }),
+  }));
+
+  function callStore(name, args) {
+    return revisionOwner.call(name, args);
   }
 
   function mapStoreFailure(error) {
@@ -680,6 +702,7 @@ export function createDurableServiceCreditExecutionOwner(options) {
     const outcome = nativePromiseCapability();
     let callbackPromise;
     try {
+      revisionOwner.assertCurrent();
       callbackPromise = REFLECT_APPLY(ASYNC_CONTEXT_RUN, CALLBACK_CONTEXT, [
         identity,
         () => {

@@ -2721,8 +2721,8 @@
     },
     {
       "path": "src/service-credit-durable-execution-owner.js",
-      "bytes": 40833,
-      "sha256": "a63a795dda77489f7da0682d83a0683cf07240f83b803f449668cb687a956863",
+      "bytes": 42057,
+      "sha256": "7297635966f70320ecc70a8f826709e941583b97202dc0e056668848e92f9168",
       "format": "module"
     },
     {
@@ -2741,6 +2741,12 @@
       "path": "src/service-credit-execution-contract.js",
       "bytes": 30258,
       "sha256": "298f8e74885e1c507953c0fcf7874832f815296746e6bacbdac97a425f1a6c73",
+      "format": "module"
+    },
+    {
+      "path": "src/service-credit-execution-revision-owner.js",
+      "bytes": 7762,
+      "sha256": "78a8f777b27f6569a6da81be2d441c640f30dc64e89dbc2ab5f37fabb425e6d6",
       "format": "module"
     },
     {
@@ -2817,8 +2823,8 @@
     },
     {
       "path": "src/service-credit-sqlite-store.js",
-      "bytes": 83873,
-      "sha256": "c7a5559685f0ccd130d35804d58879133a2c05101adbdf965f65b5b152b99e40",
+      "bytes": 85768,
+      "sha256": "d990402f712bc2db1fa979f50401371a2ded7c9bb9a1011a3e70479ec3d2ca2f",
       "format": "module"
     },
     {
