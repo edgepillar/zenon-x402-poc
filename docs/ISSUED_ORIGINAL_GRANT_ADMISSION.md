@@ -66,3 +66,7 @@ execution counts. Activation-shaped metadata remains unauthenticated DATA.
 Actual SQLite/index durability, cryptographic authentication, fresh-process
 recovery, stale-owner fencing, native release, Linux and full G1/G2 acceptance
 remain OPEN. The unchanged hosted 108-control CI is separate hosted evidence.
+
+## Retained expired-funding history
+
+The existing READ_ORIGINAL_GRANT command returns a closed originalFundingHistoryVersion: 1 envelope for retained V2 official records. It keeps grantHistory and expiredFundingHistory separate and rebinds the receipt to the pinned original challenge commitment and absolute expiry before lookup. Both histories remain NONE-authority; absence or revocation of a grant never discharges the retained obligation. V1 originals keep their existing closed bytes. The same owner, full row and exact record must survive lookup before output; lost output grants no retry or admission authority. [Contract and DATA evidence](EXPIRED_FUNDING_HISTORY.md). Native durability, fresh-process recovery, Linux and physical release remain OPEN.

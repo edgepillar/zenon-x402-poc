@@ -1,0 +1,121 @@
+{
+  "version": 65,
+  "status": "SOURCE_AND_DECLARED_MEMORY_DATA_CANDIDATE",
+  "sourceMain": "d2744316db8be73bc5457d63440d5c809242e060",
+  "sourceMainTree": "c1c8a2628d0aae41feefbe21b59e5a16095d11a4",
+  "predecessorProfile": {
+    "path": "qualification/profiles/api-credit-application-source-v64.json",
+    "bytes": 6221,
+    "sha256": "3123bf7852462a2d4cf9bae2ec2546db7fd865b4a9fe796bced207160a0d20aa"
+  },
+  "profileStorage": "EXACT_PREDECESSOR_REFERENCE_WITH_EXPLICIT_CURRENT_DELTA",
+  "product": "ONE_FUNDING_ONE_GRANT_MANY_METERED_CALLS_ORIGINAL_REPLAY_RECOVERY",
+  "expiredFundingHistory": {
+    "version": 1,
+    "scope": "STORED_EXPIRED_FUNDING_HISTORY_SOURCE_AND_MEMORY_DATA",
+    "owner": "src/issued-original-grant-admission-owner.js",
+    "existingCommand": "READ_ORIGINAL_GRANT",
+    "newCommands": 0,
+    "newRoutes": 0,
+    "newPorts": 0,
+    "versionOneResultBytesUnchanged": true,
+    "retainedRecordFormat": 2,
+    "historyEnvelopeVersion": 1,
+    "historyFields": [
+      "grantHistory",
+      "expiredFundingHistory"
+    ],
+    "independentBoundAndOutcomeDigestsBeforeInterpretation": true,
+    "originalChallengeCommitmentAndAbsoluteExpiryBeforeLookup": true,
+    "sameFullRowExactRecordAndLiveProviderBeforeOutput": true,
+    "grantHistoryDoesNotDischargeLiability": true,
+    "deliveryLiability": "RECONCILIATION_REQUIRED",
+    "historyVerification": "STORED_HISTORY_NOT_REVALIDATED",
+    "authority": "NONE",
+    "paymentSigningActivationServiceCompensationFlags": false,
+    "originalLedgerUnitsAndTimestampsPreserved": true,
+    "existingSixteenAttemptBudget": true,
+    "existingOutputBoundsUnchanged": true,
+    "noAutomaticReadRetryAdmissionOrPaymentAfterOutputLoss": true,
+    "explicitExistingGrantAdmissionStillSeparate": true,
+    "buyerGraph": 173,
+    "buyerCatalogRows": 576,
+    "providerGraph": 103,
+    "providerCatalogRows": 506,
+    "packageRowsPerCatalog": 404,
+    "packagePinsAndBareEdgesUnchanged": true,
+    "nativeExecution": false,
+    "nativePersistence": "NOT_ESTABLISHED",
+    "nativeFreshProcess": "NOT_ESTABLISHED",
+    "physicalRelease": "NOT_ESTABLISHED",
+    "LinuxAcceptance": "NOT_ESTABLISHED",
+    "G0G5": "OPEN"
+  },
+  "contract": {
+    "path": "qualification/expired-funding-history.source-contract.json",
+    "bytes": 1500,
+    "sha256": "36e73965efd4ad888ef0b8dd2c36cf6cd56af78619c11998066d94e86b1e3f25"
+  },
+  "proofManifest": {
+    "path": "qualification/expired-funding-history.proof-manifest.json",
+    "bytes": 252298,
+    "sha256": "896c29350890effa63991bad7ce6a1ea0b3393e5686960a3f9a128b2f0565ffc"
+  },
+  "failureInventory": {
+    "path": "qualification/expired-funding-history.failure-inventory.json",
+    "bytes": 518,
+    "sha256": "dc6596d1dcd1c5c4115a4007dfe667a41653bc87b236a13e2de9be84d07fd44c"
+  },
+  "sourceDelta": [
+    {
+      "path": "qualification/expired-funding-history.behavior.mjs",
+      "bytes": 12094,
+      "sha256": "1ff0595caa6f6d15a6bff089d7897ff777bd32a08bf7222ab8c0fb4f1de2df7e",
+      "gitBlob": "fb4e7bde16b27c4af510b2f0f9cab8915c486e37"
+    },
+    {
+      "path": "src/issued-original-grant-admission-owner.js",
+      "bytes": 14892,
+      "sha256": "e224979ee19511acf7a1a8bacb1481c5584ee637aafb6e93242d30b443c32010",
+      "gitBlob": "77c9409c85c04614fb2e4c7e72c24e656aabc9d0"
+    },
+    {
+      "path": "src/issued-provider-module-catalog.json",
+      "bytes": 104205,
+      "sha256": "6d0e7052d9b1a041e16254fcfb9551994bab40ca28f9de0728571cac77c1f37b",
+      "gitBlob": "75b0acaebb705eef50ecc20aeede8dcd06486684"
+    },
+    {
+      "path": "src/issued-provider-native-package-admission.js",
+      "bytes": 6429,
+      "sha256": "577996f96e16213cad7522ef81598a420735635719d066aacc256e7837a87e86",
+      "gitBlob": "eeaa8e813484e96224747a1ccc74ca9c7dd0b721"
+    }
+  ],
+  "buyerGraphUnchanged": true,
+  "providerSourceGraphUnchanged": true,
+  "providerCatalog": {
+    "path": "src/issued-provider-module-catalog.json",
+    "bytes": 104205,
+    "sha256": "6d0e7052d9b1a041e16254fcfb9551994bab40ca28f9de0728571cac77c1f37b",
+    "graph": 103,
+    "rows": 506,
+    "packageRows": 404,
+    "bareEdges": 4
+  },
+  "currentLocalData": {
+    "new": 17,
+    "reexecuted": 103,
+    "retainedExact": 1693,
+    "sourceBoundDistinct": 1813,
+    "newDATACommands": 5,
+    "newParserCommands": 1,
+    "parserSourceProofs": 48
+  },
+  "selectedHostedCIControls": 108,
+  "selectedHostedCISourceInputs": 22,
+  "hostedSelectionChanged": false,
+  "newCasesIncludedInHostedCI": false,
+  "nativeQualification": "NOT_EXECUTED",
+  "G0G5Acceptance": "OPEN"
+}

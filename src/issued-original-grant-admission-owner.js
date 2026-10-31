@@ -6,7 +6,8 @@ import { decodeB64Json } from './x402-wire.js';
 import { captureIssuedFundingGrantRecoveryExpectation,captureIssuedFundingGrantRecoveryRows } from './x402-issued-funding-grant-recovery.js';
 import { captureIssuedFundingPostServiceSelection } from './x402-issued-funding-post-application-binding.js';
 import { captureOfficialFundingPostHttpsRoute } from './x402-official-funding-post-https-request-binding.js';
-import { captureOfficialFundingPostCustodyContext,requireOfficialFundingPostCustodyContext,projectOfficialFundingPostCustodyRecord } from './official-funding-post-custody-record.js';
+import { captureOfficialFundingPostCustodyContext,requireOfficialFundingPostCustodyContext,projectOfficialFundingPostCustodyRecord,
+ projectOfficialFundingPostExpiredReceipt } from './official-funding-post-custody-record.js';
 import { captureServiceCreditOriginalFundingIdentity,captureServiceCreditOriginalFundingGrantResult } from './service-credit-original-funding-grant.js';
 
 const F=Object.freeze,D=Object.getOwnPropertyDescriptor,O=Object.hasOwn,K=Reflect.ownKeys,A=Reflect.apply,NP=Promise,PP=NP.prototype;
@@ -62,8 +63,18 @@ export function createIssuedOriginalGrantAdmissionOwner(options){
   const b=first.row.binding;if(record.phase!=='SETTLED'||record.transactionHash!==b.transactionHash
     ||record.boundJson!==canonicalJson({status:'BOUND',transactionHash:b.transactionHash,observerRecordKey:b.observerRecordKey,observerFileName:b.observerFileName})
     ||canonicalJson(JSON.parse(Buffer.from(record.originalHeader,'base64').toString('utf8')))!==canonicalJson(b.publication?.paymentPayload))fail();
+  const originalIdentity=identity(record,selection);let expiredFundingHistory=null;
+  if(JSON.parse(raw).version===2){
+   // The digest above precedes parsing. A retained receipt also needs the
+   // separately pinned original challenge; its own expiry is not a trust input.
+   const challenge=own(first.row.issue,'challenge'),intent=own(challenge,'activationIntent');
+   if(own(challenge,'fundingCommitment')!==originalIdentity.grantFundingCommitment)fail();
+   expiredFundingHistory=projectOfficialFundingPostExpiredReceipt(raw,expected.outcomeRecordDigest,F({
+    transactionHash:record.transactionHash,fundingCommitment:originalIdentity.grantFundingCommitment,expiresAt:own(intent,'expiresAt')}));
+   if(expiredFundingHistory===null)fail();
+  }
   const last=captureIssuedFundingGrantRecoveryRows(sync(p.loadBound),selection,url,expected);if(last.rowJson!==first.rowJson)fail();
-  const selected=F({rowJson:first.rowJson,recordJson:raw,identity:identity(record,selection)});if(original!==null&&(original.rowJson!==selected.rowJson||original.recordJson!==raw))fail();
+  const selected=F({rowJson:first.rowJson,recordJson:raw,identity:originalIdentity,expiredFundingHistory});if(original!==null&&(original.rowJson!==selected.rowJson||original.recordJson!==raw))fail();
   original=selected;return selected;
  }
  function requestClose(){if(providerClose!==null)return providerClose.promise;providerClose=capability();closeCalls++;
@@ -83,7 +94,13 @@ export function createIssuedOriginalGrantAdmissionOwner(options){
    lookupCalls++;history=captureServiceCreditOriginalFundingGrantResult(sync(p.readOriginalFundingGrant,[selected.identity]),selected.identity);
    const again=current(),latest=inspect();if(again.rowJson!==selected.rowJson||again.recordJson!==selected.recordJson||!eligible(latest)
      ||own(own(latest,'binding'),'transactionHash')!==hash)fail();
-   live();return history;
+   // V1 keeps its original closed result. Retained V2 history makes the
+   // separate obligation visible without treating a grant lookup as delivery,
+   // refund, fresh verification, or authority to perform another operation.
+   live();return selected.expiredFundingHistory===null?history:F({originalFundingHistoryVersion:1,
+    grantHistory:history,expiredFundingHistory:selected.expiredFundingHistory,
+    historicalObservation:true,verification:'STORED_HISTORY_NOT_REVALIDATED',authority:'NONE',
+    mayStartPayment:false,maySignPayment:false,mayActivateGrant:false,mayDispatchService:false,mayStartCompensation:false});
   }catch{hold();requestClose();fail();}finally{active=false;}
  });
  function admitOriginal(resultsOnly){

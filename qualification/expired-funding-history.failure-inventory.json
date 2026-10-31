@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "currentDataFailures": 0,
+  "currentParserFailures": 0,
+  "currentQualifiedTaskFailures": 0,
+  "unexpectedSkips": 0,
+  "cancellations": 0,
+  "inheritedInventory": {
+    "path": "qualification/expired-funding-retention.failure-inventory.json",
+    "bytes": 2424,
+    "sha256": "2668752c0ebd08d878f0479ca3a257915a7aedec4aebe089b2c49895721f85cf"
+  },
+  "earlierFailedAndUnknownRecordsPreserved": true,
+  "wholeFailedTaskReclassified": false,
+  "oldCASObjectsConsumed": false,
+  "nativeExecution": 0
+}
