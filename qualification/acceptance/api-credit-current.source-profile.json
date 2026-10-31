@@ -1,7 +1,7 @@
 {
   "profileVersion": 1,
   "profileId": "API_CREDIT_CURRENT_SOURCE_V1",
-  "sourceBaseline": "1b6f600c0f318502a6260444a77f8af074a2afbb",
+  "sourceBaseline": "5c8011768a36a5ec1cb767a1a21c09ee7d6ca002",
   "application": {
     "buyerEntry": "src/api-credit-cli.js",
     "providerEntry": "src/issued-provider-cli.js"
@@ -20,7 +20,7 @@
       "role": "provider",
       "path": "src/issued-provider-module-catalog.json",
       "bytes": 104412,
-      "sha256": "fec4a98a50126985ba84ea07546402264ef0dfd5c59360b8eeae449c572147dc",
+      "sha256": "e2fea2d5a2378fa2d078eb75d618867d7bc193e89a23f6ec41ed9e0320218286",
       "sourceRows": 102,
       "packageRows": 404,
       "bareEdges": 4
@@ -36,7 +36,7 @@
     {
       "path": "src/issued-provider-native-package-admission.js",
       "bytes": 6429,
-      "sha256": "edeb56cb78fa45febf37ccb1b785fec3dda8866b6bdd6a6519dff586592a3001",
+      "sha256": "80b1b96a27f0ff0503adf1841c831d42ddac6bbc782b4f276ffcd90c95e3c768",
       "format": "module"
     },
     {
@@ -48,19 +48,19 @@
   ],
   "dataQualification": {
     "sourceProfile": {
-      "path": "qualification/profiles/api-credit-application-source-v73.json",
-      "bytes": 4972,
-      "sha256": "b47e5d3d5d3fe932de2b52afafa7beeca557b9b22c3f9236de88e7badff96b1c"
+      "path": "qualification/profiles/api-credit-application-source-v74.json",
+      "bytes": 4339,
+      "sha256": "6a4eb1fd44322fc05a8f4eadc98ef042aed8cfadad9becb8d6ec56ae9d8c31df"
     },
     "result": {
-      "path": "qualification/recovery-response-provenance.actual-local-result.json",
-      "bytes": 194416,
-      "sha256": "d78d224b7c5c006751cae9e0d7d133cfc297520d4a4f0a4688009dcd3ebc0c34"
+      "path": "qualification/provider-wire-route.actual-local-result.json",
+      "bytes": 22854,
+      "sha256": "79d733b10bdfa278d37ca0a238d9fa81dca9150a55997bd1e8c1831bf06c38d4"
     },
-    "sourceBoundControls": 1981,
-    "executedControls": 1572,
-    "retainedControls": 409,
-    "expectedResultQualification": "G1_G2_RECOVERY_RESPONSE_PROVENANCE_DATA"
+    "sourceBoundControls": 1989,
+    "executedControls": 163,
+    "retainedControls": 1826,
+    "expectedResultQualification": "G1_PROVIDER_WIRE_ROUTE_DATA"
   },
   "runtime": {
     "nodeVersion": "24.19.0",

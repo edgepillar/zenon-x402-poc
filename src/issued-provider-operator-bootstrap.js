@@ -75,9 +75,11 @@ export function decodeIssuedProviderOperatorBootstrap(raw){
 export function bindIssuedProviderOperatorBootstrap(prepared,official,tlsMaterial,now,observation){
  if(arguments.length!==5||prepared===null||typeof prepared!=='object'||types.isProxy(prepared))fail();const state=PREPARED.get(prepared);
  if(!state||state.consumed||typeof now!=='function'||types.isProxy(now)||!Object.isFrozen(now))fail();state.consumed=true;const c=state.configuration,f=c.funding;
+ // The receipt product uses the existing service-credit HTTP wire route.
+ // Product and cost-policy names are not alternative request route IDs.
  const deriveCost=F(function deriveCost(input){const v=fields(input,['modelVersion','offer','grant','request']),o=fields(v.offer,['providerId','serviceId','offerId','offerVersion','costPolicyId']),g=fields(v.grant,['grantId','offerId','offerVersion']),r=fields(v.request,['modelVersion','grantId','requestId','method','routeId','canonicalBodyDigest','selectedContentType']);
   if(v.modelVersion!==1||r.modelVersion!==1||r.grantId!==g.grantId||g.offerId!==c.offer.offerId||g.offerVersion!==c.offer.offerVersion||Object.keys(o).some(k=>o[k]!==c.offer[k])
-   ||r.method!=='POST'||r.routeId!=='execution-receipt.v1'||r.canonicalBodyDigest!==EMPTY||r.selectedContentType!=='application/json')fail();return 1;});
+   ||r.method!=='POST'||r.routeId!=='service-credit.execute.v1'||r.canonicalBodyDigest!==EMPTY||r.selectedContentType!=='application/json')fail();return 1;});
  const execute=F(function execute(input){if(arguments.length!==1)fail();const v=fields(input,['executionId','signal']);
   if(typeof v.executionId!=='string'||!/^sha256:[0-9a-f]{64}$/.test(v.executionId)||types.isProxy(v.signal)||Reflect.apply(ABORTED,v.signal,[]))fail();
   return F({resultCode:'sha256:'+sha256Hex({domain:'zenon-x402-execution-receipt-v1',executionId:v.executionId})});});

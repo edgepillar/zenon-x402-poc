@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "owner": "src/issued-provider-operator-bootstrap.js",
+  "canonicalWireRoute": "service-credit.execute.v1",
+  "serverConstant": "SERVICE_CREDIT_HTTP_ROUTE_ID",
+  "productId": "execution-receipt-v1",
+  "costPolicyId": "execution-receipt-unit-v1",
+  "costUnits": 1,
+  "noLegacyRouteAlias": true,
+  "methodEmptyBodyJsonOfferAndGrantChecksPreserved": true,
+  "originalCostControlNowCapturesBuyerWire": true,
+  "actualProviderCallbacksAndReferenceModelComposed": true,
+  "declaredMockGrant": true,
+  "referenceReconstructionNotFreshProcess": true,
+  "pricingProductTermsFundingAndGrantAuthorityUnchanged": true,
+  "inputOutputAndCLIUnchanged": true,
+  "nativeCompatibility": "NOT_ESTABLISHED",
+  "nativeExecutions": 0,
+  "physicalRelease": "NOT_ESTABLISHED",
+  "G0G5": "OPEN"
+}

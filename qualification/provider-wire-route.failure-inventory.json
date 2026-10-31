@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "currentDataFailures": 0,
+  "currentParserFailures": 0,
+  "unexpectedSkips": 0,
+  "previousControlAssumption": {
+    "control": "provider-cli-selected-product-charges-only-original-empty-body-route",
+    "observation": "INTERNAL_ROUTE_LITERAL_WAS_TESTED_WITHOUT_BUYER_WIRE_CAPTURE",
+    "correction": "USE_EXISTING_WIRE_ROUTE_AND_REQUIRE_ACTUAL_BUYER_CAPTURE_BEFORE_PRICING",
+    "oldSourceAndRawEvidencePreserved": true,
+    "oldPassingQualificationReclassified": false
+  },
+  "sourceOnlyReadRefusalPreserved": true,
+  "inheritedInventory": {
+    "path": "qualification/recovery-response-provenance.failure-inventory.json",
+    "bytes": 679,
+    "sha256": "4bbaaaa2dccbacb8a17bfaca91b713c88a073036319971869cee06866457e964"
+  },
+  "earlierFailedAndUnknownEvidencePreserved": true
+}
