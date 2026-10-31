@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "currentDataFailures": 0,
+  "currentParserFailures": 0,
+  "unexpectedSkips": 0,
+  "priorCandidate": {
+    "rawQualificationSha256": "8f5645336fd4d8e833657311c5db91120af797f9af2ee00f698b6687510efea6",
+    "status": "UNKNOWN",
+    "taskState": "CLOSED",
+    "taskOutcome": "FAILURE",
+    "passed": 14,
+    "failed": 1,
+    "actualDataCommands": 1,
+    "failedControl": "recovery-admission-preserves-normal-original-replay-without-another-execution",
+    "sourceFinding": "TEST_COMPARED_WHOLE_ENVELOPE_WITH_DOCUMENTED_REPLAY_MARKER_DIFFERENCES",
+    "correction": "ASSERT_EXACT_RESPONSE_AND_UNCHANGED_MODEL_SPENDING_CUSTODY_WITH_DOCUMENTED_MARKERS",
+    "applicationSourceUnchanged": true,
+    "reclassified": false
+  },
+  "inheritedInventory": {
+    "path": "qualification/buyer-stop-command-admission.failure-inventory.json",
+    "bytes": 1307,
+    "sha256": "ac043e77aa0c837fc1bea09d5074c24c8fffa9932e932d08a154014e3b3ead23"
+  },
+  "earlierFailedAndUnknownEvidencePreserved": true
+}

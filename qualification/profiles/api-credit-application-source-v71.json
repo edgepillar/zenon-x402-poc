@@ -1,0 +1,124 @@
+{
+  "version": 71,
+  "status": "SOURCE_AND_DECLARED_MEMORY_DATA_CANDIDATE",
+  "sourceMain": "8cfed1278446e9412d0dd447da3a488e308d8f36",
+  "sourceMainTree": "a087946f2b3ab43c7392d5a93fab7e18a59af0cc",
+  "predecessorProfile": {
+    "path": "qualification/profiles/api-credit-application-source-v70.json",
+    "bytes": 4126,
+    "sha256": "ee460c1f0a11b06c18690ca483971cbd5857ad10ddca8e1a5ebfa15013b1f416"
+  },
+  "profileStorage": "EXACT_PREDECESSOR_REFERENCE_WITH_EXPLICIT_CURRENT_DELTA",
+  "product": "ONE_FUNDING_ONE_GRANT_MANY_METERED_CALLS_ORIGINAL_REPLAY_RECOVERY",
+  "recoveryApplicationAdmission": {
+    "path": "qualification/recovery-application-admission.source-contract.json",
+    "bytes": 725,
+    "sha256": "c1357d2733171a878b64e18065a08fb67080074d4f12fcde1ccc0c1abe2d7a0c"
+  },
+  "proofManifest": {
+    "path": "qualification/recovery-application-admission.proof-manifest.json",
+    "bytes": 198799,
+    "sha256": "761315086fa1e54e6594b85cb851250a7ebb2f680a1e88d4cd56eaf1dc08666d"
+  },
+  "failureInventory": {
+    "path": "qualification/recovery-application-admission.failure-inventory.json",
+    "bytes": 1003,
+    "sha256": "59a0a0c541925d51a4dcbe1fcd1ec35383e8beb6e5f2c1133e8871ca5150bc1b"
+  },
+  "sourceDelta": [
+    {
+      "path": "docs/RECOVERY_APPLICATION_ADMISSION.md",
+      "bytes": 2102,
+      "sha256": "03b0b40f439978b72ee68bf3ff895ec718497eebfe97b38698f2e629d3b3415f",
+      "gitBlob": "8df121eb39e062092a6b10bb7ba45eb2614258f4"
+    },
+    {
+      "path": "qualification/purchased-grant-handoff.fixture.mjs",
+      "bytes": 8098,
+      "sha256": "c74ca42262e25129e3dc51bc166f759b6360bedac57cac95184a1d3c644ac198",
+      "gitBlob": "737c0a712df0bbdada9264efc5aa2efb65a03f6f"
+    },
+    {
+      "path": "qualification/recovery-application-admission.behavior.mjs",
+      "bytes": 12217,
+      "sha256": "ba82142b8d2cd22f6fe9dfa44db3d7c13d4bd14f0d110ffc375d41eef0eab293",
+      "gitBlob": "0cb1ae134b614dfa7a2b9ca43b7e82744f22e1bc"
+    },
+    {
+      "path": "src/api-credit-funding-grant-recovery-application.js",
+      "bytes": 15821,
+      "sha256": "ea5dbd2107a1ae1cbe1b0555eced89ccfe6a42806d9918c96e01e2b26a29d5ad",
+      "gitBlob": "f7c1709634ab7c9ba948ad3013f26675784fdc97"
+    },
+    {
+      "path": "src/api-credit-module-catalog.json",
+      "bytes": 120106,
+      "sha256": "53504c0bda032c50cd373935667e4334c4b6fe396a77e868f3b4d6f186cb5282",
+      "gitBlob": "027817819d66b27839658d525b2e122262191648"
+    },
+    {
+      "path": "src/api-credit-native-package-admission.js",
+      "bytes": 6414,
+      "sha256": "e15fa38c05fd0fc341a28f35565175b3ddf380360cbea2ba859388946768cace",
+      "gitBlob": "747057072c86a200d87c57590bdf03caa8e9f335"
+    }
+  ],
+  "buyerCatalog": {
+    "role": "buyer",
+    "sourceGraph": 174,
+    "catalogRows": 577,
+    "sourceRows": 172,
+    "packageRows": 404,
+    "bareEdges": 9,
+    "changedSourceRows": [
+      "src/api-credit-funding-grant-recovery-application.js"
+    ],
+    "catalog": {
+      "path": "src/api-credit-module-catalog.json",
+      "bytes": 120106,
+      "sha256": "53504c0bda032c50cd373935667e4334c4b6fe396a77e868f3b4d6f186cb5282"
+    },
+    "admission": {
+      "path": "src/api-credit-native-package-admission.js",
+      "bytes": 6414,
+      "sha256": "e15fa38c05fd0fc341a28f35565175b3ddf380360cbea2ba859388946768cace"
+    },
+    "catalogUnchanged": false
+  },
+  "providerCatalog": {
+    "role": "provider",
+    "sourceGraph": 104,
+    "catalogRows": 507,
+    "sourceRows": 102,
+    "packageRows": 404,
+    "bareEdges": 4,
+    "changedSourceRows": [],
+    "catalog": {
+      "path": "src/issued-provider-module-catalog.json",
+      "bytes": 104412,
+      "sha256": "d377ca8c98a1860090d49480a7bc119232f1ad11a73fc9f8d17c37be2296ee71"
+    },
+    "admission": {
+      "path": "src/issued-provider-native-package-admission.js",
+      "bytes": 6429,
+      "sha256": "7c75df5d16061d31c96aeb9ad03e3ec9f443b76be3aed17894d89a09f7aa9132"
+    },
+    "catalogUnchanged": true
+  },
+  "packagePinsAndBareEdgesUnchanged": true,
+  "currentLocalData": {
+    "new": 15,
+    "reexecuted": 718,
+    "retainedExact": 1210,
+    "sourceBoundDistinct": 1943,
+    "newDATACommands": 25,
+    "newParserCommands": 1,
+    "parserSourceProofs": 49
+  },
+  "selectedHostedCIControls": 108,
+  "selectedHostedCISourceInputs": 22,
+  "hostedSelectionChanged": false,
+  "newCasesIncludedInHostedCI": false,
+  "nativeQualification": "NOT_EXECUTED",
+  "G0G5Acceptance": "OPEN"
+}

@@ -1,7 +1,7 @@
 {
   "profileVersion": 1,
   "profileId": "API_CREDIT_CURRENT_SOURCE_V1",
-  "sourceBaseline": "1a98b0883cf83747c460521a076439151c9ce223",
+  "sourceBaseline": "8cfed1278446e9412d0dd447da3a488e308d8f36",
   "application": {
     "buyerEntry": "src/api-credit-cli.js",
     "providerEntry": "src/issued-provider-cli.js"
@@ -11,7 +11,7 @@
       "role": "buyer",
       "path": "src/api-credit-module-catalog.json",
       "bytes": 120106,
-      "sha256": "2bc5f62555608648e5d2237fa3e8d84bf542ec17ea9a49e9b981e84318020e3c",
+      "sha256": "53504c0bda032c50cd373935667e4334c4b6fe396a77e868f3b4d6f186cb5282",
       "sourceRows": 172,
       "packageRows": 404,
       "bareEdges": 9
@@ -30,7 +30,7 @@
     {
       "path": "src/api-credit-native-package-admission.js",
       "bytes": 6414,
-      "sha256": "4c71f1daf1cda583dea751c45f2731e5d704d6d0d2e86127590ddf0b6550bcbc",
+      "sha256": "e15fa38c05fd0fc341a28f35565175b3ddf380360cbea2ba859388946768cace",
       "format": "module"
     },
     {
@@ -48,19 +48,19 @@
   ],
   "dataQualification": {
     "sourceProfile": {
-      "path": "qualification/profiles/api-credit-application-source-v70.json",
-      "bytes": 4126,
-      "sha256": "ee460c1f0a11b06c18690ca483971cbd5857ad10ddca8e1a5ebfa15013b1f416"
+      "path": "qualification/profiles/api-credit-application-source-v71.json",
+      "bytes": 4422,
+      "sha256": "b1513dd507c608eed1d72094031c0d4039beab0e85afc660f321fcbb6b5a9c2a"
     },
     "result": {
-      "path": "qualification/buyer-stop-command-admission.actual-local-result.json",
-      "bytes": 73602,
-      "sha256": "c72504d3957dc62e74410e77c954e27a1561ca8d940af20f82c1f0b93df7d9d2"
+      "path": "qualification/recovery-application-admission.actual-local-result.json",
+      "bytes": 91749,
+      "sha256": "4c3e98c6bb7a0bfc16e3e80fc9b1e7d3c5e810fdbac633b612c89c578eb75fba"
     },
-    "sourceBoundControls": 1928,
-    "executedControls": 581,
-    "retainedControls": 1347,
-    "expectedResultQualification": "G2_BUYER_STOP_COMMAND_ADMISSION_DATA"
+    "sourceBoundControls": 1943,
+    "executedControls": 733,
+    "retainedControls": 1210,
+    "expectedResultQualification": "G2_RECOVERY_APPLICATION_ADMISSION_DATA"
   },
   "runtime": {
     "nodeVersion": "24.19.0",

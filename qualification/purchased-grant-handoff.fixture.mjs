@@ -73,9 +73,10 @@ export function purchasedGrantHandoffFixture(options={}){
    s.lastOutput=value;return options.output?options.output(s,value):value;
   });
  });
- s.configuration=F({application:client,custody,paymentId:d.row.paymentId,fundingResourceUrl:d.f.resourceUrl,
+ const application=options.wrapDeclaredApplication?options.wrapDeclaredApplication(s,client):client;
+ s.configuration=F({application,custody,paymentId:d.row.paymentId,fundingResourceUrl:d.f.resourceUrl,
   purchase:s.purchase,inspectGrant,lookupPolicy});
- s.root=options.legacy?createApiCreditFundingGrantRecoveryApplication(F({application:client,custody,paymentId:d.row.paymentId,fundingResourceUrl:d.f.resourceUrl}))
+ s.root=options.legacy?createApiCreditFundingGrantRecoveryApplication(F({application,custody,paymentId:d.row.paymentId,fundingResourceUrl:d.f.resourceUrl}))
   :createApiCreditPurchasedGrantRecoveryApplication(s.configuration);
  s.prepare=()=>s.root.prepareOriginalFunding(h.f.input);
  s.commit=(text=d.text)=>s.root.commitOriginalFunding(F({expectedPins:h.packet.expectedPins,originalGrantQueryProfile:text}));

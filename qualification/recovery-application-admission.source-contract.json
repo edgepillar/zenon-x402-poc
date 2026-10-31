@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "owner": "src/api-credit-funding-grant-recovery-application.js",
+  "borrowedChildInspectionTrackedBeforeCallback": true,
+  "newWorkDeniedWhileInspectionBorrowed": true,
+  "childCloseDeferredUntilInspectionReturns": true,
+  "availabilityAndInvariantRecheckedAfterCallback": true,
+  "intrinsicDriftRemainsHeld": true,
+  "oneOriginalCachedChildStop": true,
+  "quiescentRevocationDoesNotClaimAnOperation": true,
+  "enteredWorkAndLateResultsRemainHeld": true,
+  "originalCheckpointAndCustodyPreserved": true,
+  "configurationAndOutputSchemasUnchanged": true,
+  "noReplacementRetryOrNewAuthority": true,
+  "authority": "NONE",
+  "nativeExecutions": 0,
+  "physicalRelease": "NOT_ESTABLISHED",
+  "G0G5": "OPEN"
+}

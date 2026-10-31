@@ -47,13 +47,21 @@ function createApplication(configuration,purchased){
   let held=false,closed=false,active=false,closing=null,childClose=null,prepared=null,originalDigest=null,retained=null,selected=null;
   let prepareClaimed=false,commitClaimed=false,commitReturned=false,submissionClaimed=false,retains=0,reads=0,currentChecks=0;
   let custodyActive=false,custodyUnknown=false,childCloseRequested=false;
+  let childViewDepth=0;
   let fundingReturned=false,handoffClaimed=false,querySelection=null,queryReceipt=null,queryActive=false,queryUnknown=false,queryClosed=false,purchaseMatched=false;
   const opaque=new Set(),retainedFrame=F(()=>[c,childClose,prepared,retained,selected,querySelection,queryReceipt,opaque]);
   function hold(){held=true;HELD.add(retainedFrame);}
   function keep(value){opaque.add(value);try{if(safe(value))observe(value,()=>{},()=>{});}catch{}}
-  function childView(){try{const v=A(child.inspect,c.application,[]);if(v===null||typeof v!=='object'||types.isProxy(v)||Object.getPrototypeOf(v)!==Object.prototype||!Object.isFrozen(v))fail();
-    if(data(v,'held')!==false)hold();return v;}catch{hold();fail();}}
-  function available(){if(!invariant()){hold();fail();}if(closed||held||closing!==null)fail();const v=childView();if(held||data(v,'lifecycle')!=='OPEN'||data(v,'publicOperationActive')!==false)fail();}
+  function childView(){
+    // Borrowed inspection can reenter this parent. Do not admit work or stop
+    // the child while that synchronous borrower has not returned.
+    childViewDepth++;
+    try{const v=A(child.inspect,c.application,[]);if(v===null||typeof v!=='object'||types.isProxy(v)||Object.getPrototypeOf(v)!==Object.prototype||!Object.isFrozen(v))fail();
+      if(data(v,'held')!==false)hold();return v;
+    }catch{hold();fail();}
+    finally{childViewDepth--;if(closing!==null)startChildClose();}
+  }
+  function available(){if(!invariant()){hold();fail();}if(closed||held||closing!==null)fail();const v=childView();if(!invariant()){hold();fail();}if(closed||held||closing!==null||data(v,'lifecycle')!=='OPEN'||data(v,'publicOperationActive')!==false)fail();}
   function custodyCall(name,args,kind){
     if(custodyActive||custodyUnknown)fail();custodyActive=true;
     try{const value=A(ports[name],c.custody,args);
@@ -71,7 +79,7 @@ function createApplication(configuration,purchased){
   function read(){current();reads++;const value=custodyCall('read',[c.paymentId],'text');
     current();if(checkRecord(value)!==retained)fail();}
   function start(work,count,input){
-    if(count!==1||active)return rejected();
+    if(count!==1||active||childViewDepth!==0)return rejected();
     try{available();}catch{return rejected();}
     const out=capability();active=true;
     function bad(){hold();active=false;out.reject(error());}
@@ -167,7 +175,7 @@ function createApplication(configuration,purchased){
       ...(purchased?{purchasedGrantHandoff:F({version:1,fundingReturned,handoffClaimed,queryActive,queryUnknown,queryCloseObserved:queryClosed,purchaseMatched,maximumQueries:1,grantAuthority:'NOT_REVALIDATED',deliveryLiability:'UNCHANGED'})}:{}),store:'BORROWED_SELECTED_SPENDING_OWNER',nativePersistence:'NOT_QUALIFIED',authority:'NONE'}),enumerable:true});return F(copy);
   });
   function startChildClose(){
-    if(closing===null||childCloseRequested||custodyActive||custodyUnknown||purchased&&(queryActive||queryUnknown))return;
+    if(closing===null||childCloseRequested||childViewDepth!==0||custodyActive||custodyUnknown||purchased&&(queryActive||queryUnknown))return;
     childCloseRequested=true;
     try{childClose=A(child.close,c.application,[]);observe(childClose,value=>{
       try{const v=childView();if(value!==undefined||held||active||data(v,'lifecycle')!=='CLOSED'||data(v,'publicOperationActive')!==false)fail();closing.resolve(undefined);}
