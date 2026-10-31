@@ -1,5 +1,7 @@
 import { types } from 'node:util';
-import { encodeBuyerApiCreditCommand } from './buyer-original-funding-command.js';
+import { Buffer } from 'node:buffer';
+import { encodeBuyerApiCreditCommand, encodeBuyerApiCreditCommandResult } from './buyer-original-funding-command.js';
+import { captureApiCreditRecordedServiceResult } from './api-credit-recorded-service-result.js';
 import { captureServiceCreditHttpExecuteOriginalInput } from './service-credit-http-execute-dispatch.js';
 
 const F = Object.freeze, D = Object.getOwnPropertyDescriptor, PREPARED = new WeakMap();
@@ -47,4 +49,32 @@ export function captureApiCreditServiceReplayCommand(original, id) {
   const state = PREPARED.get(original);
   if (!state) fail();
   try { return command(state.input, id, state.maxLineBytes); } catch { fail(); }
+}
+
+/** Decode one complete reply from the already selected private result pipe.
+ * Only a genuine captured service command selects the original identity and
+ * byte budget. Grammar/correlation supply no authentication or new authority. */
+export function decodeApiCreditServiceCommandResult(original, line) {
+  if (arguments.length !== 2 || original === null || typeof original !== 'object' || types.isProxy(original)) fail();
+  const state = PREPARED.get(original);
+  if (!state) fail();
+  try {
+    if (typeof line !== 'string' || Buffer.byteLength(line) > state.maxLineBytes + 1
+        || !line.endsWith('\n') || Buffer.from(line, 'utf8').toString('utf8') !== line) fail();
+    const reply = JSON.parse(line.slice(0, -1));
+    let nodes = 0;
+    function freeze(value, depth = 0) {
+      if (++nodes > 4096 || depth > 16) fail();
+      if (value === null || typeof value !== 'object') return;
+      for (const child of Object.values(value)) freeze(child, depth + 1);
+      F(value);
+    }
+    freeze(reply);
+    const captured = fields(reply, ['version', 'id', 'operation', 'outcome', 'result']);
+    const result = captureApiCreditRecordedServiceResult(captured.result);
+    // The existing encoder checks the original grant/request, projects the
+    // closed NONE-authority result and reproduces its canonical wire bytes.
+    if (encodeBuyerApiCreditCommandResult(original.command, result, state.maxLineBytes) !== line) fail();
+    return result;
+  } catch { fail(); }
 }

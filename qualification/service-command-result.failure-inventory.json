@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "currentDataFailures": 0,
+  "currentParserFailures": 0,
+  "unexpectedSkips": 0,
+  "inheritedInventory": {
+    "path": "qualification/recorded-result-commitment.failure-inventory.json",
+    "bytes": 935,
+    "sha256": "5aa3e58acf95142c184fe5fa34363fa705f493f0700945da03187506b523adb6"
+  },
+  "newDataCommands": 1,
+  "affectedDataCommands": 1,
+  "affectedExistingControlsReexecuted": 12,
+  "unchangedControlsNotReexecuted": 2203,
+  "completedDATAOrCIRepeatedForMetadata": false,
+  "currentPreparationRefusals": [],
+  "originalEvidenceAndFailedOutcomesPreserved": true,
+  "scope": "OPTIONAL_REPLY_CONSUMER_DATA_NOT_NATIVE_PRODUCT_ACCEPTANCE"
+}

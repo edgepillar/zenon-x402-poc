@@ -1,0 +1,218 @@
+{
+  "qualification": "G1_API_CREDIT_SERVICE_COMMAND_RESULT_CURRENT_SOURCE_DATA",
+  "status": "PASS",
+  "recordedAtUTC": "2026-10-31T23:25:31.993668+00:00",
+  "passed": 39,
+  "failed": 0,
+  "cases": [
+    {
+      "id": "command-result-exact-rich-reply-returns-frozen-none-authority-data",
+      "status": "PASS"
+    },
+    {
+      "id": "command-result-other-correlation-id-is-refused",
+      "status": "PASS"
+    },
+    {
+      "id": "command-result-other-request-under-the-same-grant-is-refused",
+      "status": "PASS"
+    },
+    {
+      "id": "command-result-other-grant-is-refused",
+      "status": "PASS"
+    },
+    {
+      "id": "command-result-other-operation-is-refused",
+      "status": "PASS"
+    },
+    {
+      "id": "command-result-other-wire-version-is-refused",
+      "status": "PASS"
+    },
+    {
+      "id": "command-result-other-outcome-is-refused",
+      "status": "PASS"
+    },
+    {
+      "id": "command-result-extra-envelope-authority-is-refused",
+      "status": "PASS"
+    },
+    {
+      "id": "command-result-extra-result-authority-is-refused",
+      "status": "PASS"
+    },
+    {
+      "id": "command-result-none-authority-cannot-be-upgraded",
+      "status": "PASS"
+    },
+    {
+      "id": "command-result-delivery-cannot-be-upgraded",
+      "status": "PASS"
+    },
+    {
+      "id": "command-result-replay-and-new-dispatch-flags-must-agree",
+      "status": "PASS"
+    },
+    {
+      "id": "command-result-missing-result-is-refused",
+      "status": "PASS"
+    },
+    {
+      "id": "command-result-response-and-result-code-must-agree",
+      "status": "PASS"
+    },
+    {
+      "id": "command-result-noncanonical-json-is-refused",
+      "status": "PASS"
+    },
+    {
+      "id": "command-result-duplicate-envelope-keys-are-refused",
+      "status": "PASS"
+    },
+    {
+      "id": "command-result-exactly-one-complete-line-is-required",
+      "status": "PASS"
+    },
+    {
+      "id": "command-result-captured-byte-budget-and-utf8-are-enforced",
+      "status": "PASS"
+    },
+    {
+      "id": "command-result-only-genuine-captures-select-the-original-and-budget",
+      "status": "PASS"
+    },
+    {
+      "id": "command-result-original-reply-cannot-be-rebound-to-the-replay-command",
+      "status": "PASS"
+    },
+    {
+      "id": "command-result-capture-input-edits-do-not-change-reply-selection",
+      "status": "PASS"
+    },
+    {
+      "id": "command-result-legacy-void-callback-is-not-a-recorded-service-result",
+      "status": "PASS"
+    },
+    {
+      "id": "command-result-one-funding-100-product-replies-and-exact-replay-preserve-counters",
+      "status": "PASS"
+    },
+    {
+      "id": "command-result-unknown-observation-is-not-converted-to-a-service-result",
+      "status": "PASS"
+    },
+    {
+      "id": "command-result-json-depth-and-node-budgets-are-bounded",
+      "status": "PASS"
+    },
+    {
+      "id": "command-result-non-string-input-never-enters-serialization-hooks",
+      "status": "PASS"
+    },
+    {
+      "id": "command-result-repeated-decoding-never-runs-the-provider-or-mutates-commands",
+      "status": "PASS"
+    },
+    {
+      "id": "service-command-uses-the-real-command-codec-and-buyer-wire-identities",
+      "status": "PASS"
+    },
+    {
+      "id": "service-command-preserves-existing-private-proof-request-and-url-bytes",
+      "status": "PASS"
+    },
+    {
+      "id": "service-command-refuses-invalid-correlation-ids-and-selected-byte-overflow",
+      "status": "PASS"
+    },
+    {
+      "id": "service-command-does-not-read-accessors-or-run-serialization-callbacks",
+      "status": "PASS"
+    },
+    {
+      "id": "service-command-refuses-proxies-without-entering-their-traps",
+      "status": "PASS"
+    },
+    {
+      "id": "service-command-rejects-noncanonical-or-nonproduct-original-requests",
+      "status": "PASS"
+    },
+    {
+      "id": "service-command-rejects-proof-request-identity-or-budget-mismatch",
+      "status": "PASS"
+    },
+    {
+      "id": "service-command-replay-changes-only-the-command-correlation-id",
+      "status": "PASS"
+    },
+    {
+      "id": "service-command-copied-or-fabricated-preparations-cannot-select-replay-input",
+      "status": "PASS"
+    },
+    {
+      "id": "service-command-capture-takes-a-stable-snapshot-before-caller-edits",
+      "status": "PASS"
+    },
+    {
+      "id": "service-command-100-reference-calls-replay-and-reconstruction-keep-one-debit-and-execution-each",
+      "status": "PASS"
+    },
+    {
+      "id": "service-command-original-replay-keeps-reference-unknown-and-held-budget",
+      "status": "PASS"
+    }
+  ],
+  "newControls": 27,
+  "reexecutedRelevantControls": 12,
+  "retainedExactControls": 2203,
+  "sourceBoundDistinctControls": 2242,
+  "actualDataNodeCommands": 2,
+  "actualParserNodeCommands": 0,
+  "currentParserSourceProofs": 52,
+  "nodeVersion": "24.19.0",
+  "platform": "darwin-arm64",
+  "nodeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25",
+  "sourceProfile": {
+    "path": "qualification/profiles/api-credit-application-source-v84.json",
+    "bytes": 2268,
+    "sha256": "f81168b1f4df844ee28558768de327a0e7df1b512a243c39069ff5e47d227959"
+  },
+  "sourceContract": {
+    "path": "qualification/service-command-result.source-contract.json",
+    "bytes": 969,
+    "sha256": "c7c5d2687aba2abfa61484d92cb9deb8146ebfb157a3f98f7e302b4884a5efc6"
+  },
+  "proofManifest": {
+    "path": "qualification/service-command-result.proof-manifest.json",
+    "bytes": 345306,
+    "sha256": "196757c0158413c35c2186bb931c9c8235415eca4a2a87426ec5a441f5e53961"
+  },
+  "failureInventory": {
+    "path": "qualification/service-command-result.failure-inventory.json",
+    "bytes": 661,
+    "sha256": "5869ceee61c98d127617093380dfb26457330eca110916b63f6f4e4a90aeca2f"
+  },
+  "taskQuotaBytes": 4194304,
+  "allSelectedPassingTasksClosedSuccess": true,
+  "unqualifiedHistoricalCASObjectsConsumed": false,
+  "actualCommandResultCodecsAndRecordedProductWrapper": true,
+  "fileSqlFundingGrantProofAndNativeChildren": "DECLARED_MEMORY_PORTS_ONLY",
+  "oneFunding100CallsAndExactReplay": "MODEL_COMPOSITION_ONLY",
+  "nativeExecutions": 0,
+  "SDK": 0,
+  "SQLite": 0,
+  "keys": 0,
+  "signatures": 0,
+  "sockets": 0,
+  "nonceSearches": 0,
+  "nodeChildren": 0,
+  "actualPrepare": 0,
+  "payouts": 0,
+  "nativeQualification": "NOT_EXECUTED",
+  "chainAuthentication": "NOT_ESTABLISHED",
+  "physicalRelease": "NOT_ESTABLISHED",
+  "freshProcessReopen": "NOT_EXECUTED",
+  "LinuxAcceptance": "NOT_ESTABLISHED",
+  "G0G5Acceptance": "OPEN",
+  "newCasesIncludedIn108CI": false
+}
