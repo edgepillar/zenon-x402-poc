@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "currentDataFailures": 0,
+  "currentParserFailures": 0,
+  "unexpectedSkips": 0,
+  "cancellations": 0,
+  "preTaskPlanningRefusal": {
+    "rawQualificationSha256": "64174667ba1fb342b8e5a84338996344f5dcf814ebaa92e470bf803585732396",
+    "status": "UNKNOWN",
+    "DATACommands": 0,
+    "tasksCreated": 0,
+    "reclassified": false,
+    "classification": "CONSERVATIVE_PRE_TASK_ENVELOPE",
+    "taskQuotaOrRootPolicyRaised": false,
+    "metadataReserveBytes": 196608
+  },
+  "inheritedInventory": {
+    "path": "qualification/current-source-profile.failure-inventory.json",
+    "bytes": 674,
+    "sha256": "849e673631a376cbb792161cf0e4ee8fb1062b37f9860e668a13f3765aa36d55"
+  },
+  "earlierFailedAndUnknownEvidencePreserved": true
+}

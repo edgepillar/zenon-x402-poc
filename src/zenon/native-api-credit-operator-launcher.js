@@ -1,8 +1,8 @@
 // SOURCE ONLY. Fixed native binding; no runtime acceptance is established.
 import { Readable, Writable } from 'node:stream';
-import { hrtime } from 'node:process';
+import process, { hrtime } from 'node:process';
 import { setTimeout, clearTimeout } from 'node:timers';
-import { runApiCreditOperatorCoordinator } from '../api-credit-operator-coordinator.js';
+import { createApiCreditOperatorCoordinator } from '../api-credit-operator-coordinator.js';
 import { captureApiCreditOperatorUtcDay } from '../api-credit-operator-clock.js';
 import { runBuyerOriginalCommandHost } from '../buyer-original-command-host.js';
 import { createNativeApiCreditOperatorPipes } from './native-api-credit-operator-pipes.js';
@@ -10,7 +10,7 @@ import { createNativeApiCreditOperatorKeyLease } from './native-api-credit-opera
 import { openSdk105NativeApiCreditProductSelectionCommandSession } from './sdk105-native-api-credit-command-session.js';
 
 const F = Object.freeze, ON = Readable.prototype.on, RD = Readable.prototype.destroy, WD = Writable.prototype.destroy;
-const NOW = Date.now, DATE = Date, CLOCK = hrtime.bigint;
+const NOW = Date.now, DATE = Date, CLOCK = hrtime.bigint, SIGNAL_ON = process.on, SIGNAL_OFF = process.off;
 const FAILED = new Set();
 let entered = false;
 function fail() { throw new TypeError('API_CREDIT_NATIVE_OPERATOR_UNKNOWN'); }
@@ -19,8 +19,9 @@ function fail() { throw new TypeError('API_CREDIT_NATIVE_OPERATOR_UNKNOWN'); }
  * loader. These fixed ports cannot be supplied through argv, JSON or env. */
 export async function runNativeApiCreditOperator(argumentsData) {
   if (arguments.length !== 1 || entered || FAILED.size !== 0) fail();
-  const pipes = createNativeApiCreditOperatorPipes(argumentsData); entered = true;
-  const frame = { pipes, commands: null, sessionEntered: false, orphanStop: null, orphanFacts: null };
+  entered = true; let pipes = null;
+  const frame = { pipes: null, pipesEntered: false, commands: null, sessionEntered: false, orphanStop: null, orphanFacts: null,
+    coordinator: null, stopRequested: false, signalUnknown: false, signals: [] };
   function stopOrphanCommands() {
     if (frame.orphanStop !== null) return frame.orphanStop;
     const streams = [frame.commands.input, frame.commands.output];
@@ -73,6 +74,30 @@ export async function runNativeApiCreditOperator(argumentsData) {
     armTimer: F((budgetMs, callback) => setTimeout(callback, budgetMs)),
     cancelTimer: F(token => { clearTimeout(token); })
   });
-  try { return await runApiCreditOperatorCoordinator({ arguments: argumentsData, ports }); }
-  catch { FAILED.add(frame); fail(); }
+  const onSignal = F(() => {
+    frame.stopRequested = true;
+    try { if (frame.coordinator !== null) frame.coordinator.requestStop(); }
+    catch { frame.signalUnknown = true; FAILED.add(frame); }
+  });
+  let result;
+  try {
+    // Subscribe before descriptor acquisition. Each entered subscription owns
+    // exactly its matching removal, including a partial subscription failure.
+    for (const name of ['SIGINT', 'SIGTERM']) {
+      frame.signals.push(name); Reflect.apply(SIGNAL_ON, process, [name, onSignal]);
+    }
+    if (frame.stopRequested) fail();
+    frame.pipesEntered = true; pipes = createNativeApiCreditOperatorPipes(argumentsData); frame.pipes = pipes;
+    frame.coordinator = createApiCreditOperatorCoordinator({ arguments: argumentsData, ports });
+    if (frame.stopRequested) frame.coordinator.requestStop();
+    result = await frame.coordinator.run();
+  } catch { FAILED.add(frame); fail(); }
+  finally {
+    for (const name of frame.signals) {
+      try { Reflect.apply(SIGNAL_OFF, process, [name, onSignal]); }
+      catch { frame.signalUnknown = true; FAILED.add(frame); }
+    }
+  }
+  if (frame.signalUnknown) { FAILED.add(frame); fail(); }
+  return result;
 }

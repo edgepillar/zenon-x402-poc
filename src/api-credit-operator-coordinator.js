@@ -33,7 +33,7 @@ function wipe(value) { if (value !== null && typeof value === 'object' && !types
  * JSON/argv cannot select them. DATA controls declare these ports explicitly.
  * All transitions are explicit commands after bootstrap; no pins are adopted
  * from replies and no prepare/funding/service operation is generated here. */
-export async function runApiCreditOperatorCoordinator(configuration) {
+export function createApiCreditOperatorCoordinator(configuration) {
   if (arguments.length !== 1 || FAILED.size >= 16) fail();
   const c = fields(configuration, ['arguments', 'ports']);
   const a = fields(c.arguments, ['mode', 'profileFd', 'keyFd', 'inputFd', 'outputFd', 'bootstrapMs']);
@@ -45,12 +45,14 @@ export async function runApiCreditOperatorCoordinator(configuration) {
   const frame = { stage: 'PROFILE', prepared: null, profileBytes: null, credential: null, key: null, selection: null, session: null, host: null,
     opening: true, unknown: false, accepted: false, timer: null, current: null, deadline: null, lastClock: null,
     stops: new Map(), inputStop: null, stopUnknown: false, stopTerminal: false, observed: null, selectionTransferred: false,
-    lateOwners: [], lateFacts: [], keyCreationEntered: false, sessionOpeningEntered: false };
+    lateOwners: [], lateFacts: [], keyCreationEntered: false, sessionOpeningEntered: false,
+    started: false, finished: false, stopRequested: false, runPromise: null, executionReceipt: null,
+    currentHost: null, hostReceipt: null, lateHostReceipt: null };
   function clock() { const n = p.clock(); if (typeof n !== 'bigint' || frame.lastClock !== null && n < frame.lastClock) fail(); frame.lastClock = n; return n; }
   function rejectOpening() { if (!frame.opening) return; frame.unknown = true; frame.opening = false; if (frame.current !== null) frame.current.out.reject(new TypeError('API_CREDIT_BOOTSTRAP_EXPIRED')); FAILED.add(frame); }
   const guard = F(function requireOpening() {
     if (arguments.length !== 0 || !frame.opening || frame.unknown) fail();
-    try { if (clock() >= frame.deadline) { rejectOpening(); fail(); } } catch { rejectOpening(); fail(); }
+    try { if (clock() >= frame.deadline || !frame.opening || frame.unknown || frame.stopRequested) { rejectOpening(); fail(); } } catch { rejectOpening(); fail(); }
   });
   function requestStop(owner) {
     if (frame.stops.has(owner)) return frame.stops.get(owner);
@@ -120,49 +122,89 @@ export async function runApiCreditOperatorCoordinator(configuration) {
     try { timer = p.armTimer(budget, F(() => { if (frame.stopTerminal) return; frame.stopUnknown = true; frame.stopTerminal = true; done.resolve(false); })); } catch { frame.stopUnknown = true; frame.stopTerminal = true; done.resolve(false); }
     decide(); return native(done.promise);
   }
-  let stopped = false, keyView = null;
-  try {
-    frame.deadline = clock() + BigInt(a.bootstrapMs) * 1000000n;
-    frame.timer = p.armTimer(a.bootstrapMs, F(rejectOpening));
-    await opening('PROFILE', stageGuard => p.readProfile(stageGuard)); frame.profileBytes = frame.observed; frame.observed = null; guard();
-    if (types.isProxy(frame.profileBytes) || !Buffer.isBuffer(frame.profileBytes) || Object.getPrototypeOf(frame.profileBytes) !== Buffer.prototype
-        || Reflect.apply(LENGTH, frame.profileBytes, []) > 262144 || types.isSharedArrayBuffer(Reflect.apply(ARRAY_BUFFER, frame.profileBytes, []))) fail();
-    const text = Reflect.apply(TEXT, frame.profileBytes, ['utf8']); if (!Reflect.apply(EQUALS, Buffer.from(text), [frame.profileBytes])) fail();
-    frame.prepared = decodeApiCreditOperatorBootstrap(text); wipe(frame.profileBytes); frame.profileBytes = null;
-    frame.stage = 'CREDENTIAL'; await opening('CREDENTIAL', stageGuard => p.readCredential(stageGuard)); frame.credential = frame.observed; frame.observed = null; guard();
-    if (types.isProxy(frame.credential) || !Buffer.isBuffer(frame.credential) || Object.getPrototypeOf(frame.credential) !== Buffer.prototype
-        || Reflect.apply(LENGTH, frame.credential, []) !== 32 || types.isSharedArrayBuffer(Reflect.apply(ARRAY_BUFFER, frame.credential, []))) fail();
-    frame.stage = 'KEY'; await opening('KEY', stageGuard => { frame.keyCreationEntered = true; return p.createKeyLease(frame.credential, frame.prepared.expectedIdentity, stageGuard); });
-    frame.key = frame.observed; frame.observed = null;
-    wipe(frame.credential); frame.credential = null; guard();
-    method(frame.key, 'close'); method(frame.key, 'inspect');
-    frame.selection = bindApiCreditOperatorBootstrap(frame.prepared, own(frame.key, 'keyPair'), p.readDay); guard();
-    frame.stage = 'SESSION'; await opening('SESSION', stageGuard => { frame.sessionOpeningEntered = true; frame.selectionTransferred = true; return p.openSession(frame.selection, stageGuard, frame.prepared.limits); });
-    frame.session = frame.observed; frame.observed = null; guard();
-    method(frame.session, 'close'); method(frame.session, 'inspect');
-    frame.accepted = true; frame.opening = false; if (frame.timer !== null) { p.cancelTimer(frame.timer); frame.timer = null; }
-    frame.stage = 'COMMANDS';
-    const hostDone = capability(); observe(p.runHost(frame.session), value => { frame.host = value; hostDone.resolve(undefined); }, hostDone.reject); await hostDone.promise;
-    if (own(frame.host, 'buyerOriginalCommandHostResultVersion') !== 1 || own(frame.host, 'mode') !== 'FUNDING_API_CREDIT'
-        || own(frame.host, 'exitCode') !== 0 || own(frame.host, 'status') !== 'CLOSED'
-        || own(frame.host, 'ownersClosedObserved') !== true || own(frame.host, 'sessionLifecycle') !== 'CLOSED'
-        || own(frame.host, 'sessionHeld') !== false || own(frame.host, 'outputOutcomeUnknown') !== false
-        || own(frame.host, 'fundingOutcomeUnknown') !== false || own(frame.host, 'recoveryOutcomeUnknown') !== false) frame.unknown = true;
-  } catch { frame.unknown = frame.unknown || frame.keyCreationEntered || frame.sessionOpeningEntered || frame.key !== null || frame.session !== null; }
-  finally {
-    frame.opening = false;
-    if (frame.timer !== null) { try { p.cancelTimer(frame.timer); } catch { frame.unknown = true; } frame.timer = null; }
-    wipe(frame.profileBytes); wipe(frame.credential);
-    if (frame.selection !== null && !frame.selectionTransferred) { try { frame.selection.release(); } catch { frame.unknown = true; } }
-    if (frame.prepared !== null) { try { frame.prepared.release(); } catch { frame.unknown = true; } }
-    try { stopped = await closeKnown(); keyView = stopView(); } catch { frame.stopUnknown = true; }
+  // This only revokes the same run. Its original finally owns all stops;
+  // a signal never opens a replacement or closes an unreturned owner.
+  const stop = F(function requestStop() {
+    if (arguments.length !== 0) fail();
+    if (frame.finished || frame.stopRequested) return;
+    frame.stopRequested = true;
+    if (!frame.started) { frame.opening = false; return; }
+    if (frame.opening) rejectOpening();
+    else frame.unknown = true;
+    if (frame.currentHost !== null) frame.currentHost.reject(new TypeError('API_CREDIT_OPERATOR_STOP_REQUESTED'));
+  });
+  const run = F(function run() {
+    if (arguments.length !== 0) fail();
+    if (frame.runPromise !== null) return frame.runPromise;
+    if (FAILED.size >= 16) fail();
+    const result = capability(); frame.runPromise = result.promise; frame.started = true;
+    try { frame.executionReceipt = execute(); observe(frame.executionReceipt, result.resolve, result.reject); }
+    catch { frame.unknown = true; FAILED.add(frame); result.reject(new TypeError('API_CREDIT_OPERATOR_UNKNOWN')); }
+    return result.promise;
+  });
+  async function execute() {
+    let stopped = false, keyView = null;
+    try {
+      if (frame.stopRequested) fail();
+      frame.deadline = clock() + BigInt(a.bootstrapMs) * 1000000n;
+      if (frame.stopRequested) fail();
+      frame.timer = p.armTimer(a.bootstrapMs, F(rejectOpening));
+      await opening('PROFILE', stageGuard => p.readProfile(stageGuard)); frame.profileBytes = frame.observed; frame.observed = null; guard();
+      if (types.isProxy(frame.profileBytes) || !Buffer.isBuffer(frame.profileBytes) || Object.getPrototypeOf(frame.profileBytes) !== Buffer.prototype
+          || Reflect.apply(LENGTH, frame.profileBytes, []) > 262144 || types.isSharedArrayBuffer(Reflect.apply(ARRAY_BUFFER, frame.profileBytes, []))) fail();
+      const text = Reflect.apply(TEXT, frame.profileBytes, ['utf8']); if (!Reflect.apply(EQUALS, Buffer.from(text), [frame.profileBytes])) fail();
+      frame.prepared = decodeApiCreditOperatorBootstrap(text); wipe(frame.profileBytes); frame.profileBytes = null;
+      frame.stage = 'CREDENTIAL'; await opening('CREDENTIAL', stageGuard => p.readCredential(stageGuard)); frame.credential = frame.observed; frame.observed = null; guard();
+      if (types.isProxy(frame.credential) || !Buffer.isBuffer(frame.credential) || Object.getPrototypeOf(frame.credential) !== Buffer.prototype
+          || Reflect.apply(LENGTH, frame.credential, []) !== 32 || types.isSharedArrayBuffer(Reflect.apply(ARRAY_BUFFER, frame.credential, []))) fail();
+      frame.stage = 'KEY'; await opening('KEY', stageGuard => { frame.keyCreationEntered = true; return p.createKeyLease(frame.credential, frame.prepared.expectedIdentity, stageGuard); });
+      frame.key = frame.observed; frame.observed = null;
+      wipe(frame.credential); frame.credential = null; guard();
+      method(frame.key, 'close'); method(frame.key, 'inspect');
+      frame.selection = bindApiCreditOperatorBootstrap(frame.prepared, own(frame.key, 'keyPair'), p.readDay); guard();
+      frame.stage = 'SESSION'; await opening('SESSION', stageGuard => { frame.sessionOpeningEntered = true; frame.selectionTransferred = true; return p.openSession(frame.selection, stageGuard, frame.prepared.limits); });
+      frame.session = frame.observed; frame.observed = null; guard();
+      method(frame.session, 'close'); method(frame.session, 'inspect');
+      frame.accepted = true; frame.opening = false; if (frame.timer !== null) { p.cancelTimer(frame.timer); frame.timer = null; }
+      frame.stage = 'COMMANDS';
+      if (frame.stopRequested) fail();
+      const hostDone = capability(); frame.currentHost = hostDone;
+      frame.hostReceipt = p.runHost(frame.session);
+      observe(frame.hostReceipt, value => {
+        if (frame.stopRequested || frame.finished || frame.currentHost !== hostDone) { frame.lateHostReceipt = value; return; }
+        frame.host = value; hostDone.resolve(undefined);
+      }, () => { if (frame.currentHost === hostDone && !frame.finished) hostDone.reject(new TypeError('API_CREDIT_HOST_UNKNOWN')); });
+      try { await hostDone.promise; } finally { frame.currentHost = null; }
+      if (frame.stopRequested) fail();
+      if (own(frame.host, 'buyerOriginalCommandHostResultVersion') !== 1 || own(frame.host, 'mode') !== 'FUNDING_API_CREDIT'
+          || own(frame.host, 'exitCode') !== 0 || own(frame.host, 'status') !== 'CLOSED'
+          || own(frame.host, 'ownersClosedObserved') !== true || own(frame.host, 'sessionLifecycle') !== 'CLOSED'
+          || own(frame.host, 'sessionHeld') !== false || own(frame.host, 'outputOutcomeUnknown') !== false
+          || own(frame.host, 'fundingOutcomeUnknown') !== false || own(frame.host, 'recoveryOutcomeUnknown') !== false) frame.unknown = true;
+    } catch { frame.unknown = frame.unknown || frame.keyCreationEntered || frame.sessionOpeningEntered || frame.key !== null || frame.session !== null; }
+    finally {
+      frame.opening = false;
+      if (frame.timer !== null) { try { p.cancelTimer(frame.timer); } catch { frame.unknown = true; } frame.timer = null; }
+      wipe(frame.profileBytes); wipe(frame.credential);
+      if (frame.selection !== null && !frame.selectionTransferred) { try { frame.selection.release(); } catch { frame.unknown = true; } }
+      if (frame.prepared !== null) { try { frame.prepared.release(); } catch { frame.unknown = true; } }
+      try { stopped = await closeKnown(); keyView = stopView(); } catch { frame.stopUnknown = true; }
+    }
+    const keyClean = frame.key === null || keyView !== null && keyView.lifecycle === 'CLOSED' && !keyView.held && keyView.rawClearCalls === 1 && keyView.rawClearReturned;
+    const clean = stopped && keyClean && !frame.unknown && !frame.stopUnknown;
+    const success = clean && frame.accepted && frame.host !== null;
+    if (!clean) FAILED.add(frame);
+    const result = F({ apiCreditOperatorCliVersion: 1, status: success ? 'CLOSED' : clean ? 'BOOTSTRAP_REFUSED' : 'CLOSE_UNKNOWN', exitCode: success ? 0 : clean ? 1 : 4,
+      stage: frame.stage, keyCreationEntered: frame.keyCreationEntered, sessionOpeningEntered: frame.sessionOpeningEntered,
+      sessionAccepted: frame.accepted, knownStopsObserved: stopped, keyLease: keyView, historicalObservation: true,
+      keyErasure: 'NOT_ESTABLISHED', nativeResourceRelease: 'NOT_ESTABLISHED', serviceDelivery: 'NOT_ESTABLISHED', automaticRetry: false, authority: 'NONE' });
+    frame.finished = true; return result;
   }
-  const keyClean = frame.key === null || keyView !== null && keyView.lifecycle === 'CLOSED' && !keyView.held && keyView.rawClearCalls === 1 && keyView.rawClearReturned;
-  const clean = stopped && keyClean && !frame.unknown && !frame.stopUnknown;
-  const success = clean && frame.accepted && frame.host !== null;
-  if (!clean) FAILED.add(frame);
-  return F({ apiCreditOperatorCliVersion: 1, status: success ? 'CLOSED' : clean ? 'BOOTSTRAP_REFUSED' : 'CLOSE_UNKNOWN', exitCode: success ? 0 : clean ? 1 : 4,
-    stage: frame.stage, keyCreationEntered: frame.keyCreationEntered, sessionOpeningEntered: frame.sessionOpeningEntered,
-    sessionAccepted: frame.accepted, knownStopsObserved: stopped, keyLease: keyView, historicalObservation: true,
-    keyErasure: 'NOT_ESTABLISHED', nativeResourceRelease: 'NOT_ESTABLISHED', serviceDelivery: 'NOT_ESTABLISHED', automaticRetry: false, authority: 'NONE' });
+  return F({ run, requestStop: stop });
+}
+
+/** Backwards-compatible immediate entry; the fixed launcher owns explicit stop. */
+export async function runApiCreditOperatorCoordinator(configuration) {
+  if (arguments.length !== 1) fail();
+  return createApiCreditOperatorCoordinator(configuration).run();
 }

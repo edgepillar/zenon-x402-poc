@@ -1,60 +1,58 @@
 # Current API-credit source profile
 
-The source checker reads the current buyer/provider catalog metadata and the
-reviewed application source bytes without loading the application or installed
-packages. It complements the retained historical evidence inventory. Neither
-report accepts a product gate.
-
-Run from a fresh source checkout with Node 24.19.0. No dependency installation
-is needed. Obtain the manifest digest independently from the reviewed change;
-do not adopt a digest calculated from an untrusted local manifest as authority.
+The builtin-only source checker compares reviewed buyer/provider source bytes
+without importing an application or installed package. Obtain the manifest
+SHA-256 independently from the reviewed change. No installation is needed.
 
 ```sh
-node scripts/report-current-api-credit-profile.mjs --profile-sha256 5a04a6bb346cc908edb329cb24ee0a4a9ff92cfac6af206afae6c258ccdbc432
+node scripts/report-current-api-credit-profile.mjs --profile-sha256 DIGEST
 ```
 
-The manifest binds source baseline
-`1928215ecd5aba6eef768cf3b6a5323e994d9968`, both catalogs, three supplementary
-admission/guard sources, the V68 DATA profile and its result. The checked union
-has 240 files and 3,330,336 bytes. The 404 installed-package rows per catalog
-are compared as metadata; installed package files are never opened. The
-manifest is deliberately separate from the application's self-pinned catalog.
+Replace `DIGEST` with the current manifest SHA-256:
+`429fda55fb56fa17e70004f70d16cc83b4026bcb2580c28c235a0bbab58a7846`.
 
-`SOURCE_MATCH` means those observed bytes match the supplied identities. It
-does not authenticate Git history, a publisher, the Node binary, an installed
-namespace, an accepted entry command or execution of the application. The
-1,893 application DATA controls are retained references, not tests rerun by
-this checker. G0-G5, native qualification and Linux/product acceptance remain
-OPEN or NOT_ESTABLISHED.
+The current manifest selects the V69 buyer-stop candidate delta over source
+parent `85903bdbffcfcb09529df4b9c1541756d1556eb0`, both catalogs, three extra
+admission/guard sources and the application DATA result (568 executed / 1,347
+retained exact controls; 1,915 source-bound application controls). The planned
+application source union is 240 files / 3,333,829 bytes. The 404 package rows
+per catalog are compared only as metadata. Installed files are not opened.
+The parent reference is not a claim that its tree already contained the delta.
 
-For bounded qualification tasks, use zero-based disjoint shards. For example,
-run `--shard 0/8` through `--shard 7/8` in separate managed tasks with the same
-manifest digest. Each command emits a JSON shard receipt on stdout. Retain the
-actual complete outputs and combine them into a JSON array; then run:
+The unchanged checker/core have [44 retained DATA cases and a prior complete
+source observation](../qualification/current-source-profile.actual-local-result.json).
+That full observation covered the earlier manifest
+`5a04a6bb346cc908edb329cb24ee0a4a9ff92cfac6af206afae6c258ccdbc432`
+and its 240 files / 3,330,336 bytes before the buyer-stop delta. It is not a
+fresh full observation of this changed candidate.
+
+[The current metadata-plan command](../qualification/buyer-stop-current-profile-plan.actual-result.json)
+checked the new manifest/catalog/DATA references with the actual unchanged
+reporter core. It read zero application-source files and ran no source-check
+shards. This verifies the current reference contract, not full source coverage.
+The application DATA and both source catalogs were reviewed separately.
+
+For a complete observation, use the command above or disjoint zero-based
+`--shard 0/8` through `--shard 7/8` commands with the same current digest. Retain
+the actual complete outputs and place all eight receipts in a JSON array.
+Combine them using:
 
 ```sh
-node scripts/report-current-api-credit-profile.mjs --profile-sha256 5a04a6bb346cc908edb329cb24ee0a4a9ff92cfac6af206afae6c258ccdbc432 --merge-receipts qualification/receipts.json
+node scripts/report-current-api-credit-profile.mjs --profile-sha256 DIGEST --merge-receipts qualification/receipts.json
 ```
 
-Combination requires every shard exactly once with matching profile, source
-set, baseline and file coverage. A partial or failed observation is not a full
-match. Receipts are ordinary metadata, not signed attestations: their origin
-must be retained separately. Combination checks receipt consistency and reads
-the catalog/DATA references again; it does not reread application files.
+Combination requires every shard once with the same profile, baseline and
+exact source coverage. Receipts are metadata, not signed attestations. Keep
+their actual origins separately. Combination rereads the catalog/DATA references
+but does not reread application files. Earlier-profile receipts cannot be
+relabelled or mixed into a current-profile full match.
 
-The reader rejects links and non-regular or multiply linked files, checks file
-and ancestor identities before/open/after each bounded read, closes each owned
-descriptor and writes no files. A refusal exits nonzero with a fixed diagnostic
-that does not expose a local path. Observations across files or shards are not
-an atomic snapshot, and these checks are not an OS sandbox. A failed shard
-consumes its attempt in that in-memory plan; a later observation is a separate
-explicit run, never repair of the earlier record.
-
-This command uses only builtins and source metadata. It does not import an
-application/SDK/core package, open application SQLite, create a key or proof,
-connect a socket, search a nonce, prepare a payment or alter a release gate.
-
-Validation of the new checker is recorded separately from the retained
-application DATA controls and the unchanged approved hosted CI profile.
-
-[44 new DATA cases, three parser checks and eight actual source-byte shards passed](../qualification/current-source-profile.actual-local-result.json). The actual shard outputs combined to 240 matching files (3,330,336 bytes) in a separate command. Seven CLOSED/SUCCESS tasks kept the existing 4 MiB quota; the 1,893 application DATA controls were not rerun. The hosted 108-control selection is unchanged and excludes these new local cases.
+The reader bounds reads, rejects links/non-regular/multiply linked files,
+checks before/open/after file and ancestor identities, and closes its own
+file descriptors without writing files. These are cooperative checks, not an
+atomic snapshot, source/Git/publisher authentication or an OS sandbox.
+A failed shard consumes its attempt; a later run is a separate observation.
+SOURCE_MATCH is byte identity only. It does not authenticate a runtime,
+installed namespace or accepted application entry. Native SDK/core/SQLite,
+keys/proofs/signatures, sockets, nonce, PREPARE/payment and Linux/product
+acceptance remain unqualified. All G0-G5 gates remain OPEN.

@@ -2505,8 +2505,8 @@
     },
     {
       "path": "src/api-credit-operator-coordinator.js",
-      "bytes": 14258,
-      "sha256": "c9445611a703ea9cc0f6d1b9c6744cf25a92497846ba9c6a77d81f616c08bd3e",
+      "bytes": 16577,
+      "sha256": "aa3326fcf257e9889c7d2b7a3bf24bcb34f514f7a8fc36e478197321b4dae2a2",
       "format": "module"
     },
     {
@@ -3303,8 +3303,8 @@
     },
     {
       "path": "src/zenon/native-api-credit-operator-launcher.js",
-      "bytes": 4348,
-      "sha256": "6b3b0ea62a231549837230f882ce0fd8cd155b29caa55a8f22aa57c638b8ef31",
+      "bytes": 5522,
+      "sha256": "bd1af070e2a8431aea9bfaa2d3f8adad16130e612ec1f809bbf78100bd4054cb",
       "format": "module"
     },
     {

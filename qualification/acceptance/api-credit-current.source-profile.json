@@ -1,7 +1,7 @@
 {
   "profileVersion": 1,
   "profileId": "API_CREDIT_CURRENT_SOURCE_V1",
-  "sourceBaseline": "1928215ecd5aba6eef768cf3b6a5323e994d9968",
+  "sourceBaseline": "85903bdbffcfcb09529df4b9c1541756d1556eb0",
   "application": {
     "buyerEntry": "src/api-credit-cli.js",
     "providerEntry": "src/issued-provider-cli.js"
@@ -11,7 +11,7 @@
       "role": "buyer",
       "path": "src/api-credit-module-catalog.json",
       "bytes": 120106,
-      "sha256": "e011e9a699a8d8b8c89aaede50533cecac61976d991d7f95e05aa919c61aaf2d",
+      "sha256": "b157f299a6defda70d2ea0b6745733329260d02f4ca61e5d128b5d7722caf07a",
       "sourceRows": 172,
       "packageRows": 404,
       "bareEdges": 9
@@ -30,7 +30,7 @@
     {
       "path": "src/api-credit-native-package-admission.js",
       "bytes": 6414,
-      "sha256": "60c27b33ce060cbe36ed022e79ad783dae2ed49d2ece5de995cf1915adca2239",
+      "sha256": "c083d601a4cd27b4fbccfc7992db9e7f6d948db44059720abd24ab77a7d49b60",
       "format": "module"
     },
     {
@@ -48,19 +48,19 @@
   ],
   "dataQualification": {
     "sourceProfile": {
-      "path": "qualification/profiles/api-credit-application-source-v68.json",
-      "bytes": 4533,
-      "sha256": "7314f0ac8281d3b95ba4a125ff1350766566a5646497cb4595b59786c6540b0e"
+      "path": "qualification/profiles/api-credit-application-source-v69.json",
+      "bytes": 4383,
+      "sha256": "8fef5dbe6419604da79b2a986ff9530f2ccb1571046e237e92e3057035ba2690"
     },
     "result": {
-      "path": "qualification/query-opening-guard.actual-local-result.json",
-      "bytes": 177817,
-      "sha256": "798f4c8cc4d079213c7de306cea2daf6fb1966263e812bc619556d03318a28e0"
+      "path": "qualification/buyer-operator-stop.actual-local-result.json",
+      "bytes": 71681,
+      "sha256": "2071dba90344b3f15e8b161bbbcc1a0d652402b698985a12c01438025db1eac6"
     },
-    "sourceBoundControls": 1893,
-    "executedControls": 1434,
-    "retainedControls": 459,
-    "expectedResultQualification": "G2_QUERY_OPENING_GUARD_DATA"
+    "sourceBoundControls": 1915,
+    "executedControls": 568,
+    "retainedControls": 1347,
+    "expectedResultQualification": "G2_BUYER_OPERATOR_STOP_DATA"
   },
   "runtime": {
     "nodeVersion": "24.19.0",

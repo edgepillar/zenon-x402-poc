@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "owner": "src/api-credit-operator-coordinator.js",
+  "nativeBinding": "src/zenon/native-api-credit-operator-launcher.js",
+  "inertControllerCreation": true,
+  "originalImmediateWrapper": true,
+  "cachedRunBeforeCallback": true,
+  "stickySameRunRevocation": true,
+  "preRunStopPreventsAcquisition": true,
+  "stageAndHostReceiptsRetained": true,
+  "lateResultsDoNotRepairUnknown": true,
+  "oneOriginalClosingPipeline": true,
+  "originalBudgetsAndOutputSchema": true,
+  "signalsInstalledBeforeDescriptorAcquisition": true,
+  "onlyOwnedSignalHandlersRemoved": true,
+  "handlerFailureWithholdsCleanExit": true,
+  "commandGrammarUnchanged": true,
+  "spendingReservation": "UNCHANGED",
+  "authority": "NONE",
+  "nativeSignalExecution": "NOT_EXECUTED",
+  "physicalRelease": "NOT_ESTABLISHED",
+  "G0G5": "OPEN"
+}
