@@ -2505,8 +2505,8 @@
     },
     {
       "path": "src/api-credit-operator-coordinator.js",
-      "bytes": 16577,
-      "sha256": "aa3326fcf257e9889c7d2b7a3bf24bcb34f514f7a8fc36e478197321b4dae2a2",
+      "bytes": 17517,
+      "sha256": "a387138e3bb4ccb561d6fba7e6b48040458f52e70b30f821449ae604065aa601",
       "format": "module"
     },
     {

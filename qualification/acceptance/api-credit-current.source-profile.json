@@ -1,7 +1,7 @@
 {
   "profileVersion": 1,
   "profileId": "API_CREDIT_CURRENT_SOURCE_V1",
-  "sourceBaseline": "85903bdbffcfcb09529df4b9c1541756d1556eb0",
+  "sourceBaseline": "1a98b0883cf83747c460521a076439151c9ce223",
   "application": {
     "buyerEntry": "src/api-credit-cli.js",
     "providerEntry": "src/issued-provider-cli.js"
@@ -11,7 +11,7 @@
       "role": "buyer",
       "path": "src/api-credit-module-catalog.json",
       "bytes": 120106,
-      "sha256": "b157f299a6defda70d2ea0b6745733329260d02f4ca61e5d128b5d7722caf07a",
+      "sha256": "2bc5f62555608648e5d2237fa3e8d84bf542ec17ea9a49e9b981e84318020e3c",
       "sourceRows": 172,
       "packageRows": 404,
       "bareEdges": 9
@@ -30,7 +30,7 @@
     {
       "path": "src/api-credit-native-package-admission.js",
       "bytes": 6414,
-      "sha256": "c083d601a4cd27b4fbccfc7992db9e7f6d948db44059720abd24ab77a7d49b60",
+      "sha256": "4c71f1daf1cda583dea751c45f2731e5d704d6d0d2e86127590ddf0b6550bcbc",
       "format": "module"
     },
     {
@@ -48,19 +48,19 @@
   ],
   "dataQualification": {
     "sourceProfile": {
-      "path": "qualification/profiles/api-credit-application-source-v69.json",
-      "bytes": 4383,
-      "sha256": "8fef5dbe6419604da79b2a986ff9530f2ccb1571046e237e92e3057035ba2690"
+      "path": "qualification/profiles/api-credit-application-source-v70.json",
+      "bytes": 4126,
+      "sha256": "ee460c1f0a11b06c18690ca483971cbd5857ad10ddca8e1a5ebfa15013b1f416"
     },
     "result": {
-      "path": "qualification/buyer-operator-stop.actual-local-result.json",
-      "bytes": 71681,
-      "sha256": "2071dba90344b3f15e8b161bbbcc1a0d652402b698985a12c01438025db1eac6"
+      "path": "qualification/buyer-stop-command-admission.actual-local-result.json",
+      "bytes": 73602,
+      "sha256": "c72504d3957dc62e74410e77c954e27a1561ca8d940af20f82c1f0b93df7d9d2"
     },
-    "sourceBoundControls": 1915,
-    "executedControls": 568,
+    "sourceBoundControls": 1928,
+    "executedControls": 581,
     "retainedControls": 1347,
-    "expectedResultQualification": "G2_BUYER_OPERATOR_STOP_DATA"
+    "expectedResultQualification": "G2_BUYER_STOP_COMMAND_ADMISSION_DATA"
   },
   "runtime": {
     "nodeVersion": "24.19.0",

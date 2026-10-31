@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "currentDataFailures": 0,
+  "currentParserFailures": 0,
+  "currentMetadataPlanFailures": 0,
+  "priorMetadataPlanFailure": {
+    "rawQualificationSha256": "365afeb3405391ba2f5280abe363a75378a1b24c15637756dc4a788deb1a3f80",
+    "status": "UNKNOWN",
+    "taskState": "CLOSED",
+    "taskOutcome": "FAILURE",
+    "actualMetadataCommands": 1,
+    "errorCode": "API_CREDIT_SOURCE_PROFILE_QUALIFICATION",
+    "sourceFinding": "PROFILE_STATUS_PROTOCOL_LABEL_MISMATCH",
+    "correction": "RESTORED_EXISTING_PROFILE_STATUS_LABEL",
+    "applicationTestsRepeated": false,
+    "reclassified": false
+  },
+  "unexpectedSkips": 0,
+  "priorCandidate": {
+    "rawQualificationSha256": "fdb8d67afa5a6cd7c6de3146015ca6062d48dc38a77588bfd6d93e21f98d8bfc",
+    "status": "UNKNOWN",
+    "taskState": "CLOSED",
+    "taskOutcome": "FAILURE",
+    "passed": 1,
+    "failed": 12,
+    "actualDataCommands": 1,
+    "sourceFinding": "NAMED_FUNCTION_SHADOWED_OWNER_STOP_HELPER",
+    "correction": "RENAMED_PRIVATE_OWNER_STOP_HELPER",
+    "reclassified": false
+  },
+  "inheritedInventory": {
+    "path": "qualification/buyer-operator-stop.failure-inventory.json",
+    "bytes": 744,
+    "sha256": "9c8f3d79c7bd52470e3fde01752a7117043d2797862447fa05fa7fc659173c72"
+  },
+  "earlierFailedAndUnknownEvidencePreserved": true
+}

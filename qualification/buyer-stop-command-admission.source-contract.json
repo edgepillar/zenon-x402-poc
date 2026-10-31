@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "owner": "src/api-credit-operator-coordinator.js",
+  "synchronousSameAcceptedSessionRevocation": true,
+  "cachedOwnerStopBeforeCallback": true,
+  "originalFinallyJoinsSameStop": true,
+  "oneParentObservationWindowBeforeCloseCallback": true,
+  "remainingMillisecondsRoundedUp": true,
+  "exhaustedWindowNotRearmed": true,
+  "clockRefusalDoesNotSkipKnownStops": true,
+  "lateHostCannotRepairUnknown": true,
+  "commandGrammarAndOutputSchemaUnchanged": true,
+  "noReplacementRetryOrNewAuthority": true,
+  "authority": "NONE",
+  "nativeExecutions": 0,
+  "physicalRelease": "NOT_ESTABLISHED",
+  "G0G5": "OPEN"
+}

@@ -47,14 +47,14 @@ export function createApiCreditOperatorCoordinator(configuration) {
     stops: new Map(), inputStop: null, stopUnknown: false, stopTerminal: false, observed: null, selectionTransferred: false,
     lateOwners: [], lateFacts: [], keyCreationEntered: false, sessionOpeningEntered: false,
     started: false, finished: false, stopRequested: false, runPromise: null, executionReceipt: null,
-    currentHost: null, hostReceipt: null, lateHostReceipt: null };
+    currentHost: null, hostReceipt: null, lateHostReceipt: null, closeWindowEntered: false, closeWindow: null };
   function clock() { const n = p.clock(); if (typeof n !== 'bigint' || frame.lastClock !== null && n < frame.lastClock) fail(); frame.lastClock = n; return n; }
   function rejectOpening() { if (!frame.opening) return; frame.unknown = true; frame.opening = false; if (frame.current !== null) frame.current.out.reject(new TypeError('API_CREDIT_BOOTSTRAP_EXPIRED')); FAILED.add(frame); }
   const guard = F(function requireOpening() {
     if (arguments.length !== 0 || !frame.opening || frame.unknown) fail();
     try { if (clock() >= frame.deadline || !frame.opening || frame.unknown || frame.stopRequested) { rejectOpening(); fail(); } } catch { rejectOpening(); fail(); }
   });
-  function requestStop(owner) {
+  function requestOwnerStop(owner) {
     if (frame.stops.has(owner)) return frame.stops.get(owner);
     const receipt = { owner, promise: null, terminal: false, clean: false }; frame.stops.set(owner, receipt);
     try { receipt.promise = Reflect.apply(method(owner, 'close'), owner, []); observe(receipt.promise,
@@ -65,7 +65,7 @@ export function createApiCreditOperatorCoordinator(configuration) {
   }
   function late(kind, value) {
     if (kind === 'PROFILE' || kind === 'CREDENTIAL') { wipe(value); return; }
-    try { method(value, 'close'); frame.lateOwners.push(value); requestStop(value); }
+    try { method(value, 'close'); frame.lateOwners.push(value); requestOwnerStop(value); }
     catch { frame.lateFacts.push({ kind, unknown: true }); frame.stopUnknown = true; }
     FAILED.add(frame);
   }
@@ -97,33 +97,61 @@ export function createApiCreditOperatorCoordinator(configuration) {
     }
     return v;
   }
+  function beginCloseWindow() {
+    if (frame.closeWindowEntered) return frame.closeWindow;
+    // Cache entry before the borrowed clock or any owner close callback. A
+    // refused clock cannot be retried to obtain a fresh observation window.
+    frame.closeWindowEntered = true;
+    try {
+      const budget = frame.prepared?.limits.closeWaitMs ?? 1000;
+      frame.closeWindow = F({ deadline: clock() + BigInt(budget) * 1000000n });
+    } catch { frame.stopUnknown = true; }
+    return frame.closeWindow;
+  }
   async function closeKnown() {
-    const closeStart = clock(), budget = frame.prepared?.limits.closeWaitMs ?? 1000, deadline = closeStart + BigInt(budget) * 1000000n;
-    if (frame.session !== null) requestStop(frame.session);
-    if (frame.key !== null) requestStop(frame.key);
+    const window = beginCloseWindow();
+    if (frame.session !== null) requestOwnerStop(frame.session);
+    if (frame.key !== null) requestOwnerStop(frame.key);
     try { frame.inputStop = p.closeInputs(); } catch { frame.stopUnknown = true; }
     const inputs = { terminal: false, clean: false };
     try { observe(frame.inputStop, v => { inputs.terminal = true; inputs.clean = v === undefined; if (!inputs.clean) frame.stopUnknown = true; }, () => { inputs.terminal = true; frame.stopUnknown = true; }); }
     catch { inputs.terminal = true; frame.stopUnknown = true; }
     const done = capability(); let timer = null;
+    function finish(clean) {
+      if (frame.stopTerminal) return;
+      frame.stopTerminal = true;
+      if (timer !== null) {
+        try { p.cancelTimer(timer); } catch { clean = false; }
+        timer = null;
+      }
+      if (!clean) frame.stopUnknown = true;
+      done.resolve(clean && !frame.stopUnknown);
+    }
     function decide() {
       if (frame.stopTerminal) return;
       try {
-        if (clock() >= deadline) { frame.stopUnknown = true; frame.stopTerminal = true; done.resolve(false); return; }
+        if (window === null || clock() >= window.deadline) { finish(false); return; }
         if (!inputs.terminal || [...frame.stops.values()].some(r => !r.terminal)) return;
-        frame.stopTerminal = true;
-        if (timer !== null) { p.cancelTimer(timer); timer = null; }
-        done.resolve(!frame.stopUnknown && inputs.clean && [...frame.stops.values()].every(r => r.clean));
-      } catch { frame.stopUnknown = true; frame.stopTerminal = true; done.resolve(false); }
+        finish(!frame.stopUnknown && inputs.clean && [...frame.stops.values()].every(r => r.clean));
+      } catch { finish(false); }
     }
     // Observe the already-entered stops; never invoke a second stop on expiry.
     for (const receipt of frame.stops.values()) if (receipt.promise !== null) { try { observe(receipt.promise, decide, decide); } catch {} }
     try { observe(frame.inputStop, decide, decide); } catch {}
-    try { timer = p.armTimer(budget, F(() => { if (frame.stopTerminal) return; frame.stopUnknown = true; frame.stopTerminal = true; done.resolve(false); })); } catch { frame.stopUnknown = true; frame.stopTerminal = true; done.resolve(false); }
+    try {
+      const remaining = window === null ? 0n : window.deadline - clock();
+      if (remaining <= 0n) finish(false);
+      else {
+        const handle = p.armTimer(Number((remaining + 999999n) / 1000000n), F(() => finish(false)));
+        if (frame.stopTerminal) { try { p.cancelTimer(handle); } catch { frame.stopUnknown = true; } }
+        else timer = handle;
+      }
+    } catch { finish(false); }
     decide(); return native(done.promise);
   }
-  // This only revokes the same run. Its original finally owns all stops;
-  // a signal never opens a replacement or closes an unreturned owner.
+  // Revoke admission on the same accepted session before yielding to queued
+  // command continuations. The original finally joins that cached stop and its
+  // remaining observation window; no replacement or unreturned owner is opened.
   const stop = F(function requestStop() {
     if (arguments.length !== 0) fail();
     if (frame.finished || frame.stopRequested) return;
@@ -131,7 +159,11 @@ export function createApiCreditOperatorCoordinator(configuration) {
     if (!frame.started) { frame.opening = false; return; }
     if (frame.opening) rejectOpening();
     else frame.unknown = true;
-    if (frame.currentHost !== null) frame.currentHost.reject(new TypeError('API_CREDIT_OPERATOR_STOP_REQUESTED'));
+    if (frame.currentHost !== null) {
+      beginCloseWindow();
+      requestOwnerStop(frame.session);
+      frame.currentHost.reject(new TypeError('API_CREDIT_OPERATOR_STOP_REQUESTED'));
+    }
   });
   const run = F(function run() {
     if (arguments.length !== 0) fail();

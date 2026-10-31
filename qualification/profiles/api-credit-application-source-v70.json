@@ -1,0 +1,118 @@
+{
+  "version": 70,
+  "status": "SOURCE_AND_DECLARED_MEMORY_DATA_CANDIDATE",
+  "sourceMain": "1a98b0883cf83747c460521a076439151c9ce223",
+  "sourceMainTree": "c368a3fcbcb5f6bb28085d6fabf7656e8e10965f",
+  "predecessorProfile": {
+    "path": "qualification/profiles/api-credit-application-source-v69.json",
+    "bytes": 4383,
+    "sha256": "8fef5dbe6419604da79b2a986ff9530f2ccb1571046e237e92e3057035ba2690"
+  },
+  "profileStorage": "EXACT_PREDECESSOR_REFERENCE_WITH_EXPLICIT_CURRENT_DELTA",
+  "product": "ONE_FUNDING_ONE_GRANT_MANY_METERED_CALLS_ORIGINAL_REPLAY_RECOVERY",
+  "buyerStopCommandAdmission": {
+    "path": "qualification/buyer-stop-command-admission.source-contract.json",
+    "bytes": 625,
+    "sha256": "23a425324c270b726d04b8d813cc0e5289e1d304af399646d6780b44eabb3426"
+  },
+  "proofManifest": {
+    "path": "qualification/buyer-stop-command-admission.proof-manifest.json",
+    "bytes": 271727,
+    "sha256": "888f47ed65c3f26fdc34bffaa082b826e6ac56a1677bbffeb449448f23c1d849"
+  },
+  "failureInventory": {
+    "path": "qualification/buyer-stop-command-admission.failure-inventory.json",
+    "bytes": 1307,
+    "sha256": "ac043e77aa0c837fc1bea09d5074c24c8fffa9932e932d08a154014e3b3ead23"
+  },
+  "sourceDelta": [
+    {
+      "path": "docs/BUYER_OPERATOR_STOP.md",
+      "bytes": 4044,
+      "sha256": "243062d3d878645c91361047e10e000da2eab809c6925c3315c2695bf4433f2a",
+      "gitBlob": "239ac54dc7593ce41ae1330c12637d83b855114f"
+    },
+    {
+      "path": "qualification/buyer-stop-command-admission.behavior.mjs",
+      "bytes": 10702,
+      "sha256": "2e358f049920cf53b6d2c4613eb2a89855cda738ed9f2d624869156a13d4a2ee",
+      "gitBlob": "6051816105c278b506ec585ccb82738f3702c651"
+    },
+    {
+      "path": "src/api-credit-module-catalog.json",
+      "bytes": 120106,
+      "sha256": "2bc5f62555608648e5d2237fa3e8d84bf542ec17ea9a49e9b981e84318020e3c",
+      "gitBlob": "e92092dd69a9638eef04ab64a40a68c6c52cd6fe"
+    },
+    {
+      "path": "src/api-credit-native-package-admission.js",
+      "bytes": 6414,
+      "sha256": "4c71f1daf1cda583dea751c45f2731e5d704d6d0d2e86127590ddf0b6550bcbc",
+      "gitBlob": "21223d2ec0fdb646b77e57408b8cbfa60086cf08"
+    },
+    {
+      "path": "src/api-credit-operator-coordinator.js",
+      "bytes": 17517,
+      "sha256": "a387138e3bb4ccb561d6fba7e6b48040458f52e70b30f821449ae604065aa601",
+      "gitBlob": "0069296798b9fbc00871e7db6a78a74e92287c1a"
+    }
+  ],
+  "buyerCatalog": {
+    "role": "buyer",
+    "sourceGraph": 174,
+    "catalogRows": 577,
+    "sourceRows": 172,
+    "packageRows": 404,
+    "bareEdges": 9,
+    "changedSourceRows": [
+      "src/api-credit-operator-coordinator.js"
+    ],
+    "catalog": {
+      "path": "src/api-credit-module-catalog.json",
+      "bytes": 120106,
+      "sha256": "2bc5f62555608648e5d2237fa3e8d84bf542ec17ea9a49e9b981e84318020e3c"
+    },
+    "admission": {
+      "path": "src/api-credit-native-package-admission.js",
+      "bytes": 6414,
+      "sha256": "4c71f1daf1cda583dea751c45f2731e5d704d6d0d2e86127590ddf0b6550bcbc"
+    },
+    "catalogUnchanged": false
+  },
+  "providerCatalog": {
+    "role": "provider",
+    "sourceGraph": 104,
+    "catalogRows": 507,
+    "sourceRows": 102,
+    "packageRows": 404,
+    "bareEdges": 4,
+    "changedSourceRows": [],
+    "catalog": {
+      "path": "src/issued-provider-module-catalog.json",
+      "bytes": 104412,
+      "sha256": "d377ca8c98a1860090d49480a7bc119232f1ad11a73fc9f8d17c37be2296ee71"
+    },
+    "admission": {
+      "path": "src/issued-provider-native-package-admission.js",
+      "bytes": 6429,
+      "sha256": "7c75df5d16061d31c96aeb9ad03e3ec9f443b76be3aed17894d89a09f7aa9132"
+    },
+    "catalogUnchanged": true
+  },
+  "packagePinsAndBareEdgesUnchanged": true,
+  "currentLocalData": {
+    "new": 13,
+    "reexecuted": 568,
+    "retainedExact": 1347,
+    "sourceBoundDistinct": 1928,
+    "newDATACommands": 6,
+    "newParserCommands": 1,
+    "parserSourceProofs": 49
+  },
+  "selectedHostedCIControls": 108,
+  "selectedHostedCISourceInputs": 22,
+  "hostedSelectionChanged": false,
+  "newCasesIncludedInHostedCI": false,
+  "nativeQualification": "NOT_EXECUTED",
+  "G0G5Acceptance": "OPEN"
+}

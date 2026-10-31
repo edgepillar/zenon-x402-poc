@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "status": "PASS",
+  "result": {
+    "qualification": "G0_BUYER_STOP_COMMAND_CURRENT_PROFILE_PLAN",
+    "status": "PLAN_REFERENCES_MATCH",
+    "profileSha256": "26a21a65dbb5c3b360f1fa5985b12dbe4a91f5808f0a463173440fb514e1b1d2",
+    "sourceBaseline": "1a98b0883cf83747c460521a076439151c9ce223",
+    "sourceSetSha256": "a27a76bc5b78f36c983c59920db26d2d9bcd660e694e17a541b10dbb6017cdbc",
+    "plannedApplicationSources": 240,
+    "plannedApplicationSourceBytes": 3334769,
+    "sourceBoundApplicationControls": 1928,
+    "profileReferenceFilesRead": 5,
+    "applicationSourceFilesRead": 0,
+    "installedPackageFilesRead": 0,
+    "sourceChecksExecuted": 0,
+    "fullSourceCoverageReexecuted": false,
+    "nativeExecutions": 0,
+    "authority": "NONE",
+    "G0G5Acceptance": "OPEN"
+  },
+  "actualMetadataNodeCommands": 1,
+  "applicationNativeCommands": 0,
+  "nodeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25",
+  "rawQualificationSha256": "373db625422f04d8f6d9ee06c633d36b5a37bc2cbc613c456334302a476785a3",
+  "command": {
+    "state": "COMPLETE",
+    "actualExit": 0,
+    "outputComplete": true,
+    "stdout": {
+      "sha256": "aa1eb02571b9c6198c5174497ffc99cce80ad5764ce1d21bfc75546ca2db5e81",
+      "bytes": 651
+    },
+    "stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    }
+  },
+  "ownedTaskClosed": true,
+  "taskOutcome": "SUCCESS",
+  "taskQuotaBytes": 4194304,
+  "fullSourceObservationRepeated": false,
+  "checkerSourceChanged": false,
+  "retainedCheckerDataControls": 44,
+  "priorFailedMetadataPlan": {
+    "rawQualificationSha256": "365afeb3405391ba2f5280abe363a75378a1b24c15637756dc4a788deb1a3f80",
+    "status": "UNKNOWN",
+    "taskOutcome": "FAILURE",
+    "reclassified": false
+  },
+  "physicalRelease": "NOT_ESTABLISHED",
+  "G0G5Acceptance": "OPEN"
+}

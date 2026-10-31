@@ -99,3 +99,7 @@ turn source or documentary results into an accepted gate.
 Current native execution is disabled by user instruction. The prepared paired
 native draft is not selected as the supported one-grant product profile. New
 feature families and unrelated capacity work do not precede the G0/G1/G2 package.
+
+## Buyer stop command admission source candidate
+
+Resolving a queued command and immediately stopping could admit a declared client method before coordinator finally entered session close. The same-session close now revokes admission synchronously; finally joins that receipt and the remaining original close window. No new funding, service retry, replacement or economic authority is introduced. 13 new and 568 affected DATA controls passed; 1,347 retain exact source/runtime bindings, for 1,928 source-bound application controls. One parser command passed; 49 current application sources have parser proofs. The unchanged approved hosted selection remains 108 controls and excludes the new local cases. Native/Linux, physical release and G0-G5 acceptance remain OPEN. See [the result](qualification/buyer-stop-command-admission.actual-local-result.json), [the retained failed candidate](qualification/buyer-stop-command-admission.failure-inventory.json) and [the stop contract](docs/BUYER_OPERATOR_STOP.md). The normal 106-command reference composition remains DATA evidence. No native execution was performed.
