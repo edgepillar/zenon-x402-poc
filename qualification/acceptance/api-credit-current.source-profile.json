@@ -1,7 +1,7 @@
 {
   "profileVersion": 1,
   "profileId": "API_CREDIT_CURRENT_SOURCE_V1",
-  "sourceBaseline": "ca7e95d82348185ad4e12469d4930d7176280939",
+  "sourceBaseline": "ad663b83b5fee77d7943ebbaccf5bcf283eb18b5",
   "application": {
     "buyerEntry": "src/api-credit-cli.js",
     "providerEntry": "src/issued-provider-cli.js"
@@ -11,7 +11,7 @@
       "role": "buyer",
       "path": "src/api-credit-module-catalog.json",
       "bytes": 120934,
-      "sha256": "277652c9923e9460f726c9f19527380a25d9149f4981f8329feda4e0fb2a1615",
+      "sha256": "e358c77b4ec3acaae3f4ecd8238ed47975c5eb8ee746e5eb09958dcc9bbb8cac",
       "sourceRows": 176,
       "packageRows": 404,
       "bareEdges": 9
@@ -30,7 +30,7 @@
     {
       "path": "src/api-credit-native-package-admission.js",
       "bytes": 6414,
-      "sha256": "0319bedcabf157acd797300d5b5f3ed57ba493b17b2cc1e94a6a690ec1426cb9",
+      "sha256": "5eb73ef8e6e94ce34ce6c96df198abb597d36e7dbc3d6e15bde2257b9c676af9",
       "format": "module"
     },
     {
@@ -48,19 +48,19 @@
   ],
   "dataQualification": {
     "sourceProfile": {
-      "path": "qualification/profiles/api-credit-application-source-v82.json",
-      "bytes": 4358,
-      "sha256": "a8d3ed6c6605db915a6dc648a66c73473f3f7ae8af4365b6df28840ecd32a81e"
+      "path": "qualification/profiles/api-credit-application-source-v83.json",
+      "bytes": 4287,
+      "sha256": "c39a82739f660fc92c923b3e85dd750b26710a494ffde3fc0436a53155c14275"
     },
     "result": {
-      "path": "qualification/recovery-inspection-stop.actual-local-result.json",
-      "bytes": 99421,
-      "sha256": "3101f6d59da454cc08a65878c1a26f783f3b35816dcb8eae9635e16e16f9002b"
+      "path": "qualification/recorded-result-commitment.actual-local-result.json",
+      "bytes": 101480,
+      "sha256": "43922978eba035d2b292d71331531d63b2cd8d463cc983a8b10bf7fa4210e862"
     },
-    "sourceBoundControls": 2197,
-    "executedControls": 792,
+    "sourceBoundControls": 2215,
+    "executedControls": 810,
     "retainedControls": 1405,
-    "expectedResultQualification": "G2_RECOVERY_INSPECTION_STOP_CURRENT_SOURCE_DATA"
+    "expectedResultQualification": "G1_G2_RECORDED_RESULT_COMMITMENT_CURRENT_SOURCE_DATA"
   },
   "runtime": {
     "nodeVersion": "24.19.0",

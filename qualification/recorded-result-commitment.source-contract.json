@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "selection": "RECORDED_RESULT_CACHE_MATCHES_TERMINAL_EXECUTION_COMMITMENT",
+  "originalRequestAndExecutionBindingPreserved": true,
+  "backendAndRequestCacheEqualityPreserved": true,
+  "canonicalV1ResultCommitmentBeforeCacheOrLocalResponse": true,
+  "coherentlyChangedCachesWithOriginalCommitmentRefused": true,
+  "domain": "zenon-x402:service-credit-sqlite-result-v1",
+  "domainNulSeparator": true,
+  "digestPrefix": "sha256:",
+  "canonicalObjectKeyOrder": true,
+  "absentOrForeignCommitmentWithholdsHistory": true,
+  "commitmentAccessorOrProxyNotEntered": true,
+  "unknownHistoryDoesNotReadLateCommitment": true,
+  "sameOwnersSingleReadAndClosePath": true,
+  "noNewQueryDebitDispatchOrPaymentAuthority": true,
+  "existingOutputSchemaPreserved": true,
+  "sqliteSourceAndSchemaUnchanged": true,
+  "fixtureArbitraryDigestReplacedWithV1ByteContract": true,
+  "durableByteContractSource": {
+    "path": "src/service-credit-sqlite-store.js",
+    "bytes": 85768,
+    "sha256": "d990402f712bc2db1fa979f50401371a2ded7c9bb9a1011a3e70479ec3d2ca2f",
+    "gitBlob": "19a98a26f459261a06454d8a6754c5dab07f8d8b"
+  },
+  "nativeQualification": "NOT_EXECUTED",
+  "G0G5": "OPEN"
+}

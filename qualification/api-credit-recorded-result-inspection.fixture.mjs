@@ -1,6 +1,7 @@
 // Actual product writes, reference-model reconstruction, combined V6 read core,
 // owner and coordinator. SQL/proof/file/epoch/channel ports are declared DATA.
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { recordedResultFixture } from './api-credit-recorded-result.fixture.mjs';
 import { InMemoryServiceCreditModel } from '../src/service-credit-model.js';
 import { createServiceCreditExecutionContract, prepareServiceCreditExecution, fenceServiceCreditExecution,
@@ -33,12 +34,14 @@ export async function resultInspectionFixture(options={}){
  const ledgerRequest=model.getRequest(key),executionRequest={};
  for(const name of ['modelVersion','grantId','requestId','requestDigest','method','routeId','canonicalBodyDigest','selectedContentType','maxCostUnits','costUnits'])executionRequest[name]=ledgerRequest[name];
  // Real pure execution-contract transitions over declared memory DATA only.
- // The result commitment is a declared fixture value, not a SQL checksum proof.
+ // The result commitment uses the existing store's v1 DATA byte contract.
+ // This remains a declared memory fixture, not a SQL read/checksum proof.
  const policy=F({policyId:'inspection.execution.fixture',policyVersion:1,maxDurationMs:100});
  const empty=createServiceCreditExecutionContract({ledgerId:'inspection.execution.fixture',policy,capacity:1});
  const prepared=prepareServiceCreditExecution({state:empty,request:executionRequest,policy,selectedDurationMs:100,wallClockStartMs:0});
  const fenced=fenceServiceCreditExecution({state:prepared.state,executionId:prepared.execution.executionId,wallClockNowMs:1}).fenceTransitionCandidate;
- const completed=completeServiceCreditExecution({state:fenced.state,executionId:fenced.execution.executionId,resultCommitment:'sha256:'+'a'.repeat(64),wallClockNowMs:2});
+ const resultCommitment='sha256:'+createHash('sha256').update('zenon-x402:service-credit-sqlite-result-v1\0').update(canonicalJson(ledgerRequest.cachedResult)).digest('hex');
+ const completed=completeServiceCreditExecution({state:fenced.state,executionId:fenced.execution.executionId,resultCommitment,wallClockNowMs:2});
  assert.equal(completed.winner,'SUCCEEDED');r.execution=completed.execution;
  r.outcome=()=>{
   const request=model.getRequest(key),status=options.backendStatus??'CACHED_SUCCESS';

@@ -1,5 +1,7 @@
 import { Buffer } from 'node:buffer';
 import { types } from 'node:util';
+import { createHash } from 'node:crypto';
+import { canonicalJson } from './canonical.js';
 import { snapshotOriginalServiceRequestCustodyKey, validateOriginalServiceRequestCustody } from './service-credit-original-request-custody-contract.js';
 import { captureApiCreditRecordedServiceResult, validateApiCreditRecordedResponseBinding } from './api-credit-recorded-service-result.js';
 
@@ -63,6 +65,11 @@ export function captureApiCreditRecordedResultInspection(observed,manifest){
    if(data(request,'state')!=='SUCCEEDED'||data(execution,'terminalClassification')!=='SUCCEEDED')fail();
    cached=cache(data(backend,'cachedResult'));const requestCache=cache(data(request,'cachedResult'));
    if(JSON.stringify(cached)!==JSON.stringify(requestCache))fail();
+   // Match the existing durable store's v1 result commitment before releasing
+   // any cache or local response. Agreement between two cache copies alone
+   // does not bind either copy to the terminal execution's committed result.
+   const commitment='sha256:'+createHash('sha256').update('zenon-x402:service-credit-sqlite-result-v1\0').update(canonicalJson(cached)).digest('hex');
+   if(data(execution,'resultCommitment')!==commitment)fail();
    responseJson=localResponse(local,key,cached);
   }else if(data(backend,'cachedResult')!==null)fail();
  }

@@ -1,0 +1,122 @@
+{
+  "version": 83,
+  "status": "SOURCE_AND_DECLARED_MEMORY_DATA_CANDIDATE",
+  "sourceMain": "ad663b83b5fee77d7943ebbaccf5bcf283eb18b5",
+  "sourceMainTree": "433df1e9ce8a9acaee625662426f4f6baae690b3",
+  "predecessorProfile": {
+    "path": "qualification/profiles/api-credit-application-source-v82.json",
+    "bytes": 4358,
+    "sha256": "a8d3ed6c6605db915a6dc648a66c73473f3f7ae8af4365b6df28840ecd32a81e"
+  },
+  "profileStorage": "EXACT_PREDECESSOR_REFERENCE_WITH_RECORDED_RESULT_COMMITMENT_DELTA",
+  "product": "ONE_FUNDING_ONE_GRANT_MANY_METERED_CALLS_ORIGINAL_REPLAY_RECOVERY",
+  "recordedResultCommitment": {
+    "path": "qualification/recorded-result-commitment.source-contract.json",
+    "bytes": 1182,
+    "sha256": "9759a160e1a135e06e26dc950710b82bd9ac61059b231b3210061b16a4513028"
+  },
+  "proofManifest": {
+    "path": "qualification/recorded-result-commitment.proof-manifest.json",
+    "bytes": 339184,
+    "sha256": "80932ed4be2c857c344306a0559dfc20aec0b57d99954972f7c83f0cc2250f79"
+  },
+  "failureInventory": {
+    "path": "qualification/recorded-result-commitment.failure-inventory.json",
+    "bytes": 935,
+    "sha256": "5aa3e58acf95142c184fe5fa34363fa705f493f0700945da03187506b523adb6"
+  },
+  "sourceDelta": [
+    {
+      "path": "qualification/api-credit-recorded-result-inspection.fixture.mjs",
+      "bytes": 10057,
+      "sha256": "b523bb22e8d26bee9df8548187f7178882d3b51d1261af6a6da8651c7f599861",
+      "gitBlob": "886402bbbbdb5ad1a3aa8a1c7ac35f8d061b5246"
+    },
+    {
+      "path": "qualification/recorded-result-commitment.behavior.mjs",
+      "bytes": 9303,
+      "sha256": "0131b52f3fac1a95bad30a788f35e55771d025baed33a62e0ffda04574c77ce2",
+      "gitBlob": "146d91e5d95e8f95ae23b5ff81c4ca2af5f91acb"
+    },
+    {
+      "path": "src/api-credit-module-catalog.json",
+      "bytes": 120934,
+      "sha256": "e358c77b4ec3acaae3f4ecd8238ed47975c5eb8ee746e5eb09958dcc9bbb8cac",
+      "gitBlob": "b08b907e000142df809a4e6b4642f2c31d283f06"
+    },
+    {
+      "path": "src/api-credit-native-package-admission.js",
+      "bytes": 6414,
+      "sha256": "5eb73ef8e6e94ce34ce6c96df198abb597d36e7dbc3d6e15bde2257b9c676af9",
+      "gitBlob": "220bdf4b9751bf25112bf9f97f799f3f72fb6803"
+    },
+    {
+      "path": "src/api-credit-recorded-result-inspection.js",
+      "bytes": 8518,
+      "sha256": "ae552fe19f34f1c64aff8b9223eea73e168ca5a0faa2c0b38b8ae8d497c4e8c2",
+      "gitBlob": "c482ea3f7bdb99d279058d07c850eeaa5b96f311"
+    }
+  ],
+  "buyerCatalog": {
+    "role": "buyer",
+    "sourceGraph": 178,
+    "catalogRows": 581,
+    "sourceRows": 176,
+    "packageRows": 404,
+    "bareEdges": 9,
+    "addedSourceRows": [],
+    "changedSourceRows": [
+      "src/api-credit-recorded-result-inspection.js"
+    ],
+    "removedSourceRows": [],
+    "catalog": {
+      "path": "src/api-credit-module-catalog.json",
+      "bytes": 120934,
+      "sha256": "e358c77b4ec3acaae3f4ecd8238ed47975c5eb8ee746e5eb09958dcc9bbb8cac"
+    },
+    "admission": {
+      "path": "src/api-credit-native-package-admission.js",
+      "bytes": 6414,
+      "sha256": "5eb73ef8e6e94ce34ce6c96df198abb597d36e7dbc3d6e15bde2257b9c676af9"
+    },
+    "catalogUnchanged": false
+  },
+  "providerCatalog": {
+    "role": "provider",
+    "sourceGraph": 104,
+    "catalogRows": 507,
+    "sourceRows": 102,
+    "packageRows": 404,
+    "bareEdges": 4,
+    "addedSourceRows": [],
+    "changedSourceRows": [],
+    "removedSourceRows": [],
+    "catalog": {
+      "path": "src/issued-provider-module-catalog.json",
+      "bytes": 104412,
+      "sha256": "e2fea2d5a2378fa2d078eb75d618867d7bc193e89a23f6ec41ed9e0320218286"
+    },
+    "admission": {
+      "path": "src/issued-provider-native-package-admission.js",
+      "bytes": 6429,
+      "sha256": "80b1b96a27f0ff0503adf1841c831d42ddac6bbc782b4f276ffcd90c95e3c768"
+    },
+    "catalogUnchanged": true
+  },
+  "packagePinsAndBareEdgesUnchanged": true,
+  "currentLocalData": {
+    "new": 18,
+    "reexecuted": 792,
+    "retainedExact": 1405,
+    "sourceBoundDistinct": 2215,
+    "newDATACommands": 14,
+    "newParserCommands": 2,
+    "parserSourceProofs": 52
+  },
+  "selectedHostedCIControls": 108,
+  "selectedHostedCISourceInputs": 22,
+  "hostedSelectionChanged": false,
+  "newCasesIncludedInHostedCI": false,
+  "nativeQualification": "NOT_EXECUTED",
+  "G0G5Acceptance": "OPEN"
+}

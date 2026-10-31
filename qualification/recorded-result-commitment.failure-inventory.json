@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "currentDataFailures": 0,
+  "currentParserFailures": 0,
+  "unexpectedSkips": 0,
+  "findingScope": "RESULT_PROJECTION_COMMITMENT_BINDING_NOT_NATIVE_SQL_DURABILITY",
+  "inheritedInventory": {
+    "path": "qualification/recovery-inspection-stop.failure-inventory.json",
+    "bytes": 1017,
+    "sha256": "9d9e13996a3db2daa5d768f1cfb4af488cc6cca85d66b432871f9f25b25f4339"
+  },
+  "newDataCommands": 1,
+  "affectedDataCommands": 13,
+  "affectedExistingControlsReexecuted": 792,
+  "unchangedControlsNotReexecuted": 1405,
+  "preservedMetadataPreparationRefusal": {
+    "rawQualificationSha256": "f8b039ce0cc7d0b171357f58e5994e87f2453cf666a92575538739f8e5ef3c06",
+    "actualDATACommands": 0,
+    "actualParserCommands": 0,
+    "managedTaskCreated": false,
+    "sourceOrCIRepeated": false,
+    "reclassified": false
+  },
+  "completedDATAOrCIRepeatedForMetadata": false,
+  "originalEvidenceAndFailedOutcomesPreserved": true
+}
