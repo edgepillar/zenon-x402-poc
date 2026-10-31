@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "selection": "FIXED_NAMED_NON_DP_PREPARATION_ADMISSION",
+  "factory": "createApiCreditNonDpPurchasedGrantRecoveryApplication",
+  "capture": "captureNonDpOriginalFundingSignerPreparation",
+  "sharedPolicyCapture": "captureNonDpFusedResourcePolicy",
+  "policyFields": [
+    "policyVersion",
+    "maxFusedPlasma",
+    "maxMomentumAdvances"
+  ],
+  "policyVersion": 1,
+  "maxFusedPlasmaInclusive": [
+    1,
+    9007199254740991
+  ],
+  "maxMomentumAdvancesInclusive": [
+    0,
+    128
+  ],
+  "policyAdmittedBeforePrepareClaimAndChildEntry": true,
+  "missingExtraUnsafeAccessorAndUnsupportedPolicyRefused": true,
+  "noPolicyDefaultsWorkOrLaneSelectors": true,
+  "knownPreconditionRefusalDoesNotConsumeOriginalAttempt": true,
+  "admittedChildFailureStillHeldAndSingleAttempt": true,
+  "sameExistingOwnerJournalCustodyBudgetSignerAndStopChain": true,
+  "validPreparationBytesAndDigestMatchGenericCapture": true,
+  "callerInputUnchanged": true,
+  "legacyGenericAndHistoryGrammarPreserved": true,
+  "candidateStrategyAndObservedReadShareTheExplicitPolicy": true,
+  "nativeFixedNonDpSourceSelectsNamedOwner": true,
+  "policyAdmissionEstablishesNoObservationChainAuthenticationOrSigningAuthority": true,
+  "nativeQualification": "NOT_EXECUTED",
+  "G0G5": "OPEN"
+}

@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "currentDataFailures": 0,
+  "currentParserFailures": 0,
+  "unexpectedSkips": 0,
+  "correctedSourceFinding": "INVALID_NON_DP_POLICY_PREVIOUSLY_REACHED_THE_OUTER_PREPARATION_CLAIM_AND_CHILD_BEFORE_REFUSAL",
+  "originalSourceAndEvidencePreserved": true,
+  "inheritedInventory": {
+    "path": "qualification/non-dp-operator-configuration.failure-inventory.json",
+    "bytes": 773,
+    "sha256": "5b8c0454212d2bce7d6de00fc50c0331398bafb0fbb2ff243ecb0bbe87138132"
+  },
+  "preservedInitialDataAttempt": {
+    "passed": 6,
+    "failed": 1,
+    "remainingCasesNotExecuted": true,
+    "taskOutcome": "FAILURE",
+    "reportStatus": "UNKNOWN",
+    "rawQualificationSha256": "e7d195c86d7c76179b326b5a857a15748e4524fd405f90022dc5d83210773dea",
+    "correction": "Remove an insertion-order expectation not promised by the existing preparation capture; compare its complete JSON and digest instead.",
+    "runtimeSourceUnchangedByTestCorrection": true,
+    "originalFailedRunReclassified": false
+  },
+  "preservedPreDataHeadGuardRefusal": {
+    "actualDataCommands": 0,
+    "actualParserCommands": 0,
+    "rawQualificationSha256": "de0ba610048f91393aaa8ff88486724df3361c76a52a5db47817413b42a5f94c"
+  },
+  "preservedCatalogMetadataExpectationRefusal": {
+    "applicationCommands": 0,
+    "rawCorrectionSha256": "b3b4504974e3ceaf0891356ed1816ad00fffd5803fdd3c467adb20c5284b1696",
+    "sourceInference": "Only the buyer graph reaches the new policy helper. Provider reachability is independent of shared DATA fixtures."
+  },
+  "preservedInitialMetadataPlanAttempt": {
+    "reportSha256": "c9ba8f60afb793593b5220390b5ec64d33daac722210de8b8d07131289704986",
+    "actualMetadataCommands": 1,
+    "actualExit": 1,
+    "taskOutcome": "FAILURE",
+    "reportStatus": "UNKNOWN",
+    "error": "API_CREDIT_SOURCE_PROFILE_CATALOG_COUNT",
+    "correction": "Update the buyer manifest sourceRows from 175 to the derived 176; all runtime DATA and parser sources are unchanged.",
+    "failedRunReclassified": false
+  },
+  "unchanged604CasesRepeated": false,
+  "DATAOrCIRepeatedForMetadataError": false,
+  "earlierFailedAndUnknownEvidenceReclassified": false
+}

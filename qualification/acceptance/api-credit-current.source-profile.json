@@ -1,7 +1,7 @@
 {
   "profileVersion": 1,
   "profileId": "API_CREDIT_CURRENT_SOURCE_V1",
-  "sourceBaseline": "3f13412a7191b4331ce6c9f20b863e26f7c7bae1",
+  "sourceBaseline": "4702ff9b7ebc047f69d342a20c8ca8d5b095123b",
   "application": {
     "buyerEntry": "src/api-credit-cli.js",
     "providerEntry": "src/issued-provider-cli.js"
@@ -10,9 +10,9 @@
     {
       "role": "buyer",
       "path": "src/api-credit-module-catalog.json",
-      "bytes": 120732,
-      "sha256": "2ad7cb10298362ee30b7674bf36b50576672e960617a83862965ebfdfb483bc6",
-      "sourceRows": 175,
+      "bytes": 120934,
+      "sha256": "dec240fb2a29c1728d30a75589a4e83b900ede52f4e480fb1e23871658d1d0b3",
+      "sourceRows": 176,
       "packageRows": 404,
       "bareEdges": 9
     },
@@ -30,7 +30,7 @@
     {
       "path": "src/api-credit-native-package-admission.js",
       "bytes": 6414,
-      "sha256": "58365e318cc194df29f35ec7255fce3bd01be706f620bbde502c70c5a62608d6",
+      "sha256": "0e4032ed5671904c9678e2222fb5b819e40456d517c158f8ad1d033dcb9550bc",
       "format": "module"
     },
     {
@@ -48,19 +48,19 @@
   ],
   "dataQualification": {
     "sourceProfile": {
-      "path": "qualification/profiles/api-credit-application-source-v78.json",
-      "bytes": 6722,
-      "sha256": "7f6a33c57834cd4b6aa2a7d17e6d8dd32bf1d9efb23c8f1b323c0b2b079a6eac"
+      "path": "qualification/profiles/api-credit-application-source-v79.json",
+      "bytes": 5850,
+      "sha256": "ed85cf23af397ee97c23b09dc21622dd9f900660653469c4a32f97352a31d10d"
     },
     "result": {
-      "path": "qualification/non-dp-operator-configuration.actual-local-result.json",
-      "bytes": 98754,
-      "sha256": "52baa891f11ec297cf6e53e3ab7f4c0326d7f27991a1c71e4b43d5712e6e0aee"
+      "path": "qualification/non-dp-preparation-admission.actual-local-result.json",
+      "bytes": 190504,
+      "sha256": "06628e469f263d97d70dae6c894880b8f5b5ebcd9a8aa55462c6d8a20210fbbe"
     },
-    "sourceBoundControls": 2130,
-    "executedControls": 789,
-    "retainedControls": 1341,
-    "expectedResultQualification": "G1_NON_DP_OPERATOR_CONFIGURATION_DATA"
+    "sourceBoundControls": 2149,
+    "executedControls": 1545,
+    "retainedControls": 604,
+    "expectedResultQualification": "G1_NON_DP_PREPARATION_ADMISSION_DATA"
   },
   "runtime": {
     "nodeVersion": "24.19.0",

@@ -1,5 +1,5 @@
 // SOURCE ONLY; this complete native binding has not been executed.
-import { createApiCreditPurchasedGrantRecoveryApplication } from '../api-credit-funding-grant-recovery-application.js';
+import { createApiCreditPurchasedGrantRecoveryApplication, createApiCreditNonDpPurchasedGrantRecoveryApplication } from '../api-credit-funding-grant-recovery-application.js';
 import { types } from 'node:util';
 import { decodeApiCreditOriginalGrantQueryProfile, releaseApiCreditOriginalGrantQueryProfile } from '../api-credit-original-grant-query-profile.js';
 import { inspectNativeApiCreditOriginalGrant } from './native-api-credit-original-grant-query.js';
@@ -106,7 +106,7 @@ async function openApplication(selection, requireCurrentOpening, productProfile,
           const result=await inspectNativeApiCreditOriginalGrant(token,guard);guard();return result;
         }finally{if(token!==undefined)releaseApiCreditOriginalGrantQueryProfile(token);}
       });
-      application = createApiCreditPurchasedGrantRecoveryApplication(F({ application: product,
+      application = (nonDp ? createApiCreditNonDpPurchasedGrantRecoveryApplication : createApiCreditPurchasedGrantRecoveryApplication)(F({ application: product,
         custody: file.grantQueryCustody, paymentId: selected.spending.paymentId, fundingResourceUrl: c.storeOptions.resourceUrl,
         purchase: productProfile.purchase, inspectGrant, lookupPolicy }));
     }

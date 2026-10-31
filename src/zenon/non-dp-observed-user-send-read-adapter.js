@@ -1,4 +1,5 @@
 import { types } from 'node:util';
+import { captureNonDpFusedResourcePolicy } from './non-dp-fused-resource-policy.js';
 import { Buffer } from 'node:buffer';
 import { canonicalJson } from '../canonical.js';
 import { snapshotBoundedJsonRpcReadResultText } from './bounded-json-rpc-read-core.js';
@@ -89,8 +90,7 @@ function input(value) {
   if (c.nonDpReadInputVersion !== 1 || c.phase !== 'UNSIGNED' || typeof c.runtimeContextDigest !== 'string'
       || c.runtimeContextDigest.length !== 71 || !DIGEST.test(c.runtimeContextDigest)) fail();
   base64(c.publicKey, 32);
-  const policy = record(c.policy, ['policyVersion', 'maxFusedPlasma', 'maxMomentumAdvances']);
-  if (policy.policyVersion !== 1) fail(); uint(policy.maxFusedPlasma, 1); uint(policy.maxMomentumAdvances, 0, 128);
+  let policy;try { policy = captureNonDpFusedResourcePolicy(c.policy); } catch { fail(); }
   const request = createZenonUserSendObservationInput({ observationIntentVersion: 1, phase: c.phase,
     paymentRequired: c.paymentRequired, accepted: c.accepted, payerAddress: c.payerAddress, compiledSporkIds: c.compiledSporkIds });
   return F({ c, request });

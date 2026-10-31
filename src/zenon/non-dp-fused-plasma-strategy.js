@@ -1,4 +1,5 @@
 import { types } from 'node:util';
+import { captureNonDpFusedResourcePolicy } from './non-dp-fused-resource-policy.js';
 import { PlasmaStrategy } from './plasma-strategy.js';
 import { canonicalJson } from '../canonical.js';
 import { classifyDynamicPlasmaCompatibility } from './dynamic-plasma-compatibility.js';
@@ -18,9 +19,6 @@ function fields(value, names) {
   for (const name of names) { const d = D(value, name); if (!d?.enumerable || !Object.hasOwn(d, 'value')) fail(); out[name] = d.value; }
   return F(out);
 }
-function integer(value, minimum, maximum) {
-  if (!Number.isSafeInteger(value) || Object.is(value, -0) || value < minimum || value > maximum) fail();
-}
 function owner(value) { if (value === null || typeof value !== 'object' || types.isProxy(value) || !OWNERS.has(value)) fail(); }
 function context(input) {
   if (D(Object.prototype, 'then') !== undefined || D(Object.prototype, 'toJSON') !== undefined) fail();
@@ -38,9 +36,7 @@ function context(input) {
   if (classifyDynamicPlasmaCompatibility(observation).classification !== 'PRE_DP') fail();
   const rpc = observation.rpcObservation;
   if (rpc.requiredDifficulty !== 0 || rpc.availablePlasma < rpc.basePlasma) fail();
-  const policy = fields(c.policy, ['policyVersion', 'maxFusedPlasma', 'maxMomentumAdvances']);
-  if (policy.policyVersion !== 1) fail();
-  integer(policy.maxFusedPlasma, 1, Number.MAX_SAFE_INTEGER); integer(policy.maxMomentumAdvances, 0, 128);
+  const policy = captureNonDpFusedResourcePolicy(c.policy);
   if (rpc.basePlasma > policy.maxFusedPlasma) fail();
   const request = F({ address: binding.subject.address, blockType: 2, toAddress: binding.subject.toAddress, data: binding.subject.data });
   const observedRequest = fields(c.observedQuoteRequest, ['address', 'blockType', 'toAddress', 'data']);

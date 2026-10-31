@@ -1,4 +1,5 @@
 import { types } from 'node:util';
+import { captureNonDpFusedResourcePolicy } from './non-dp-fused-resource-policy.js';
 import { Buffer } from 'node:buffer';
 import { canonicalJson } from '../canonical.js';
 import { captureZenonDynamicPlasmaFundingPostPreparationInput } from './dynamic-plasma-funding-post-preparation-input.js';
@@ -30,9 +31,6 @@ function join(pending) {
       () => { resolve(F(Object.assign(Object.create(null), { ok: false }))); }]);
   });
   Object.defineProperty(p, 'constructor', { value: NP }); return p;
-}
-function integer(value, min, max = Number.MAX_SAFE_INTEGER) {
-  if (!Number.isSafeInteger(value) || Object.is(value, -0) || value < min || value > max) fail();
 }
 
 /** Explicit non-DP source binding to the existing age-bound, context-custodied
@@ -78,9 +76,8 @@ export function createNonDpCustodiedOriginalCandidate(configuration) {
   async function wait(pending) { const settled = await join(pending); current(); if (!settled.ok) fail(); return settled.value; }
   function capture(incoming, url) {
     const input = captureZenonDynamicPlasmaFundingPostPreparationInput(incoming, url), r = input.plannerContext.readInput;
-    const policy = record(r.policy, ['policyVersion', 'maxFusedPlasma', 'maxMomentumAdvances']);
-    if (policy.policyVersion !== 1 || r.payerAddress !== c.expectedAddress) fail();
-    integer(policy.maxFusedPlasma, 1); integer(policy.maxMomentumAdvances, 0, 128);
+    let policy;try { policy = captureNonDpFusedResourcePolicy(r.policy); } catch { fail(); }
+    if (r.payerAddress !== c.expectedAddress) fail();
     return F({ input, read: F({ nonDpReadInputVersion: 1, phase: 'UNSIGNED', paymentRequired: r.paymentRequired,
       accepted: r.accepted, payerAddress: r.payerAddress, compiledSporkIds: r.compiledSporkIds,
       policy, runtimeContextDigest: r.runtimeContextDigest, publicKey: c.expectedPublicKey }) });

@@ -1,3 +1,4 @@
+import { captureNonDpFusedResourcePolicy } from './zenon/non-dp-fused-resource-policy.js';
 import { Buffer } from 'node:buffer';
 import { createHash } from 'node:crypto';
 import { types } from 'node:util';
@@ -33,9 +34,18 @@ function jsonCopy(value, depth = 0, budget = { nodes: 4096, characters: 65536 })
     Object.defineProperty(out, key, { value: jsonCopy(d.value, depth + 1, budget), enumerable: true }); }
   return F(out);
 }
+export function captureNonDpOriginalFundingSignerPreparation(input, fundingResourceUrl) {
+  if (arguments.length !== 2) fail();
+  return capturePreparation(input, fundingResourceUrl, true);
+}
 export function captureOriginalFundingSignerPreparation(input, fundingResourceUrl) {
   if (arguments.length !== 2) fail();
-  const captured = captureZenonDynamicPlasmaFundingPostPreparationInput(input, fundingResourceUrl), preparationInputJson = JSON.stringify(captured);
+  return capturePreparation(input, fundingResourceUrl, false);
+}
+function capturePreparation(input, fundingResourceUrl, nonDp) {
+  const captured = captureZenonDynamicPlasmaFundingPostPreparationInput(input, fundingResourceUrl);
+  if (nonDp) { try { captureNonDpFusedResourcePolicy(captured.plannerContext.readInput.policy); } catch { fail(); } }
+  const preparationInputJson = JSON.stringify(captured);
   text(preparationInputJson, 65536);
   return F({ fundingResourceUrl, preparationInputJson, originalDigest: 'sha256:' + createHash('sha256').update(preparationInputJson).digest('hex') });
 }

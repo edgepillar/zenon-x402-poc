@@ -4,7 +4,7 @@ import { captureOriginalFundingServiceHandoffRequest } from './zenon/dynamic-pla
 import { restoreOriginalPaymentCheckpoint } from './service-credit-pilot-original-payment-checkpoint.js';
 import { types } from 'node:util';
 import { captureFundingPostCheckpointRoute } from './x402-funding-post-checkpoint-route.js';
-import { captureOriginalFundingSignerPreparation } from './original-funding-signer-context-custody.js';
+import { captureOriginalFundingSignerPreparation, captureNonDpOriginalFundingSignerPreparation } from './original-funding-signer-context-custody.js';
 import { captureApiCreditFundingGrantRecoveryProfile, projectApiCreditFundingGrantRecoveryRecord } from './api-credit-funding-grant-recovery-record.js';
 
 const F=Object.freeze,D=Object.getOwnPropertyDescriptor,K=Reflect.ownKeys,O=Object.hasOwn,A=Reflect.apply;
@@ -36,7 +36,12 @@ export function createApiCreditFundingGrantRecoveryApplication(configuration){
 export function createApiCreditPurchasedGrantRecoveryApplication(configuration){
   if(arguments.length!==1)fail();return createApplication(configuration,true);
 }
-function createApplication(configuration,purchased){
+/** Fixed non-DP product: pure policy admission precedes the preparation claim
+ * and every child/budget/signer operation. No additional owner or journal. */
+export function createApiCreditNonDpPurchasedGrantRecoveryApplication(configuration){
+  if(arguments.length!==1)fail();return createApplication(configuration,true,true);
+}
+function createApplication(configuration,purchased,nonDp=false){
   if(!invariant()||HELD.size>=64)fail();
   const c=fields(configuration,['application','custody','paymentId','fundingResourceUrl',...(purchased?['purchase','inspectGrant','lookupPolicy']:[])]);
   if(purchased){fn(c.inspectGrant);if(c.purchase===null||typeof c.purchase!=='object'||types.isProxy(c.purchase)||!Object.isFrozen(c.purchase))fail();}
@@ -100,7 +105,7 @@ function createApplication(configuration,purchased){
     catch{keep(pending);hold();out.reject(error());}return out.promise;
   }
   function prepare(input){
-    if(prepareClaimed)fail();const original=captureOriginalFundingSignerPreparation(input,c.fundingResourceUrl);
+    if(prepareClaimed)fail();const original=(nonDp?captureNonDpOriginalFundingSignerPreparation:captureOriginalFundingSignerPreparation)(input,c.fundingResourceUrl);
     prepareClaimed=true;originalDigest=original.originalDigest;
     return delegate('prepareOriginalFunding',input,value=>{
       if(data(value,'phase')!=='AWAITING_INDEPENDENT_PINS')fail();const packet=data(value,'packet'),serialized=data(packet,'serializedCheckpoint');
