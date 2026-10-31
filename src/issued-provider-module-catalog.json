@@ -2492,9 +2492,15 @@
       "format": "module"
     },
     {
+      "path": "src/issued-expired-funding-retention.js",
+      "bytes": 5259,
+      "sha256": "1b6d4034ddae777068576dc10139911e71fb05ed0cdae989d7afa91043e28788",
+      "format": "module"
+    },
+    {
       "path": "src/issued-funding-grant-activation-owner.js",
-      "bytes": 13920,
-      "sha256": "c44d0b454531adf8b114564bc0dedfb188fb24ac99fbf42b0bf3fba78815ba31",
+      "bytes": 15214,
+      "sha256": "a6e78e83bfbb22cb234aae4c3824b34b30c580e13926c8eb324493de3a857315",
       "format": "module"
     },
     {
@@ -2643,8 +2649,8 @@
     },
     {
       "path": "src/official-funding-post-custody-record.js",
-      "bytes": 11259,
-      "sha256": "1427e4b2183a28c7a06518dae54525650d66b35994527f6b338ca2ad2560d0ae",
+      "bytes": 15211,
+      "sha256": "01e4d22ba96b4bed7c8d77e28ea26af360db40a5d94c519203cfd1b9a3ea5f60",
       "format": "module"
     },
     {
@@ -2655,8 +2661,8 @@
     },
     {
       "path": "src/official-funding-post-outcome-custody.js",
-      "bytes": 8874,
-      "sha256": "72293e96d3446eb21df9661cf19f307c5206dd09da90e2a32b8a8d1d05ea6c73",
+      "bytes": 9187,
+      "sha256": "3efd47e692080d7857cdae162880e84f97d1a39631cf0b01d7d7804b4c2311fd",
       "format": "module"
     },
     {
@@ -2835,8 +2841,8 @@
     },
     {
       "path": "src/service-credit-zenon-funding-intake-sqlite-store.js",
-      "bytes": 40261,
-      "sha256": "dcdca312b5917edcc54063f913928e2fa2dc862b92157ee247bd2087c11606f8",
+      "bytes": 40557,
+      "sha256": "54db0b31c61f84d5e77e81f01e7aac0e753740207d2d442e7caee29f8e43fe77",
       "format": "module"
     },
     {
@@ -2889,8 +2895,8 @@
     },
     {
       "path": "src/x402-issued-funding-grant-native-activation.js",
-      "bytes": 6075,
-      "sha256": "11d7244f50bebb4d271fba447abb25838aedf8954a5fe946391c4ea91571433b",
+      "bytes": 8147,
+      "sha256": "287ee3688be391f414dc0bab36c6b1ce694284eba0f99ef856d0af56450c0e9e",
       "format": "module"
     },
     {

@@ -40,7 +40,8 @@ export function createIssuedFundingGrantActivationOwner(options){
  const p=fields(c.port,['providerSnapshot','providerClose','loadBound','prepareActivation','admitCommittedServiceGrant']);
  for(const fn of Object.values(p))if(typeof fn!=='function'||types.isProxy(fn)||!Object.isFrozen(fn))fail();if(new Set(Object.values(p)).size!==5)fail();
  let closed=false,held=false,active=false,attempts=0,activationEntered=false,verificationEntered=false,fundedWithoutGrantObserved=false,admittedGrantId=null,row=null,observer=null,prepared=null,work=null,closing=null,providerClose=null;
- let preparations=0,activationCalls=0,verificationCalls=0,admissionCalls=0,closeCalls=0,activationExpiryOutcomeMode=false;const opaque=[];
+ let preparations=0,activationCalls=0,verificationCalls=0,admissionCalls=0,closeCalls=0,activationExpiryOutcomeMode=false;
+ let retainExpiredFunding=null,retentionCalls=0;const opaque=[];
  const retained=F(()=>[p,row,observer,prepared,work,closing,providerClose,opaque]);
  function hold(v){held=true;HELD.add(retained);if(v!==undefined){opaque.push(v);discard(v);}}
  function live(){if(closed||held||!invariant())fail();}
@@ -65,19 +66,29 @@ export function createIssuedFundingGrantActivationOwner(options){
    A(THEN.value,observed,[()=>providerClose.resolve(undefined),()=>{hold();providerClose.reject(new TypeError('ACTIVATION_PROVIDER_CLOSE_UNKNOWN'));}]);
   }catch{hold();providerClose.reject(new TypeError('ACTIVATION_PROVIDER_CLOSE_UNKNOWN'));}return providerClose.promise;}
  function failed(ticket){hold();requestClose();ticket.reject(new TypeError('ORIGINAL_ACTIVATION_UNKNOWN'));}
+ function retentionFence(hash,pinnedRow){return F(function assertOriginalActivationCurrent(){if(arguments.length!==0)fail();
+  current(hash);if(bound(hash).raw!==pinnedRow)fail();live();return undefined;});}
+ function expiredReceipt(result,hash,pinnedRow){
+  const issue=own(row,'issue'),intent=own(own(issue,'challenge'),'activationIntent'),selection=createIssuedFundingPostSdkResourceBinding(own(issue,'frame'),url).selection();
+  const receipt=captureIssuedExpiredFundingResult(result,F({transactionHash:hash,fundingCommitment:'sha256:'+selection.resource.tags[1]+selection.resource.tags[2],expiresAt:own(intent,'expiresAt')}));
+  // Fence the added write HERE, after verification, with the current original
+  // row and provider lifecycle. A late result after close must not enter CAS.
+  current(hash);if(bound(hash).raw!==pinnedRow)fail();live();
+  if(retainExpiredFunding!==null){retentionCalls++;let returned;
+   try{returned=A(retainExpiredFunding,undefined,[receipt]);}catch{fail();}
+   if(returned!==undefined){hold(returned);fail();}
+  }
+  current(hash);if(bound(hash).raw!==pinnedRow)fail();live();fundedWithoutGrantObserved=true;return receipt;
+ }
  async function settleExpiredFunding(value,ticket,hash,pinnedRow){
   try{const result=(await observe(value,v=>snapshot(v))).value;live();current(hash);if(bound(hash).raw!==pinnedRow)fail();
-   const issue=own(row,'issue'),intent=own(own(issue,'challenge'),'activationIntent'),selection=createIssuedFundingPostSdkResourceBinding(own(issue,'frame'),url).selection();
-   const receipt=captureIssuedExpiredFundingResult(result,F({transactionHash:hash,fundingCommitment:'sha256:'+selection.resource.tags[1]+selection.resource.tags[2],expiresAt:own(intent,'expiresAt')}));
-   current(hash);if(bound(hash).raw!==pinnedRow)fail();live();fundedWithoutGrantObserved=true;ticket.resolve(receipt);
+   ticket.resolve(expiredReceipt(result,hash,pinnedRow));
   }catch{failed(ticket);}finally{active=false;}
  }
  async function settle(value,ticket,hash,pinnedRow,allowExpired=false){
   try{const result=(await observe(value,v=>snapshot(v))).value;live();current(hash);if(bound(hash).raw!==pinnedRow)fail();
    if(allowExpired&&O(result,'expiredFundingVersion')){
-    const issue=own(row,'issue'),intent=own(own(issue,'challenge'),'activationIntent'),selection=createIssuedFundingPostSdkResourceBinding(own(issue,'frame'),url).selection();
-    const receipt=captureIssuedExpiredFundingResult(result,F({transactionHash:hash,fundingCommitment:'sha256:'+selection.resource.tags[1]+selection.resource.tags[2],expiresAt:own(intent,'expiresAt')}));
-    current(hash);if(bound(hash).raw!==pinnedRow)fail();live();fundedWithoutGrantObserved=true;ticket.resolve(receipt);return;
+    ticket.resolve(expiredReceipt(result,hash,pinnedRow));return;
    }
    const r=fields(result,['activation','grant']),grant=r.grant,id=own(grant,'grantId');
    if(typeof id!=='string'||!/^grant_[0-9a-f]{64}$/.test(id)||own(grant,'transactionId')!=='zenontx:'+hash)fail();
@@ -96,21 +107,27 @@ export function createIssuedFundingGrantActivationOwner(options){
    prepared=A(p.prepareActivation,undefined,[observerStore,row]);if(types.isPromise(prepared)){hold(prepared);fail();}live();
    if(prepared===null||typeof prepared!=='object'||types.isProxy(prepared)||!Object.isFrozen(prepared))fail();const status=own(prepared,'status');
    if(status==='NOT_READY'){fields(prepared,['status']);current(hash);if(bound(hash).raw!==selected.raw)fail();active=false;ticket.resolve(F({status:'NOT_READY',activationEntered:false,authority:'NONE'}));return ticket.promise;}
-   if(status==='VERIFY_EXPIRED_FUNDING'){
-    const ready=fields(prepared,['status','verify']);if(typeof ready.verify!=='function'||types.isProxy(ready.verify)||!Object.isFrozen(ready.verify)||Object.values(p).includes(ready.verify))fail();
+   if(status==='VERIFY_EXPIRED_FUNDING'||status==='VERIFY_EXPIRED_FUNDING_WITH_RETENTION'){
+    const retaining=status==='VERIFY_EXPIRED_FUNDING_WITH_RETENTION';
+    const ready=fields(prepared,retaining?['status','verify','retainExpiredFunding']:['status','verify']);if(typeof ready.verify!=='function'||types.isProxy(ready.verify)||!Object.isFrozen(ready.verify)||Object.values(p).includes(ready.verify))fail();
+    if(retaining){const fn=ready.retainExpiredFunding;if(typeof fn!=='function'||types.isProxy(fn)||!Object.isFrozen(fn)||Object.values(p).includes(fn)||fn===ready.verify)fail();retainExpiredFunding=fn;}
     current(hash);if(bound(hash).raw!==selected.raw)fail();live();verificationEntered=true;verificationCalls++;
-    let returned;try{returned=A(ready.verify,undefined,[]);}catch{fail();}
+    let returned;try{returned=A(ready.verify,undefined,retaining?[retentionFence(hash,selected.raw)]:[]);}catch{fail();}
     const running=settleExpiredFunding(returned,ticket,hash,selected.raw);A(THEN.value,running,[()=>{},()=>{}]);return ticket.promise;
    }
-   const ready=fields(prepared,['status','activate']);if(!['READY','READY_WITH_EXPIRY_OUTCOME'].includes(status)||typeof ready.activate!=='function'||types.isProxy(ready.activate)||!Object.isFrozen(ready.activate)||Object.values(p).includes(ready.activate))fail();
-   current(hash);if(bound(hash).raw!==selected.raw)fail();live();activationEntered=true;activationCalls++;activationExpiryOutcomeMode=status==='READY_WITH_EXPIRY_OUTCOME';
-   let returned;try{returned=A(ready.activate,undefined,[]);}catch{fail();}const running=settle(returned,ticket,hash,selected.raw,activationExpiryOutcomeMode);A(THEN.value,running,[()=>{},()=>{}]);
+   const retaining=status==='READY_WITH_RETAINED_EXPIRY_OUTCOME';
+   const ready=fields(prepared,retaining?['status','activate','retainExpiredFunding']:['status','activate']);if(!['READY','READY_WITH_EXPIRY_OUTCOME','READY_WITH_RETAINED_EXPIRY_OUTCOME'].includes(status)||typeof ready.activate!=='function'||types.isProxy(ready.activate)||!Object.isFrozen(ready.activate)||Object.values(p).includes(ready.activate))fail();
+   if(retaining){const fn=ready.retainExpiredFunding;if(typeof fn!=='function'||types.isProxy(fn)||!Object.isFrozen(fn)||Object.values(p).includes(fn)||fn===ready.activate)fail();retainExpiredFunding=fn;}
+   current(hash);if(bound(hash).raw!==selected.raw)fail();live();activationEntered=true;activationCalls++;activationExpiryOutcomeMode=status!=='READY';
+   let returned;try{returned=A(ready.activate,undefined,retaining?[retentionFence(hash,selected.raw)]:[]);}catch{fail();}const running=settle(returned,ticket,hash,selected.raw,activationExpiryOutcomeMode);A(THEN.value,running,[()=>{},()=>{}]);
   }catch{active=false;failed(ticket);}return ticket.promise;
  });
  const admitCommittedServiceGrant=F(function admitCommittedServiceGrant(id){if(arguments.length!==1||active)fail();live();return A(p.admitCommittedServiceGrant,undefined,[id]);});
  const close=F(function close(){if(arguments.length!==0)return rejected();if(closing!==null)return closing.promise;
   closing=capability();closed=true;if(active)hold();const receipt=requestClose();A(THEN.value,receipt,[()=>{if(held||active)closing.reject(new TypeError('ACTIVATION_CLOSE_HELD'));else closing.resolve(undefined);},()=>closing.reject(new TypeError('ACTIVATION_CLOSE_HELD'))]);return closing.promise;});
  const view=F(function snapshotView(){if(arguments.length!==0)fail();return F({version:1,closed,held,active,attempts,maximumAttempts:16,activationEntered,preparations,activationCalls,admissionCalls,admittedGrantId,providerCloseCalls:closeCalls,
-  verificationEntered,verificationCalls,fundedWithoutGrantObserved,...(activationExpiryOutcomeMode?{activationResultMode:'ACTIVATION_OR_EXPIRED_FUNDING'}:{}),observerStore:'BORROWED_NOT_CLOSED',serviceStore:'BORROWED_NOT_CLOSED',fundingStore:'BORROWED_NOT_CLOSED',newFunding:0,SDKSettlementCalls:0,signatures:0,authority:'EXPLICIT_LOCAL_OPERATOR_REQUIRED',nativeAcceptance:'NOT_ESTABLISHED'});});
+  verificationEntered,verificationCalls,fundedWithoutGrantObserved,...(activationExpiryOutcomeMode?{activationResultMode:'ACTIVATION_OR_EXPIRED_FUNDING'}:{}),
+  ...(retainExpiredFunding!==null?{expiredFundingRetentionMode:'SAME_ORIGINAL_CAS_BEFORE_OUTPUT',expiredFundingRetentionCalls:retentionCalls}:{}),
+  observerStore:'BORROWED_NOT_CLOSED',serviceStore:'BORROWED_NOT_CLOSED',fundingStore:'BORROWED_NOT_CLOSED',newFunding:0,SDKSettlementCalls:0,signatures:0,authority:'EXPLICIT_LOCAL_OPERATOR_REQUIRED',nativeAcceptance:'NOT_ESTABLISHED'});});
  return F({activateOriginalCommittedFunding,admitCommittedServiceGrant,close,snapshot:view});
 }

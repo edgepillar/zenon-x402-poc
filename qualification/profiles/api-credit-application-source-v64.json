@@ -1,0 +1,160 @@
+{
+  "version": 64,
+  "status": "SOURCE_AND_DECLARED_MEMORY_DATA_CANDIDATE",
+  "sourceMain": "e71f009118f3ef564ef61fd2167e9ea2adf61668",
+  "sourceMainTree": "08e95f0bde77e0ba2ff4f794f8fc0f0de9446a00",
+  "predecessorProfile": {
+    "path": "qualification/profiles/api-credit-application-source-v63.json",
+    "bytes": 456824,
+    "sha256": "9ceeb0a91d0cf34fdfe6d7842f8a153c58822005a779f2995976cdd0e66cd570"
+  },
+  "profileStorage": "EXACT_PREDECESSOR_REFERENCE_WITH_EXPLICIT_CURRENT_DELTA",
+  "product": "ONE_FUNDING_ONE_GRANT_MANY_METERED_CALLS_ORIGINAL_REPLAY_RECOVERY",
+  "expiredFundingRetention": {
+    "version": 1,
+    "scope": "EXPIRED_ORIGINAL_FUNDING_RETENTION_SOURCE_AND_MEMORY_DATA",
+    "record": "src/official-funding-post-custody-record.js",
+    "controller": "src/issued-expired-funding-retention.js",
+    "owner": "src/issued-funding-grant-activation-owner.js",
+    "nativeBinding": "src/x402-issued-funding-grant-native-activation.js",
+    "intake": "src/service-credit-zenon-funding-intake-sqlite-store.js",
+    "recordSlot": "intake_official_outcomes.record_json",
+    "recordFormat": 2,
+    "recordFields": [
+      "version",
+      "officialRecord",
+      "expiredFunding"
+    ],
+    "maximumRecordBytes": 65536,
+    "exactCanonicalV1Reconstruction": true,
+    "strictTerminalV1ToV2CASOnly": true,
+    "noNestedOrReplacingOrEqualClaim": true,
+    "noSchemaOrTableChange": true,
+    "candidateCapturedBeforeEncoding": true,
+    "knownCompletionRequiresExactCASAcknowledgementAndReadback": true,
+    "ownerLifecycleAndCompleteOriginalBoundRowFence": true,
+    "unexpiredGrantAdmissionUnchanged": true,
+    "historyVerification": "STORED_HISTORY_NOT_REVALIDATED",
+    "deliveryLiability": "RECONCILIATION_REQUIRED",
+    "serviceDelivery": "NOT_ESTABLISHED",
+    "compensation": "NOT_ESTABLISHED",
+    "historyAuthority": "NONE",
+    "unknown": "HELD_WITHOUT_RETRY",
+    "encodingRefusal": "ORIGINAL_ROW_RETAINED_AND_CANDIDATE_HELD_IN_MEMORY",
+    "encodingRefusalDurability": "NOT_ESTABLISHED",
+    "noNewPaymentSignerServiceCompensationOrVerificationAuthority": true,
+    "processClaim": "LOCAL_ONLY_CROSS_PROCESS_FENCING_OPEN",
+    "buyerGraph": 173,
+    "buyerCatalogRows": 576,
+    "providerGraph": 103,
+    "providerCatalogRows": 506,
+    "packageRowsPerCatalog": 404,
+    "buyerCatalogUnchanged": true,
+    "packagePinsAndBareEdgesUnchanged": true,
+    "nativeExecution": false,
+    "nativeDurability": "NOT_ESTABLISHED",
+    "nativeAuthentication": "NOT_ESTABLISHED",
+    "physicalRelease": "NOT_ESTABLISHED",
+    "LinuxAcceptance": "NOT_ESTABLISHED",
+    "G0G5": "OPEN"
+  },
+  "contract": {
+    "path": "qualification/expired-funding-retention.source-contract.json",
+    "bytes": 1904,
+    "sha256": "cdb8b796c3230e5bf5b0ef8e75524e6bc66c0df0cb7c17567b8d76a254318bdb"
+  },
+  "proofManifest": {
+    "path": "qualification/expired-funding-retention.proof-manifest.json",
+    "bytes": 190322,
+    "sha256": "69bbdd53711364d8d1af8242fe5ebd336f0b489dcdce668355df3fec1a77a846"
+  },
+  "failureInventory": {
+    "path": "qualification/expired-funding-retention.failure-inventory.json",
+    "bytes": 2424,
+    "sha256": "2668752c0ebd08d878f0479ca3a257915a7aedec4aebe089b2c49895721f85cf"
+  },
+  "sourceDelta": [
+    {
+      "path": "qualification/expired-funding-retention.behavior.mjs",
+      "bytes": 24832,
+      "sha256": "fc0e929940b173d81ccea1683c3af73b30f4c514842e671b29546fd24ca50ac6",
+      "gitBlob": "cf33aa5b21de22003e6195dda31943f4b2da6771"
+    },
+    {
+      "path": "src/issued-expired-funding-retention.js",
+      "bytes": 5259,
+      "sha256": "1b6d4034ddae777068576dc10139911e71fb05ed0cdae989d7afa91043e28788",
+      "gitBlob": "880e57d4c29c77c6907678a2a908f60fe01e48ba"
+    },
+    {
+      "path": "src/issued-funding-grant-activation-owner.js",
+      "bytes": 15214,
+      "sha256": "a6e78e83bfbb22cb234aae4c3824b34b30c580e13926c8eb324493de3a857315",
+      "gitBlob": "c27b38e6419067c82e232b1d226785ddb8d2060e"
+    },
+    {
+      "path": "src/issued-provider-module-catalog.json",
+      "bytes": 104205,
+      "sha256": "96e92a6151930340871e62b2b9f7041534c6a5d7ed8c81678f358b26dc063f58",
+      "gitBlob": "9a51e69d46810cb117d6a6ffb6d05ff7e6aa2f5a"
+    },
+    {
+      "path": "src/issued-provider-native-package-admission.js",
+      "bytes": 6429,
+      "sha256": "160e4aaa024b4347ef8a767bd19af25f893af5d47e6979606cdfc1df916c2a9e",
+      "gitBlob": "66efeedb5f76cf2e67e17d98bb0d49331b664e21"
+    },
+    {
+      "path": "src/official-funding-post-custody-record.js",
+      "bytes": 15211,
+      "sha256": "01e4d22ba96b4bed7c8d77e28ea26af360db40a5d94c519203cfd1b9a3ea5f60",
+      "gitBlob": "004e6aabe91579e1413ff07b7caed8abfc1ce36e"
+    },
+    {
+      "path": "src/official-funding-post-outcome-custody.js",
+      "bytes": 9187,
+      "sha256": "3efd47e692080d7857cdae162880e84f97d1a39631cf0b01d7d7804b4c2311fd",
+      "gitBlob": "55a16805a5f8da820e3da5ff52daad9d11c7928d"
+    },
+    {
+      "path": "src/service-credit-zenon-funding-intake-sqlite-store.js",
+      "bytes": 40557,
+      "sha256": "54db0b31c61f84d5e77e81f01e7aac0e753740207d2d442e7caee29f8e43fe77",
+      "gitBlob": "29065bdce308f3f451fbf212b0cbc57bca9fb089"
+    },
+    {
+      "path": "src/x402-issued-funding-grant-native-activation.js",
+      "bytes": 8147,
+      "sha256": "287ee3688be391f414dc0bab36c6b1ce694284eba0f99ef856d0af56450c0e9e",
+      "gitBlob": "d887439caf0a04a0a7eb59681711bc89a2da4673"
+    }
+  ],
+  "buyerGraphUnchanged": true,
+  "providerSourceGraphAddition": [
+    "src/issued-expired-funding-retention.js"
+  ],
+  "providerCatalog": {
+    "path": "src/issued-provider-module-catalog.json",
+    "bytes": 104205,
+    "sha256": "96e92a6151930340871e62b2b9f7041534c6a5d7ed8c81678f358b26dc063f58",
+    "graph": 103,
+    "rows": 506,
+    "packageRows": 404,
+    "bareEdges": 4
+  },
+  "currentLocalData": {
+    "new": 45,
+    "reexecuted": 582,
+    "retainedExact": 1169,
+    "sourceBoundDistinct": 1796,
+    "newDATACommands": 22,
+    "newParserCommands": 3,
+    "parserSourceProofs": 48
+  },
+  "selectedHostedCIControls": 108,
+  "selectedHostedCISourceInputs": 22,
+  "hostedSelectionChanged": false,
+  "newCasesIncludedInHostedCI": false,
+  "nativeQualification": "NOT_EXECUTED",
+  "G0G5Acceptance": "OPEN"
+}

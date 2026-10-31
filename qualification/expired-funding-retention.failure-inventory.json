@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "currentDataFailures": 0,
+  "currentParserFailures": 0,
+  "currentQualifiedTaskFailures": 0,
+  "unexpectedSkips": 0,
+  "cancellations": 0,
+  "preservedEnvironmentalAndHarnessRefusals": [
+    {
+      "rawQualificationSha256": "0dcab99faf7cf311106c4b5171ded4e88fb35cb08aca520b3111c1fa46b02325",
+      "status": "REFUSAL_PRESERVED",
+      "classification": "PRIOR_ROOT_OBJECT_OWNERSHIP_REFUSED_NOT_OVERRIDDEN",
+      "applicationNodeCommands": 0,
+      "originalRecordReclassified": false
+    },
+    {
+      "rawQualificationSha256": "679298090cbef03c8d0f5accf10ca2534f0cfe436f27bea2bf9a6056d62e4dfc",
+      "status": "UNKNOWN",
+      "classification": "PRE_TASK_PROJECT_IDENTIFIER_REFUSED",
+      "applicationNodeCommands": 0,
+      "originalRecordReclassified": false
+    },
+    {
+      "rawQualificationSha256": "7561350f7019dcb88217f14f6b849062de34bf2d8af1e673fff210b5f51ca251",
+      "status": "UNKNOWN",
+      "classification": "PRE_TASK_SHARED_METADATA_LEASE_BUSY",
+      "applicationNodeCommands": 0,
+      "originalRecordReclassified": false
+    },
+    {
+      "rawQualificationSha256": "65783415bbff44789c2e60915f56beee7b6ed0a2a53007453718527954544424",
+      "status": "UNKNOWN",
+      "classification": "PRE_TASK_SHARED_METADATA_LEASE_BUSY_PASSIVE_WAIT",
+      "applicationNodeCommands": 0,
+      "originalRecordReclassified": false
+    },
+    {
+      "rawQualificationSha256": "3302e8352256b45203154ced86d17db93f1f7fbcae1265efaba9bab41ead3914",
+      "status": "UNKNOWN",
+      "classification": "PRE_NODE_SMALL_METADATA_RECEIPT_OVERFLOW_CLOSED_FAILURE",
+      "applicationNodeCommands": 0,
+      "originalRecordReclassified": false
+    },
+    {
+      "rawQualificationSha256": "1b6b39a796bcbd8c417b408e3044f6fb53d3524e30cdc061456eea4eade40753",
+      "status": "UNKNOWN",
+      "classification": "PRE_TASK_TUPLE_JSON_PLAN_COMPARISON_REFUSED",
+      "applicationNodeCommands": 0,
+      "originalRecordReclassified": false
+    }
+  ],
+  "earlierInventoriesPreserved": true,
+  "oldRootOwnershipStillUnqualified": true,
+  "oldCASObjectsConsumed": false,
+  "historicalFilesDeleted": false,
+  "baseline40CasesSha256": "aabf25c0245128b765026a9e3e4e68203956a1cb3588a706ff79aa262b1b3078",
+  "baselineExpectedCounterexamples": {
+    "rawQualificationSha256": "948a6f16ac7cf3057d625ff146e71fb2e79215472c5ec600ab36bf41a2064936",
+    "count": 2,
+    "productAcceptance": false
+  },
+  "nativeExecution": 0
+}

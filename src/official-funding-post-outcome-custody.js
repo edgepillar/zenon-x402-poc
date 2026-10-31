@@ -2,7 +2,8 @@ import { types } from 'node:util';
 import { captureOfficialFundingPostReservedObservation,captureOfficialFundingPostReservedObservationResult } from './official-funding-post-reserved-observation.js';
 import { captureOfficialFundingPostCustodyContext,createOfficialFundingPostEnteredRecord,inspectOfficialFundingPostCustodyRecord,
  requireOfficialFundingPostCustodyContext,createOfficialFundingPostObservationRecord,createOfficialFundingPostOutcomeRecord,
- officialFundingPostCustodyRecordDigest,projectOfficialFundingPostCustodyRecord } from './official-funding-post-custody-record.js';
+ officialFundingPostCustodyRecordDigest,projectOfficialFundingPostCustodyRecord,
+ requireOfficialFundingPostRetainedExtension } from './official-funding-post-custody-record.js';
 
 const F=Object.freeze,D=Object.getOwnPropertyDescriptor,O=Object.hasOwn,A=Reflect.apply,NP=Promise,PP=NP.prototype;
 const THEN=D(PP,'then'),CTOR=D(PP,'constructor'),SPECIES=D(NP,Symbol.species);
@@ -32,7 +33,13 @@ export function createOfficialFundingPostOutcomeCustody(options){
   if(value!==null&&typeof value!=='string')hold(value);after();
   if(value!==null){try{requireOfficialFundingPostCustodyContext(value,context);}catch{held=true;fail();}}return value;
  }
- function current(){const value=read();if(raw===null||value!==raw){held=true;fail();}return value;}
+ function current(){const value=read();if(raw===null){held=true;fail();}
+  if(value!==raw){
+   // Only an exact terminal V1 -> retained-receipt wrapper is monotonic. No
+   // pending/unknown outcome, original bytes or observation budget may change.
+   try{requireOfficialFundingPostRetainedExtension(raw,value);}catch{held=true;fail();}raw=value;
+  }return value;
+ }
  function persist(expected,next){
   proposed=next;let value;writes++;
   try{value=A(p.compareAndSwap,undefined,[expected,next]);}catch{hold();}

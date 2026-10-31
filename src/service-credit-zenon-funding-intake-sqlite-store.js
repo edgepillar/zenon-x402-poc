@@ -20,7 +20,8 @@ import {
   validatePaymentRequired,
 } from './x402-wire.js';
 import { deriveZenonFundingObserverSqliteRecordKey } from './service-credit-zenon-funding-observer-sqlite-store.js';
-import { inspectOfficialFundingPostCustodyRecord, requireOfficialFundingPostCustodyTransition } from './official-funding-post-custody-record.js';
+import { inspectOfficialFundingPostCustodyRecord, requireOfficialFundingPostCustodyTransition,
+  inspectOfficialFundingPostExpiredReceipt } from './official-funding-post-custody-record.js';
 
 // Physical table grammar; database user_version is a separate store-wide marker.
 export const ZENON_FUNDING_INTAKE_SQLITE_STORE_SCHEMA_VERSION = 1;
@@ -620,6 +621,11 @@ function validateOfficialRecord(raw, source) {
           observerRecordKey: b.observerRecordKey, observerFileName: b.observerFileName })) fail('ZENON_FUNDING_INTAKE_STORE_CORRUPT');
     const decoded = JSON.parse(Buffer.from(r.originalHeader, 'base64').toString('utf8'));
     if (canonicalJson(decoded) !== canonicalJson(b.publication.paymentPayload)) fail('ZENON_FUNDING_INTAKE_STORE_CORRUPT');
+    inspectOfficialFundingPostExpiredReceipt(raw, Object.freeze({
+      transactionHash: b.transactionHash,
+      fundingCommitment: source.issue.challenge.fundingCommitment,
+      expiresAt: source.issue.challenge.activationIntent.expiresAt,
+    }));
     return r;
   } catch { fail('ZENON_FUNDING_INTAKE_STORE_CORRUPT'); }
 }

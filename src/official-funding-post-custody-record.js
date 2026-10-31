@@ -5,6 +5,7 @@ import { canonicalJson } from './canonical.js';
 import { decodeB64Json,validatePaymentPayloadEnvelope,sameResource,sameRequirements } from './x402-wire.js';
 import { createIssuedFundingPostSdkResourceBinding } from './x402-issued-funding-post-sdk-resource.js';
 import { captureIssuedFundingPostServiceSelection,createIssuedFundingPostApplicationBinding } from './x402-issued-funding-post-application-binding.js';
+import { captureIssuedExpiredFundingResult } from './issued-expired-funding-receipt.js';
 
 const F=Object.freeze,D=Object.getOwnPropertyDescriptor,O=Object.hasOwn,K=Reflect.ownKeys;
 const KEYS=['version','resourceUrl','issuedFrameJson','serviceSelectionJson','originalHeader','transactionHash','boundJson','maximumPendingReconciliations','observations','phase','outcomeJson'];
@@ -69,7 +70,7 @@ export function createOfficialFundingPostEnteredRecord(selected,originalHeader,i
  return encode({version:1,...c,originalHeader,transactionHash:b.transactionHash,boundJson:canonicalJson(b),observations:0,phase:'FIRST_IN_FLIGHT',outcomeJson:null});
 }
 /** Historical DATA only. A checksum or BOUND never manufactures settlement. */
-export function inspectOfficialFundingPostCustodyRecord(raw){
+function inspectVersionOne(raw){
  if(arguments.length!==1)fail();const r=fields(parse(raw,65536),KEYS);
  if(r.version!==1||!hash(r.transactionHash)||!['FIRST_IN_FLIGHT','OBSERVATION_IN_FLIGHT','PENDING','SETTLED','EXHAUSTED'].includes(r.phase))fail();
  const c=context({resourceUrl:r.resourceUrl,issuedFrameJson:r.issuedFrameJson,serviceSelectionJson:r.serviceSelectionJson,maximumPendingReconciliations:r.maximumPendingReconciliations});
@@ -84,6 +85,52 @@ export function inspectOfficialFundingPostCustodyRecord(raw){
   if(r.phase==='PENDING'&&r.observations>0&&r.observations>=r.maximumPendingReconciliations)fail();
  }
  return F(r);
+}
+function expiryPins(value,record){
+ const selected=fields(value,['transactionHash','fundingCommitment','expiresAt']);
+ if(!hash(selected.transactionHash)||typeof selected.fundingCommitment!=='string'
+   ||/^sha256:[0-9a-f]{64}$/.exec(selected.fundingCommitment)?.[0]!==selected.fundingCommitment
+   ||!Number.isSafeInteger(selected.expiresAt)||selected.expiresAt<1)fail();
+ const issued=createIssuedFundingPostSdkResourceBinding(parse(record.issuedFrameJson,8192),record.resourceUrl).selection();
+ if(selected.transactionHash!==record.transactionHash
+   ||selected.fundingCommitment!=='sha256:'+issued.resource.tags[1]+issued.resource.tags[2])fail();
+ return F(selected);
+}
+function expiredEnvelope(raw){
+ const envelope=fields(parse(raw,65536),['version','officialRecord','expiredFunding']);
+ if(envelope.version!==2)fail();const record=inspectVersionOne(canonicalJson(envelope.officialRecord));
+ if(record.phase!=='SETTLED')fail();const value=parse(canonicalJson(envelope.expiredFunding),4096);
+ const issued=createIssuedFundingPostSdkResourceBinding(parse(record.issuedFrameJson,8192),record.resourceUrl).selection();
+ const pins=expiryPins({transactionHash:record.transactionHash,
+  fundingCommitment:'sha256:'+issued.resource.tags[1]+issued.resource.tags[2],
+  expiresAt:value.expiresAt},record);
+ const receipt=captureIssuedExpiredFundingResult(value,pins);
+ if(canonicalJson(receipt)!==canonicalJson(envelope.expiredFunding))fail();return F({envelope,record,receipt});
+}
+/** V2 preserves the canonical terminal V1 object without string-encoding it
+ * again. Canonical reconstruction recovers the exact original bytes. Existing
+ * readers still see the same closed official outcome; no SDK state is invented.
+ * A stored receipt is historical metadata, never fresh funding authentication. */
+export function inspectOfficialFundingPostCustodyRecord(raw){
+ if(arguments.length!==1)fail();const parsed=parse(raw,65536);
+ return parsed.version===2?expiredEnvelope(raw).record:inspectVersionOne(raw);
+}
+export function createOfficialFundingPostExpiredRecord(raw,receipt,selected){
+ if(arguments.length!==3)fail();const record=inspectVersionOne(raw);if(record.phase!=='SETTLED')fail();
+ const captured=captureIssuedExpiredFundingResult(receipt,expiryPins(selected,record));
+ const next=encode({version:2,officialRecord:record,expiredFunding:captured});
+ expiredEnvelope(next);return next;
+}
+/** The SQL adapter additionally binds selected expiry to the original issued
+ * challenge. Resource/transaction commitments alone do not decode its terms. */
+export function inspectOfficialFundingPostExpiredReceipt(raw,selected){
+ if(arguments.length!==2)fail();const record=inspectOfficialFundingPostCustodyRecord(raw),pins=expiryPins(selected,record);
+ if(parse(raw,65536).version===1)return null;
+ return captureIssuedExpiredFundingResult(expiredEnvelope(raw).receipt,pins);
+}
+export function requireOfficialFundingPostRetainedExtension(expected,proposed){
+ if(arguments.length!==2)fail();const before=inspectVersionOne(expected),next=expiredEnvelope(proposed);
+ if(before.phase!=='SETTLED'||canonicalJson(next.envelope.officialRecord)!==expected)fail();return next.record;
 }
 export function requireOfficialFundingPostCustodyContext(raw,selected){
  if(arguments.length!==2)fail();const r=inspectOfficialFundingPostCustodyRecord(raw),c=context(selected);
@@ -108,6 +155,7 @@ export function createOfficialFundingPostOutcomeRecord(raw,outcome){
 /** Strict compare-and-swap transition. Equal proposed bytes are NOT a claim. */
 export function requireOfficialFundingPostCustodyTransition(expected,proposed){
  if(arguments.length!==2)fail();const next=inspectOfficialFundingPostCustodyRecord(proposed);
+ if(parse(proposed,65536).version===2)return requireOfficialFundingPostRetainedExtension(expected,proposed);
  if(expected===null){if(next.phase!=='FIRST_IN_FLIGHT')fail();return next;}
  const before=inspectOfficialFundingPostCustodyRecord(expected);for(const key of IMMUTABLE)if(before[key]!==next[key])fail();
  const legal=before.phase==='PENDING'?createOfficialFundingPostObservationRecord(expected)
@@ -124,4 +172,12 @@ export function projectOfficialFundingPostCustodyRecord(raw,selectedDigest){
  return F({recordJson:raw,recordDigest:selectedDigest,phase:r.phase,transactionHash:r.transactionHash,originalHeader:r.originalHeader,outcomeJson:r.outcomeJson,
   observations:r.observations,maximumPendingReconciliations:r.maximumPendingReconciliations,historicalObservation:true,authority:'NONE',mayEnterSdk:false,mayStartFunding:false,
   mayResumeObservation:false,mayActivateGrant:false,mayDispatchService:false,physicalRelease:'NOT_ESTABLISHED'});
+}
+export function projectOfficialFundingPostExpiredReceipt(raw,selectedDigest,selected){
+ if(arguments.length!==3||officialFundingPostCustodyRecordDigest(raw)!==selectedDigest)fail();
+ const receipt=inspectOfficialFundingPostExpiredReceipt(raw,selected);if(receipt===null)return null;
+ return F({expiredFundingHistoryVersion:1,recordDigest:selectedDigest,receipt,
+  verification:'STORED_HISTORY_NOT_REVALIDATED',authority:'NONE',mayEnterSdk:false,mayStartFunding:false,
+  mayReverifyFunding:false,mayActivateGrant:false,mayDispatchService:false,mayStartCompensation:false,
+  physicalRelease:'NOT_ESTABLISHED'});
 }
