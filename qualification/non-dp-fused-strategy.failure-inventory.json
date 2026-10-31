@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "currentDataFailures": 0,
+  "currentParserFailures": 0,
+  "unexpectedSkips": 0,
+  "inheritedInventory": {
+    "path": "qualification/api-credit-service-command.failure-inventory.json",
+    "bytes": 610,
+    "sha256": "bdfc18416c6cce1e0971fc2f6bb14a441a39a9e804e5bd0e1bef8cecc2503c61"
+  },
+  "earlierFailedAndUnknownEvidencePreserved": true,
+  "sourceFinding": {
+    "roadmapRequiresIndependentNonDpProduct": true,
+    "existingNativeEntryUsesDpPreparation": true,
+    "resourcePolicyAndDraftNowImplemented": true,
+    "nativeReadSignerStoreBudgetAndRecoveryBindingStillRequired": true
+  },
+  "sourceOnlySDKInspection": {
+    "legacyRpcAndThreeFieldResponseAndBase64SerializerMatchedCurrentCatalog": true,
+    "SDKExecuted": false
+  }
+}

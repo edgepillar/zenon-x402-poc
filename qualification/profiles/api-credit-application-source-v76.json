@@ -1,0 +1,105 @@
+{
+  "version": 76,
+  "status": "SOURCE_AND_DECLARED_MEMORY_DATA_CANDIDATE",
+  "sourceMain": "ee15549d11f7389c3b5142ce3346d6f5bd87c887",
+  "sourceMainTree": "b4c408e598f2f0a7557d46218fadad9f17563f04",
+  "predecessorProfile": {
+    "path": "qualification/profiles/api-credit-application-source-v75.json",
+    "bytes": 3641,
+    "sha256": "d5295aa2a0b738647b9575e424d01585e5c9a9057224ce846a87a2b329f4eb7c"
+  },
+  "profileStorage": "EXACT_PREDECESSOR_REFERENCE_WITH_EXPLICIT_ADDITIVE_HELPER",
+  "product": "ONE_FUNDING_ONE_GRANT_MANY_METERED_CALLS_ORIGINAL_REPLAY_RECOVERY",
+  "nonDpFusedResourcePlanning": {
+    "path": "qualification/non-dp-fused-strategy.source-contract.json",
+    "bytes": 920,
+    "sha256": "595a613a2e768f0b87c9241b3f3a427bdb8cc834e210597441c09639405a8ca8"
+  },
+  "proofManifest": {
+    "path": "qualification/non-dp-fused-strategy.proof-manifest.json",
+    "bytes": 91414,
+    "sha256": "b73aaf06e69b5aa55393d60c75fca6e80a2150883c02e30a6e9248a32b70f166"
+  },
+  "failureInventory": {
+    "path": "qualification/non-dp-fused-strategy.failure-inventory.json",
+    "bytes": 756,
+    "sha256": "550b5bd154d3298facb0c3236f1760c1307a32c257b1f684d555b9b84a72873f"
+  },
+  "sourceDelta": [
+    {
+      "path": "docs/NON_DP_FUSED_PLASMA_STRATEGY.md",
+      "bytes": 3237,
+      "sha256": "2b0cc428542738956b238f68de3c6af924eb876465ef79c8d76e20973e1d1210",
+      "gitBlob": "dc8794167a39c81fb2af77ee477584a3bbe38658"
+    },
+    {
+      "path": "qualification/non-dp-fused-strategy.behavior.mjs",
+      "bytes": 14481,
+      "sha256": "1fdbae7b753d0c256fd14232afd14e6a0db5a5e8388cdaa13c9634fd3097533b",
+      "gitBlob": "3aab4b8f8b849b302551346ed6a99283259c6808"
+    },
+    {
+      "path": "src/zenon/non-dp-fused-plasma-strategy.js",
+      "bytes": 8198,
+      "sha256": "ee6031b65428b2d5923680bf323d79af23898c380553cce31f924ff8413d39ad",
+      "gitBlob": "9879834f06a0105914bcc4bbcf300cb0067f5e55"
+    }
+  ],
+  "buyerCatalog": {
+    "role": "buyer",
+    "sourceGraph": 174,
+    "catalogRows": 577,
+    "sourceRows": 172,
+    "packageRows": 404,
+    "bareEdges": 9,
+    "changedSourceRows": [],
+    "catalog": {
+      "path": "src/api-credit-module-catalog.json",
+      "bytes": 120106,
+      "sha256": "7de98737fa689e23ec14b41544b9fa4dc6e28fa4964e4d51076ac0ae384af87d"
+    },
+    "admission": {
+      "path": "src/api-credit-native-package-admission.js",
+      "bytes": 6414,
+      "sha256": "2f70b6a9b1877763c268db8443b986acb9b2f16bbb0cc2cf7f4ed8c98b29bd03"
+    },
+    "catalogUnchanged": true
+  },
+  "providerCatalog": {
+    "role": "provider",
+    "sourceGraph": 104,
+    "catalogRows": 507,
+    "sourceRows": 102,
+    "packageRows": 404,
+    "bareEdges": 4,
+    "changedSourceRows": [],
+    "catalog": {
+      "path": "src/issued-provider-module-catalog.json",
+      "bytes": 104412,
+      "sha256": "e2fea2d5a2378fa2d078eb75d618867d7bc193e89a23f6ec41ed9e0320218286"
+    },
+    "admission": {
+      "path": "src/issued-provider-native-package-admission.js",
+      "bytes": 6429,
+      "sha256": "80b1b96a27f0ff0503adf1841c831d42ddac6bbc782b4f276ffcd90c95e3c768"
+    },
+    "catalogUnchanged": true
+  },
+  "additiveHelperOutsideNativeEntryGraphs": true,
+  "packagePinsAndBareEdgesUnchanged": true,
+  "currentLocalData": {
+    "new": 24,
+    "reexecuted": 0,
+    "retainedExact": 2001,
+    "sourceBoundDistinct": 2025,
+    "newDATACommands": 1,
+    "newParserCommands": 0,
+    "parserSourceProofs": 49
+  },
+  "selectedHostedCIControls": 108,
+  "selectedHostedCISourceInputs": 22,
+  "hostedSelectionChanged": false,
+  "newCasesIncludedInHostedCI": false,
+  "nativeQualification": "NOT_EXECUTED",
+  "G0G5Acceptance": "OPEN"
+}

@@ -1,7 +1,7 @@
 {
   "profileVersion": 1,
   "profileId": "API_CREDIT_CURRENT_SOURCE_V1",
-  "sourceBaseline": "f06b44aaedf1cbf107f9bf449178702812e48f0f",
+  "sourceBaseline": "ee15549d11f7389c3b5142ce3346d6f5bd87c887",
   "application": {
     "buyerEntry": "src/api-credit-cli.js",
     "providerEntry": "src/issued-provider-cli.js"
@@ -48,19 +48,19 @@
   ],
   "dataQualification": {
     "sourceProfile": {
-      "path": "qualification/profiles/api-credit-application-source-v75.json",
-      "bytes": 3641,
-      "sha256": "d5295aa2a0b738647b9575e424d01585e5c9a9057224ce846a87a2b329f4eb7c"
+      "path": "qualification/profiles/api-credit-application-source-v76.json",
+      "bytes": 3635,
+      "sha256": "c0f64e8f1ba3186d4b032bd453536aff0ffc546f2371edfe4f1579d43d510585"
     },
     "result": {
-      "path": "qualification/api-credit-service-command.actual-local-result.json",
-      "bytes": 4067,
-      "sha256": "73a7e977baa7e6c9b801fd01e88d095eb16bde7c50b7477699e292966250898a"
+      "path": "qualification/non-dp-fused-strategy.actual-local-result.json",
+      "bytes": 5415,
+      "sha256": "1f19604ded5d44eb7e48d12003e551105c573a357de2579560441e3121711e08"
     },
-    "sourceBoundControls": 2001,
-    "executedControls": 12,
-    "retainedControls": 1989,
-    "expectedResultQualification": "G1_API_CREDIT_SERVICE_COMMAND_DATA"
+    "sourceBoundControls": 2025,
+    "executedControls": 24,
+    "retainedControls": 2001,
+    "expectedResultQualification": "G1_NON_DP_FUSED_STRATEGY_DATA"
   },
   "runtime": {
     "nodeVersion": "24.19.0",

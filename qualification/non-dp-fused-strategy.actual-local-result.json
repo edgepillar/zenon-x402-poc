@@ -1,0 +1,177 @@
+{
+  "qualification": "G1_NON_DP_FUSED_STRATEGY_DATA",
+  "status": "PASS",
+  "recordedAtUTC": "2026-10-31T16:39:54.773231+00:00",
+  "passed": 24,
+  "failed": 0,
+  "cases": [
+    {
+      "id": "non-dp-quote-selects-the-existing-sdk105-legacy-rpc-request-shape",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-apply-uses-only-required-base-fusion-with-zero-difficulty",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-draft-keeps-original-intent-fields-and-uncomputed-material",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-draft-composes-with-the-existing-306-byte-hash-codec",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-rejects-positive-work-and-insufficient-fused-resource-without-fallback",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-fusion-cap-is-enforced-at-the-exact-base-plasma-boundary",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-origin-momentum-must-match-the-unsigned-subject",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-rejects-unstable-before-after-frontier-observations",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-rejects-active-dp-even-with-zero-required-difficulty",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-rejects-incoherent-or-unsupported-frontier-prices-and-version",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-unavailable-or-mismatched-chain-observations-are-not-legacy-permission",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-rpc-request-must-match-the-independent-full-user-send-subject",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-copied-and-cross-owner-quotes-cannot-select-material",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-final-read-advances-keep-the-original-acknowledgement-and-allocation",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-final-read-refuses-window-overflow-rollback-and-same-height-fork",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-final-read-refuses-resource-loss-or-base-cost-change",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-final-read-refuses-dp-activation-without-replanning",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-quote-does-not-authorize-changed-intent-policy-or-runtime",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-rejects-accessors-and-value-hooks-without-entering-them",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-rejects-proxy-inputs-and-receipts-without-traps",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-capture-detaches-inputs-and-retains-the-original-policy",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-rejects-negative-zero-unsafe-and-inconsistent-resource-numbers",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-signed-phases-extra-fields-and-unowned-method-calls-are-refused",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-is-an-explicit-separate-spi-with-no-silent-dp-strategy-downgrade",
+      "status": "PASS"
+    }
+  ],
+  "newControls": 24,
+  "reexecutedRelevantControls": 0,
+  "retainedExactControls": 2001,
+  "sourceBoundDistinctControls": 2025,
+  "actualDataNodeCommands": 1,
+  "actualParserNodeCommands": 0,
+  "currentParserSourceProofs": 49,
+  "nodeVersion": "24.19.0",
+  "platform": "darwin-arm64",
+  "nodeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25",
+  "resources": {
+    "taskQuotaBytes": 4194304,
+    "qualifiedTasks": 1,
+    "commandsByTask": [
+      1
+    ],
+    "maximumPlannedNewCasePeakBytes": 1825554,
+    "maximumPlannedRegressionPeakBytes": 0,
+    "metadataReserveBytes": 0,
+    "maximumEstimatedRegressionMetadataBytes": 0,
+    "stderrCapBytes": 1048576,
+    "taskCommandCap": 16,
+    "minimumFreeFloorBytes": 10737418240,
+    "allSiblingReservationsIncluded": true,
+    "existingRootPoliciesUnchanged": true,
+    "sourceTransforms": false,
+    "independentAPFSClones": true,
+    "unchangedRegressionCommandsRepeated": 0,
+    "retentionMetadataBytes": 80647
+  },
+  "actualNonDpStrategyAndSharedUserSendHashCodecs": true,
+  "declaredFrontierAndRpcObservations": true,
+  "nativeEntryBinding": "NOT_IMPLEMENTED",
+  "componentCooperativeTimers": false,
+  "newCaseTimerInvocations": 0,
+  "proofManifest": {
+    "path": "qualification/non-dp-fused-strategy.proof-manifest.json",
+    "bytes": 91414,
+    "sha256": "b73aaf06e69b5aa55393d60c75fca6e80a2150883c02e30a6e9248a32b70f166"
+  },
+  "sourceContract": {
+    "path": "qualification/non-dp-fused-strategy.source-contract.json",
+    "bytes": 920,
+    "sha256": "595a613a2e768f0b87c9241b3f3a427bdb8cc834e210597441c09639405a8ca8"
+  },
+  "sourceProfile": {
+    "path": "qualification/profiles/api-credit-application-source-v76.json",
+    "bytes": 3635,
+    "sha256": "c0f64e8f1ba3186d4b032bd453536aff0ffc546f2371edfe4f1579d43d510585"
+  },
+  "failureInventory": {
+    "path": "qualification/non-dp-fused-strategy.failure-inventory.json",
+    "bytes": 756,
+    "sha256": "550b5bd154d3298facb0c3236f1760c1307a32c257b1f684d555b9b84a72873f"
+  },
+  "nativeExecutions": 0,
+  "SDK": 0,
+  "SQLite": 0,
+  "signals": 0,
+  "keys": 0,
+  "signatures": 0,
+  "sockets": 0,
+  "nonceSearches": 0,
+  "nodeChildren": 0,
+  "actualPrepare": 0,
+  "payouts": 0,
+  "proofAuthentication": "NOT_ESTABLISHED",
+  "nativeResourceRelease": "NOT_ESTABLISHED",
+  "LinuxAcceptance": "NOT_ESTABLISHED",
+  "G0G5Acceptance": "OPEN",
+  "approvedHostedCISeparate": true,
+  "newCasesIncludedIn108CI": false
+}
