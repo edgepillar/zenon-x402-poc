@@ -4,7 +4,7 @@ Invoke only inside an explicitly approved owned task. There is no installer,
 fixture/key generator, signal sender or automatic retry. The fixed provider
 CLI, independently selected fixture bytes and an external loopback synthetic
 RPC are prerequisites. A complete product verdict still needs authoritative ledger,
-budget, negative-case, interruption and physical-release evidence.
+budget, changed-offer/payment, concurrency, interruption and physical-release evidence.
 """
 import hashlib
 import json
@@ -18,12 +18,12 @@ import time
 
 CAPS = {"runProfile": 262144, "commands": 2097152, "runReplies": 2097152,
         "recoveryProfile": 65536, "recoveryReply": 4096, "ledgerProfile": 65536, "signerProfile": 16384,
-        "providerProfile": 262144, "providerJournalProfile": 8192, "providerActivation": 1024}
+        "providerProfile": 262144, "providerJournalProfile": 8192, "providerActivation": 1024, "negativeProfile": 8192}
 FILES = {"runProfile": "run-profile.json", "commands": "run-commands.jsonl",
          "runReplies": "run-replies.jsonl", "recoveryProfile": "recovery-profile.json",
          "recoveryReply": "recovery-reply.jsonl", "ledgerProfile": "ledger-profile.json", "signerProfile": "signer-profile.json", "credential": "credential.bin",
          "providerProfile": "provider-profile.json", "providerJournalProfile": "provider-journal-profile.json",
-         "providerActivation": "provider-activation.json", "providerTls": "provider-tls.bin"}
+         "providerActivation": "provider-activation.json", "providerTls": "provider-tls.bin", "negativeProfile": "negative-profile.json"}
 ENTRY = "src/api-credit-cli.js"
 PROVIDER_ENTRY = "src/issued-provider-cli.js"
 PREFLIGHT = "qualification/api-credit-linux-acceptance-preflight.mjs"
@@ -33,6 +33,9 @@ BUDGET_CONTRACT = "qualification/api-credit-linux-budget-contract.mjs"
 LEDGER_CONTRACT = "qualification/api-credit-linux-ledger-contract.mjs"
 LEDGER_PROBE = "qualification/api-credit-linux-ledger-probe.mjs"
 PROVIDER_CONTRACT = "qualification/api-credit-linux-provider-contract.mjs"
+NEGATIVE_CONTRACT = "qualification/api-credit-linux-negative-contract.mjs"
+NEGATIVE_REPLY = "qualification/api-credit-linux-negative-reply.mjs"
+NEGATIVE_PROBE = "qualification/api-credit-linux-negative-probe.mjs"
 BASE_INPUT = ("runProfile", "commands", "runReplies", "recoveryProfile", "recoveryReply", "ledgerProfile", "signerProfile")
 
 
@@ -135,7 +138,7 @@ def verify_sources(repo, rows):
         data = checked(repo / name, 2097152)
         require(pin(data) == {"bytes": row["bytes"], "sha256": row["sha256"]})
     require({ENTRY, PROVIDER_ENTRY, PREFLIGHT, CONTRACT, LEDGER_CONTRACT, BUDGET_CONTRACT, SIGNER_CONTRACT, LEDGER_PROBE,
-             PROVIDER_CONTRACT, "src/api-credit-native-package-admission.js", "src/api-credit-module-catalog.json",
+             PROVIDER_CONTRACT, NEGATIVE_CONTRACT, NEGATIVE_REPLY, NEGATIVE_PROBE, "src/api-credit-native-package-admission.js", "src/api-credit-module-catalog.json",
              "src/issued-provider-native-package-admission.js", "src/issued-provider-module-catalog.json"}.issubset(seen))
     for catalog_path in ("src/api-credit-module-catalog.json", "src/issued-provider-module-catalog.json"):
         catalog = json.loads(checked(repo / catalog_path, 262144))
@@ -174,17 +177,18 @@ def fixture_paths(scratch, data):
             and observer_root.stat().st_mode & 0o077 == 0 and next(observer_root.iterdir(), None) is None)
 
 
-def bounded_stage(node, repo, outdir, payload, deadline, environment, stage):
+def bounded_stage(node, repo, outdir, payload, deadline, environment, stage, peer=None):
     # Popen.communicate/run timeout helpers are deliberately avoided: run's
     # timeout can kill the child, and communicate accumulates complete output.
-    require(stage in ("preflight", "ledger-before", "ledger-after"))
+    require(stage in ("preflight", "ledger-before", "ledger-after", "service-negatives"))
+    require((peer is not None) == (stage == "service-negatives"))
     require(time.monotonic() < deadline)
     if stage != "preflight":
         remaining = int((deadline - time.monotonic()) * 1000)
         require(1 <= remaining <= 120000)
         payload = json.dumps({"version": 1, "maximumOpenMs": remaining, "selection": json.loads(payload)},
                              ensure_ascii=True, separators=(",", ":")).encode()
-    entry = PREFLIGHT if stage == "preflight" else LEDGER_PROBE
+    entry = PREFLIGHT if stage == "preflight" else NEGATIVE_PROBE if stage == "service-negatives" else LEDGER_PROBE
     require(time.monotonic() < deadline)
     child = subprocess.Popen([str(node), entry], cwd=repo, env=environment,
                              stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False)
@@ -198,10 +202,15 @@ def bounded_stage(node, repo, outdir, payload, deadline, environment, stage):
             selector.register(child.stdin, selectors.EVENT_WRITE)
             for fd in streams:
                 selector.register(fd, selectors.EVENT_READ)
-            while selector.get_map():
+            owned_fds = {child.stdin.fileno(), *streams}
+            while any(fd in selector.get_map() for fd in owned_fds):
                 require(time.monotonic() < deadline)
+                if peer is not None:
+                    peer.require_running(); peer.watch(selector)
                 for key, events in selector.select(min(0.05, max(0, deadline - time.monotonic()))):
                     try:
+                        if peer is not None and key.fd in peer.read_fds():
+                            peer.pump_read(key.fd); continue
                         if events & selectors.EVENT_WRITE:
                             count = os.write(key.fd, memoryview(payload)[offset:]); require(count > 0); offset += count
                             if offset == len(payload):
@@ -216,6 +225,7 @@ def bounded_stage(node, repo, outdir, payload, deadline, environment, stage):
             require(offset == len(payload) and deadline > time.monotonic())
             require(child.wait(timeout=deadline - time.monotonic()) == 0)
             require(stage != "preflight" or sizes["stderr"] == 0)
+            if peer is not None: peer.require_running()
             report["status"] = "BOUNDED_STAGE_PROCESS_PASS"
     finally:
         selector.close()
@@ -572,7 +582,7 @@ def main():
     require(scratch.is_absolute() and scratch.is_dir() and scratch.stat().st_uid == os.getuid() and scratch.stat().st_mode & 0o077 == 0)
     manifest_path = Path(sys.argv[2]); require(manifest_path.parent == scratch)
     manifest = json.loads(checked(manifest_path, 262144, True))
-    require(set(manifest) == {"version", "node", "repository", "sourcePins", "fixturePins", "bootstrapMs", "totalMs"} and manifest["version"] == 5)
+    require(set(manifest) == {"version", "node", "repository", "sourcePins", "fixturePins", "bootstrapMs", "totalMs"} and manifest["version"] == 6)
     require(type(manifest["bootstrapMs"]) is int and 1 <= manifest["bootstrapMs"] <= 60000)
     require(type(manifest["totalMs"]) is int and 1 <= manifest["totalMs"] <= 120000)
     require(set(manifest["node"]) == {"path", "bytes", "sha256"})
@@ -590,11 +600,11 @@ def main():
     environment = {"PATH": str(node.parent), "LANG": "C", "TZ": "UTC", "TMPDIR": str(scratch), "NODE_DISABLE_COMPILE_CACHE": "1"}
     deadline = time.monotonic() + manifest["totalMs"] / 1000
     # Pure preflight precedes both TLS material and buyer credential. Its
-    # ten text inputs are independent; no observed response selects a pin.
+    # eleven text inputs are independent; no observed response selects a pin.
     payload = json.dumps({k: v.decode("utf-8") for k, v in data.items()}, ensure_ascii=True, separators=(",", ":")).encode()
     bounded_stage(node, repo, outdir, payload, deadline, environment, "preflight")
     preflight = json.loads(checked(outdir / "preflight.stdout.private.json", 8192, True))
-    require(preflight["status"] == "PREFLIGHT_PASS" and preflight["version"] == 5
+    require(preflight["status"] == "PREFLIGHT_PASS" and preflight["version"] == 6
             and preflight["inputPins"] == {k: pin(v) for k, v in data.items()})
     plan = provider_plan(data)
     require(preflight["providerReplyPins"] == {k: pin(v) for k, v in plan.items()})
@@ -623,6 +633,19 @@ def main():
                        data["commands"].splitlines(keepends=True), data["runReplies"].splitlines(keepends=True),
                        manifest["bootstrapMs"], deadline, environment, peer=provider)
         require(run["status"] == "PROCESS_PROTOCOL_PASS" and run["childObservedLive"] is False)
+        # No further buyer command, credential or economic operation. Three
+        # preselected service proof mutations run while this provider is live.
+        verify_sources(repo, manifest["sourcePins"]); require(binary_pin(node) == expected_node)
+        provider.require_running()
+        bounded_stage(node, repo, outdir, payload, deadline, environment, "service-negatives", peer=provider)
+        negative = json.loads(checked(outdir / "service-negatives.stdout.private.json", 4096, True))
+        require(negative["version"] == 6 and negative["status"] == "SERVICE_NEGATIVE_REPLIES_MATCHED"
+                and negative["selectionDigest"] == preflight["selectionDigest"] and negative["negativeRequests"] == 3
+                and [row["kind"] for row in negative["observations"]] == preflight["negativeRequestKinds"]
+                and all(row["statusCode"] == 401 for row in negative["observations"])
+                and negative["authority"] == "NONE" and negative["mayDispatchFunding"] is False
+                and negative["additionalGrant"] is False and negative["mayRetry"] is False
+                and negative["physicalRelease"] == "NOT_ESTABLISHED")
         provider.close()
     finally:
         credential[:] = b"\0" * len(credential)
@@ -640,11 +663,13 @@ def main():
     after = ledger_stage(node, repo, outdir, base_payload, deadline, environment, "ledger-after",
                          expected_node, manifest["sourcePins"], preflight["signerSelectionDigest"], preflight["budgetSelectionDigest"])
     require(before == after)
-    save(outdir / "result.private.json", {"version": 5, "status": "PROVIDER_PROCESS_LEDGER_SPENDING_AND_SIGNER_OBSERVATIONS_MATCHED", "preflight": preflight,
+    save(outdir / "result.private.json", {"version": 6, "status": "PROVIDER_PROCESS_NEGATIVES_LEDGER_SPENDING_AND_SIGNER_OBSERVATIONS_MATCHED", "preflight": preflight,
          "applicationProcesses": 2, "preflightProcesses": 1, "ledgerProbeProcesses": 2, "ledgerSpendingAndSignerObservation": after,
          "providerProcesses": 1, "journalSetupProcesses": 1, "providerActivationCommands": 1, "providerCloseBeforeLedger": True,
+         "negativeProbeProcesses": 1, "serviceNegativeObservation": negative, "negativeRequests": 3,
+         "changedOfferAcceptance": "NOT_ESTABLISHED", "differentPaymentIdentityAcceptance": "NOT_ESTABLISHED",
          "signalsSent": 0, "automaticRetries": 0, "G1Acceptance": "NOT_ESTABLISHED", "G2Acceptance": "NOT_ESTABLISHED"})
-    print("API_CREDIT_LINUX_PROVIDER_PROCESS_LEDGER_SPENDING_AND_SIGNER_OBSERVATIONS_MATCHED")
+    print("API_CREDIT_LINUX_PROVIDER_PROCESS_NEGATIVES_LEDGER_SPENDING_AND_SIGNER_OBSERVATIONS_MATCHED")
 
 
 if __name__ == "__main__":

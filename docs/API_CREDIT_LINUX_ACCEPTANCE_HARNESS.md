@@ -7,21 +7,22 @@ The harness has not been executed. Native execution remains disabled by the
 current user decision. Do not interpret its DATA preflight results as Linux,
 SDK/core, SQLite, HTTPS, signer, restart or release qualification.
 
-The explicit version-five candidate adds the fixed provider journal, start,
-ACTIVATE and close sequence to the G1 one-funding/100-request
+The explicit version-six candidate retains the fixed provider journal, start,
+ACTIVATE and close sequence and adds three selected service authorization
+negatives to the G1 one-funding/100-request
 scenario, persisted provider-ledger, payer spending-budget and retained signer observations,
 and the normal fresh-process original-result read. Full G1 additionally
-requires the actual accepted native run, negative-case and concurrency evidence. G2 still requires
+requires the actual accepted native run, changed-offer/different-payment and concurrency evidence. G2 still requires
 its specified interruption cutpoints, signer loss,
 stale-owner and physical release or controlled HELD observations. Both gates
-remain OPEN; a `PROVIDER_PROCESS_LEDGER_SPENDING_AND_SIGNER_OBSERVATIONS_MATCHED` report is insufficient
+remain OPEN; a `PROVIDER_PROCESS_NEGATIVES_LEDGER_SPENDING_AND_SIGNER_OBSERVATIONS_MATCHED` report is insufficient
 to close them by itself.
 
 ## Exact scenario
 
 An independently reviewed synthetic fixture supplies all bytes before launch:
 
-1. A canonical, keyless non-DP operator bootstrap and an existing 32-byte
+1. A canonical, keyless non-DP V3 loopback operator bootstrap and an existing 32-byte
    synthetic credential in a separate private file.
 2. Exactly 106 command frames: prepare, commit with the ready original-grant
    query, submit funding, original handoff, 100 different service request IDs,
@@ -50,6 +51,8 @@ An independently reviewed synthetic fixture supplies all bytes before launch:
     authenticate the record key, grant, chain or authority record.
 11. An existing provider TLS key/certificate frame in its own private binary
     file. The harness generates no key, certificate, proof or signature.
+12. The closed selected negative profile described below. It changes existing
+    proof-bound DATA without generating a cryptographic signature.
 
 The pure preflight uses the real non-DP bootstrap, command, service-wire,
 ready-query, original-checkpoint and recorded-result codecs. It validates the
@@ -79,7 +82,9 @@ authority. There is no RESUME, polling loop, retry, replacement or second
 observer opener. The parent continues to drain the same provider's bounded
 output/stderr while the buyer runs; unexpected provider output refuses progress.
 
-After the buyer's complete clean exit, the parent sends exactly one explicit
+After the buyer's complete clean exit, the fixed negative probe must match all
+three selected authorization refusals and known client-close observations while
+the same provider remains live. The parent then sends exactly one explicit
 CLOSE command to that provider. Its exact CLOSED response, EOF, zero exit and
 existing clean provider marker must all match before either ledger probe can
 open the provider file. An activation/start/close ambiguity prevents later
@@ -185,16 +190,17 @@ launcher supplies `SPV_TASK_SCRATCH`, its lease, quota, mounted-volume identity,
 global reservations, ten-GiB floor and foreground process-group supervision.
 This harness neither creates/adopts a storage root nor supplies an OS sandbox.
 
-The private manifest has exactly `version: 5`, `node`, `repository`,
+The private manifest has exactly `version: 6`, `node`, `repository`,
 `sourcePins`, `fixturePins`, `bootstrapMs` and `totalMs`. `node` has an absolute
 path plus exact `bytes` and `sha256`; `repository` is the reviewed absolute
 ordinary source tree. `sourcePins` lists unique relative `path`, `bytes` and
 `sha256` rows, including the CLI, fixed preflight, pure contract, admission,
-catalogs for both CLIs, fixed provider/ledger/spending/signer contracts/probe and every source/package row in both catalogs. The manifest cannot
+catalogs for both CLIs, fixed provider/ledger/spending/signer contracts/probe,
+the negative contract/reply/probe modules and every source/package row in both catalogs. The manifest cannot
 choose executable arguments, import conditions, a module or package resolver.
 Declared pins establish byte equality, not operator identity or authenticity.
 
-`fixturePins` binds the following twelve fixed names in the owned scratch directory:
+`fixturePins` binds the following thirteen fixed names in the owned scratch directory:
 
 | Key | File | Maximum bytes |
 | --- | --- | ---: |
@@ -208,6 +214,7 @@ Declared pins establish byte equality, not operator identity or authenticity.
 | `providerProfile` | `provider-profile.json` | 262144 |
 | `providerJournalProfile` | `provider-journal-profile.json` | 8192 |
 | `providerActivation` | `provider-activation.json` | 1024 |
+| `negativeProfile` | `negative-profile.json` | 8192 |
 | `providerTls` | `provider-tls.bin` | 131080 |
 | `credential` | `credential.bin` | exactly 32 |
 
@@ -218,10 +225,12 @@ are refused. The four explicit FRESH database paths must be distinct and absent;
 the journal directory must be absent and the selected private observer root
 empty. Bootstrap is 1-60000 ms; one total deadline of 1-120000 ms spans
 preflight, journal initialization, provider lifetime, both buyer application
-processes and the two fixed ledger probes. The separately bounded provider
+processes, the one fixed service-negative probe and the two fixed ledger probes. The separately bounded provider
 command/execution/start/close allowances do not renew this parent deadline.
-Immediately before each probe launch, the parent wraps the seven selected text
-inputs with a remaining opening allowance in milliseconds. The fixed probe
+Immediately before each ledger probe launch, the parent wraps the seven selected
+text inputs with a remaining opening allowance in milliseconds. The negative
+probe receives the eleven preflight texts and the same remaining-allowance form.
+The fixed ledger probe
 captures an observed local monotonic deadline before reading that envelope and
 checks it before acquisition and subsequent admission. Neither allowance is a
 preemptive timeout, a common-clock proof or an OS/process lifetime guarantee. No child
@@ -241,7 +250,7 @@ entry. Binary hashing streams 64-KiB chunks without copying the runtime.
 
 Each exact reply has its existing aggregate cap; unexpected stdout is refused
 and application stderr is capped at 64 KiB. Preflight stdout/stderr are capped
-at 8192/128 bytes. Each ledger probe has a 4096-byte output and 64-KiB stderr
+at 8192/128 bytes. Each ledger and service-negative probe has a 4096-byte output and 64-KiB stderr
 cap. No full ledger snapshot or second database copy is written by the probe;
 only bounded observations/digests are retained; raw signer/checkpoint bytes never enter probe stdout. Raw bounded observations and per-process outcomes are kept
 under a newly created private `linux-cli-acceptance` directory. The first
@@ -260,3 +269,51 @@ The source candidate supplies no installer, TLS/key/proof generator, network
 discovery, arbitrary provider command, real funding, SDK PREPARE, CI change or CI retry.
 Its current qualification is the pure transcript/ledger/spending/signer preflight over declared
 memory DATA plus parser checks. Runtime integration remains unexecuted.
+
+## V6 selected service authorization negatives (unexecuted)
+
+The version-six candidate requires the explicit non-DP V3 loopback buyer profile
+and one additional independent `negative-profile.json` text input. The closed
+profile has `negativeAcceptanceVersion: 1`, `foreignGrantId`, `changedRequestId`
+and `changedMaxCostUnits`. The first must differ from the selected grant; the
+second must differ from all 100 positive request IDs; the cost must be a different
+positive integer no greater than 1,000,000. These are authorization-test inputs,
+not new spending limits. The same provider must retain at least 109 selected
+request and connection starts. The harness never raises either selected limit.
+
+The existing 106-command buyer transcript is unchanged. Once that buyer has
+closed with EOF and zero exit, the still-running provider receives exactly three
+empty service POSTs in one additional fixed probe process. Each mutation starts
+with the independently selected first positive request/proof: change only its
+grant ID, request ID or cost ceiling in both the proof DATA and request metadata.
+Keep the same public-key and signature strings. No signing, key generation,
+funding request, second grant, new buyer credential or SQL opener is added to
+this stage. No negative request is generated from an observed reply.
+
+The probe uses the existing native HTTPS transport at the same selected
+`127.0.0.1` provider origin and CA, on an unprivileged port. Each request gets one
+fixed client owner, a single zero-argument `end()`, one connection/start allowance
+and the existing selected deadline/handshake/close budgets bounded by the parent
+allowance. The reply collector requires exactly HTTP 401, the existing
+`ServiceCredit` authentication challenge, the private response-header policy and
+`{"error":"unauthorized"}` bytes. It also requires complete response end and both
+request/response close events. The known client must return from close with zero
+tracked handles/timers and no unknown state before the next case. An error stops
+the sequence; the token cannot retry, resume or create a fourth request.
+
+The parent drains the same provider's control output while the probe runs. It
+then requires the existing explicit provider CLOSE/EOF/zero-exit barrier. Both
+existing ledger/spending/signer probes remain: one before fresh keyless recovery
+and one afterward. The existing whole-original ledger verifier still requires
+one grant, exactly 100 original successful requests/executions, 100 consumed
+units, no held units and the original remaining balance. Thus these negatives
+cannot be accepted merely because some HTTP error was returned. They add no
+store connection, buyer command or spending/signing operation.
+
+This covers intentionally altered authorization DATA and an unselected grant
+reference. It does not establish interoperability with another valid holder or
+grant, changed-offer rejection, different-payment rejection, concurrency,
+interruption or physical release. Those acceptance requirements remain open.
+The source-only candidate and pure declared-memory controls do not authenticate
+fixtures or execute the Python harness/native probe, TLS, capability verification,
+SDK/core or SQLite. Current native execution remains disabled. G0-G5 stay OPEN.

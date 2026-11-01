@@ -1,0 +1,208 @@
+{
+  "qualification": "G1_LINUX_SERVICE_NEGATIVE_DATA",
+  "status": "PASS",
+  "recordedAtUTC": "2026-11-01T06:56:26.867475+00:00",
+  "passed": 36,
+  "failed": 0,
+  "cases": [
+    {
+      "id": "linux-negative-selection-retains-the-whole-v5-provider-and-v4-signer-bindings",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-negative-selection-adds-only-three-keyless-service-mutations-after-buyer-close",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-negative-mutations-preserve-the-original-signature-key-and-unselected-fields",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-negative-plan-retains-the-same-explicit-ca-origin-and-selected-transport-bounds",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-negative-summary-binds-mutations-without-logging-proof-or-private-paths",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-negative-profile-cannot-select-the-legacy-public-read-profile",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-negative-profile-is-closed-canonical-and-versioned",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-negative-grant-mutation-must-be-different-and-retain-valid-identity-grammar",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-negative-request-mutation-cannot-collide-with-any-original-request",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-negative-cost-mutation-is-explicit-bounded-and-different",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-negative-selection-refuses-to-raise-an-insufficient-provider-transport-budget",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-negative-selection-cannot-replace-the-original-purchase-provider-or-activation",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-negative-selection-rejects-accessors-and-proxies-without-entering-hooks",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-negative-token-copies-proxies-and-extra-arguments-cannot-acquire-a-plan",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-negative-input-mutation-does-not-rebind-a-captured-plan",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-negative-sequence-observes-three-exact-refusals-and-known-client-closes",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-negative-sequence-has-no-repeat-or-resume-after-success",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-negative-sequence-stops-on-an-opaque-reply-and-cannot-resume",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-negative-sequence-stops-on-a-thrown-or-rejected-exchange",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-negative-sequence-requires-the-exact-401-and-body-not-any-error-response",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-negative-sequence-requires-all-interface-close-and-completeness-observations",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-negative-sequence-refuses-bad-port-shapes-before-spending-the-token",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-negative-sequence-reentry-cannot-create-a-fourth-request",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-negative-result-keeps-authentication-offer-payment-release-and-product-gates-open",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-negative-http-collector-sends-one-selected-empty-post-and-never-a-body",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-negative-http-collector-waits-for-both-close-events",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-negative-http-collector-accepts-bounded-split-body-and-case-insensitive-header-names",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-negative-http-collector-refuses-any-success-or-unexpected-error-status",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-negative-http-collector-requires-exact-authentication-and-private-header-policy",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-negative-http-collector-refuses-duplicate-extra-or-non-close-connection-headers",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-negative-http-collector-refuses-changed-truncated-or-oversized-body",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-negative-http-collector-refuses-incomplete-end-early-close-and-bad-chunk-types",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-negative-http-collector-refuses-request-response-errors-and-abort",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-negative-http-collector-refuses-a-duplicate-response-before-completion",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-negative-http-collector-refuses-nonlocal-query-body-or-credential-bearing-targets",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-negative-http-collector-refuses-extra-options-and-proxy-port-without-hooks",
+      "status": "PASS"
+    }
+  ],
+  "retainedExactControls": 2502,
+  "sourceBoundDistinctControls": 2538,
+  "sourceBoundApplicationControls": 2372,
+  "separateHarnessControls": 166,
+  "currentParserSourceProofs": 55,
+  "actualDataNodeCommands": 2,
+  "currentRevisionDataNodeCommands": 1,
+  "actualParserNodeCommands": 2,
+  "currentRevisionParserNodeCommands": 2,
+  "nodeVersion": "24.19.0",
+  "platform": "darwin-arm64",
+  "nodeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25",
+  "taskQuotaBytes": 4194304,
+  "plannedPeakBytes": 3779970,
+  "passingQualificationTasks": 2,
+  "allSelectedTasksClosedSuccess": true,
+  "proofManifest": {
+    "path": "qualification/linux-service-negative-acceptance.proof-manifest.json",
+    "bytes": 91417,
+    "sha256": "f517b94d21cc0af09f11f69be30421b4f9776100881ef1b35aec65cbde729a7e"
+  },
+  "failureInventory": {
+    "path": "qualification/linux-service-negative-acceptance.failure-inventory.json",
+    "bytes": 1101,
+    "sha256": "00d9425b7a97d77942e00636620706a82a008d1ccecf2888b089c26ebc3a173f"
+  },
+  "sourceReviewSha256": "ccda8bfe037ed8a027bbafb3bb7ab7cc32140b50e4afa3ea1a29d5a4ef58b8f6",
+  "pythonSourceCompilation": {
+    "path": "qualification/api-credit-linux-acceptance.py",
+    "sha256": "e15934dbbbc395d4d61c0c5751c026199fae7e5af1898af62309290ae021c130",
+    "compileOnly": true,
+    "executed": false
+  },
+  "applicationProfile": "V90_SOURCE_CANDIDATE",
+  "applicationGraphAndPackagesUnchanged": true,
+  "candidateHarnessVersion": 6,
+  "declaredPortRequests": 3,
+  "nativeProbeRequests": 0,
+  "nativeExecutions": 0,
+  "SDK": 0,
+  "SQLite": 0,
+  "keys": 0,
+  "signatures": 0,
+  "sockets": 0,
+  "nonceSearches": 0,
+  "nodeChildren": 0,
+  "actualPrepare": 0,
+  "nativeHarness": "NOT_EXECUTED",
+  "negativeServiceAcceptance": "NOT_ESTABLISHED",
+  "foreignValidHolderInteroperability": "NOT_ESTABLISHED",
+  "changedOfferAcceptance": "NOT_ESTABLISHED",
+  "differentPaymentIdentityAcceptance": "NOT_ESTABLISHED",
+  "physicalRelease": "NOT_ESTABLISHED",
+  "G0G5Acceptance": "OPEN",
+  "newCasesIncludedIn108CI": false
+}

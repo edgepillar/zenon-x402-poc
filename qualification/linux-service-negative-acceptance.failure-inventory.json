@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "currentDataFailures": 0,
+  "currentParserFailures": 0,
+  "unexpectedSkips": 0,
+  "inheritedInventory": {
+    "path": "qualification/non-dp-loopback-operator.failure-inventory.json",
+    "bytes": 1128,
+    "sha256": "c8084b0821caed0777a8b3bbb27562dc09a88c7fa2aeec8430b7d607b932efb1"
+  },
+  "actualNewCandidateDATACommands": 2,
+  "currentRevisionDATACommands": 1,
+  "parserCommands": 2,
+  "baselineControlsReexecuted": 0,
+  "unchangedControlsRetained": 2502,
+  "passingPriorVariant": {
+    "rawQualificationSha256": "7417919cde362a58c22713225fd376cdb8bc40dca0a789fc78f5aaf8c069f7fa",
+    "passed": 36,
+    "failed": 0,
+    "classification": "PASSING_CANDIDATE_BEFORE_COMMENT_ACCURACY_CORRECTION",
+    "wholeSourceTaskReclassified": false,
+    "retainedCurrentParserProofs": 2
+  },
+  "correction": "Clarify that SHA-256 DATA pins are calculated; no signing or authentication is performed. Runtime behavior is unchanged; final DATA inputs were rerun, parser bytes were retained without reruns.",
+  "applicationNativeCommands": 0,
+  "scope": "DECLARED_MEMORY_AND_PARSER_SOURCE_ONLY"
+}
