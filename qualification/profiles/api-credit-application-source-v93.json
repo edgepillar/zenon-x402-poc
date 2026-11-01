@@ -1,0 +1,88 @@
+{
+  "version": 93,
+  "status": "SOURCE_AND_DECLARED_MEMORY_DATA_CANDIDATE",
+  "sourceMain": "23bd09a3d55d9a1e677f3cf3887fe0e1ae3a5c9c",
+  "sourceMainTree": "d7257784f9e0f1a42858d207058cd7360a9a9406",
+  "predecessorProfile": {
+    "path": "qualification/profiles/api-credit-application-source-v92.json",
+    "bytes": 3226,
+    "sha256": "7ed35c45613062488843a7160722b040f176ff1959ce146ed4a1e970a5e36e34"
+  },
+  "profileStorage": "EXACT_PREDECESSOR_PROOF_REFERENCE_WITH_EXPLICIT_SOURCE_AND_ROLE_REPLACEMENTS",
+  "product": "ONE_FUNDING_ONE_GRANT_MANY_METERED_CALLS_ORIGINAL_REPLAY_RECOVERY",
+  "historicalDailyEvents": {
+    "path": "qualification/spending-day-events.source-contract.json",
+    "bytes": 2166,
+    "sha256": "725fe8b4b342fb7ab0b0615d855fc3c218dbb0b67aa7c8033df3266fb9607d64"
+  },
+  "proofManifest": {
+    "path": "qualification/spending-day-events.proof-manifest.json",
+    "bytes": 398180,
+    "sha256": "21f7db46484345c6ed33f711944fb1940d83c79f5ea4f0988ea04f034d6e2c08"
+  },
+  "failureInventory": {
+    "path": "qualification/spending-day-events.failure-inventory.json",
+    "bytes": 2170,
+    "sha256": "51f4b7809e475a02f972da20943984a3c89dc5be28efc1db6f64d3008570ec59"
+  },
+  "sourceDelta": [
+    {
+      "path": "docs/SPENDING_HISTORICAL_DAILY_VALIDATION.md",
+      "bytes": 2204,
+      "sha256": "82813f9b822ad78946e67ced993c5a1aa7639d5c513f3d5cc5624ca387ad286e",
+      "gitBlob": "2d806ffd2fc02b0786bf1f730413a870c7c05314"
+    },
+    {
+      "path": "qualification/spending-historical-day-events.behavior.mjs",
+      "bytes": 10503,
+      "sha256": "a8cf754da4aee6897373eb1fb5e29d6eae2a91162dcc065a5055021914a068f4",
+      "gitBlob": "67fd06d319f797be7b8ae2e280de37a93b8b4dcc"
+    },
+    {
+      "path": "src/api-credit-module-catalog.json",
+      "bytes": 121331,
+      "sha256": "1dfb08bfe228492fd2b686a6511bf02d6e5e8274d2cf8bf6bfdc460c988460d9",
+      "gitBlob": "d0527549d7b22660208ecfba437f0dfe3c9a9f3b"
+    },
+    {
+      "path": "src/api-credit-native-package-admission.js",
+      "bytes": 6414,
+      "sha256": "24547810db7d21fb7fd559253aeb2f4ec03ede58c1d723321621a009d79a0227",
+      "gitBlob": "9252f2126fea0b84241cd6f3f14bb633f0a74a78"
+    },
+    {
+      "path": "src/original-funding-spending-reservations.js",
+      "bytes": 13772,
+      "sha256": "7e499e30d83ce54f06af1905cd434e63ff4f92b5578ed8470eb07ab15c29a856",
+      "gitBlob": "dea40f4bfd691134aa78a09f39b1276949cc36f4"
+    }
+  ],
+  "nativeSourceGraphs": {
+    "buyer": 180,
+    "provider": 105,
+    "union": 247,
+    "bytes": 3419513,
+    "sourceOnly": true
+  },
+  "buyerSourceGraphUnchanged": false,
+  "providerSourceGraphUnchanged": true,
+  "all404PackageRowsAndBareEdgesUnchanged": true,
+  "currentLocalData": {
+    "new": 24,
+    "reexecuted": 1869,
+    "retainedExact": 551,
+    "sourceBoundDistinct": 2444,
+    "separateHarnessRetained": 0,
+    "separateHarnessReexecuted": 181,
+    "allSourceBoundControls": 2625,
+    "newDATACommands": 65,
+    "newParserCommands": 1,
+    "parserSourceProofs": 55
+  },
+  "selectedHostedCIControls": 108,
+  "selectedHostedCISourceInputs": 22,
+  "hostedSelectionChanged": false,
+  "newCasesIncludedInHostedCI": false,
+  "nativeQualification": "NOT_EXECUTED",
+  "G0G5Acceptance": "OPEN"
+}

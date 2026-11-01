@@ -1,7 +1,7 @@
 {
   "profileVersion": 1,
   "profileId": "API_CREDIT_CURRENT_SOURCE_V1",
-  "sourceBaseline": "2a8f5fe92bdc055581770827a341c872bef23e9f",
+  "sourceBaseline": "23bd09a3d55d9a1e677f3cf3887fe0e1ae3a5c9c",
   "application": {
     "buyerEntry": "src/api-credit-cli.js",
     "providerEntry": "src/issued-provider-cli.js"
@@ -11,7 +11,7 @@
       "role": "buyer",
       "path": "src/api-credit-module-catalog.json",
       "bytes": 121331,
-      "sha256": "cfef6acd7957cdbef92ebb30b008dac81c2754694c5afc257669bfff78551e37",
+      "sha256": "1dfb08bfe228492fd2b686a6511bf02d6e5e8274d2cf8bf6bfdc460c988460d9",
       "sourceRows": 178,
       "packageRows": 404,
       "bareEdges": 9
@@ -30,7 +30,7 @@
     {
       "path": "src/api-credit-native-package-admission.js",
       "bytes": 6414,
-      "sha256": "c4c0fc4ffe8fcf8ea5af1e4d713e40334ff61c2b4a0f0a144121a0d302808fbf",
+      "sha256": "24547810db7d21fb7fd559253aeb2f4ec03ede58c1d723321621a009d79a0227",
       "format": "module"
     },
     {
@@ -48,19 +48,19 @@
   ],
   "dataQualification": {
     "sourceProfile": {
-      "path": "qualification/profiles/api-credit-application-source-v92.json",
-      "bytes": 3226,
-      "sha256": "7ed35c45613062488843a7160722b040f176ff1959ce146ed4a1e970a5e36e34"
+      "path": "qualification/profiles/api-credit-application-source-v93.json",
+      "bytes": 3218,
+      "sha256": "ce55fb57e389d97a8511f745c7b89807ffe352709c9b446ecfaf5f610457973e"
     },
     "result": {
-      "path": "qualification/prequery-custody-hold.actual-local-result.json",
-      "bytes": 108986,
-      "sha256": "fc895b5b796448932256b60c38f4f85130012a97900e2686ecc68ed55549bc10"
+      "path": "qualification/spending-day-events.actual-local-result.json",
+      "bytes": 231624,
+      "sha256": "0bf1682a4986e6e7626c137598c2285c681cd8a9b04f52de57af20a09010a465"
     },
-    "sourceBoundControls": 2420,
-    "executedControls": 882,
-    "retainedControls": 1538,
-    "expectedResultQualification": "G1_PREQUERY_CUSTODY_HOLD_CURRENT_SOURCE_DATA"
+    "sourceBoundControls": 2444,
+    "executedControls": 1893,
+    "retainedControls": 551,
+    "expectedResultQualification": "G1_SPENDING_DAY_EVENTS_CURRENT_SOURCE_DATA"
   },
   "runtime": {
     "nodeVersion": "24.19.0",

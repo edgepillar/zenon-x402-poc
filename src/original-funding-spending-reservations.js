@@ -77,11 +77,23 @@ function decode(raw, policy) {
   }
   const exposure = totals(s.reservations, s.lastDay);
   if (exposure.total > amount(policy.maxTotal) || exposure.daily > amount(policy.maxDaily) || JSON.stringify(s) !== raw) fail('CORRUPT');
-  const days = new Set(s.reservations.flatMap(r => r.spentDay === null ? [r.reservedDay] : [r.reservedDay, r.spentDay]));
-  for (const d of days) {
-    let historical = 0n;
-    for (const r of s.reservations) if (r.reservedDay <= d && (r.spentDay === null || r.spentDay >= d)) historical += amount(r.amount);
-    if (historical > amount(policy.maxDaily)) fail('CORRUPT');
+  // A SPENT original occupies its spend day too. Admit every start before
+  // checking that day's peak, then remove only that day's completed originals.
+  const events = new Map(), dailyLimit = amount(policy.maxDaily);
+  function event(d) {
+    let value = events.get(d);
+    if (value === undefined) { value = { starts: 0n, ends: 0n }; events.set(d, value); }
+    return value;
+  }
+  for (const r of s.reservations) {
+    const value = amount(r.amount); event(r.reservedDay).starts += value;
+    if (r.spentDay !== null) event(r.spentDay).ends += value;
+  }
+  let historical = 0n;
+  for (const d of [...events.keys()].sort((a, b) => a - b)) {
+    const value = events.get(d); historical += value.starts;
+    if (historical > dailyLimit) fail('CORRUPT');
+    historical -= value.ends;
   }
   return s;
 }

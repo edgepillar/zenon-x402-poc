@@ -1,0 +1,58 @@
+{
+  "version": 1,
+  "currentDataFailures": 0,
+  "currentParserFailures": 0,
+  "unexpectedSkips": 0,
+  "inheritedInventory": {
+    "path": "qualification/prequery-custody-hold.failure-inventory.json",
+    "bytes": 2678,
+    "sha256": "365d1ad971993a20f145fad87026dfd46d159bcbd859635a23003737a5bc0e13"
+  },
+  "newDataCommands": 1,
+  "affectedDataCommands": 64,
+  "parserCommands": 1,
+  "affectedExistingControlsReexecuted": 2050,
+  "unchangedControlsNotReexecuted": 551,
+  "retainedFailedDATA": [],
+  "retainedPreparationRefusals": [],
+  "retainedActualDATAFailures": 9,
+  "inheritedRefusalsPreserved": true,
+  "passingOriginalSourceVariant": {
+    "rawQualificationSha256": "d756f9f7bd1ce9f90bd861564bb909ee1e7a6da359f2d15953717fdba26a389f",
+    "source": {
+      "path": "src/original-funding-spending-reservations.js",
+      "bytes": 13357,
+      "sha256": "8334f0a0f5c3d436b7096786322d4f25a12afeba250223a7fb07b1e0d4fcb135",
+      "gitBlob": "38992f8619057c0cecb24738c45307e0e8edb20c"
+    },
+    "stdout": {
+      "sha256": "b33ac35445ecb7197103344050cf7fd38390080840a55f011b012c70a789bb96",
+      "bytes": 2550
+    },
+    "entry": "qualification/spending-historical-day-events.behavior.mjs",
+    "currentDATAGroup": false,
+    "wholeSourceTaskReclassified": false,
+    "sourceBytesRetainedInOwnedCAS": true,
+    "identicalCurrentAndOriginalPacket": true,
+    "referenceVectors": 121,
+    "referenceCells": 3192945,
+    "maximumRecords": 1024
+  },
+  "sameTestBytesAndPacketBeforeAndAfterOptimization": true,
+  "packingOptimization": {
+    "method": "BEST_OF_TEN_DETERMINISTIC_SHARED_SOURCE_PACKINGS_BEFORE_ANY_TASK",
+    "originalTasks": 8,
+    "currentTasks": 6,
+    "originalChargedPeaks": 30794737,
+    "currentChargedPeaks": 23532509,
+    "taskQuotaBytesUnchanged": 4194304,
+    "commandLimitUnchanged": 16,
+    "completedDATARerunForPacking": false,
+    "measuredDiskReclaim": false,
+    "candidateOrder": "1:delta",
+    "previousUnexecutedReviewSha256": "17739e547846fc45afaf77b43a7d75ce538fcd81cc03c411ebb7d8c54d8c041b"
+  },
+  "completedDATAOrCIRepeatedForMetadata": false,
+  "nativeQualification": "NOT_EXECUTED",
+  "scope": "SOURCE_AND_DECLARED_MEMORY_ONLY"
+}
