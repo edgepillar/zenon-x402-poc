@@ -139,6 +139,7 @@ check('successful-history-retains-none-authority-and-open-native-gates', async (
   assert.equal(observed.G1Acceptance, 'NOT_ESTABLISHED'); assert.equal(observed.G2Acceptance, 'NOT_ESTABLISHED');
 });
 
+export const createApiCreditLinuxLedgerDataFixture = fixture;
 export const apiCreditLinuxLedgerDataCases = F(checks);
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const cases = [];

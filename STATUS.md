@@ -1,5 +1,21 @@
 # Current API-credit application status
 
+## G1 Linux payer spending-budget readback candidate
+
+The unexecuted V3 Linux acceptance harness now checks the actual payer spending
+file in the same two processes already selected for provider-ledger readback.
+The same declared clean owner/policy and actual preparation-codec digest must
+match exactly one SPENT original. Current-owner guards bracket unchanged budget
+bytes; the actual journal checks monetary exposure independently of service
+units. Revoke, fresh owner views and one known close must precede output.
+
+No additional native process, database copy, ownership transfer, budget release
+or write is selected. Cross-store equality is not an atomic or authenticated
+snapshot, and a known close return does not establish OS resource release.
+Native Linux execution remains unexecuted; G1/G2 and all other roadmap gates
+remain OPEN. See `docs/API_CREDIT_LINUX_ACCEPTANCE_HARNESS.md`.
+
+
 Baseline [85903bdb](https://github.com/edgepillar/zenon-x402-poc/commit/85903bdbffcfcb09529df4b9c1541756d1556eb0),
 31 October 2026. [Current roadmap](docs/ROADMAP.md).
 

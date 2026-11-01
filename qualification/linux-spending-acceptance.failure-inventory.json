@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "currentDATAFailures": [],
+  "retainedFailures": [
+    {
+      "rawQualificationStatus": "UNKNOWN",
+      "actualDATAStatus": "FAIL",
+      "passed": 4,
+      "failed": 1,
+      "classification": "TEST_ASSUMED_REENCODING_CHANGED_A_DIGEST",
+      "taskState": "CLOSED",
+      "taskOutcome": "FAILURE",
+      "actualDATACommands": 1,
+      "actualParserCommands": 0,
+      "originalSourcePreserved": true,
+      "reclassified": false,
+      "correction": "Snapshot preserves input order; this canonical transcript happens to retain sorted order. The negative fixture now explicitly reorders its own data and asserts a distinct digest. Runtime behavior is unchanged."
+    }
+  ],
+  "metadataRefusals": [
+    {
+      "status": "FAILURE",
+      "stage": "SOURCE_REVIEW_PIN_HELPER",
+      "reason": "Relative physical authoring path passed to logical-source pin helper; read refused before report/task creation.",
+      "correction": "Pin reviewed authored bytes directly, without changing the logical source resolver.",
+      "applicationNativeCommands": 0,
+      "DATACommands": 0,
+      "managedTasksCreated": 0
+    }
+  ],
+  "predecessor": {
+    "path": "qualification/linux-ledger-acceptance.failure-inventory.json",
+    "bytes": 2834,
+    "sha256": "19def706dad4319a6c8b2701bb5303904fddb7fd6f22f61aa023a8a5b84e38e5"
+  },
+  "nativeRuns": [],
+  "nativeAcceptance": "NOT_ESTABLISHED"
+}

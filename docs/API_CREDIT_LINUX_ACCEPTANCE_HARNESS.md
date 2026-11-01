@@ -7,13 +7,13 @@ The harness has not been executed. Native execution remains disabled by the
 current user decision. Do not interpret its DATA preflight results as Linux,
 SDK/core, SQLite, HTTPS, signer, restart or release qualification.
 
-The explicit version-two candidate advances the G1 one-funding/100-request
-scenario, persisted provider-ledger observations and the normal fresh-process
-original-result read. Full G1 additionally requires the actual accepted native
-run, spending-budget, negative-case and concurrency evidence. G2 still requires
+The explicit version-three candidate advances the G1 one-funding/100-request
+scenario, persisted provider-ledger and payer spending-budget observations,
+and the normal fresh-process original-result read. Full G1 additionally
+requires the actual accepted native run, negative-case and concurrency evidence. G2 still requires
 its specified interruption cutpoints, signer loss,
 stale-owner and physical release or controlled HELD observations. Both gates
-remain OPEN; a `PROCESS_AND_LEDGER_OBSERVATIONS_MATCHED` report is insufficient
+remain OPEN; a `PROCESS_LEDGER_AND_SPENDING_OBSERVATIONS_MATCHED` report is insufficient
 to close them by itself.
 
 ## Exact scenario
@@ -54,12 +54,39 @@ cross-links, exact response commitments and purchased/consumed/held/remaining
 units must match the same independent purchase and original command transcript.
 No claimed request count is substituted for those persisted records.
 
+The same probe process then opens the existing payer spending file using the
+actual four-table grant-recovery owner used by the product. It derives the
+OPEN_EXISTING profile from the independently declared CREATE_NEW selection:
+the same account, policy, store/owner identity, epoch one, device, private root
+and file limits are retained. It never adopts metadata from a database,
+transfers ownership, creates a missing file or falls back to a signer-only
+schema. The actual opener also validates its retained signer/grant-query rows;
+the probe has no signing, record-retention or grant-query-write operation.
+
+Three current-owner guards bracket two complete spending loads. Both strings
+must be identical and pass the actual spending-history decoder and journal
+arithmetic. Exactly one SPENT row must bind the same payment ID, accepted
+network/asset/recipient/amount and preparation digest used by the real spending
+wrapper. That digest uses the existing codec's captured JSON bytes; the
+unrelated sorted snapshot encoding must not replace it. RESERVED, UNKNOWN,
+missing, foreign, extra or changed originals fail the clean scenario. Money
+exposure and provider service units are separate observations.
+
+The journal observes only the stored last day, without a clock, new admission,
+expiry, release, replacement or write. The owner must return void current
+guards, fresh OPEN views, a void revoke and fresh REVOKED view, then one void
+close and fresh CLOSED view before publication. Unknown read/guard/view receipts
+retain uncertainty without a physical close or another acquisition. A known
+semantic mismatch may revoke/close once while still withholding output.
+The provider owner must close before the payer owner opens; the two stores do
+not share an atomic snapshot. No extra probe process or database copy is added.
+
 The next application process uses only `--recorded-result-fd`
 and `--output-fd`; it receives no credential or service-command input. Its
 same-original cached response must match the selected first response exactly.
 Normal process exit is observed; no interruption or hardware durability claim
 is made. A second fixed ledger-probe process must return the identical complete
-observation after recovery. The external synthetic provider, accepted native
+provider-and-spending observation after recovery. The external synthetic provider, accepted native
 fixture and release evidence remain prerequisites, not invented counters.
 
 The probe's existing store opening and reads use real transactions, including
@@ -88,12 +115,12 @@ launcher supplies `SPV_TASK_SCRATCH`, its lease, quota, mounted-volume identity,
 global reservations, ten-GiB floor and foreground process-group supervision.
 This harness neither creates/adopts a storage root nor supplies an OS sandbox.
 
-The private manifest has exactly `version: 2`, `node`, `repository`,
+The private manifest has exactly `version: 3`, `node`, `repository`,
 `sourcePins`, `fixturePins`, `bootstrapMs` and `totalMs`. `node` has an absolute
 path plus exact `bytes` and `sha256`; `repository` is the reviewed absolute
 ordinary source tree. `sourcePins` lists unique relative `path`, `bytes` and
 `sha256` rows, including the CLI, fixed preflight, pure contract, admission,
-catalog, fixed ledger contract/probe and every source/package row in that catalog. The manifest cannot
+catalog, fixed ledger and spending contracts/probe and every source/package row in that catalog. The manifest cannot
 choose executable arguments, import conditions, a module or package resolver.
 Declared pins establish byte equality, not operator identity or authenticity.
 
@@ -147,5 +174,5 @@ cleared where possible; complete secret erasure is not established.
 
 The source candidate supplies no installer, TLS/key/proof generator, network
 discovery, provider launcher, real funding, SDK PREPARE, CI change or CI retry.
-Its current qualification is the pure transcript/ledger preflight over declared
+Its current qualification is the pure transcript/ledger/spending preflight over declared
 memory DATA plus parser checks. Runtime integration remains unexecuted.
