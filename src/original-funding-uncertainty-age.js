@@ -7,7 +7,8 @@ function day(value) {
   if (!Number.isSafeInteger(value) || Object.is(value, -0) || value < 0 || value > 2147483647) fail();
   return value;
 }
-function limits(input) {
+export function captureOriginalFundingUncertaintyAgeLimits(input) {
+  if (arguments.length !== 1) fail();
   const names = ['version', 'maximumUnresolvedAgeDays'];
   if (input === null || typeof input !== 'object' || types.isProxy(input)
       || Object.getPrototypeOf(input) !== Object.prototype || Reflect.ownKeys(input).length !== names.length) fail();
@@ -29,7 +30,7 @@ function limits(input) {
  * No backend, clock callback, mutation, release or external operation exists. */
 export function inspectOriginalFundingUncertaintyAge(raw, policy, observedDay, ageLimits) {
   if (arguments.length !== 4) fail();
-  const selected = limits(ageLimits), today = day(observedDay);
+  const selected = captureOriginalFundingUncertaintyAgeLimits(ageLimits), today = day(observedDay);
   const state = inspectOriginalFundingSpendingState(raw, policy);
   if (today < state.lastDay) fail();
   let reserved = 0, unknown = 0, spent = 0, oldestUnresolved = null, oldestUnknown = null;

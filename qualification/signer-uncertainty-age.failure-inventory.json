@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "currentDataFailures": 0,
+  "currentParserFailures": 0,
+  "unexpectedSkips": 0,
+  "inheritedInventory": {
+    "path": "qualification/funding-uncertainty-age.failure-inventory.json",
+    "bytes": 669,
+    "sha256": "82ff517d30b763506ef942101fbd9286c21bee7a4156421eae6e2c8d53a271c4"
+  },
+  "newDataCommands": 1,
+  "affectedDataCommands": 15,
+  "parserCommands": 2,
+  "affectedExistingControlsReexecuted": 834,
+  "unchangedControlsNotReexecuted": 1434,
+  "completedDATAOrCIRepeatedForMetadata": false,
+  "originalEvidenceAndFailedOutcomesPreserved": true,
+  "currentPreparationRefusals": [
+    {
+      "kind": "REGRESSION_HELPER_GENERATION_BEFORE_WRITE",
+      "sha256": "63a5dd22f012925df1233a145524b028f799c46cec62cfbd13ccfae275735c1a",
+      "errorType": "SyntaxError",
+      "generatedFileWritten": false,
+      "DATACommands": 0,
+      "parserCommands": 0,
+      "nativeExecutions": 0,
+      "reclassified": false
+    }
+  ],
+  "scope": "SOURCE_DATA_AND_NATIVE_FILE_SYNTAX_ONLY_NOT_NATIVE_ACCEPTANCE"
+}

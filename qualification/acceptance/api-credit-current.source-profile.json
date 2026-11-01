@@ -1,7 +1,7 @@
 {
   "profileVersion": 1,
   "profileId": "API_CREDIT_CURRENT_SOURCE_V1",
-  "sourceBaseline": "2c3935f0785c8f0003326a61b531bba25997aa20",
+  "sourceBaseline": "d7ebb5dc563b7b473ddaac5e4f73070949d0de68",
   "application": {
     "buyerEntry": "src/api-credit-cli.js",
     "providerEntry": "src/issued-provider-cli.js"
@@ -10,9 +10,9 @@
     {
       "role": "buyer",
       "path": "src/api-credit-module-catalog.json",
-      "bytes": 120934,
-      "sha256": "e358c77b4ec3acaae3f4ecd8238ed47975c5eb8ee746e5eb09958dcc9bbb8cac",
-      "sourceRows": 176,
+      "bytes": 121135,
+      "sha256": "56ccca546edc0a557020dd7275371f973ffc17649f247a0a3c8a57fccb04bc24",
+      "sourceRows": 177,
       "packageRows": 404,
       "bareEdges": 9
     },
@@ -30,7 +30,7 @@
     {
       "path": "src/api-credit-native-package-admission.js",
       "bytes": 6414,
-      "sha256": "5eb73ef8e6e94ce34ce6c96df198abb597d36e7dbc3d6e15bde2257b9c676af9",
+      "sha256": "10f8af1c74d859823797ac37d50e231e3ea7c142f7955782467ecb5203c32685",
       "format": "module"
     },
     {
@@ -48,19 +48,19 @@
   ],
   "dataQualification": {
     "sourceProfile": {
-      "path": "qualification/profiles/api-credit-application-source-v86.json",
-      "bytes": 2284,
-      "sha256": "436f1030336e06ed3c37bc1c5bc27cc8315ec8fd84f7b0aef78b5ba542efbe6a"
+      "path": "qualification/profiles/api-credit-application-source-v87.json",
+      "bytes": 3830,
+      "sha256": "8129dafae0aafda54b3fbd95a060e84594a4c49368c7e9cb91c251c86d247684"
     },
     "result": {
-      "path": "qualification/funding-uncertainty-age.actual-local-result.json",
-      "bytes": 4712,
-      "sha256": "fd6fd7c047e9d70d3f2f2b2ed3382e324a02b25d480e9e3c880d3b1de85d3524"
+      "path": "qualification/signer-uncertainty-age.actual-local-result.json",
+      "bytes": 107986,
+      "sha256": "46320337a66ff04060d5ba0309d9054d1cb42a1294d57688e60df201a68e52c1"
     },
-    "sourceBoundControls": 2268,
-    "executedControls": 24,
-    "retainedControls": 2244,
-    "expectedResultQualification": "G2_FUNDING_UNCERTAINTY_AGE_CURRENT_SOURCE_DATA"
+    "sourceBoundControls": 2301,
+    "executedControls": 867,
+    "retainedControls": 1434,
+    "expectedResultQualification": "G2_SIGNER_UNCERTAINTY_AGE_CURRENT_SOURCE_DATA"
   },
   "runtime": {
     "nodeVersion": "24.19.0",

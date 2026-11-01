@@ -1,0 +1,103 @@
+{
+  "version": 87,
+  "status": "SOURCE_AND_DECLARED_MEMORY_DATA_CANDIDATE",
+  "sourceMain": "d7ebb5dc563b7b473ddaac5e4f73070949d0de68",
+  "sourceMainTree": "f591b106bdfdbcec40878b1b55d37d381fb0e3f0",
+  "predecessorProfile": {
+    "path": "qualification/profiles/api-credit-application-source-v86.json",
+    "bytes": 2284,
+    "sha256": "436f1030336e06ed3c37bc1c5bc27cc8315ec8fd84f7b0aef78b5ba542efbe6a"
+  },
+  "profileStorage": "EXACT_PREDECESSOR_PROOF_REFERENCE_WITH_EXPLICIT_SOURCE_AND_ROLE_REPLACEMENTS",
+  "product": "ONE_FUNDING_ONE_GRANT_MANY_METERED_CALLS_ORIGINAL_REPLAY_RECOVERY",
+  "signerUncertaintyAge": {
+    "path": "qualification/signer-uncertainty-age.source-contract.json",
+    "bytes": 1320,
+    "sha256": "6b22a376e11c6ff3e31c7375c829cacf2c8c70546fca68b3fccf4c69de903d47"
+  },
+  "proofManifest": {
+    "path": "qualification/signer-uncertainty-age.proof-manifest.json",
+    "bytes": 112686,
+    "sha256": "b318e0ae086a39cf3ba3397fc22f099746569c0289b833ab3feaa7e146766f04"
+  },
+  "failureInventory": {
+    "path": "qualification/signer-uncertainty-age.failure-inventory.json",
+    "bytes": 1024,
+    "sha256": "73d5f68c4f45862c3159d673e51e912a377adfc8b8f2303912b9e0cc0357105c"
+  },
+  "sourceDelta": [
+    {
+      "path": "qualification/signer-uncertainty-age.behavior.mjs",
+      "bytes": 21921,
+      "sha256": "b36a2324aecf0a1b83859810f2f0eb82edb0dd7e04ac396f244a5893b363a15a",
+      "gitBlob": "147aed1e7bb5433b45b89cc46da6fdcfde8c2ed9"
+    },
+    {
+      "path": "src/api-credit-module-catalog.json",
+      "bytes": 121135,
+      "sha256": "56ccca546edc0a557020dd7275371f973ffc17649f247a0a3c8a57fccb04bc24",
+      "gitBlob": "4eaae0dbf6943eca470f7fbedd18a820afc7ae20"
+    },
+    {
+      "path": "src/api-credit-native-package-admission.js",
+      "bytes": 6414,
+      "sha256": "10f8af1c74d859823797ac37d50e231e3ea7c142f7955782467ecb5203c32685",
+      "gitBlob": "27a5ef5e5a66365b1fcea76acb38e2fb047757fb"
+    },
+    {
+      "path": "src/api-credit-recovery-inspection-coordinator.js",
+      "bytes": 15659,
+      "sha256": "08fcd564cec68b3b406db233c5d87af3b6130931a0fe4c57199969489c64f53f",
+      "gitBlob": "de5016a9203514abba302be038c46e0f42c97227"
+    },
+    {
+      "path": "src/api-credit-signer-inspection-profile.js",
+      "bytes": 4553,
+      "sha256": "16240fe86ef25868da3d372798ecb54574560726e48cd13ed1edcf7398bc72d8",
+      "gitBlob": "5931026d44b193bc157a6b222b7546d5e2e968f7"
+    },
+    {
+      "path": "src/original-funding-signer-inspection-owner.js",
+      "bytes": 14169,
+      "sha256": "cbdf722222507b5190b9d758f85550c198c7042d0304ada28e673cff643e6c41",
+      "gitBlob": "4b4e2426be0845a9dabe00ef973f064f30e3abb7"
+    },
+    {
+      "path": "src/original-funding-uncertainty-age.js",
+      "bytes": 3625,
+      "sha256": "ab14848e5bd2342f3bb4e1150e87c5b063e9907c4623783406e87308e78ea6b3",
+      "gitBlob": "e69779927e100dabd0f709d9dee4987d7e4fee49"
+    },
+    {
+      "path": "src/zenon/native-api-credit-signer-inspection.js",
+      "bytes": 2081,
+      "sha256": "2cc5c6c2aa8a0b3f08caa61c51bc8a7beac65be35547290bc766ee15469343d6",
+      "gitBlob": "317a5e0a37b27cb62e5754b46c561476911990e8"
+    }
+  ],
+  "nativeSourceGraphs": {
+    "buyer": 179,
+    "provider": 104,
+    "union": 245,
+    "bytes": 3403049,
+    "sourceOnly": true
+  },
+  "providerSourceGraphUnchanged": true,
+  "all404PackageRowsAndBareEdgesUnchanged": true,
+  "currentLocalData": {
+    "new": 33,
+    "reexecuted": 834,
+    "retainedExact": 1434,
+    "sourceBoundDistinct": 2301,
+    "newDATACommands": 16,
+    "newParserCommands": 2,
+    "parserSourceProofs": 52,
+    "retainedParserProofs": 50
+  },
+  "selectedHostedCIControls": 108,
+  "selectedHostedCISourceInputs": 22,
+  "hostedSelectionChanged": false,
+  "newCasesIncludedInHostedCI": false,
+  "nativeQualification": "NOT_EXECUTED",
+  "G0G5Acceptance": "OPEN"
+}

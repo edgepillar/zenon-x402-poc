@@ -2553,8 +2553,8 @@
     },
     {
       "path": "src/api-credit-recovery-inspection-coordinator.js",
-      "bytes": 15311,
-      "sha256": "729b9dbfd1f85bb017d27634e3c2d42662820390478cb7fba24f1a5f51b8316b",
+      "bytes": 15659,
+      "sha256": "08fcd564cec68b3b406db233c5d87af3b6130931a0fe4c57199969489c64f53f",
       "format": "module"
     },
     {
@@ -2571,8 +2571,8 @@
     },
     {
       "path": "src/api-credit-signer-inspection-profile.js",
-      "bytes": 3942,
-      "sha256": "c13564d0af16b3209077f0d2093deb8c46d2b929c620e05a8a7ddf47d05c991d",
+      "bytes": 4553,
+      "sha256": "16240fe86ef25868da3d372798ecb54574560726e48cd13ed1edcf7398bc72d8",
       "format": "module"
     },
     {
@@ -2685,8 +2685,8 @@
     },
     {
       "path": "src/original-funding-signer-inspection-owner.js",
-      "bytes": 9304,
-      "sha256": "5bce47aef10cce566625f742673ccd955657bf996027dbc5309b38d751bff9a8",
+      "bytes": 14169,
+      "sha256": "cbdf722222507b5190b9d758f85550c198c7042d0304ada28e673cff643e6c41",
       "format": "module"
     },
     {
@@ -2717,6 +2717,12 @@
       "path": "src/original-funding-spending-sqlite-store.js",
       "bytes": 17223,
       "sha256": "4b46a7c7d59b1bb80f036a81e028d16d442b3b7792bd34776e1ab67d031db764",
+      "format": "module"
+    },
+    {
+      "path": "src/original-funding-uncertainty-age.js",
+      "bytes": 3625,
+      "sha256": "ab14848e5bd2342f3bb4e1150e87c5b063e9907c4623783406e87308e78ea6b3",
       "format": "module"
     },
     {
@@ -3327,8 +3333,8 @@
     },
     {
       "path": "src/zenon/native-api-credit-signer-inspection.js",
-      "bytes": 1633,
-      "sha256": "d9c6c3817df610789c9364b5d105b809198c7ea4b19d41b1d26a02849c0c72d6",
+      "bytes": 2081,
+      "sha256": "2cc5c6c2aa8a0b3f08caa61c51bc8a7beac65be35547290bc766ee15469343d6",
       "format": "module"
     },
     {

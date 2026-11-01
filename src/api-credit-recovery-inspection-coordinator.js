@@ -179,6 +179,9 @@ function createCoordinator(configuration, signer, recorded = false, funding = fa
     if (funding && (result.fundingResourceUrl !== frame.prepared.fundingResourceUrl || result.paymentHash !== frame.prepared.paymentHash
       || result.recordPresent && createHash('sha256').update(result.serializedCheckpoint).digest('hex') !== frame.prepared.checkpointDigest)) fail();
     if (signer && (result.paymentId !== frame.prepared.paymentId || result.originalDigest !== frame.prepared.originalDigest || result.fundingResourceUrl !== frame.prepared.fundingResourceUrl)) fail();
+    if (signer && (result.signerInspectionVersion !== frame.prepared.signerInspectionVersion
+        || result.signerInspectionVersion === 2 && (result.uncertaintyAge.maximumUnresolvedAgeDays !== frame.prepared.uncertaintyAgeLimits.maximumUnresolvedAgeDays
+          || result.uncertaintyAge.policyId !== frame.prepared.spendingPolicyId))) fail();
     if (recorded && (result.grantId !== frame.prepared.requestKey.grantId || result.requestId !== frame.prepared.requestKey.requestId)) fail();
     guard(); frame.stage = 'OUTPUT';
     await stage(g => p.writeResult(canonicalJson(result) + '\n', g)); if (frame.value !== undefined) fail(); frame.value = null;

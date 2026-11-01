@@ -3,6 +3,7 @@ import { types } from 'node:util';
 import { canonicalJson } from './canonical.js';
 import { captureOriginalFundingSpendingFileProfile } from './original-funding-spending-file-profile.js';
 import { captureFundingPostCheckpointRoute } from './x402-funding-post-checkpoint-route.js';
+import { captureOriginalFundingUncertaintyAgeLimits } from './original-funding-uncertainty-age.js';
 
 const F = Object.freeze, PROFILES = new WeakMap();
 function fail() { throw new TypeError('API_CREDIT_SIGNER_INSPECTION_PROFILE'); }
@@ -30,19 +31,26 @@ export function captureApiCreditSignerInspectionExpected(input) {
 export function decodeApiCreditSignerInspectionProfile(text) {
   if (arguments.length !== 1 || typeof text !== 'string' || Buffer.byteLength(text) > 16384 || Buffer.from(text).toString('utf8') !== text) fail();
   let decoded; try { decoded = JSON.parse(text); freezeJson(decoded); } catch { fail(); }
-  if (canonicalJson(decoded) !== text) fail(); const c = fields(decoded, ['signerInspectionVersion', 'spendingFile', 'expectedOriginal']);
-  if (c.signerInspectionVersion !== 1) fail(); const file = captureOriginalFundingSpendingFileProfile(c.spendingFile), expected = captureApiCreditSignerInspectionExpected(c.expectedOriginal);
+  if (canonicalJson(decoded) !== text) fail();
+  const version = Object.getOwnPropertyDescriptor(decoded, 'signerInspectionVersion')?.value;
+  if (version !== 1 && version !== 2) fail();
+  const c = fields(decoded, ['signerInspectionVersion', 'spendingFile', 'expectedOriginal', ...(version === 2 ? ['uncertaintyAgeLimits'] : [])]);
+  const file = captureOriginalFundingSpendingFileProfile(c.spendingFile), expected = captureApiCreditSignerInspectionExpected(c.expectedOriginal);
   if (file.storageProfile.mode !== 'OPEN_EXISTING' || file.storageProfile.policy.recipients.length !== 1) fail();
-  const state = { file, expected, consumed: false, released: false };
+  const ageLimits = version === 2 ? captureOriginalFundingUncertaintyAgeLimits(c.uncertaintyAgeLimits) : null;
+  const state = { file, expected, ageLimits, consumed: false, released: false };
   const release = F(function release() { if (arguments.length !== 0) fail(); if (state.released) return;
-    state.released = true; state.file = null; state.expected = null; });
-  const profile = F({ signerInspectionVersion: 1, paymentId: expected.paymentId, originalDigest: expected.originalDigest,
-    fundingResourceUrl: expected.fundingResourceUrl, release }); PROFILES.set(profile, state); return profile;
+    state.released = true; state.file = null; state.expected = null; state.ageLimits = null; });
+  const profile = F({ signerInspectionVersion: version, paymentId: expected.paymentId, originalDigest: expected.originalDigest,
+    fundingResourceUrl: expected.fundingResourceUrl,
+    ...(version === 2 ? { uncertaintyAgeLimits: ageLimits, spendingPolicyId: file.storageProfile.policy.policyId } : {}),
+    release }); PROFILES.set(profile, state); return profile;
 }
 export function consumeApiCreditSignerInspectionProfile(profile) {
   if (arguments.length !== 1 || profile === null || typeof profile !== 'object' || types.isProxy(profile)) fail();
   const state = PROFILES.get(profile); if (!state || state.consumed || state.released) fail(); state.consumed = true;
-  return F({ fileConfiguration: F({ storageProfile: state.file.storageProfile, allowedRoot: state.file.allowedRoot, filePolicy: state.file.filePolicy }), expectedOriginal: state.expected });
+  return F({ fileConfiguration: F({ storageProfile: state.file.storageProfile, allowedRoot: state.file.allowedRoot, filePolicy: state.file.filePolicy }), expectedOriginal: state.expected,
+    ...(state.ageLimits === null ? {} : { uncertaintyAgeLimits: state.ageLimits }) });
 }
 export function releaseApiCreditSignerInspectionProfile(profile) {
   if (arguments.length !== 1 || profile === null || typeof profile !== 'object' || types.isProxy(profile) || !PROFILES.has(profile)) fail(); profile.release();
