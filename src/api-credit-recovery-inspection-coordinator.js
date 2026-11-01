@@ -179,7 +179,9 @@ function createCoordinator(configuration, signer, recorded = false, funding = fa
     if (funding && (result.fundingResourceUrl !== frame.prepared.fundingResourceUrl || result.paymentHash !== frame.prepared.paymentHash
       || result.recordPresent && createHash('sha256').update(result.serializedCheckpoint).digest('hex') !== frame.prepared.checkpointDigest)) fail();
     if (signer && (result.paymentId !== frame.prepared.paymentId || result.originalDigest !== frame.prepared.originalDigest || result.fundingResourceUrl !== frame.prepared.fundingResourceUrl)) fail();
-    if (signer && (result.signerInspectionVersion !== frame.prepared.signerInspectionVersion
+    // Profile V3 selects the four-table current store. Historical output keeps
+    // the existing closed V2 age grammar and carries no new authority.
+    if (signer && (result.signerInspectionVersion !== (frame.prepared.signerInspectionVersion === 3 ? 2 : frame.prepared.signerInspectionVersion)
         || result.signerInspectionVersion === 2 && (result.uncertaintyAge.maximumUnresolvedAgeDays !== frame.prepared.uncertaintyAgeLimits.maximumUnresolvedAgeDays
           || result.uncertaintyAge.policyId !== frame.prepared.spendingPolicyId))) fail();
     if (recorded && (result.grantId !== frame.prepared.requestKey.grantId || result.requestId !== frame.prepared.requestKey.requestId)) fail();

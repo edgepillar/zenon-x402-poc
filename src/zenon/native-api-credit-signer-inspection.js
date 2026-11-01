@@ -1,6 +1,7 @@
 // SOURCE ONLY. No native open/read/release execution is established here.
 import { types } from 'node:util';
-import { consumeApiCreditSignerInspectionProfile, releaseApiCreditSignerInspectionProfile } from '../api-credit-signer-inspection-profile.js';
+import { consumeApiCreditSignerInspectionProfile, releaseApiCreditSignerInspectionProfile,
+  createApiCreditSignerInspectionFilePorts } from '../api-credit-signer-inspection-profile.js';
 import { runApiCreditSignerInspectionOwner, runApiCreditSignerInspectionWithUncertaintyAgeOwner } from '../original-funding-signer-inspection-owner.js';
 import { captureApiCreditOperatorUtcDay } from '../api-credit-operator-clock.js';
 
@@ -11,11 +12,12 @@ export async function inspectNativeApiCreditSignerOriginal(profile, requireOpeni
   try {
     if (arguments.length !== 2 || typeof requireOpening !== 'function' || types.isProxy(requireOpening) || !Object.isFrozen(requireOpening)) throw new TypeError('API_CREDIT_SIGNER_INSPECTION');
     requireOpening(); const captured = consumeApiCreditSignerInspectionProfile(profile);
-    requireOpening(); const { openOriginalFundingSpendingSignerContextFileOwner } = await import('../original-funding-spending-file-owner.js');
-    requireOpening(); const ports = F({ openFile: F(function openExistingOriginalFile(configuration) {
-      requireOpening(); if (configuration.storageProfile.mode !== 'OPEN_EXISTING') throw new TypeError('API_CREDIT_SIGNER_INSPECTION');
-      return openOriginalFundingSpendingSignerContextFileOwner(configuration);
-    }) });
+    requireOpening(); const { openOriginalFundingSpendingSignerContextFileOwner,
+      openOriginalFundingSpendingGrantRecoveryFileOwner } = await import('../original-funding-spending-file-owner.js');
+    requireOpening(); const ports = createApiCreditSignerInspectionFilePorts(captured, requireOpening, F({
+      signerContext: F(configuration => openOriginalFundingSpendingSignerContextFileOwner(configuration)),
+      grantRecovery: F(configuration => openOriginalFundingSpendingGrantRecoveryFileOwner(configuration)),
+    }));
     const configuration = { fileConfiguration: captured.fileConfiguration, expectedOriginal: captured.expectedOriginal, ports, requireOpening };
     return Object.hasOwn(captured, 'uncertaintyAgeLimits')
       ? runApiCreditSignerInspectionWithUncertaintyAgeOwner({ ...configuration, uncertaintyAgeLimits: captured.uncertaintyAgeLimits,

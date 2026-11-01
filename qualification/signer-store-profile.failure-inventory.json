@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "currentDataFailures": 0,
+  "currentParserFailures": 0,
+  "unexpectedSkips": 0,
+  "inheritedInventory": {
+    "path": "qualification/linux-spending-acceptance.failure-inventory.json",
+    "bytes": 1401,
+    "sha256": "f8a7a7a9d61cb8f5beef26a389c7c372f79f481eab9e860454a56ec935b1efae"
+  },
+  "newDataCommands": 1,
+  "affectedDataCommands": 18,
+  "parserCommands": 2,
+  "affectedExistingControlsReexecuted": 925,
+  "unchangedControlsNotReexecuted": 1458,
+  "completedDATAOrCIRepeatedForMetadata": false,
+  "retainedFailedDATA": [
+    {
+      "classification": "TEST_EXPECTED_DERIVED_HASH_AS_RAW_FIELD",
+      "rawEvidenceSha256": "cec5a346f74987df683184e454e06ed927cfcbb39534ad1188833fbe5e2996ad",
+      "passed": 5,
+      "failed": 1,
+      "actualDATACommands": 1,
+      "actualParserCommands": 0,
+      "taskState": "CLOSED",
+      "taskOutcome": "FAILURE",
+      "originalSourcePreserved": true,
+      "reclassified": false,
+      "correction": "The raw custody record does not persist the decoder-derived transactionHash field. Compare the complete original packet/hash/pins assembled by the actual DATA codec from the independent retained unsigned/signed fixture. Runtime behavior is unchanged."
+    }
+  ],
+  "retainedPreparationRefusals": [
+    {
+      "classification": "FOUR_MIB_PEAK_PREFLIGHT_REFUSAL",
+      "rawEvidenceSha256": "548a40c0bfa672bcdd7bcd1758c5f0c595912d70c218525398f82f8582a0a030",
+      "estimatedPeakBytes": 4527630,
+      "existingQuotaBytes": 4194304,
+      "managedTaskCreated": false,
+      "DATACommands": 0,
+      "parserCommands": 0,
+      "quotaRaised": false,
+      "correction": "Split affected entries into three bounded groups; preserve the original refusal."
+    }
+  ],
+  "nativeQualification": "NOT_EXECUTED",
+  "scope": "SOURCE_AND_DECLARED_MEMORY_ONLY"
+}

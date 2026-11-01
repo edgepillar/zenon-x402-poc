@@ -7,8 +7,20 @@ node src/api-credit-cli.js --signer-inspect-fd 3 --output-fd 6 --bootstrap-ms 10
 This SOURCE candidate uses the same CLI and fixed inspection pipe/coordinator
 owner as funding/backend inspection. Supply two distinct, exclusive owned
 POSIX FIFO ends. Input is one canonical JSON envelope, newline and EOF, at most
-16384 UTF-8 bytes, depth 16 and 1024 nodes. Its exact fields are
-`signerInspectionVersion:1`, `spendingFile` and `expectedOriginal`.
+16384 UTF-8 bytes, depth 16 and 1024 nodes. All profiles require
+`signerInspectionVersion`, `spendingFile` and `expectedOriginal`.
+
+| Input version | Additional required fields | Existing file owner | Historical output |
+| --- | --- | --- | --- |
+| 1 | None | Three-table signer context | Version 1 |
+| 2 | `uncertaintyAgeLimits` | Three-table signer context | Version 2 with age |
+| 3 | `uncertaintyAgeLimits`, `spendingStoreProfile: "GRANT_RECOVERY_V1"` | Four-table current API-credit grant recovery | Version 2 with age |
+
+Version 3 explicitly selects the current application's retained grant-query
+schema. Versions 1 and 2 retain their previous schema selection. There is no
+automatic schema discovery, retry through a different opener or missing-field
+default. The version-two historical output grammar is unchanged: selecting the
+current file format adds no result, signing, submission or release authority.
 
 `spendingFile` is the existing explicit spending-file configuration: version 1
 storage profile, OPEN_EXISTING mode, selected policy/account, database path,
@@ -16,13 +28,19 @@ independently retained owner token, private root/device and file/space bounds.
 The first-product policy has one recipient. `expectedOriginal` contains the
 independent paymentId, original-input digest and fundingResourceUrl. No owner
 is discovered from the file; missing data cannot select create/adopt/migrate.
-The actual opener accepts only the signer-context v2 table profile. Old files
-and exposed account ledgers are preserved, never reset to make inspection pass.
+The selected opener validates the exact existing table profile. Old files and
+exposed account ledgers are preserved, never reset to make inspection pass.
+All profile, account, owner-token, device, root and capacity selections must
+match the admitted input. The consumed profile can issue one fixed opener and
+enter it once; profile release or opening expiry prevents acquisition.
 
 The envelope and EOF pass DATA admission before the literal native file import.
 No wallet, key, SDK package, signer, transport, quote, work or payment path is
 selected. The actual file owner opens the existing private ledger and performs
-one selected signer-record read under its current epoch/profile checks. This
+one selected signer-record read under its current epoch/profile checks.
+Versions 2 and 3 also bracket the same owner's spending-history loads with
+current-owner guards and apply the selected uncertainty-age limit. They keep
+UNKNOWN reservations unchanged, including after the escalation age. This
 is not SQLite readOnly: normal opening PRAGMAs/transactions remain real local
 operations. Neither physical checks nor owner tokens are an OS/same-user lease.
 

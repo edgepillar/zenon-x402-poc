@@ -1,7 +1,7 @@
 {
   "profileVersion": 1,
   "profileId": "API_CREDIT_CURRENT_SOURCE_V1",
-  "sourceBaseline": "d7ebb5dc563b7b473ddaac5e4f73070949d0de68",
+  "sourceBaseline": "b79f3b3262f40609f8c6c47540450339724f5f15",
   "application": {
     "buyerEntry": "src/api-credit-cli.js",
     "providerEntry": "src/issued-provider-cli.js"
@@ -11,7 +11,7 @@
       "role": "buyer",
       "path": "src/api-credit-module-catalog.json",
       "bytes": 121135,
-      "sha256": "56ccca546edc0a557020dd7275371f973ffc17649f247a0a3c8a57fccb04bc24",
+      "sha256": "37ba26fff5c7faa7d0c92d1b99538af57ff04a7399e82ae1c660bb3ba368147f",
       "sourceRows": 177,
       "packageRows": 404,
       "bareEdges": 9
@@ -30,7 +30,7 @@
     {
       "path": "src/api-credit-native-package-admission.js",
       "bytes": 6414,
-      "sha256": "10f8af1c74d859823797ac37d50e231e3ea7c142f7955782467ecb5203c32685",
+      "sha256": "18794a467f6cc4a7c39027c4c322c8fb92a5f70131c49af66d0507238baa28f9",
       "format": "module"
     },
     {
@@ -48,19 +48,19 @@
   ],
   "dataQualification": {
     "sourceProfile": {
-      "path": "qualification/profiles/api-credit-application-source-v87.json",
-      "bytes": 3830,
-      "sha256": "8129dafae0aafda54b3fbd95a060e84594a4c49368c7e9cb91c251c86d247684"
+      "path": "qualification/profiles/api-credit-application-source-v88.json",
+      "bytes": 3873,
+      "sha256": "e8502cd2a90dec74db9edd74e93037792f8f311dfaea52744c4c49d37a78022b"
     },
     "result": {
-      "path": "qualification/signer-uncertainty-age.actual-local-result.json",
-      "bytes": 107986,
-      "sha256": "46320337a66ff04060d5ba0309d9054d1cb42a1294d57688e60df201a68e52c1"
+      "path": "qualification/signer-store-profile.actual-local-result.json",
+      "bytes": 117944,
+      "sha256": "91832acce94cc7f2a288f58b5f59249829afb40789304d8743821743f01f3bbb"
     },
-    "sourceBoundControls": 2301,
-    "executedControls": 867,
-    "retainedControls": 1434,
-    "expectedResultQualification": "G2_SIGNER_UNCERTAINTY_AGE_CURRENT_SOURCE_DATA"
+    "sourceBoundControls": 2323,
+    "executedControls": 865,
+    "retainedControls": 1458,
+    "expectedResultQualification": "G2_EXPLICIT_SIGNER_STORE_CURRENT_SOURCE_DATA"
   },
   "runtime": {
     "nodeVersion": "24.19.0",

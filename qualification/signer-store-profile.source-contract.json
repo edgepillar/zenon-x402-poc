@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "selection": "EXPLICIT_V3_CURRENT_GRANT_RECOVERY_SIGNER_INSPECTION",
+  "existingOperatorArgument": "--signer-inspect-fd",
+  "inputVersions": [
+    1,
+    2,
+    3
+  ],
+  "legacyInputAndOutputPreserved": true,
+  "versionThreeRequiredStoreProfile": "GRANT_RECOVERY_V1",
+  "versionThreeHistoricalResultVersion": 2,
+  "independentExistingOwnerTokenRequired": true,
+  "uncertaintyAgeMaximumRequired": true,
+  "threeFieldActualConstructorInput": true,
+  "ownerPolicyRootDeviceAndLimitsRetained": true,
+  "genuineConsumedProfileOnly": true,
+  "singleIssuedOpenerAndEntry": true,
+  "releaseOrExpiryStopsAcquisition": true,
+  "schemaDiscovery": false,
+  "schemaFallback": false,
+  "creationOrMigration": false,
+  "newKeysOrSignatures": false,
+  "spendingWrites": false,
+  "newDispatchAuthority": false,
+  "sameOriginalHashCheckpointAndPinsPreserved": true,
+  "coordinatorOriginalAgePolicyAndVersionBound": true,
+  "buyerCatalogChanged": true,
+  "providerCatalogChanged": false,
+  "packageRowsAndBareEdgesUnchanged": true,
+  "nativeQualification": "NOT_EXECUTED",
+  "G0G5": "OPEN"
+}

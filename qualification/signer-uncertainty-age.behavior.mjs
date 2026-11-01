@@ -242,6 +242,8 @@ check('signer-age-invalid-v2-profile-never-enters-the-owned-inspector', async ()
   assert.equal(result.status, 'BOOTSTRAP_REFUSED'); assert.equal(s.calls.inspect, 0); assert.equal(r.calls.open, 0); assert.equal(s.calls.close, 1);
 });
 
+export const signerUncertaintyAgeDataFixture = fixture;
+export const signerUncertaintyAgeCoordinatorDataFixture = coordinator;
 export const signerUncertaintyAgeDataCases = F(checks.map(c => F(c)));
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const cases = [];

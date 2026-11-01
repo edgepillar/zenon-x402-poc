@@ -124,7 +124,8 @@ function run(configuration, withAge) {
   }
   try {
     c.requireOpening(); const firstDay = withAge ? readDay() : null;
-    frame.owner = p.openFile(file); discardUnexpectedPromise(frame.owner);
+    const openConfiguration = withAge ? F({ storageProfile: file.storageProfile, allowedRoot: file.allowedRoot, filePolicy: file.filePolicy }) : file;
+    frame.owner = p.openFile(openConfiguration); discardUnexpectedPromise(frame.owner);
     if (frame.owner === null || typeof frame.owner !== 'object' || types.isProxy(frame.owner) || types.isPromise(frame.owner) || SEEN.has(frame.owner)) fail('OWNER');
     frame.view = method(frame.owner, 'inspect'); frame.revoke = method(frame.owner, 'revoke'); frame.close = method(frame.owner, 'close');
     const custody = data(frame.owner, 'signerCustody'), read = method(custody, 'readSignerRecord'); if (data(custody, 'requirePreparationContext') !== true) fail('OWNER');
