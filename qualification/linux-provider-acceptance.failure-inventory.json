@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "currentDATAFailures": [],
+  "retainedFailures": [
+    {
+      "actualDATAStatus": "FAIL",
+      "passed": 0,
+      "failed": 1,
+      "classification": "PURE_FIXTURE_REQUESTED_STATE_CAP_ABOVE_EXISTING_RECOVERY_CODEC_LIMIT",
+      "taskState": "CLOSED",
+      "taskOutcome": "FAILURE",
+      "actualDATACommands": 1,
+      "actualParserCommands": 0,
+      "originalSourcePreserved": true,
+      "reclassified": false,
+      "correction": "Use the existing one-MiB recovery limit in both independently selected backend profiles; product limits are unchanged."
+    }
+  ],
+  "diagnostic": {
+    "status": "OBSERVATION_ONLY",
+    "productValidation": false,
+    "commands": 1,
+    "sourceAndOutcomePreserved": true
+  },
+  "metadataRefusals": [],
+  "predecessor": {
+    "path": "qualification/original-observer-admission.failure-inventory.json",
+    "bytes": 672,
+    "sha256": "ad80fbf5b6d5213827440ffbee56d742ce2697da29b5f1bef37041355674c81c"
+  },
+  "nativeRuns": [],
+  "nativeAcceptance": "NOT_ESTABLISHED"
+}

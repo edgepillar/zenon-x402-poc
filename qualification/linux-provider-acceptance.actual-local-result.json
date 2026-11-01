@@ -1,0 +1,127 @@
+{
+  "version": 1,
+  "status": "PASS",
+  "scope": "PURE_PROVIDER_BUYER_JOURNAL_CONTROL_SELECTION_DATA_AND_PREFLIGHT_PARSER_ONLY",
+  "sourceBaseline": "863005578417445d8bf034a5bd7dd6def62e9224",
+  "newPassed": 22,
+  "affectedPassed": 0,
+  "failed": 0,
+  "newCases": [
+    {
+      "id": "linux-provider-selection-binds-the-same-ten-independent-text-inputs",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-provider-keeps-the-existing-signer-and-budget-observation-bindings",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-provider-start-and-close-frames-match-the-existing-control-protocol",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-provider-explicit-journal-initialization-retains-no-authority-or-release-claim",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-provider-activate-ack-is-selected-before-output-and-matches-the-original-grant",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-provider-declared-observer-key-is-bound-but-not-authenticated-by-data-preflight",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-provider-summary-does-not-expose-private-originals-command-frames-or-paths",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-provider-frozen-plan-and-internal-token-cannot-be-forged",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-provider-selection-refuses-extra-input-accessors-and-proxies-without-hooks",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-provider-profile-is-explicit-v3-fresh-and-journal-only",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-provider-offer-and-funding-terms-must-equal-the-independent-purchase",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-provider-rejects-a-different-product-or-cost-policy",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-provider-service-store-file-root-and-all-limits-must-match-the-ledger-probe",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-provider-intake-cannot-alias-the-payer-or-spending-database",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-provider-https-origin-bind-port-and-original-funding-url-are-fixed",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-provider-rpc-selection-refuses-external-hosts-credentials-paths-and-query",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-provider-journal-selection-cannot-change-directory-or-selected-device",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-provider-activation-rejects-another-command-id-operation-or-observer-file",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-provider-activation-rejects-traversal-and-incomplete-original-key",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-provider-added-inputs-refuse-noncanonical-or-oversized-frames",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-provider-reply-pins-cover-every-selected-bootstrap-activation-and-close-frame",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-provider-data-never-claims-linux-transport-chain-authentication-or-gate-completion",
+      "status": "PASS"
+    }
+  ],
+  "retainedExactControls": 2453,
+  "currentSourceBoundControls": 2475,
+  "applicationControls": 2345,
+  "separateLinuxHarnessControls": 130,
+  "actualPassingDATACommands": 1,
+  "retainedFailedCurrentDATACommands": 1,
+  "diagnosticCommands": 1,
+  "diagnosticIsProductValidation": false,
+  "actualNodeParserCommands": 1,
+  "retainedExactParserOrigins": 53,
+  "currentParserOrigins": 54,
+  "pythonSourceCompile": "PASS_NOT_EXECUTED",
+  "nativeExecutions": 0,
+  "pythonHarnessExecutions": 0,
+  "actualSQLite": 0,
+  "installedSDKOrCoreEvaluation": 0,
+  "sockets": 0,
+  "keys": 0,
+  "signatures": 0,
+  "nonceSearches": 0,
+  "LinuxHarness": "NOT_EXECUTED",
+  "nativeFixtureAcceptance": "NOT_ESTABLISHED",
+  "buyerReadRoutesIsolation": "NOT_ESTABLISHED",
+  "atomicSnapshotAcrossStores": false,
+  "physicalRelease": "NOT_ESTABLISHED",
+  "G0G5Acceptance": "OPEN",
+  "workflowChanged": false,
+  "hostedCIControls": 108
+}

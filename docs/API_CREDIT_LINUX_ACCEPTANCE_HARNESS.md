@@ -1,19 +1,20 @@
 # Linux API-credit CLI acceptance harness: unexecuted source candidate
 
 `qualification/api-credit-linux-acceptance.py` drives the existing documented
-`src/api-credit-cli.js` through real inherited POSIX FIFO descriptors. It does
+`src/api-credit-cli.js` and `src/issued-provider-cli.js` through inherited POSIX FIFO descriptors. It does
 not introduce another buyer, payment, credential loader or provider product.
 The harness has not been executed. Native execution remains disabled by the
 current user decision. Do not interpret its DATA preflight results as Linux,
 SDK/core, SQLite, HTTPS, signer, restart or release qualification.
 
-The explicit version-four candidate advances the G1 one-funding/100-request
+The explicit version-five candidate adds the fixed provider journal, start,
+ACTIVATE and close sequence to the G1 one-funding/100-request
 scenario, persisted provider-ledger, payer spending-budget and retained signer observations,
 and the normal fresh-process original-result read. Full G1 additionally
 requires the actual accepted native run, negative-case and concurrency evidence. G2 still requires
 its specified interruption cutpoints, signer loss,
 stale-owner and physical release or controlled HELD observations. Both gates
-remain OPEN; a `PROCESS_LEDGER_SPENDING_AND_SIGNER_OBSERVATIONS_MATCHED` report is insufficient
+remain OPEN; a `PROVIDER_PROCESS_LEDGER_SPENDING_AND_SIGNER_OBSERVATIONS_MATCHED` report is insufficient
 to close them by itself.
 
 ## Exact scenario
@@ -34,18 +35,55 @@ An independently reviewed synthetic fixture supplies all bytes before launch:
 7. An independently selected canonical signer-inspection V3 profile, requiring
    `GRANT_RECOVERY_V1`, an explicit uncertainty-age maximum, the same existing
    spending-file owner/policy/root/device/limits and original payment/digest/URL.
+8. A canonical provider V3 FRESH profile selecting JOURNAL_ONLY, the same
+   purchase offer/selection/terms, execution-receipt product and provider ledger
+   database/root/limits used by both historical probes. Provider HTTPS is bound
+   to the exact selected `127.0.0.1` origin; its independently selected RPC URL
+   is restricted to `ws://127.0.0.1/` with an optional explicit port.
+9. An explicit new-journal profile for that same provider journal and selected
+   device. Initialization is a separate fixed CLI mode; no existing directory
+   is adopted, reset or removed.
+10. Exactly one preselected ACTIVATE command, with ID `acceptance-activate`,
+    the observer filename for the original payment hash and an independently
+    retained record key. The actual provider validates that pair against its
+    retained original before opening the observer; DATA preflight does not
+    authenticate the record key, grant, chain or authority record.
+11. An existing provider TLS key/certificate frame in its own private binary
+    file. The harness generates no key, certificate, proof or signature.
 
 The pure preflight uses the real non-DP bootstrap, command, service-wire,
 ready-query, original-checkpoint and recorded-result codecs. It validates the
-whole supplied transcript before the credential is read. It never converts
+whole supplied transcript before either TLS material or the buyer credential is read. It never converts
 actual prepare output into independent pins or generates a proof, signature,
 grant, payment, replacement or retry. Signature-shaped test strings are not
 authenticated by this preflight. The actual product retains its own checks.
 
-The first application process receives only the fixed RUN arguments. The
+After pure preflight, the parent runs the existing fixed journal initializer
+with inherited profile/output FIFOs. The exact INITIALIZED response, EOF, zero
+exit and existing clean CLI marker must match before provider startup. The
+provider RUN child receives only its fixed profile/TLS/control/output
+descriptors. Its exact START/LISTENING response must precede the first buyer
+credential read or buyer process launch.
+
+The first buyer application process receives only the fixed RUN arguments. The
 parent waits for each complete exact predeclared reply before sending the next
 command. A mismatch, refusal, unknown result, extra output, broken frame or
 deadline ends advancement. No later command or automatic recovery is sent.
+
+After matching buyer reply two (the original funding BOUND response), the
+parent pauses before sending handoff. It sends the single preselected ACTIVATE
+command to that same provider process. Only a complete matching ADMITTED
+response for the independently selected original grant and transaction allows
+handoff and the existing 100 requests plus exact replay. BOUND creates no grant
+authority. There is no RESUME, polling loop, retry, replacement or second
+observer opener. The parent continues to drain the same provider's bounded
+output/stderr while the buyer runs; unexpected provider output refuses progress.
+
+After the buyer's complete clean exit, the parent sends exactly one explicit
+CLOSE command to that provider. Its exact CLOSED response, EOF, zero exit and
+existing clean provider marker must all match before either ledger probe can
+open the provider file. An activation/start/close ambiguity prevents later
+stages. Parent endpoint closure does not establish physical release.
 
 Only a zero exit, complete matching output, EOF and the existing clean CLI
 status allow the first fixed provider-ledger probe. That separate process
@@ -107,8 +145,15 @@ and `--output-fd`; it receives no credential or service-command input. Its
 same-original cached response must match the selected first response exactly.
 Normal process exit is observed; no interruption or hardware durability claim
 is made. A second fixed ledger-probe process must return the identical complete
-provider-and-spending observation after recovery. The external synthetic provider, accepted native
-fixture and release evidence remain prerequisites, not invented counters.
+provider-and-spending observation after recovery. An accepted native fixture,
+externally managed synthetic RPC and release evidence remain prerequisites.
+
+The accompanying provider fixture is pure codec DATA with deliberately invalid
+signature-shaped bytes, synthetic authority text and a declared CA. It is not
+an accepted native fixture. The provider-loopback constraint does not establish
+isolation of the buyer's independently selected pinned HTTPS read routes. Those
+routes and all native resources need separate review before any future native
+approval; neither this preflight nor the Python source supplies a network sandbox.
 
 The probe's existing store opening and reads use real transactions, including
 BEGIN IMMEDIATE; they are not OS-readonly SQLite handles. The source adds no
@@ -136,16 +181,16 @@ launcher supplies `SPV_TASK_SCRATCH`, its lease, quota, mounted-volume identity,
 global reservations, ten-GiB floor and foreground process-group supervision.
 This harness neither creates/adopts a storage root nor supplies an OS sandbox.
 
-The private manifest has exactly `version: 4`, `node`, `repository`,
+The private manifest has exactly `version: 5`, `node`, `repository`,
 `sourcePins`, `fixturePins`, `bootstrapMs` and `totalMs`. `node` has an absolute
 path plus exact `bytes` and `sha256`; `repository` is the reviewed absolute
 ordinary source tree. `sourcePins` lists unique relative `path`, `bytes` and
 `sha256` rows, including the CLI, fixed preflight, pure contract, admission,
-catalog, fixed ledger, spending and signer contracts/probe and every source/package row in that catalog. The manifest cannot
+catalogs for both CLIs, fixed provider/ledger/spending/signer contracts/probe and every source/package row in both catalogs. The manifest cannot
 choose executable arguments, import conditions, a module or package resolver.
 Declared pins establish byte equality, not operator identity or authenticity.
 
-`fixturePins` binds the following eight fixed names in the owned scratch directory:
+`fixturePins` binds the following twelve fixed names in the owned scratch directory:
 
 | Key | File | Maximum bytes |
 | --- | --- | ---: |
@@ -156,13 +201,21 @@ Declared pins establish byte equality, not operator identity or authenticity.
 | `recoveryReply` | `recovery-reply.jsonl` | 4096 |
 | `ledgerProfile` | `ledger-profile.json` | 65536 |
 | `signerProfile` | `signer-profile.json` | 16384 |
+| `providerProfile` | `provider-profile.json` | 262144 |
+| `providerJournalProfile` | `provider-journal-profile.json` | 8192 |
+| `providerActivation` | `provider-activation.json` | 1024 |
+| `providerTls` | `provider-tls.bin` | 131080 |
 | `credential` | `credential.bin` | exactly 32 |
 
 Files must be private, owned regular files with one link and no symlink
-ancestors. Every payer, spending and recovery/backend database path and allowed
+ancestors. Every payer, spending, provider intake, observer, journal and recovery/backend path and allowed
 root must remain beneath this task's own scratch; operator data directories
-are refused. Bootstrap is 1-60000 ms; one total deadline of 1-120000 ms spans
-preflight, both application processes and the two fixed ledger probes.
+are refused. The four explicit FRESH database paths must be distinct and absent;
+the journal directory must be absent and the selected private observer root
+empty. Bootstrap is 1-60000 ms; one total deadline of 1-120000 ms spans
+preflight, journal initialization, provider lifetime, both buyer application
+processes and the two fixed ledger probes. The separately bounded provider
+command/execution/start/close allowances do not renew this parent deadline.
 Immediately before each probe launch, the parent wraps the seven selected text
 inputs with a remaining opening allowance in milliseconds. The fixed probe
 captures an observed local monotonic deadline before reading that envelope and
@@ -184,7 +237,7 @@ entry. Binary hashing streams 64-KiB chunks without copying the runtime.
 
 Each exact reply has its existing aggregate cap; unexpected stdout is refused
 and application stderr is capped at 64 KiB. Preflight stdout/stderr are capped
-at 4096/128 bytes. Each ledger probe has a 4096-byte output and 64-KiB stderr
+at 8192/128 bytes. Each ledger probe has a 4096-byte output and 64-KiB stderr
 cap. No full ledger snapshot or second database copy is written by the probe;
 only bounded observations/digests are retained; raw signer/checkpoint bytes never enter probe stdout. Raw bounded observations and per-process outcomes are kept
 under a newly created private `linux-cli-acceptance` directory. The first
@@ -200,6 +253,6 @@ There is no automatic second opener after UNKNOWN. Known Python buffers are
 cleared where possible; complete secret erasure is not established.
 
 The source candidate supplies no installer, TLS/key/proof generator, network
-discovery, provider launcher, real funding, SDK PREPARE, CI change or CI retry.
+discovery, arbitrary provider command, real funding, SDK PREPARE, CI change or CI retry.
 Its current qualification is the pure transcript/ledger/spending/signer preflight over declared
 memory DATA plus parser checks. Runtime integration remains unexecuted.
