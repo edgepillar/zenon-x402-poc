@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "currentDATAFailures": [],
+  "nativeRuns": [],
+  "preservedMetadataRefusals": [
+    {
+      "kind": "READ_QUERY_GENERATION_SYNTAX_ERROR",
+      "filesWritten": 0,
+      "taskCreated": false,
+      "actualDATACommands": 0
+    },
+    {
+      "kind": "REVIEW_ASCII_ASSERTION",
+      "filesWritten": 0,
+      "taskCreated": false,
+      "actualDATACommands": 0,
+      "correction": "English doc en-dash normalized before review"
+    }
+  ],
+  "earlierPassingSource": {
+    "status": "PASS",
+    "cases": 28,
+    "currentSource": false,
+    "reclassified": false
+  },
+  "changesAfterFirstPass": [
+    "Bind displayed prepare/funding hashes to the independently validated original checkpoint query.",
+    "Constrain future native fixture database paths to the owned task scratch."
+  ],
+  "parserRepeatedForMetadata": false,
+  "nativeAcceptance": "NOT_ESTABLISHED"
+}

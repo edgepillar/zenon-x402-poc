@@ -1,0 +1,152 @@
+{
+  "version": 1,
+  "qualification": "G1_LINUX_CLI_ACCEPTANCE_PREFLIGHT_DATA",
+  "scope": "PURE_PREFLIGHT_DATA_AND_SOURCE_PARSER_ONLY",
+  "status": "PASS",
+  "sourceBaseline": "5cbc4f831f6f3467abf602ab14e45e5ee8787355",
+  "passed": 28,
+  "failed": 0,
+  "cases": [
+    {
+      "id": "real-106-command-grammar-validates-100-distinct-originals-one-replay-and-keyless-read",
+      "status": "PASS"
+    },
+    {
+      "id": "fixture-pins-bind-every-exact-private-input-without-echoing-it",
+      "status": "PASS"
+    },
+    {
+      "id": "accessor-proxy-and-extra-field-inputs-never-enter-user-code",
+      "status": "PASS"
+    },
+    {
+      "id": "missing-or-extra-command-never-becomes-a-shorter-product-scenario",
+      "status": "PASS"
+    },
+    {
+      "id": "missing-close-and-a-second-funding-attempt-refuse",
+      "status": "PASS"
+    },
+    {
+      "id": "duplicate-correlation-ids-refuse-before-a-child-or-key",
+      "status": "PASS"
+    },
+    {
+      "id": "99-distinct-requests-plus-an-early-repeat-cannot-count-as-100",
+      "status": "PASS"
+    },
+    {
+      "id": "a-replay-must-retain-the-complete-original-proof-and-request-bytes",
+      "status": "PASS"
+    },
+    {
+      "id": "modified-grant-and-proof-identities-refuse",
+      "status": "PASS"
+    },
+    {
+      "id": "a-first-call-marked-replayed-cannot-hide-absent-dispatch-observation",
+      "status": "PASS"
+    },
+    {
+      "id": "the-exact-replay-cannot-claim-another-dispatch",
+      "status": "PASS"
+    },
+    {
+      "id": "changed-replay-result-bytes-are-not-the-historical-response",
+      "status": "PASS"
+    },
+    {
+      "id": "unexpected-missing-or-a-close-result-frame-refuses",
+      "status": "PASS"
+    },
+    {
+      "id": "reply-correlation-and-order-are-exact",
+      "status": "PASS"
+    },
+    {
+      "id": "unknown-funding-is-not-a-clean-handoff-fixture",
+      "status": "PASS"
+    },
+    {
+      "id": "declared-success-does-not-become-delivery-or-grant-authority",
+      "status": "PASS"
+    },
+    {
+      "id": "prepare-output-cannot-silently-select-new-independent-pins",
+      "status": "PASS"
+    },
+    {
+      "id": "committed-pins-and-submit-pins-must-be-the-same-predeclared-original",
+      "status": "PASS"
+    },
+    {
+      "id": "ready-query-profile-must-pass-the-existing-original-byte-contract",
+      "status": "PASS"
+    },
+    {
+      "id": "fresh-read-uses-the-same-checkpoint-grant-and-original-header",
+      "status": "PASS"
+    },
+    {
+      "id": "fresh-read-cannot-select-a-second-request-or-a-new-proof",
+      "status": "PASS"
+    },
+    {
+      "id": "fresh-read-must-reopen-the-original-payer-file",
+      "status": "PASS"
+    },
+    {
+      "id": "backend-only-cache-does-not-prove-the-retained-local-response",
+      "status": "PASS"
+    },
+    {
+      "id": "recovered-result-must-match-the-first-original-result-byte-for-byte",
+      "status": "PASS"
+    },
+    {
+      "id": "recovered-success-retains-all-no-authority-and-uncertainty-fields",
+      "status": "PASS"
+    },
+    {
+      "id": "canonical-framing-and-eof-are-required-in-each-transcript",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-public-bootstrap-keeps-work-fields-out-of-the-product-run",
+      "status": "PASS"
+    },
+    {
+      "id": "configured-byte-limits-are-not-raised-for-the-harness",
+      "status": "PASS"
+    }
+  ],
+  "runtimeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25",
+  "actualCurrentDataCommands": 1,
+  "allActualDataCommands": 2,
+  "actualNodeParserCommands": 1,
+  "pythonSourceCompile": "PASS_NOT_EXECUTED",
+  "sourceInputCount": 95,
+  "runtimeInputSeal": "3d57d8140440bddf20d9ed995a9bdac6a46018352855669f80844eac5c1039cc",
+  "rawStdout": {
+    "sha256": "7bfce54ec329c0a300ecb057f33ddf402ead9e455ef868b402385b65f18aa392",
+    "bytes": 2714
+  },
+  "earlierPassingRevisionPreserved": true,
+  "priorCurrentControlsRetainedExact": 2301,
+  "priorCurrentNodeParserOriginsRetainedExact": 52,
+  "applicationNativeCommands": 0,
+  "installedSDKOrCoreEvaluation": 0,
+  "SQLite": 0,
+  "sockets": 0,
+  "keys": 0,
+  "signatures": 0,
+  "nonceSearches": 0,
+  "nodeChildren": 0,
+  "LinuxProcessProtocol": "NOT_EXECUTED",
+  "providerLedgerAcceptance": "NOT_ESTABLISHED",
+  "G1": "OPEN",
+  "G2": "OPEN",
+  "workflowChanged": false,
+  "hostedCIControls": 108,
+  "hostedCIInputs": 22
+}
