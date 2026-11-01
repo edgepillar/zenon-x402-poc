@@ -1,0 +1,246 @@
+{
+  "version": 1,
+  "scope": "PURE_LEDGER_AND_TRANSCRIPT_DATA_PLUS_SOURCE_PARSER_ONLY",
+  "status": "PASS",
+  "sourceBaseline": "36279f146f176e20f3304dbc4d0875d1e43ba9fa",
+  "newPassed": 25,
+  "affectedPassed": 28,
+  "failed": 0,
+  "newCases": [
+    {
+      "id": "one-original-grant-100-real-model-debits-and-execution-contract-results-match",
+      "status": "PASS"
+    },
+    {
+      "id": "selection-retains-the-existing-106-command-and-independent-original-preflight",
+      "status": "PASS"
+    },
+    {
+      "id": "database-and-limits-are-the-same-explicit-recovery-backend",
+      "status": "PASS"
+    },
+    {
+      "id": "missing-cost-or-a-raised-unit-price-cannot-select-a-different-scenario",
+      "status": "PASS"
+    },
+    {
+      "id": "snapshot-payload-and-output-digests-do-not-echo-originals-or-proof-data",
+      "status": "PASS"
+    },
+    {
+      "id": "stale-execution-revision-refuses",
+      "status": "PASS"
+    },
+    {
+      "id": "changed-ledger-between-bracketing-reads-refuses-even-with-a-new-valid-checksum",
+      "status": "PASS"
+    },
+    {
+      "id": "tampered-public-ledger-checksum-refuses",
+      "status": "PASS"
+    },
+    {
+      "id": "missing-or-extra-request-cannot-be-counted-as-100",
+      "status": "PASS"
+    },
+    {
+      "id": "missing-execution-with-100-successful-ledger-rows-refuses",
+      "status": "PASS"
+    },
+    {
+      "id": "another-original-payment-cannot-be-used-for-the-selected-grant",
+      "status": "PASS"
+    },
+    {
+      "id": "changed-purchase-lifetime-does-not-renew-the-original-grant",
+      "status": "PASS"
+    },
+    {
+      "id": "changed-request-identity-refuses-even-with-the-same-request-count",
+      "status": "PASS"
+    },
+    {
+      "id": "cached-result-must-match-the-original-response-and-execution-commitment",
+      "status": "PASS"
+    },
+    {
+      "id": "a-successful-execution-with-another-result-commitment-refuses",
+      "status": "PASS"
+    },
+    {
+      "id": "unit-counters-must-preserve-the-purchased-total-and-no-held-units",
+      "status": "PASS"
+    },
+    {
+      "id": "unknown-or-unfenced-execution-never-becomes-a-successful-run",
+      "status": "PASS"
+    },
+    {
+      "id": "canonical-bounded-snapshot-strings-are-required",
+      "status": "PASS"
+    },
+    {
+      "id": "one-owned-read-orders-ledger-execution-ledger-and-void-close-before-output",
+      "status": "PASS"
+    },
+    {
+      "id": "throwing-read-retains-the-owner-without-close-or-a-second-attempt",
+      "status": "PASS"
+    },
+    {
+      "id": "opaque-read-receipts-do-not-enter-then-getters-or-force-close",
+      "status": "PASS"
+    },
+    {
+      "id": "known-semantic-conflict-closes-once-and-withholds-observation",
+      "status": "PASS"
+    },
+    {
+      "id": "nonvoid-or-throwing-close-never-publishes-or-retries",
+      "status": "PASS"
+    },
+    {
+      "id": "copied-tokens-and-proxy-callbacks-cannot-acquire-a-store-read",
+      "status": "PASS"
+    },
+    {
+      "id": "successful-history-retains-none-authority-and-open-native-gates",
+      "status": "PASS"
+    }
+  ],
+  "affectedCases": [
+    {
+      "id": "real-106-command-grammar-validates-100-distinct-originals-one-replay-and-keyless-read",
+      "status": "PASS"
+    },
+    {
+      "id": "fixture-pins-bind-every-exact-private-input-without-echoing-it",
+      "status": "PASS"
+    },
+    {
+      "id": "accessor-proxy-and-extra-field-inputs-never-enter-user-code",
+      "status": "PASS"
+    },
+    {
+      "id": "missing-or-extra-command-never-becomes-a-shorter-product-scenario",
+      "status": "PASS"
+    },
+    {
+      "id": "missing-close-and-a-second-funding-attempt-refuse",
+      "status": "PASS"
+    },
+    {
+      "id": "duplicate-correlation-ids-refuse-before-a-child-or-key",
+      "status": "PASS"
+    },
+    {
+      "id": "99-distinct-requests-plus-an-early-repeat-cannot-count-as-100",
+      "status": "PASS"
+    },
+    {
+      "id": "a-replay-must-retain-the-complete-original-proof-and-request-bytes",
+      "status": "PASS"
+    },
+    {
+      "id": "modified-grant-and-proof-identities-refuse",
+      "status": "PASS"
+    },
+    {
+      "id": "a-first-call-marked-replayed-cannot-hide-absent-dispatch-observation",
+      "status": "PASS"
+    },
+    {
+      "id": "the-exact-replay-cannot-claim-another-dispatch",
+      "status": "PASS"
+    },
+    {
+      "id": "changed-replay-result-bytes-are-not-the-historical-response",
+      "status": "PASS"
+    },
+    {
+      "id": "unexpected-missing-or-a-close-result-frame-refuses",
+      "status": "PASS"
+    },
+    {
+      "id": "reply-correlation-and-order-are-exact",
+      "status": "PASS"
+    },
+    {
+      "id": "unknown-funding-is-not-a-clean-handoff-fixture",
+      "status": "PASS"
+    },
+    {
+      "id": "declared-success-does-not-become-delivery-or-grant-authority",
+      "status": "PASS"
+    },
+    {
+      "id": "prepare-output-cannot-silently-select-new-independent-pins",
+      "status": "PASS"
+    },
+    {
+      "id": "committed-pins-and-submit-pins-must-be-the-same-predeclared-original",
+      "status": "PASS"
+    },
+    {
+      "id": "ready-query-profile-must-pass-the-existing-original-byte-contract",
+      "status": "PASS"
+    },
+    {
+      "id": "fresh-read-uses-the-same-checkpoint-grant-and-original-header",
+      "status": "PASS"
+    },
+    {
+      "id": "fresh-read-cannot-select-a-second-request-or-a-new-proof",
+      "status": "PASS"
+    },
+    {
+      "id": "fresh-read-must-reopen-the-original-payer-file",
+      "status": "PASS"
+    },
+    {
+      "id": "backend-only-cache-does-not-prove-the-retained-local-response",
+      "status": "PASS"
+    },
+    {
+      "id": "recovered-result-must-match-the-first-original-result-byte-for-byte",
+      "status": "PASS"
+    },
+    {
+      "id": "recovered-success-retains-all-no-authority-and-uncertainty-fields",
+      "status": "PASS"
+    },
+    {
+      "id": "canonical-framing-and-eof-are-required-in-each-transcript",
+      "status": "PASS"
+    },
+    {
+      "id": "non-dp-public-bootstrap-keeps-work-fields-out-of-the-product-run",
+      "status": "PASS"
+    },
+    {
+      "id": "configured-byte-limits-are-not-raised-for-the-harness",
+      "status": "PASS"
+    }
+  ],
+  "retainedExactControls": 2301,
+  "currentSourceBoundControls": 2354,
+  "actualPassingDATACommands": 2,
+  "allActualDATACommandsIncludingRetainedFailure": 6,
+  "actualNodeParserCommands": 2,
+  "retainedExactParserOrigins": 52,
+  "currentParserOrigins": 54,
+  "pythonSourceCompile": "PASS_NOT_EXECUTED",
+  "nativeExecutions": 0,
+  "actualSQLite": 0,
+  "installedSDKOrCoreEvaluation": 0,
+  "sockets": 0,
+  "keys": 0,
+  "signatures": 0,
+  "nonceSearches": 0,
+  "LinuxHarness": "NOT_EXECUTED",
+  "atomicSnapshot": false,
+  "physicalRelease": "NOT_ESTABLISHED",
+  "G0G5Acceptance": "OPEN",
+  "workflowChanged": false,
+  "hostedCIControls": 108
+}

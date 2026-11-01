@@ -17,13 +17,15 @@ import sys
 import time
 
 CAPS = {"runProfile": 262144, "commands": 2097152, "runReplies": 2097152,
-        "recoveryProfile": 65536, "recoveryReply": 4096}
+        "recoveryProfile": 65536, "recoveryReply": 4096, "ledgerProfile": 65536}
 FILES = {"runProfile": "run-profile.json", "commands": "run-commands.jsonl",
          "runReplies": "run-replies.jsonl", "recoveryProfile": "recovery-profile.json",
-         "recoveryReply": "recovery-reply.jsonl", "credential": "credential.bin"}
+         "recoveryReply": "recovery-reply.jsonl", "ledgerProfile": "ledger-profile.json", "credential": "credential.bin"}
 ENTRY = "src/api-credit-cli.js"
 PREFLIGHT = "qualification/api-credit-linux-acceptance-preflight.mjs"
 CONTRACT = "qualification/api-credit-linux-acceptance-contract.mjs"
+LEDGER_CONTRACT = "qualification/api-credit-linux-ledger-contract.mjs"
+LEDGER_PROBE = "qualification/api-credit-linux-ledger-probe.mjs"
 
 
 def require(condition):
@@ -101,7 +103,8 @@ def verify_sources(repo, rows):
         pins[name] = {"bytes": row["bytes"], "sha256": row["sha256"]}
         data = checked(repo / name, 2097152)
         require(pin(data) == {"bytes": row["bytes"], "sha256": row["sha256"]})
-    require({ENTRY, PREFLIGHT, CONTRACT, "src/api-credit-native-package-admission.js", "src/api-credit-module-catalog.json"}.issubset(seen))
+    require({ENTRY, PREFLIGHT, CONTRACT, LEDGER_CONTRACT, LEDGER_PROBE,
+             "src/api-credit-native-package-admission.js", "src/api-credit-module-catalog.json"}.issubset(seen))
     catalog = json.loads(checked(repo / "src/api-credit-module-catalog.json", 262144))
     require(catalog["version"] == 1 and type(catalog["rows"]) is list and len(catalog["rows"]) <= 1024)
     for row in catalog["rows"]:
@@ -125,16 +128,19 @@ def fixture_paths(scratch, data):
                 require(not stat.S_ISLNK(ancestor.lstat().st_mode))
 
 
-def preflight_process(node, repo, outdir, payload, deadline, environment):
+def bounded_stage(node, repo, outdir, payload, deadline, environment, stage):
     # Popen.communicate/run timeout helpers are deliberately avoided: run's
     # timeout can kill the child, and communicate accumulates complete output.
-    child = subprocess.Popen([str(node), PREFLIGHT], cwd=repo, env=environment,
+    require(stage in ("preflight", "ledger-before", "ledger-after"))
+    require(time.monotonic() < deadline)
+    entry = PREFLIGHT if stage == "preflight" else LEDGER_PROBE
+    child = subprocess.Popen([str(node), entry], cwd=repo, env=environment,
                              stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False)
     report = {"status": "UNKNOWN", "pid": child.pid, "signalsSent": 0, "childExit": None}
     selector = selectors.DefaultSelector(); offset = 0; sizes = {"stdout": 0, "stderr": 0}
     try:
-        with fresh_file(outdir / "preflight.stdout.private.json") as out, fresh_file(outdir / "preflight.stderr.private.bin") as err:
-            streams = {child.stdout.fileno(): (out, "stdout", 4096), child.stderr.fileno(): (err, "stderr", 128)}
+        with fresh_file(outdir / (stage + ".stdout.private.json")) as out, fresh_file(outdir / (stage + ".stderr.private.bin")) as err:
+            streams = {child.stdout.fileno(): (out, "stdout", 4096), child.stderr.fileno(): (err, "stderr", 128 if stage == "preflight" else 65536)}
             for stream in (child.stdin, child.stdout, child.stderr):
                 os.set_blocking(stream.fileno(), False)
             selector.register(child.stdin, selectors.EVENT_WRITE)
@@ -156,14 +162,26 @@ def preflight_process(node, repo, outdir, payload, deadline, environment):
                     except BlockingIOError:
                         continue
             require(offset == len(payload) and deadline > time.monotonic())
-            require(child.wait(timeout=deadline - time.monotonic()) == 0 and sizes["stderr"] == 0)
-            report["status"] = "PREFLIGHT_PROCESS_PASS"
+            require(child.wait(timeout=deadline - time.monotonic()) == 0)
+            require(stage != "preflight" or sizes["stderr"] == 0)
+            report["status"] = "BOUNDED_STAGE_PROCESS_PASS"
     finally:
         selector.close()
         for stream in (child.stdin, child.stdout, child.stderr):
             stream.close()
         report["childExit"] = child.poll(); report["childObservedLive"] = report["childExit"] is None
-        save(outdir / "preflight.process.private.json", report)
+        save(outdir / (stage + ".process.private.json"), report)
+
+
+def ledger_stage(node, repo, outdir, payload, deadline, environment, stage, expected_node, source_pins, selection_digest):
+    verify_sources(repo, source_pins); require(binary_pin(node) == expected_node)
+    bounded_stage(node, repo, outdir, payload, deadline, environment, stage)
+    observed = json.loads(checked(outdir / (stage + ".stdout.private.json"), 4096, True))
+    require(observed["status"] == "LEDGER_OBSERVATION_MATCHED" and observed["selectionDigest"] == selection_digest
+            and observed["storeCloseReturned"] is True and observed["authority"] == "NONE"
+            and observed["grants"] == 1 and observed["requests"] == observed["successfulExecutions"] == 100
+            and observed["physicalRelease"] == "NOT_ESTABLISHED" and observed["atomicSnapshot"] is False)
+    return observed
 
 
 def exchange(node, repo, outdir, name, profile, credential, commands, expected, bootstrap_ms, deadline, environment):
@@ -171,6 +189,7 @@ def exchange(node, repo, outdir, name, profile, credential, commands, expected, 
     socket-backed extra stdio. Only this call's child ends are inherited.
     Every next command waits for the complete, predeclared preceding reply.
     """
+    require(time.monotonic() < deadline)
     writers = []
     child_ends = []
     all_fds = set()
@@ -203,6 +222,7 @@ def exchange(node, repo, outdir, name, profile, credential, commands, expected, 
             args += ["--profile-fd", str(profile_fd), "--key-fd", str(key_fd),
                      "--input-fd", str(command_read), "--output-fd", str(output_write)]
         args += ["--bootstrap-ms", str(bootstrap_ms)]
+        require(time.monotonic() < deadline)
         child = subprocess.Popen(args, cwd=repo, env=environment, stdin=subprocess.DEVNULL,
                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True,
                                  pass_fds=tuple(child_ends), shell=False)
@@ -299,7 +319,7 @@ def main():
     require(scratch.is_absolute() and scratch.is_dir() and scratch.stat().st_uid == os.getuid() and scratch.stat().st_mode & 0o077 == 0)
     manifest_path = Path(sys.argv[2]); require(manifest_path.parent == scratch)
     manifest = json.loads(checked(manifest_path, 262144, True))
-    require(set(manifest) == {"version", "node", "repository", "sourcePins", "fixturePins", "bootstrapMs", "totalMs"} and manifest["version"] == 1)
+    require(set(manifest) == {"version", "node", "repository", "sourcePins", "fixturePins", "bootstrapMs", "totalMs"} and manifest["version"] == 2)
     require(type(manifest["bootstrapMs"]) is int and 1 <= manifest["bootstrapMs"] <= 60000)
     require(type(manifest["totalMs"]) is int and 1 <= manifest["totalMs"] <= 120000)
     require(set(manifest["node"]) == {"path", "bytes", "sha256"})
@@ -319,9 +339,10 @@ def main():
     # Preflight does not read the credential. The fixed file imports only DATA
     # contracts; the subsequent two children use the actual existing CLI.
     payload = json.dumps({k: v.decode("utf-8") for k, v in data.items()}, ensure_ascii=True, separators=(",", ":")).encode()
-    preflight_process(node, repo, outdir, payload, deadline, environment)
+    bounded_stage(node, repo, outdir, payload, deadline, environment, "preflight")
     preflight = json.loads(checked(outdir / "preflight.stdout.private.json", 4096, True))
-    require(preflight["status"] == "PREFLIGHT_PASS" and preflight["inputPins"] == {k: pin(v) for k, v in data.items()})
+    require(preflight["status"] == "PREFLIGHT_PASS" and preflight["version"] == 2
+            and preflight["inputPins"] == {k: pin(v) for k, v in data.items()})
     credential = bytearray(checked(scratch / FILES["credential"], 32, True))
     require(len(credential) == 32 and pin(credential) == manifest["fixturePins"]["credential"])
     try:
@@ -334,15 +355,20 @@ def main():
     finally:
         credential[:] = b"\0" * len(credential)
     require(run["status"] == "PROCESS_PROTOCOL_PASS" and run["childObservedLive"] is False)
+    before = ledger_stage(node, repo, outdir, payload, deadline, environment, "ledger-before",
+                          expected_node, manifest["sourcePins"], preflight["selectionDigest"])
     verify_sources(repo, manifest["sourcePins"])
     require(binary_pin(node) == expected_node)
     recovery = exchange(node, repo, outdir, "recovery", data["recoveryProfile"], None, [],
                         [data["recoveryReply"]], manifest["bootstrapMs"], deadline, environment)
     require(recovery["status"] == "PROCESS_PROTOCOL_PASS" and recovery["childObservedLive"] is False)
-    save(outdir / "result.private.json", {"version": 1, "status": "PROCESS_PROTOCOL_PASS", "preflight": preflight,
-         "applicationProcesses": 2, "preflightProcesses": 1, "signalsSent": 0, "automaticRetries": 0,
-         "providerLedgerAcceptance": "NOT_ESTABLISHED", "G1Acceptance": "NOT_ESTABLISHED", "G2Acceptance": "NOT_ESTABLISHED"})
-    print("API_CREDIT_LINUX_PROCESS_PROTOCOL_PASS")
+    after = ledger_stage(node, repo, outdir, payload, deadline, environment, "ledger-after",
+                         expected_node, manifest["sourcePins"], preflight["selectionDigest"])
+    require(before == after)
+    save(outdir / "result.private.json", {"version": 2, "status": "PROCESS_AND_LEDGER_OBSERVATIONS_MATCHED", "preflight": preflight,
+         "applicationProcesses": 2, "preflightProcesses": 1, "ledgerProbeProcesses": 2, "ledgerObservation": after,
+         "signalsSent": 0, "automaticRetries": 0, "G1Acceptance": "NOT_ESTABLISHED", "G2Acceptance": "NOT_ESTABLISHED"})
+    print("API_CREDIT_LINUX_PROCESS_AND_LEDGER_OBSERVATIONS_MATCHED")
 
 
 if __name__ == "__main__":

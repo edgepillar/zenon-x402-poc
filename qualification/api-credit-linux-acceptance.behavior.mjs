@@ -162,6 +162,7 @@ check('configured-byte-limits-are-not-raised-for-the-harness', async () => {
   await refused(f => { const r = JSON.parse(f.runProfile); r.limits = { maxLineBytes: 256 }; f.runProfile = canonicalJson(r); });
 });
 
+export const createApiCreditLinuxAcceptanceDataFixture = fixture;
 export const apiCreditLinuxAcceptanceDataCases = F(checks);
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const cases = [];

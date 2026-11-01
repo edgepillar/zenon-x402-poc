@@ -1,0 +1,74 @@
+{
+  "version": 1,
+  "currentDATAFailures": [],
+  "retainedFailures": [
+    {
+      "rawQualificationStatus": "UNKNOWN",
+      "actualDATAStatus": "FAIL",
+      "passed": 0,
+      "failed": 1,
+      "classification": "HARNESS_FIXTURE_ACTIVATION_VERSION",
+      "taskState": "CLOSED",
+      "taskOutcome": "FAILURE",
+      "actualDATACommands": 1,
+      "actualParserCommands": 0,
+      "originalSourcePreserved": true,
+      "reclassified": false,
+      "correction": "Declared memory activation uses existing Zenon v2/evidence-v1 shape; no signature or evidence authentication."
+    },
+    {
+      "rawQualificationStatus": "UNKNOWN",
+      "actualDATAStatus": "FAIL",
+      "passed": 0,
+      "failed": 1,
+      "classification": "HARNESS_PREFLIGHT_ORIGINAL_WIRE_GRAMMAR",
+      "taskState": "CLOSED",
+      "taskOutcome": "FAILURE",
+      "actualDATACommands": 1,
+      "actualParserCommands": 0,
+      "originalSourcePreserved": true,
+      "reclassified": false,
+      "correction": "Retain the fixed field order already required by the real original-request codec; never rewrite request bytes or relax the wire codec."
+    },
+    {
+      "rawQualificationStatus": "UNKNOWN",
+      "actualDATAStatus": "FAIL",
+      "passed": 0,
+      "failed": 1,
+      "classification": "UNRESOLVED_PREFLIGHT_STAGE",
+      "taskState": "CLOSED",
+      "taskOutcome": "FAILURE",
+      "actualDATACommands": 1,
+      "actualParserCommands": 0,
+      "originalSourcePreserved": true,
+      "reclassified": false,
+      "correction": "Add bounded fixed source-stage diagnostics; native stderr stays unchanged and no raw data is exposed. Root cause is not established yet."
+    },
+    {
+      "rawQualificationStatus": "UNKNOWN",
+      "actualDATAStatus": "FAIL",
+      "passed": 0,
+      "failed": 1,
+      "classification": "FIXTURE_RECOVERY_SELECTED_GRANT_MISMATCH",
+      "taskState": "CLOSED",
+      "taskOutcome": "FAILURE",
+      "actualDATACommands": 1,
+      "actualParserCommands": 0,
+      "originalSourcePreserved": true,
+      "reclassified": false,
+      "correction": "Keep the payer profile selectedGrantId identical to the same retained selection/request grant. No original-byte or codec rule is relaxed."
+    }
+  ],
+  "diagnosticClarification": "The V2/V3 field-order hypothesis was not the observed first refusal. V4 bounded diagnostics identify SELECTION_BASE; the fixture left payerOptions.selectedGrantId on its old grant. The independent source field-order bug was also corrected without changing the original wire contract. Every earlier actual FAILURE/UNKNOWN is preserved.",
+  "preservedMetadataRefusals": [
+    {
+      "kind": "PATCH_CONTEXT_REFUSAL",
+      "attempts": 2,
+      "filesWritten": 0,
+      "taskCreated": false,
+      "DATACommands": 0
+    }
+  ],
+  "nativeRuns": [],
+  "nativeAcceptance": "NOT_ESTABLISHED"
+}
