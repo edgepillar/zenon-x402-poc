@@ -1,6 +1,7 @@
 import process from 'node:process';
 import { pathToFileURL } from 'node:url';
 import { captureApiCreditCliExecutionContext } from './api-credit-cli-execution-context.js';
+import { isApiCreditPublicProfileRefusal, API_CREDIT_PUBLIC_PROFILE_REFUSAL_STDERR } from './api-credit-operator-result.js';
 
 const HELP = 'API credit operator source candidate (native acceptance is OPEN).\n'
   + 'node src/api-credit-cli.js --profile-fd 3 --key-fd 4 --input-fd 5 --output-fd 6 --bootstrap-ms 1000\n'
@@ -78,7 +79,8 @@ export async function runApiCreditCli(argv) {
   }
   // Never append status to the already-owned/closed command result pipe.
   process.stderr.write(result.exitCode === 0 ? 'API_CREDIT_OPERATOR_CLOSED\n'
-    : result.exitCode === 1 ? 'API_CREDIT_OPERATOR_BOOTSTRAP_REFUSED\n' : 'API_CREDIT_OPERATOR_CLOSE_UNKNOWN\n');
+    : result.exitCode === 1 ? args.mode === 'RUN' && isApiCreditPublicProfileRefusal(result)
+      ? API_CREDIT_PUBLIC_PROFILE_REFUSAL_STDERR : 'API_CREDIT_OPERATOR_BOOTSTRAP_REFUSED\n' : 'API_CREDIT_OPERATOR_CLOSE_UNKNOWN\n');
   return result.exitCode;
 }
 

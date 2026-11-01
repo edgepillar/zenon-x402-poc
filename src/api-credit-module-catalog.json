@@ -2451,8 +2451,8 @@
     },
     {
       "path": "src/api-credit-cli.js",
-      "bytes": 6249,
-      "sha256": "be1c7f390482add8d2b9299ebdad389f83c3daad3e4498f87f0f2773b9aeb1ed",
+      "bytes": 6488,
+      "sha256": "5268fe93b49c2faf634b7627de8cf1dee5312208d4720db57e16516d0d1c528c",
       "format": "module"
     },
     {
@@ -2505,8 +2505,14 @@
     },
     {
       "path": "src/api-credit-operator-coordinator.js",
-      "bytes": 17892,
-      "sha256": "539c703bcfb75abc83a8935ae3619e261dad69e59bfe0530a2a9fdf422924083",
+      "bytes": 18407,
+      "sha256": "41cb8f0c895ba6b750039e9c4977a60f985c97fa1548766442e732dd4b1eebc0",
+      "format": "module"
+    },
+    {
+      "path": "src/api-credit-operator-result.js",
+      "bytes": 1808,
+      "sha256": "34fd30f9cd16bf50751f3b2ad1558007fef9c31c908c38594df3c11276a1dcf7",
       "format": "module"
     },
     {

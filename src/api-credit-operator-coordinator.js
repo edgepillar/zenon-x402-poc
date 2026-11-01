@@ -52,7 +52,7 @@ function createCoordinator(configuration, nonDp) {
   const frame = { stage: 'PROFILE', prepared: null, profileBytes: null, credential: null, key: null, selection: null, session: null, host: null,
     opening: true, unknown: false, accepted: false, timer: null, current: null, deadline: null, lastClock: null,
     stops: new Map(), inputStop: null, stopUnknown: false, stopTerminal: false, observed: null, selectionTransferred: false,
-    lateOwners: [], lateFacts: [], keyCreationEntered: false, sessionOpeningEntered: false,
+    lateOwners: [], lateFacts: [], publicProfileAdmission: 'NOT_ATTEMPTED', credentialReadEntered: false, keyCreationEntered: false, sessionOpeningEntered: false,
     started: false, finished: false, stopRequested: false, runPromise: null, executionReceipt: null,
     currentHost: null, hostReceipt: null, lateHostReceipt: null, closeWindowEntered: false, closeWindow: null };
   function clock() { const n = p.clock(); if (typeof n !== 'bigint' || frame.lastClock !== null && n < frame.lastClock) fail(); frame.lastClock = n; return n; }
@@ -192,8 +192,12 @@ function createCoordinator(configuration, nonDp) {
       if (types.isProxy(frame.profileBytes) || !Buffer.isBuffer(frame.profileBytes) || Object.getPrototypeOf(frame.profileBytes) !== Buffer.prototype
           || Reflect.apply(LENGTH, frame.profileBytes, []) > 262144 || types.isSharedArrayBuffer(Reflect.apply(ARRAY_BUFFER, frame.profileBytes, []))) fail();
       const text = Reflect.apply(TEXT, frame.profileBytes, ['utf8']); if (!Reflect.apply(EQUALS, Buffer.from(text), [frame.profileBytes])) fail();
-      frame.prepared = (nonDp ? decodeNonDpApiCreditOperatorBootstrap : decodeApiCreditOperatorBootstrap)(text); wipe(frame.profileBytes); frame.profileBytes = null;
-      frame.stage = 'CREDENTIAL'; await opening('CREDENTIAL', stageGuard => p.readCredential(stageGuard)); frame.credential = frame.observed; frame.observed = null; guard();
+      // Attribute only the actual pure decoder refusal. A failed/expired read,
+      // malformed byte view or later credential/owner failure is not this fact.
+      try { frame.prepared = (nonDp ? decodeNonDpApiCreditOperatorBootstrap : decodeApiCreditOperatorBootstrap)(text); }
+      catch { frame.publicProfileAdmission = 'REFUSED'; fail(); }
+      frame.publicProfileAdmission = 'ACCEPTED'; wipe(frame.profileBytes); frame.profileBytes = null;
+      frame.stage = 'CREDENTIAL'; await opening('CREDENTIAL', stageGuard => { frame.credentialReadEntered = true; return p.readCredential(stageGuard); }); frame.credential = frame.observed; frame.observed = null; guard();
       if (types.isProxy(frame.credential) || !Buffer.isBuffer(frame.credential) || Object.getPrototypeOf(frame.credential) !== Buffer.prototype
           || Reflect.apply(LENGTH, frame.credential, []) !== 32 || types.isSharedArrayBuffer(Reflect.apply(ARRAY_BUFFER, frame.credential, []))) fail();
       frame.stage = 'KEY'; await opening('KEY', stageGuard => { frame.keyCreationEntered = true; return p.createKeyLease(frame.credential, frame.prepared.expectedIdentity, stageGuard); });
@@ -234,7 +238,8 @@ function createCoordinator(configuration, nonDp) {
     const success = clean && frame.accepted && frame.host !== null;
     if (!clean) FAILED.add(frame);
     const result = F({ apiCreditOperatorCliVersion: 1, status: success ? 'CLOSED' : clean ? 'BOOTSTRAP_REFUSED' : 'CLOSE_UNKNOWN', exitCode: success ? 0 : clean ? 1 : 4,
-      stage: frame.stage, keyCreationEntered: frame.keyCreationEntered, sessionOpeningEntered: frame.sessionOpeningEntered,
+      stage: frame.stage, publicProfileAdmission: frame.publicProfileAdmission, credentialReadEntered: frame.credentialReadEntered,
+      keyCreationEntered: frame.keyCreationEntered, sessionOpeningEntered: frame.sessionOpeningEntered,
       sessionAccepted: frame.accepted, knownStopsObserved: stopped, keyLease: keyView, historicalObservation: true,
       keyErasure: 'NOT_ESTABLISHED', nativeResourceRelease: 'NOT_ESTABLISHED', serviceDelivery: 'NOT_ESTABLISHED', automaticRetry: false, authority: 'NONE' });
     frame.finished = true; return result;

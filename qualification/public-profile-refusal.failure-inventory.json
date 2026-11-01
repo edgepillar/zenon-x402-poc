@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "currentDataFailures": 0,
+  "currentParserFailures": 0,
+  "unexpectedSkips": 0,
+  "inheritedInventory": {
+    "path": "qualification/linux-service-negative-acceptance.failure-inventory.json",
+    "bytes": 1101,
+    "sha256": "00d9425b7a97d77942e00636620706a82a008d1ccecf2888b089c26ebc3a173f"
+  },
+  "newDataCommands": 2,
+  "affectedDataCommands": 16,
+  "parserCommands": 3,
+  "affectedExistingControlsReexecuted": 858,
+  "unchangedControlsNotReexecuted": 1680,
+  "retainedFailedDATA": [],
+  "retainedPreparationRefusals": [],
+  "inheritedActualDATAFailures": 8,
+  "inheritedRefusalsPreserved": true,
+  "completedDATAOrCIRepeatedForMetadata": false,
+  "nativeQualification": "NOT_EXECUTED",
+  "scope": "SOURCE_AND_DECLARED_MEMORY_ONLY"
+}

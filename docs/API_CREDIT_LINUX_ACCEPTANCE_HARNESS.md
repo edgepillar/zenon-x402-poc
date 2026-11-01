@@ -7,15 +7,15 @@ The harness has not been executed. Native execution remains disabled by the
 current user decision. Do not interpret its DATA preflight results as Linux,
 SDK/core, SQLite, HTTPS, signer, restart or release qualification.
 
-The explicit version-six candidate retains the fixed provider journal, start,
-ACTIVATE and close sequence and adds three selected service authorization
-negatives to the G1 one-funding/100-request
+The explicit version-seven candidate retains the fixed provider journal, start,
+ACTIVATE and close sequence, the three selected service authorization
+negatives and one pre-credential public-offer refusal attempt to the G1 one-funding/100-request
 scenario, persisted provider-ledger, payer spending-budget and retained signer observations,
 and the normal fresh-process original-result read. Full G1 additionally
 requires the actual accepted native run, changed-offer/different-payment and concurrency evidence. G2 still requires
 its specified interruption cutpoints, signer loss,
 stale-owner and physical release or controlled HELD observations. Both gates
-remain OPEN; a `PROVIDER_PROCESS_NEGATIVES_LEDGER_SPENDING_AND_SIGNER_OBSERVATIONS_MATCHED` report is insufficient
+remain OPEN; a `PUBLIC_OFFER_REFUSAL_PROVIDER_NEGATIVES_LEDGER_SPENDING_AND_SIGNER_OBSERVATIONS_MATCHED` report is insufficient
 to close them by itself.
 
 ## Exact scenario
@@ -53,6 +53,8 @@ An independently reviewed synthetic fixture supplies all bytes before launch:
     file. The harness generates no key, certificate, proof or signature.
 12. The closed selected negative profile described below. It changes existing
     proof-bound DATA without generating a cryptographic signature.
+13. A canonical `offerRefusalProfile` with `offerRefusalVersion: 1` and one
+    explicit different positive safe-integer `offerVersion`.
 
 The pure preflight uses the real non-DP bootstrap, command, service-wire,
 ready-query, original-checkpoint and recorded-result codecs. It validates the
@@ -61,7 +63,9 @@ actual prepare output into independent pins or generates a proof, signature,
 grant, payment, replacement or retry. Signature-shaped test strings are not
 authenticated by this preflight. The actual product retains its own checks.
 
-After pure preflight, the parent runs the existing fixed journal initializer
+After pure preflight, the parent first runs the selected public-offer refusal
+attempt described below. Its specific marker, exit and EOF barrier must match
+before the parent runs the existing fixed journal initializer
 with inherited profile/output FIFOs. The exact INITIALIZED response, EOF, zero
 exit and existing clean CLI marker must match before provider startup. The
 provider RUN child receives only its fixed profile/TLS/control/output
@@ -190,17 +194,18 @@ launcher supplies `SPV_TASK_SCRATCH`, its lease, quota, mounted-volume identity,
 global reservations, ten-GiB floor and foreground process-group supervision.
 This harness neither creates/adopts a storage root nor supplies an OS sandbox.
 
-The private manifest has exactly `version: 6`, `node`, `repository`,
+The private manifest has exactly `version: 7`, `node`, `repository`,
 `sourcePins`, `fixturePins`, `bootstrapMs` and `totalMs`. `node` has an absolute
 path plus exact `bytes` and `sha256`; `repository` is the reviewed absolute
 ordinary source tree. `sourcePins` lists unique relative `path`, `bytes` and
 `sha256` rows, including the CLI, fixed preflight, pure contract, admission,
 catalogs for both CLIs, fixed provider/ledger/spending/signer contracts/probe,
-the negative contract/reply/probe modules and every source/package row in both catalogs. The manifest cannot
+the negative contract/reply/probe, offer-refusal contract and every
+source/package row in both catalogs. The manifest cannot
 choose executable arguments, import conditions, a module or package resolver.
 Declared pins establish byte equality, not operator identity or authenticity.
 
-`fixturePins` binds the following thirteen fixed names in the owned scratch directory:
+`fixturePins` binds the following fourteen fixed names in the owned scratch directory:
 
 | Key | File | Maximum bytes |
 | --- | --- | ---: |
@@ -215,6 +220,7 @@ Declared pins establish byte equality, not operator identity or authenticity.
 | `providerJournalProfile` | `provider-journal-profile.json` | 8192 |
 | `providerActivation` | `provider-activation.json` | 1024 |
 | `negativeProfile` | `negative-profile.json` | 8192 |
+| `offerRefusalProfile` | `offer-refusal-profile.json` | 8192 |
 | `providerTls` | `provider-tls.bin` | 131080 |
 | `credential` | `credential.bin` | exactly 32 |
 
@@ -225,7 +231,8 @@ are refused. The four explicit FRESH database paths must be distinct and absent;
 the journal directory must be absent and the selected private observer root
 empty. Bootstrap is 1-60000 ms; one total deadline of 1-120000 ms spans
 preflight, journal initialization, provider lifetime, both buyer application
-processes, the one fixed service-negative probe and the two fixed ledger probes. The separately bounded provider
+processes, the one public-offer refusal attempt, the one fixed service-negative
+probe and the two fixed ledger probes. The separately bounded provider
 command/execution/start/close allowances do not renew this parent deadline.
 Immediately before each ledger probe launch, the parent wraps the seven selected
 text inputs with a remaining opening allowance in milliseconds. The negative
@@ -317,3 +324,41 @@ interruption or physical release. Those acceptance requirements remain open.
 The source-only candidate and pure declared-memory controls do not authenticate
 fixtures or execute the Python harness/native probe, TLS, capability verification,
 SDK/core or SQLite. Current native execution remains disabled. G0-G5 stay OPEN.
+
+## V7 public-offer refusal before provider or credential (unexecuted)
+
+The additional `offer-refusal-profile.json` supplies an explicit offer version
+that differs from the same original purchase. The entire existing V6 selection
+must pass first. The derived public RUN profile changes only
+`purchaseExpectationJson.offer.offerVersion`; the challenge, configuration,
+spending policy and all original/payment/command bytes stay unchanged. The
+actual non-DP product decoder must refuse that DATA profile during preflight.
+No expected profile, pin, version or marker is learned from a process response.
+
+The parent then launches the same fixed buyer CLI RUN entry with four ordinary
+FIFO ends and the mutated public profile. It immediately closes the empty key
+and command writers, providing zero credential bytes and zero commands. The
+result pipe and stdout must remain empty; stderr must terminate in the unique
+`API_CREDIT_OPERATOR_PUBLIC_PROFILE_REFUSED` marker and the child must exit 1
+with complete EOF. The source's known-runtime warning prefix remains bounded.
+A generic BOOTSTRAP_REFUSED, PACKAGE/RUNTIME failure or CLOSE_UNKNOWN cannot pass.
+The actual coordinator attributes that marker only to the decoder refusal with
+no credential port, key factory or application opener entered and a clean known
+input stop. Thus absence of a credential after an accepted profile is not an
+offer-rejection observation. See [the result contract](API_CREDIT_PUBLIC_PROFILE_REFUSAL.md).
+
+Only after that terminal barrier may the existing journal/provider/positive
+buyer scenario start. It still uses the separately selected original profile
+and its one credential. The successful 100 calls, exact replay, three service
+proof mutations, provider close and both whole-original persisted probes remain
+required. The service-negative child receives the same eleven V6 text inputs
+and its own V6 selection digest; the new V7 digest cannot replace that binding.
+There are three buyer CLI processes overall (refusal, positive RUN and keyless
+history), one provider, one journal initializer, one preflight, one service
+negative probe and two ledger probes. The same total deadline remains.
+
+This is an additional fixed acceptance case, not a product retry or automatic
+repair of an unknown operation. Native execution remains disabled. The marker
+is sanitized observation DATA, not authentication or physical-release evidence.
+The actual CLI/package namespace and Linux run remain unexecuted; full G1/G2,
+different-payment handoff, concurrency and interruption requirements stay OPEN.

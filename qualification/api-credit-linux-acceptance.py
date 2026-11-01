@@ -18,12 +18,12 @@ import time
 
 CAPS = {"runProfile": 262144, "commands": 2097152, "runReplies": 2097152,
         "recoveryProfile": 65536, "recoveryReply": 4096, "ledgerProfile": 65536, "signerProfile": 16384,
-        "providerProfile": 262144, "providerJournalProfile": 8192, "providerActivation": 1024, "negativeProfile": 8192}
+        "providerProfile": 262144, "providerJournalProfile": 8192, "providerActivation": 1024, "negativeProfile": 8192, "offerRefusalProfile": 8192}
 FILES = {"runProfile": "run-profile.json", "commands": "run-commands.jsonl",
          "runReplies": "run-replies.jsonl", "recoveryProfile": "recovery-profile.json",
          "recoveryReply": "recovery-reply.jsonl", "ledgerProfile": "ledger-profile.json", "signerProfile": "signer-profile.json", "credential": "credential.bin",
          "providerProfile": "provider-profile.json", "providerJournalProfile": "provider-journal-profile.json",
-         "providerActivation": "provider-activation.json", "providerTls": "provider-tls.bin", "negativeProfile": "negative-profile.json"}
+         "providerActivation": "provider-activation.json", "providerTls": "provider-tls.bin", "negativeProfile": "negative-profile.json", "offerRefusalProfile": "offer-refusal-profile.json"}
 ENTRY = "src/api-credit-cli.js"
 PROVIDER_ENTRY = "src/issued-provider-cli.js"
 PREFLIGHT = "qualification/api-credit-linux-acceptance-preflight.mjs"
@@ -36,7 +36,9 @@ PROVIDER_CONTRACT = "qualification/api-credit-linux-provider-contract.mjs"
 NEGATIVE_CONTRACT = "qualification/api-credit-linux-negative-contract.mjs"
 NEGATIVE_REPLY = "qualification/api-credit-linux-negative-reply.mjs"
 NEGATIVE_PROBE = "qualification/api-credit-linux-negative-probe.mjs"
+OFFER_REFUSAL_CONTRACT = "qualification/api-credit-linux-offer-refusal-contract.mjs"
 BASE_INPUT = ("runProfile", "commands", "runReplies", "recoveryProfile", "recoveryReply", "ledgerProfile", "signerProfile")
+NEGATIVE_INPUT = BASE_INPUT + ("providerProfile", "providerJournalProfile", "providerActivation", "negativeProfile")
 
 
 def canonical_line(value):
@@ -60,6 +62,16 @@ def provider_plan(data):
         "closeCommand": canonical_line(dict(version=1, id="acceptance-close", operation="CLOSE", argument=None)),
         "closeReply": reply("acceptance-close", "CLOSE", dict(status="CLOSED")),
     }
+
+
+def offer_refusal_plan(data):
+    # Same preselected purchase, with exactly one explicit offer-version drift.
+    # The JS preflight binds these bytes and requires the actual decoder refusal.
+    run = json.loads(data["runProfile"]); purchase = json.loads(run["purchaseExpectationJson"])
+    selected = json.loads(data["offerRefusalProfile"])
+    purchase["offer"]["offerVersion"] = selected["offerVersion"]
+    run["purchaseExpectationJson"] = canonical_line(purchase).decode()[:-1]
+    return canonical_line(run)[:-1]
 
 
 def require(condition):
@@ -138,7 +150,7 @@ def verify_sources(repo, rows):
         data = checked(repo / name, 2097152)
         require(pin(data) == {"bytes": row["bytes"], "sha256": row["sha256"]})
     require({ENTRY, PROVIDER_ENTRY, PREFLIGHT, CONTRACT, LEDGER_CONTRACT, BUDGET_CONTRACT, SIGNER_CONTRACT, LEDGER_PROBE,
-             PROVIDER_CONTRACT, NEGATIVE_CONTRACT, NEGATIVE_REPLY, NEGATIVE_PROBE, "src/api-credit-native-package-admission.js", "src/api-credit-module-catalog.json",
+             PROVIDER_CONTRACT, NEGATIVE_CONTRACT, NEGATIVE_REPLY, NEGATIVE_PROBE, OFFER_REFUSAL_CONTRACT, "src/api-credit-native-package-admission.js", "src/api-credit-module-catalog.json",
              "src/issued-provider-native-package-admission.js", "src/issued-provider-module-catalog.json"}.issubset(seen))
     for catalog_path in ("src/api-credit-module-catalog.json", "src/issued-provider-module-catalog.json"):
         catalog = json.loads(checked(repo / catalog_path, 262144))
@@ -434,7 +446,9 @@ def exchange(node, repo, outdir, name, profile, credential, commands, expected, 
     """
     require(time.monotonic() < deadline)
     journal = name == "provider-journal"
+    offer_refusal = name == "offer-refusal"
     require(not journal or credential is None and not commands and peer is None)
+    require(not offer_refusal or credential == b"" and not commands and not expected and peer is None)
     writers = []
     child_ends = []
     all_fds = set()
@@ -458,7 +472,7 @@ def exchange(node, repo, outdir, name, profile, credential, commands, expected, 
             key_fd = incoming(credential)
             command_read, command_write = os.pipe(); all_fds.update((command_read, command_write))
             child_ends.append(command_read)
-            writers.append({"fd": command_write, "data": commands[0], "offset": 0, "commands": True})
+            writers.append({"fd": command_write, "data": b"" if offer_refusal else commands[0], "offset": 0, "commands": not offer_refusal})
         output_read, output_write = os.pipe(); all_fds.update((output_read, output_write)); child_ends.append(output_write)
         require(all(3 <= fd <= 1023 and stat.S_ISFIFO(os.fstat(fd).st_mode) for fd in child_ends))
         args = [str(node), PROVIDER_ENTRY if journal else ENTRY]
@@ -477,7 +491,13 @@ def exchange(node, repo, outdir, name, profile, credential, commands, expected, 
         for fd in child_ends:
             os.close(fd); all_fds.remove(fd)
         for writer in writers:
-            os.set_blocking(writer["fd"], False); selector.register(writer["fd"], selectors.EVENT_WRITE, writer)
+            if not writer["data"]:
+                # Only the pre-key refusal child gets empty EOFs. No credential
+                # file is read, and a later credential EOF cannot pass its marker.
+                require(offer_refusal and not writer["commands"])
+                os.close(writer["fd"]); all_fds.remove(writer["fd"])
+            else:
+                os.set_blocking(writer["fd"], False); selector.register(writer["fd"], selectors.EVENT_WRITE, writer)
         streams = {output_read: ("output", output, sum(map(len, expected))),
                    child.stdout.fileno(): ("stdout", stdout, 0), child.stderr.fileno(): ("stderr", stderr, 65536)}
         sizes = {"output": 0, "stdout": 0, "stderr": 0}
@@ -550,13 +570,15 @@ def exchange(node, repo, outdir, name, profile, credential, commands, expected, 
         require(credential is None or report["commandsWritten"] == len(commands))
         remaining = deadline - time.monotonic(); require(remaining > 0)
         report["childExit"] = child.wait(timeout=remaining)
-        marker = b"ISSUED_PROVIDER_JOURNAL_INITIALIZED\n" if journal else b"API_CREDIT_OPERATOR_CLOSED\n"
-        require(report["childExit"] == 0 and bytes(errors).endswith(marker)
-                and bytes(errors).count(marker) == 1
-                and b"API_CREDIT_OPERATOR_CLOSE_UNKNOWN" not in errors and b"REFUSED" not in errors)
+        marker = (b"API_CREDIT_OPERATOR_PUBLIC_PROFILE_REFUSED\n" if offer_refusal else
+                  b"ISSUED_PROVIDER_JOURNAL_INITIALIZED\n" if journal else b"API_CREDIT_OPERATOR_CLOSED\n")
+        require(report["childExit"] == (1 if offer_refusal else 0) and bytes(errors).endswith(marker)
+                and bytes(errors).count(marker) == 1 and b"API_CREDIT_OPERATOR_CLOSE_UNKNOWN" not in errors
+                and (b"API_CREDIT_OPERATOR_BOOTSTRAP_REFUSED" not in errors if offer_refusal else b"REFUSED" not in errors))
         if peer is not None:
             peer.require_running(); require(report.get("providerActivationMatchedBeforeHandoff") is True)
-        report.update(status="PROCESS_PROTOCOL_PASS", outputEOF=True, stdoutBytes=sizes["stdout"], stderrBytes=sizes["stderr"])
+        report.update(status="PUBLIC_PROFILE_REFUSAL_PROCESS_PASS" if offer_refusal else "PROCESS_PROTOCOL_PASS", outputEOF=True, stdoutBytes=sizes["stdout"], stderrBytes=sizes["stderr"])
+        if offer_refusal: report.update(credentialBytesProvided=0, commandFramesProvided=0, credentialEOFNotUsedAsRefusalEvidence=True)
         return report
     finally:
         if child is not None:
@@ -582,7 +604,7 @@ def main():
     require(scratch.is_absolute() and scratch.is_dir() and scratch.stat().st_uid == os.getuid() and scratch.stat().st_mode & 0o077 == 0)
     manifest_path = Path(sys.argv[2]); require(manifest_path.parent == scratch)
     manifest = json.loads(checked(manifest_path, 262144, True))
-    require(set(manifest) == {"version", "node", "repository", "sourcePins", "fixturePins", "bootstrapMs", "totalMs"} and manifest["version"] == 6)
+    require(set(manifest) == {"version", "node", "repository", "sourcePins", "fixturePins", "bootstrapMs", "totalMs"} and manifest["version"] == 7)
     require(type(manifest["bootstrapMs"]) is int and 1 <= manifest["bootstrapMs"] <= 60000)
     require(type(manifest["totalMs"]) is int and 1 <= manifest["totalMs"] <= 120000)
     require(set(manifest["node"]) == {"path", "bytes", "sha256"})
@@ -600,14 +622,24 @@ def main():
     environment = {"PATH": str(node.parent), "LANG": "C", "TZ": "UTC", "TMPDIR": str(scratch), "NODE_DISABLE_COMPILE_CACHE": "1"}
     deadline = time.monotonic() + manifest["totalMs"] / 1000
     # Pure preflight precedes both TLS material and buyer credential. Its
-    # eleven text inputs are independent; no observed response selects a pin.
+    # twelve text inputs are independent; no observed response selects a pin.
     payload = json.dumps({k: v.decode("utf-8") for k, v in data.items()}, ensure_ascii=True, separators=(",", ":")).encode()
     bounded_stage(node, repo, outdir, payload, deadline, environment, "preflight")
     preflight = json.loads(checked(outdir / "preflight.stdout.private.json", 8192, True))
-    require(preflight["status"] == "PREFLIGHT_PASS" and preflight["version"] == 6
+    require(preflight["status"] == "PREFLIGHT_PASS" and preflight["version"] == 7
             and preflight["inputPins"] == {k: pin(v) for k, v in data.items()})
     plan = provider_plan(data)
     require(preflight["providerReplyPins"] == {k: pin(v) for k, v in plan.items()})
+    # The real fixed CLI must reject the changed public offer before the
+    # provider starts and before this parent reads TLS or credential material.
+    rejected_profile = offer_refusal_plan(data)
+    require(pin(rejected_profile) == preflight["offerRefusalProfilePin"]
+            and pin(b"API_CREDIT_OPERATOR_PUBLIC_PROFILE_REFUSED\n") == preflight["offerRefusalMarkerPin"])
+    verify_sources(repo, manifest["sourcePins"]); require(binary_pin(node) == expected_node)
+    offer_refusal = exchange(node, repo, outdir, "offer-refusal", rejected_profile, b"", [], [],
+                             manifest["bootstrapMs"], deadline, environment)
+    require(offer_refusal["status"] == "PUBLIC_PROFILE_REFUSAL_PROCESS_PASS" and offer_refusal["childObservedLive"] is False
+            and offer_refusal["credentialBytesProvided"] == offer_refusal["commandFramesProvided"] == 0)
     # Explicitly initialize only the selected new private journal. The known
     # close/exit barrier precedes the provider's opener for that same journal.
     verify_sources(repo, manifest["sourcePins"]); require(binary_pin(node) == expected_node)
@@ -637,10 +669,11 @@ def main():
         # preselected service proof mutations run while this provider is live.
         verify_sources(repo, manifest["sourcePins"]); require(binary_pin(node) == expected_node)
         provider.require_running()
-        bounded_stage(node, repo, outdir, payload, deadline, environment, "service-negatives", peer=provider)
+        negative_payload = json.dumps({k: data[k].decode("utf-8") for k in NEGATIVE_INPUT}, ensure_ascii=True, separators=(",", ":")).encode()
+        bounded_stage(node, repo, outdir, negative_payload, deadline, environment, "service-negatives", peer=provider)
         negative = json.loads(checked(outdir / "service-negatives.stdout.private.json", 4096, True))
         require(negative["version"] == 6 and negative["status"] == "SERVICE_NEGATIVE_REPLIES_MATCHED"
-                and negative["selectionDigest"] == preflight["selectionDigest"] and negative["negativeRequests"] == 3
+                and negative["selectionDigest"] == preflight["negativeSelectionDigest"] and negative["negativeRequests"] == 3
                 and [row["kind"] for row in negative["observations"]] == preflight["negativeRequestKinds"]
                 and all(row["statusCode"] == 401 for row in negative["observations"])
                 and negative["authority"] == "NONE" and negative["mayDispatchFunding"] is False
@@ -663,13 +696,13 @@ def main():
     after = ledger_stage(node, repo, outdir, base_payload, deadline, environment, "ledger-after",
                          expected_node, manifest["sourcePins"], preflight["signerSelectionDigest"], preflight["budgetSelectionDigest"])
     require(before == after)
-    save(outdir / "result.private.json", {"version": 6, "status": "PROVIDER_PROCESS_NEGATIVES_LEDGER_SPENDING_AND_SIGNER_OBSERVATIONS_MATCHED", "preflight": preflight,
-         "applicationProcesses": 2, "preflightProcesses": 1, "ledgerProbeProcesses": 2, "ledgerSpendingAndSignerObservation": after,
+    save(outdir / "result.private.json", {"version": 7, "status": "PUBLIC_OFFER_REFUSAL_PROVIDER_NEGATIVES_LEDGER_SPENDING_AND_SIGNER_OBSERVATIONS_MATCHED", "preflight": preflight,
+         "applicationProcesses": 3, "publicOfferRefusalProcesses": 1, "publicOfferRefusal": offer_refusal, "preflightProcesses": 1, "ledgerProbeProcesses": 2, "ledgerSpendingAndSignerObservation": after,
          "providerProcesses": 1, "journalSetupProcesses": 1, "providerActivationCommands": 1, "providerCloseBeforeLedger": True,
          "negativeProbeProcesses": 1, "serviceNegativeObservation": negative, "negativeRequests": 3,
          "changedOfferAcceptance": "NOT_ESTABLISHED", "differentPaymentIdentityAcceptance": "NOT_ESTABLISHED",
          "signalsSent": 0, "automaticRetries": 0, "G1Acceptance": "NOT_ESTABLISHED", "G2Acceptance": "NOT_ESTABLISHED"})
-    print("API_CREDIT_LINUX_PROVIDER_PROCESS_NEGATIVES_LEDGER_SPENDING_AND_SIGNER_OBSERVATIONS_MATCHED")
+    print("API_CREDIT_LINUX_PUBLIC_OFFER_REFUSAL_PROVIDER_NEGATIVES_LEDGER_SPENDING_AND_SIGNER_OBSERVATIONS_MATCHED")
 
 
 if __name__ == "__main__":

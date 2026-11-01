@@ -1,0 +1,130 @@
+{
+  "version": 91,
+  "status": "SOURCE_AND_DECLARED_MEMORY_DATA_CANDIDATE",
+  "sourceMain": "b0ad978ea1675e412424ac654581e6568dbeb909",
+  "sourceMainTree": "7b598b6b9850794ae004c4d34c155e697217962b",
+  "predecessorProfile": {
+    "path": "qualification/profiles/api-credit-application-source-v90.json",
+    "bytes": 5150,
+    "sha256": "09b1f306862200c4944f54ef362d899803cc1f938584e3a0c1d32d4ffc0fc3bb"
+  },
+  "profileStorage": "EXACT_PREDECESSOR_PROOF_REFERENCE_WITH_EXPLICIT_SOURCE_AND_ROLE_REPLACEMENTS",
+  "product": "ONE_FUNDING_ONE_GRANT_MANY_METERED_CALLS_ORIGINAL_REPLAY_RECOVERY",
+  "publicProfileRefusal": {
+    "path": "qualification/public-profile-refusal.source-contract.json",
+    "bytes": 1639,
+    "sha256": "6a0a90c1dd826a3c4977ee65a34b4c53742e4eb081d873bae40ee36f5fa5754e"
+  },
+  "proofManifest": {
+    "path": "qualification/public-profile-refusal.proof-manifest.json",
+    "bytes": 189780,
+    "sha256": "00d1d5aaaaf144762112abb32f03bf1465c1c5ce3c48dac0edfb14b8ee158d15"
+  },
+  "failureInventory": {
+    "path": "qualification/public-profile-refusal.failure-inventory.json",
+    "bytes": 757,
+    "sha256": "029a865f1863a43210083b536757e7ba4ff5369ec46e6864e531af167e6cdef9"
+  },
+  "sourceDelta": [
+    {
+      "path": "docs/API_CREDIT_LINUX_ACCEPTANCE_HARNESS.md",
+      "bytes": 23964,
+      "sha256": "58fa2359a64df6851303641ee5ae1f3a8fcfe5310e51ab0ece088b2a1f447f97",
+      "gitBlob": "25ef88f6c90dbf7dc3c9739b18446218e5b2b007"
+    },
+    {
+      "path": "docs/API_CREDIT_PUBLIC_PROFILE_REFUSAL.md",
+      "bytes": 2776,
+      "sha256": "9889c91089532ffdd4fc8aee93bc1f4893877a71178b177588b4452f001c51a0",
+      "gitBlob": "1dd6055ba35a8d7d6953cf9ad5a0dfca0c4ee6b2"
+    },
+    {
+      "path": "qualification/api-credit-linux-acceptance-preflight.mjs",
+      "bytes": 1103,
+      "sha256": "ee551981ce26ad121b65939635617c18862c613320aa1ad25bf4dd5b6eb972a3",
+      "gitBlob": "21301c85c69660d03806c0893c7f9ed8e2acd9a3"
+    },
+    {
+      "path": "qualification/api-credit-linux-acceptance.py",
+      "bytes": 44669,
+      "sha256": "700203684e9c1327f785e27cdecd04b5e4e2a5b9e2caab7e723e8ebbd2735ab1",
+      "gitBlob": "7c11cda34f9985ae5d9a79a1414d75da28bc1cbf"
+    },
+    {
+      "path": "qualification/api-credit-linux-offer-refusal-contract.mjs",
+      "bytes": 4658,
+      "sha256": "aebaf44b4e7d7a7dcbb27cc8cbbb72a9fdc7ff095140eb1cceecb3319b047400",
+      "gitBlob": "e12f15bc69f1747046f75488c5df87cc50c24ac7"
+    },
+    {
+      "path": "qualification/api-credit-linux-offer-refusal.behavior.mjs",
+      "bytes": 8752,
+      "sha256": "99430400e72161b4ad18f97dbd323950d9d4034d24e60e102021c70e062a755f",
+      "gitBlob": "a02082116492b5968782e67c9042a7f104b7761f"
+    },
+    {
+      "path": "qualification/api-credit-public-profile-refusal.behavior.mjs",
+      "bytes": 14002,
+      "sha256": "d9940993868a3f3741777b4c111e9654450996d3b738882f763e31a63b20e0a1",
+      "gitBlob": "422de78ef8836bda0067154a57552cf10195da5a"
+    },
+    {
+      "path": "src/api-credit-cli.js",
+      "bytes": 6488,
+      "sha256": "5268fe93b49c2faf634b7627de8cf1dee5312208d4720db57e16516d0d1c528c",
+      "gitBlob": "0ef1011d8de4163c78ed74732948fe1a01c1f359"
+    },
+    {
+      "path": "src/api-credit-module-catalog.json",
+      "bytes": 121331,
+      "sha256": "bf4374aa432a4eea83c8290b3a6533c4b5ae7873d5a8dc27e7f65a3d48633cdc",
+      "gitBlob": "6d2896eb7292e0c11cf16b7d24ec7b57e2e87fa1"
+    },
+    {
+      "path": "src/api-credit-native-package-admission.js",
+      "bytes": 6414,
+      "sha256": "536306dba3c2141bdafe4959461b3bda0c6ce55a2a73cfc4b2cebfad2cabf94e",
+      "gitBlob": "ac20711ae2c707f3c9a8d2441579667beda58a56"
+    },
+    {
+      "path": "src/api-credit-operator-coordinator.js",
+      "bytes": 18407,
+      "sha256": "41cb8f0c895ba6b750039e9c4977a60f985c97fa1548766442e732dd4b1eebc0",
+      "gitBlob": "b2244be42377c1e5073a0e429323d57b3c5c1cbd"
+    },
+    {
+      "path": "src/api-credit-operator-result.js",
+      "bytes": 1808,
+      "sha256": "34fd30f9cd16bf50751f3b2ad1558007fef9c31c908c38594df3c11276a1dcf7",
+      "gitBlob": "b790b4f24f4238499ada0df86626e918c1aff00e"
+    }
+  ],
+  "nativeSourceGraphs": {
+    "buyer": 180,
+    "provider": 105,
+    "union": 247,
+    "bytes": 3418989,
+    "sourceOnly": true
+  },
+  "buyerSourceGraphUnchanged": false,
+  "providerSourceGraphUnchanged": true,
+  "all404PackageRowsAndBareEdgesUnchanged": true,
+  "currentLocalData": {
+    "new": 30,
+    "reexecuted": 692,
+    "retainedExact": 1680,
+    "sourceBoundDistinct": 2402,
+    "separateHarnessRetained": 0,
+    "separateHarnessReexecuted": 181,
+    "allSourceBoundControls": 2583,
+    "newDATACommands": 18,
+    "newParserCommands": 3,
+    "parserSourceProofs": 55
+  },
+  "selectedHostedCIControls": 108,
+  "selectedHostedCISourceInputs": 22,
+  "hostedSelectionChanged": false,
+  "newCasesIncludedInHostedCI": false,
+  "nativeQualification": "NOT_EXECUTED",
+  "G0G5Acceptance": "OPEN"
+}
