@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "currentDataFailures": 0,
+  "currentParserFailures": 0,
+  "unexpectedSkips": 0,
+  "inheritedInventory": {
+    "path": "qualification/service-command-result.failure-inventory.json",
+    "bytes": 661,
+    "sha256": "5869ceee61c98d127617093380dfb26457330eca110916b63f6f4e4a90aeca2f"
+  },
+  "newDataCommands": 1,
+  "affectedDataCommands": 1,
+  "affectedExistingControlsReexecuted": 478,
+  "unchangedControlsNotReexecuted": 1764,
+  "expectedDeclaredOutputRefusals": 2,
+  "completedDATAOrCIRepeatedForMetadata": false,
+  "currentPreparationRefusals": [],
+  "originalEvidenceAndFailedOutcomesPreserved": true,
+  "scope": "RAW_COMMAND_WIRE_DECLARED_MEMORY_COMPOSITION_NOT_NATIVE_ACCEPTANCE"
+}

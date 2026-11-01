@@ -10,6 +10,7 @@ import { encodeBuyerOriginalFundingCommandResult as legacy,encodeBuyerApiCreditC
 import { createBuyerApiCreditFundingCommandSession as session } from '../src/buyer-original-funding-command-session.js';
 import { createBuyerApiCreditCommandLineChannel as channel } from '../src/buyer-command-line-channel.js';
 import { runBuyerOriginalCommandHost as host } from '../src/buyer-original-command-host.js';
+import { recordedResultWireFixture } from './api-credit-recorded-result-wire.fixture.mjs';
 
 const F=Object.freeze,checks=[...apiCreditStoreOwnerDataCases];function check(id,run){checks.push({id,run});}
 const command=(id,operation,input={})=>({version:1,id,operation,input});
@@ -53,11 +54,18 @@ check('recorded-result-101st-new-request-cannot-spend-more-reference-units',asyn
  const grant=r.h.model.getGrant(r.h.grant.grantId);assert.equal(grant.consumedUnits,100);assert.equal(grant.availableUnits,0);assert.equal(r.completes,100);assert.equal(r.h.counts.grants,1);await r.cleanup();
 });
 check('recorded-result-actual-command-session-returns-100-results-and-the-original-replay',async()=>{
- const r=fixture(),h=r.h;h.owner=session({client:r.root,channel:channel({input:h.input,output:h.output,limits:{}}),limits:{}});
- const run=h.startFunding(()=>{const commands=[];for(let i=0;i<100;i++)commands.push(command('service.'+i,'submitService',r.request('item.'+i)));
-  commands.push(command('replay','submitService',r.request('item.0')),command('close','close'));h.input.write(commands.map(c=>commandLine(c)).join(''));});
- const out=await run;assert.equal(out.status,'CLOSED');const values=h.replies.filter(v=>v.operation==='submitService');assert.equal(values.length,101);
- assert.equal(values[0].result.responseJson,values[100].result.responseJson);assert.equal(values[100].result.replayed,true);assert.equal(r.submissions,100);assert.equal(h.counts.grants,1);await r.cleanup();
+ const s=recordedResultWireFixture();try{
+  const out=await s.start(),r=s.r,h=s.h;
+  assert.equal(out.status,'CLOSED');assert.equal(out.exitCode,0);assert.equal(s.consumerError,null);
+  assert.equal(s.rawReplies.length,101);assert.equal(s.decoded.length,101);assert.equal(s.serviceCommands.length,101);
+  assert.equal(h.replies.length,105);assert.equal(h.owner.inspect().commands,106);assert.equal(s.closeSent,true);
+  assert.equal(s.decoded[0].responseJson,s.decoded[100].responseJson);assert.equal(s.decoded[100].replayed,true);
+  assert.equal(s.decoded[100].newDispatchRequested,false);assert.equal(s.serviceCommands[100].command.input,s.first.command.input);
+  assert.equal(JSON.stringify(h.model.exportState()),s.beforeReplay);assert.equal(h.raw(),s.paymentBeforeReplay);
+  assert.deepEqual([h.counts.funding,h.counts.grants,h.counts.handoffs,r.submissions,r.reserves,r.begins,r.completes],[1,1,1,100,100,100,100]);
+  const grant=h.model.getGrant(h.grant.grantId);assert.deepEqual([grant.availableUnits,grant.heldUnits,grant.consumedUnits],[0,0,100]);
+  assert.deepEqual([h.counts.stops,h.counts.walletStops],[1,1]);assert.equal(out.authority,'NONE');assert.equal(out.nativeResourceCleanup,'NOT_QUALIFIED');
+ }finally{await s.cleanup();}
 });
 check('recorded-result-api-credit-codec-accepts-bounded-recorded-data-while-legacy-stays-void',async()=>{
  const r=await ready(),input=r.request(),v=await r.root.submitOriginal(input),c=command('service','submitService',input);

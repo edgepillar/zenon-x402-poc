@@ -1,0 +1,66 @@
+{
+  "version": 85,
+  "status": "SOURCE_AND_DECLARED_MEMORY_DATA_CANDIDATE",
+  "sourceMain": "ced448ce06e388ebf351313cbe039ac7826fadaf",
+  "sourceMainTree": "eda08be5233131a766acb764e9b2279b125389cf",
+  "predecessorProfile": {
+    "path": "qualification/profiles/api-credit-application-source-v84.json",
+    "bytes": 2268,
+    "sha256": "f81168b1f4df844ee28558768de327a0e7df1b512a243c39069ff5e47d227959"
+  },
+  "profileStorage": "EXACT_PREDECESSOR_REFERENCE_WITH_RAW_REPLY_ACCEPTANCE_COMPOSITION_DELTA",
+  "product": "ONE_FUNDING_ONE_GRANT_MANY_METERED_CALLS_ORIGINAL_REPLAY_RECOVERY",
+  "rawReplyAcceptanceComposition": {
+    "path": "qualification/recorded-result-wire.source-contract.json",
+    "bytes": 1106,
+    "sha256": "b6e43f5caa9d9db1e08012349ab24b532b9673f5ac3c24dd8913fbadafffc9be"
+  },
+  "proofManifest": {
+    "path": "qualification/recorded-result-wire.proof-manifest.json",
+    "bytes": 349737,
+    "sha256": "4eb0fd5d41a8a0f66050107e3642d8d60e6e2c230ba508266b99507ec957ee7e"
+  },
+  "failureInventory": {
+    "path": "qualification/recorded-result-wire.failure-inventory.json",
+    "bytes": 705,
+    "sha256": "5a306b137f56323f115142743f5c5f5276fcabed5e1c400c6a4538af8c191052"
+  },
+  "sourceDelta": [
+    {
+      "path": "qualification/api-credit-recorded-result-wire.fixture.mjs",
+      "bytes": 3634,
+      "sha256": "41dc62fd0c6ef847d036fb41878e669686917da5af17c6b4cf69316159fce80e",
+      "gitBlob": "755a6b5284f3f1ce8547b4358180452a1e16b02b"
+    },
+    {
+      "path": "qualification/api-credit-recorded-result.behavior.mjs",
+      "bytes": 15969,
+      "sha256": "50834f63d91249fbfa600f142577a78db37811e6dbd4ddcb97da9900b929ef30",
+      "gitBlob": "d6563f68832a68065f533f06ec0509c30e80d703"
+    },
+    {
+      "path": "qualification/recorded-result-wire.behavior.mjs",
+      "bytes": 4796,
+      "sha256": "558013405303d00f6ef18732b4bc1bada79cf6a0185d2a0dbbaf0ab015e200ef",
+      "gitBlob": "87acd358b3d19e45e75e7ac15385a81766cb58c2"
+    }
+  ],
+  "defaultNativeBuyerProviderGraphsAndCatalogsUnchanged": true,
+  "acceptanceHarnessOutsideNativeEntryGraph": true,
+  "currentLocalData": {
+    "new": 2,
+    "reexecuted": 478,
+    "retainedExact": 1764,
+    "sourceBoundDistinct": 2244,
+    "newDATACommands": 2,
+    "newParserCommands": 0,
+    "parserSourceProofs": 52,
+    "retainedParserProofs": 52
+  },
+  "selectedHostedCIControls": 108,
+  "selectedHostedCISourceInputs": 22,
+  "hostedSelectionChanged": false,
+  "newCasesIncludedInHostedCI": false,
+  "nativeQualification": "NOT_EXECUTED",
+  "G0G5Acceptance": "OPEN"
+}

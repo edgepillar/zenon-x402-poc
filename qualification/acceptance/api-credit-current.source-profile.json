@@ -1,7 +1,7 @@
 {
   "profileVersion": 1,
   "profileId": "API_CREDIT_CURRENT_SOURCE_V1",
-  "sourceBaseline": "2ffd1af2849182318b0f2729e0bcd717a063af19",
+  "sourceBaseline": "ced448ce06e388ebf351313cbe039ac7826fadaf",
   "application": {
     "buyerEntry": "src/api-credit-cli.js",
     "providerEntry": "src/issued-provider-cli.js"
@@ -48,19 +48,19 @@
   ],
   "dataQualification": {
     "sourceProfile": {
-      "path": "qualification/profiles/api-credit-application-source-v84.json",
-      "bytes": 2268,
-      "sha256": "f81168b1f4df844ee28558768de327a0e7df1b512a243c39069ff5e47d227959"
+      "path": "qualification/profiles/api-credit-application-source-v85.json",
+      "bytes": 2540,
+      "sha256": "07a4d6cddf7ae1ac3ea57bc661e3945c0cfdffcdf6e49f59438b01f6d1e4cb5b"
     },
     "result": {
-      "path": "qualification/service-command-result.actual-local-result.json",
-      "bytes": 6519,
-      "sha256": "c0a6509460148f083875faf2b9fcc8f399a210c6bda558dc0d5aff2fe7279afa"
+      "path": "qualification/recorded-result-wire.actual-local-result.json",
+      "bytes": 60958,
+      "sha256": "f89251707f19373e8d2bafc7fd335bfb90e441282e67b19f2fae442556c46a60"
     },
-    "sourceBoundControls": 2242,
-    "executedControls": 39,
-    "retainedControls": 2203,
-    "expectedResultQualification": "G1_API_CREDIT_SERVICE_COMMAND_RESULT_CURRENT_SOURCE_DATA"
+    "sourceBoundControls": 2244,
+    "executedControls": 480,
+    "retainedControls": 1764,
+    "expectedResultQualification": "G1_G2_RECORDED_RESULT_WIRE_CURRENT_SOURCE_DATA"
   },
   "runtime": {
     "nodeVersion": "24.19.0",
