@@ -1,7 +1,7 @@
 {
   "profileVersion": 1,
   "profileId": "API_CREDIT_CURRENT_SOURCE_V1",
-  "sourceBaseline": "ced448ce06e388ebf351313cbe039ac7826fadaf",
+  "sourceBaseline": "2c3935f0785c8f0003326a61b531bba25997aa20",
   "application": {
     "buyerEntry": "src/api-credit-cli.js",
     "providerEntry": "src/issued-provider-cli.js"
@@ -48,19 +48,19 @@
   ],
   "dataQualification": {
     "sourceProfile": {
-      "path": "qualification/profiles/api-credit-application-source-v85.json",
-      "bytes": 2540,
-      "sha256": "07a4d6cddf7ae1ac3ea57bc661e3945c0cfdffcdf6e49f59438b01f6d1e4cb5b"
+      "path": "qualification/profiles/api-credit-application-source-v86.json",
+      "bytes": 2284,
+      "sha256": "436f1030336e06ed3c37bc1c5bc27cc8315ec8fd84f7b0aef78b5ba542efbe6a"
     },
     "result": {
-      "path": "qualification/recorded-result-wire.actual-local-result.json",
-      "bytes": 60958,
-      "sha256": "f89251707f19373e8d2bafc7fd335bfb90e441282e67b19f2fae442556c46a60"
+      "path": "qualification/funding-uncertainty-age.actual-local-result.json",
+      "bytes": 4712,
+      "sha256": "fd6fd7c047e9d70d3f2f2b2ed3382e324a02b25d480e9e3c880d3b1de85d3524"
     },
-    "sourceBoundControls": 2244,
-    "executedControls": 480,
-    "retainedControls": 1764,
-    "expectedResultQualification": "G1_G2_RECORDED_RESULT_WIRE_CURRENT_SOURCE_DATA"
+    "sourceBoundControls": 2268,
+    "executedControls": 24,
+    "retainedControls": 2244,
+    "expectedResultQualification": "G2_FUNDING_UNCERTAINTY_AGE_CURRENT_SOURCE_DATA"
   },
   "runtime": {
     "nodeVersion": "24.19.0",

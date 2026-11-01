@@ -1,0 +1,77 @@
+{
+  "version": 2,
+  "sourceMain": "2c3935f0785c8f0003326a61b531bba25997aa20",
+  "runtimeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25",
+  "retainedExactProof": {
+    "path": "qualification/recorded-result-wire.proof-manifest.json",
+    "bytes": 349737,
+    "sha256": "4eb0fd5d41a8a0f66050107e3642d8d60e6e2c230ba508266b99507ec957ee7e",
+    "gitBlob": "1c92a699febf45b0b751e175f787aa555f372af8",
+    "sourceBoundControls": 2244,
+    "currentParserSourceProofs": 52
+  },
+  "sourcePins": [
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "qualification/funding-uncertainty-age.behavior.mjs",
+      "bytes": 12350,
+      "sha256": "4f87be7251e7ef4804c6712a7a30a75dc8638e5ec87056eb433367525a5766e1",
+      "gitBlob": "e89bbdb776fc9a717923543fba9206d8e352a740"
+    },
+    {
+      "path": "src/original-funding-spending-reservations.js",
+      "bytes": 13357,
+      "sha256": "8334f0a0f5c3d436b7096786322d4f25a12afeba250223a7fb07b1e0d4fcb135",
+      "gitBlob": "38992f8619057c0cecb24738c45307e0e8edb20c"
+    },
+    {
+      "path": "src/original-funding-uncertainty-age.js",
+      "bytes": 3508,
+      "sha256": "eed161efed85b52e16dd649af21058b67cc867f19182043fb658fe7c28eba964",
+      "gitBlob": "9be7e9c5ff41a504f57c56d85838cd9d27032cdf"
+    }
+  ],
+  "newDataGroups": [
+    {
+      "entry": "qualification/funding-uncertainty-age.behavior.mjs",
+      "count": 24,
+      "kind": "NEW_INERT_DATA_COMMAND",
+      "rawQualificationSha256": "c0d54e067014d699456a642be1fd3628f07fa56d2b68bfc6517f1b64b61059eb",
+      "group": "new",
+      "runtimeInputs": [
+        "package.json",
+        "qualification/funding-uncertainty-age.behavior.mjs",
+        "src/original-funding-spending-reservations.js",
+        "src/original-funding-uncertainty-age.js"
+      ],
+      "runtimeInputSeal": "414065d288f9eb2ef58645a25889497d873c1f3bf63fec4db6dc4df3332248df",
+      "caseIdsSha256": "a3ce61ae4c510915b0b38985618f7e57f960eea8cbbcc2eea633a43e8ac9eab3",
+      "wholeSourceTaskReclassified": false
+    }
+  ],
+  "rawCurrentEvidenceSha256": "aa7dcb8511a08ec46a4f8bdb67fa3f38ba166ab70c5cde4476af2a378f99d459",
+  "counts": {
+    "newCases": 24,
+    "reexecutedAffectedCases": 0,
+    "retainedExactCases": 2244,
+    "sourceBoundDistinctDataControls": 2268,
+    "currentParserSourceProofs": 52
+  },
+  "commandCounts": {
+    "DATA": 1,
+    "parser": 0,
+    "metadataPlan": 0
+  },
+  "distinctCaseIdSetSha256": "0651ca6ac6fde2c537df027d45b87f451ddd251a6b9d86dc9d9c1a73d37744b2",
+  "retainedExactRuntimeRolesReverified": true,
+  "all52ParserOriginsRetainedWithoutReruns": true,
+  "originalProofRetainedUnchanged": true,
+  "retainedSourcePinsNotRecopied": true,
+  "historicalWrapperChainsRepeated": false,
+  "scope": "EXACT_RETAINED_PROOF_REFERENCE_AND_NEW_PURE_DATA_COMMAND_NOT_NATIVE_ACCEPTANCE"
+}

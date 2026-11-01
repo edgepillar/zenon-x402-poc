@@ -1,0 +1,60 @@
+{
+  "version": 86,
+  "status": "SOURCE_AND_DECLARED_MEMORY_DATA_CANDIDATE",
+  "sourceMain": "2c3935f0785c8f0003326a61b531bba25997aa20",
+  "sourceMainTree": "507bf01dcc8bc290dcf737aa6be661e79e99c643",
+  "predecessorProfile": {
+    "path": "qualification/profiles/api-credit-application-source-v85.json",
+    "bytes": 2540,
+    "sha256": "07a4d6cddf7ae1ac3ea57bc661e3945c0cfdffcdf6e49f59438b01f6d1e4cb5b"
+  },
+  "profileStorage": "EXACT_PREDECESSOR_AND_RETAINED_PROOF_REFERENCES_WITH_UNCERTAINTY_AGE_DELTA",
+  "product": "ONE_FUNDING_ONE_GRANT_MANY_METERED_CALLS_ORIGINAL_REPLAY_RECOVERY",
+  "uncertaintyAgeClassification": {
+    "path": "qualification/funding-uncertainty-age.source-contract.json",
+    "bytes": 832,
+    "sha256": "09c09084ffc70216fe718e2bdedb3635a0641280c8b4c0cd40f33327565beed6"
+  },
+  "proofManifest": {
+    "path": "qualification/funding-uncertainty-age.proof-manifest.json",
+    "bytes": 2974,
+    "sha256": "fdcb15ffbab850a29f15f14f9d0044657f382a24b063ed33389f96b93bf8f084"
+  },
+  "failureInventory": {
+    "path": "qualification/funding-uncertainty-age.failure-inventory.json",
+    "bytes": 669,
+    "sha256": "82ff517d30b763506ef942101fbd9286c21bee7a4156421eae6e2c8d53a271c4"
+  },
+  "sourceDelta": [
+    {
+      "path": "qualification/funding-uncertainty-age.behavior.mjs",
+      "bytes": 12350,
+      "sha256": "4f87be7251e7ef4804c6712a7a30a75dc8638e5ec87056eb433367525a5766e1",
+      "gitBlob": "e89bbdb776fc9a717923543fba9206d8e352a740"
+    },
+    {
+      "path": "src/original-funding-uncertainty-age.js",
+      "bytes": 3508,
+      "sha256": "eed161efed85b52e16dd649af21058b67cc867f19182043fb658fe7c28eba964",
+      "gitBlob": "9be7e9c5ff41a504f57c56d85838cd9d27032cdf"
+    }
+  ],
+  "defaultNativeBuyerProviderGraphsAndCatalogsUnchanged": true,
+  "uncertaintyAgeApiOutsideNativeEntryGraphs": true,
+  "currentLocalData": {
+    "new": 24,
+    "reexecuted": 0,
+    "retainedExact": 2244,
+    "sourceBoundDistinct": 2268,
+    "newDATACommands": 1,
+    "newParserCommands": 0,
+    "parserSourceProofs": 52,
+    "retainedParserProofs": 52
+  },
+  "selectedHostedCIControls": 108,
+  "selectedHostedCISourceInputs": 22,
+  "hostedSelectionChanged": false,
+  "newCasesIncludedInHostedCI": false,
+  "nativeQualification": "NOT_EXECUTED",
+  "G0G5Acceptance": "OPEN"
+}

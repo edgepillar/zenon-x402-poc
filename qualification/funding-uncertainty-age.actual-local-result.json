@@ -1,0 +1,157 @@
+{
+  "qualification": "G2_FUNDING_UNCERTAINTY_AGE_CURRENT_SOURCE_DATA",
+  "status": "PASS",
+  "recordedAtUTC": "2026-11-01T00:28:04.840337+00:00",
+  "passed": 24,
+  "failed": 0,
+  "cases": [
+    {
+      "id": "age-empty-observation-never-issues-new-work-authority",
+      "status": "PASS"
+    },
+    {
+      "id": "age-threshold-equality-retains-the-original-without-escalating",
+      "status": "PASS"
+    },
+    {
+      "id": "age-one-day-above-the-explicit-maximum-requires-escalation",
+      "status": "PASS"
+    },
+    {
+      "id": "age-zero-day-policy-is-not-an-instantaneous-payment-expiry",
+      "status": "PASS"
+    },
+    {
+      "id": "age-reserved-preparation-ambiguity-also-requires-escalation",
+      "status": "PASS"
+    },
+    {
+      "id": "age-unknown-duration-is-measured-from-original-reservation",
+      "status": "PASS"
+    },
+    {
+      "id": "age-observation-does-not-renew-at-repeated-unknown-records",
+      "status": "PASS"
+    },
+    {
+      "id": "age-mixed-history-selects-unresolved-and-unknown-origins-separately",
+      "status": "PASS"
+    },
+    {
+      "id": "age-spent-history-is-not-an-unresolved-reservation",
+      "status": "PASS"
+    },
+    {
+      "id": "age-classification-preserves-exact-history-and-enters-no-backend",
+      "status": "PASS"
+    },
+    {
+      "id": "age-result-is-detached-from-later-policy-threshold-mutation",
+      "status": "PASS"
+    },
+    {
+      "id": "age-lost-commit-ack-classifies-the-retained-reserved-original",
+      "status": "PASS"
+    },
+    {
+      "id": "age-exceeded-reopen-never-releases-single-original-admission",
+      "status": "PASS"
+    },
+    {
+      "id": "age-exact-late-bound-history-preserves-lifetime-exposure",
+      "status": "PASS"
+    },
+    {
+      "id": "age-stale-clock-cannot-understate-the-recorded-history",
+      "status": "PASS"
+    },
+    {
+      "id": "age-explicit-day-domain-refuses-negative-zero-and-nonintegers",
+      "status": "PASS"
+    },
+    {
+      "id": "age-explicit-maximum-domain-refuses-negative-zero-and-nonintegers",
+      "status": "PASS"
+    },
+    {
+      "id": "age-maximum-day-arithmetic-remains-an-exact-safe-integer",
+      "status": "PASS"
+    },
+    {
+      "id": "age-missing-extra-or-version-drifted-policy-fails-closed",
+      "status": "PASS"
+    },
+    {
+      "id": "age-threshold-descriptors-do-not-invoke-accessors-or-proxies",
+      "status": "PASS"
+    },
+    {
+      "id": "age-malformed-and-noncanonical-history-is-not-reinterpreted",
+      "status": "PASS"
+    },
+    {
+      "id": "age-foreign-policy-and-missing-history-fields-withhold-a-result",
+      "status": "PASS"
+    },
+    {
+      "id": "age-input-arity-is-exact-and-has-no-default-threshold",
+      "status": "PASS"
+    },
+    {
+      "id": "age-does-not-expose-original-identities-amounts-or-authorization",
+      "status": "PASS"
+    }
+  ],
+  "newControls": 24,
+  "reexecutedRelevantControls": 0,
+  "retainedExactControls": 2244,
+  "sourceBoundDistinctControls": 2268,
+  "actualDataNodeCommands": 1,
+  "actualParserNodeCommands": 0,
+  "currentParserSourceProofs": 52,
+  "nodeVersion": "24.19.0",
+  "platform": "darwin-arm64",
+  "nodeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25",
+  "sourceProfile": {
+    "path": "qualification/profiles/api-credit-application-source-v86.json",
+    "bytes": 2284,
+    "sha256": "436f1030336e06ed3c37bc1c5bc27cc8315ec8fd84f7b0aef78b5ba542efbe6a"
+  },
+  "sourceContract": {
+    "path": "qualification/funding-uncertainty-age.source-contract.json",
+    "bytes": 832,
+    "sha256": "09c09084ffc70216fe718e2bdedb3635a0641280c8b4c0cd40f33327565beed6"
+  },
+  "proofManifest": {
+    "path": "qualification/funding-uncertainty-age.proof-manifest.json",
+    "bytes": 2974,
+    "sha256": "fdcb15ffbab850a29f15f14f9d0044657f382a24b063ed33389f96b93bf8f084"
+  },
+  "failureInventory": {
+    "path": "qualification/funding-uncertainty-age.failure-inventory.json",
+    "bytes": 669,
+    "sha256": "82ff517d30b763506ef942101fbd9286c21bee7a4156421eae6e2c8d53a271c4"
+  },
+  "taskQuotaBytes": 4194304,
+  "allSelectedPassingTasksClosedSuccess": true,
+  "unqualifiedHistoricalCASObjectsConsumed": false,
+  "actualCanonicalJournalAndSingleOriginalAdmission": true,
+  "backend": "DECLARED_MEMORY_CAS_ONLY",
+  "nativeExecutions": 0,
+  "SDK": 0,
+  "SQLite": 0,
+  "keys": 0,
+  "signatures": 0,
+  "sockets": 0,
+  "nonceSearches": 0,
+  "nodeChildren": 0,
+  "actualPrepare": 0,
+  "payouts": 0,
+  "nativeQualification": "NOT_EXECUTED",
+  "chainAuthentication": "NOT_ESTABLISHED",
+  "physicalRelease": "NOT_ESTABLISHED",
+  "freshProcessReopen": "NOT_EXECUTED",
+  "LinuxAcceptance": "NOT_ESTABLISHED",
+  "G0G5Acceptance": "OPEN",
+  "newCasesIncludedIn108CI": false
+}

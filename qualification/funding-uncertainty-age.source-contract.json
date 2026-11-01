@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "selection": "READ_ONLY_ORIGINAL_FUNDING_UNCERTAINTY_AGE",
+  "existingCanonicalSpendingStateValidator": true,
+  "explicitObservedDayAndAgeMaximumRequired": true,
+  "clockRollbackRefused": true,
+  "ageOrigin": "ORIGINAL_RESERVATION_DAY_NOT_SIGNING_OR_UNKNOWN_TRANSITION",
+  "ageComparison": "STRICTLY_GREATER_THAN_EXPLICIT_MAXIMUM",
+  "reservedAndUnknownCountedSeparately": true,
+  "spentExcludedFromOutstandingAgeButLifetimeExposurePreserved": true,
+  "noClockBackendSignerOrTransportCapabilities": true,
+  "existingSingleOriginalAdmissionUnchanged": true,
+  "reservationRelease": false,
+  "newPaymentSigningSubmissionOrDispatchAuthority": false,
+  "historicalObservationOnly": true,
+  "nativeEntryGraphsChanged": false,
+  "operatorCliChanged": false,
+  "nativeQualification": "NOT_EXECUTED",
+  "G0G5": "OPEN"
+}

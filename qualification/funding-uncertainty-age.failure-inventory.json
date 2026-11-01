@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "currentDataFailures": 0,
+  "currentParserFailures": 0,
+  "unexpectedSkips": 0,
+  "inheritedInventory": {
+    "path": "qualification/recorded-result-wire.failure-inventory.json",
+    "bytes": 705,
+    "sha256": "5a306b137f56323f115142743f5c5f5276fcabed5e1c400c6a4538af8c191052"
+  },
+  "newDataCommands": 1,
+  "affectedDataCommands": 0,
+  "affectedExistingControlsReexecuted": 0,
+  "unchangedControlsNotReexecuted": 2244,
+  "completedDATAOrCIRepeatedForMetadata": false,
+  "currentPreparationRefusals": [],
+  "originalEvidenceAndFailedOutcomesPreserved": true,
+  "scope": "PURE_AGE_CLASSIFICATION_AND_DECLARED_MEMORY_JOURNAL_NOT_NATIVE_ACCEPTANCE"
+}
