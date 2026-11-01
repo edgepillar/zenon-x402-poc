@@ -9,6 +9,7 @@ const HELP = 'API credit operator source candidate (native acceptance is OPEN).\
   + 'RUN also requires the reviewed ordinary package byte catalog before pipe adoption.\n'
   + 'Supply four distinct, exclusive POSIX FIFO ends owned by the operator.\n'
   + 'Profile: canonical public bootstrap JSON terminated by EOF.\n'
+  + 'Non-DP V3 explicitly selects LOOPBACK_QUALIFICATION_V1 with a port and the same CA; V2 keeps public read routes.\n'
   + 'Key: exactly 32 existing private-key bytes terminated by EOF.\n'
   + 'Input/output: bounded explicit original-funding and service commands.\n'
   + 'History only: node src/api-credit-cli.js --inspect-fd 3 --output-fd 6 --bootstrap-ms 1000\n'

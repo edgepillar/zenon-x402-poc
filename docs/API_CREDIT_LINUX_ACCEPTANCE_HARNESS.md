@@ -150,10 +150,14 @@ externally managed synthetic RPC and release evidence remain prerequisites.
 
 The accompanying provider fixture is pure codec DATA with deliberately invalid
 signature-shaped bytes, synthetic authority text and a declared CA. It is not
-an accepted native fixture. The provider-loopback constraint does not establish
-isolation of the buyer's independently selected pinned HTTPS read routes. Those
-routes and all native resources need separate review before any future native
-approval; neither this preflight nor the Python source supplies a network sandbox.
+an accepted native fixture. The explicit non-DP V3 buyer bootstrap can select
+the existing closed loopback HTTPS read session with the same CA and an explicit
+unprivileged port. V2 keeps its public pinned-route policy. See [the V3 read
+bootstrap](API_CREDIT_LOOPBACK_READ_BOOTSTRAP.md). The preflight states the selected
+buyer read profile and never falls back to public reads. This source selection
+does not establish OS/network isolation or native fixture acceptance. All routes
+and native resources still require separate review before a future native run;
+neither this preflight nor the Python source supplies a network sandbox.
 
 The probe's existing store opening and reads use real transactions, including
 BEGIN IMMEDIATE; they are not OS-readonly SQLite handles. The source adds no

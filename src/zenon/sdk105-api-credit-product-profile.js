@@ -4,12 +4,15 @@ import { createApiCreditRecordedServiceResultApplication } from '../api-credit-r
 import { types } from 'node:util';
 import { canonicalJson } from '../canonical.js';
 import { decodeB64Json, encodeB64Json, validateActiveUpfrontRequirement, validatePaymentRequiredForOfferSelection } from '../x402-wire.js';
-import { captureSdk105ApiCreditSelection, captureSdk105NonDpApiCreditSelection } from './sdk105-api-credit-selection.js';
-import { captureNativeFundingServiceOperationalConfiguration, captureNativeNonDpFundingServiceOperationalConfiguration } from './native-funding-service-configuration.js';
+import { captureSdk105ApiCreditSelection, captureSdk105NonDpApiCreditSelection,
+  captureSdk105NonDpApiCreditSelectionForLocalQualification } from './sdk105-api-credit-selection.js';
+import { captureNativeFundingServiceOperationalConfiguration, captureNativeNonDpFundingServiceOperationalConfiguration,
+  captureNativeNonDpFundingServiceOperationalConfigurationForLocalQualification } from './native-funding-service-configuration.js';
+import { captureNativeFundingServiceLoopbackReadSelection } from './native-funding-service-loopback-read-selection.js';
 import { captureOriginalFundingSpendingFileProfile } from '../original-funding-spending-file-profile.js';
 import { captureZenonDynamicPlasmaFundingPostPreparationInput } from './dynamic-plasma-funding-post-preparation-input.js';
 
-const F = Object.freeze, DESC = Object.getOwnPropertyDescriptor, OWN = Object.hasOwn;
+const F = Object.freeze, DESC = Object.getOwnPropertyDescriptor, OWN = Object.hasOwn, FILL = Buffer.prototype.fill;
 const SELECTED = new WeakMap(), PROFILES = new WeakMap();
 const OPERATIONS = ['prepareOriginalFunding', 'commitOriginalFunding', 'submitOriginalFunding', 'handoffToService', 'submitOriginal'];
 function fail() { const e = new TypeError('SDK105_API_CREDIT_PRODUCT_PROFILE'); Object.defineProperty(e, 'stack', { value: e.message }); throw F(e); }
@@ -19,6 +22,10 @@ function fields(value, names) {
   const out = {};
   for (const name of names) { const d = DESC(value, name); if (!d?.enumerable || !OWN(d, 'value')) fail(); out[name] = d.value; }
   return out;
+}
+function productVersion(value) {
+  if (value === null || typeof value !== 'object' || types.isProxy(value) || Object.getPrototypeOf(value) !== Object.prototype) fail();
+  const d = DESC(value, 'productProfileVersion'); if (!d?.enumerable || !OWN(d, 'value')) fail(); return d.value;
 }
 function snapshot(value, depth = 0, budget = { nodes: 256, bytes: 4096 }) {
   if (--budget.nodes < 0 || depth > 8) fail();
@@ -67,15 +74,17 @@ export function captureSdk105NonDpApiCreditProductOperatorData(configuration) {
   return captureProductOperatorData(configuration, true);
 }
 function captureProductOperatorData(configuration, nonDp) {
-  const c = fields(configuration, ['productProfileVersion', 'paymentRequiredHeader', 'purchaseExpectationJson', 'configuration', 'spendingFile', 'spending']);
-  if (c.productProfileVersion !== 2) fail();
+  const local = nonDp && productVersion(configuration) === 3;
+  const c = fields(configuration, ['productProfileVersion', 'paymentRequiredHeader', 'purchaseExpectationJson', 'configuration', 'spendingFile', 'spending', ...(local ? ['localReadOptions'] : [])]);
+  if (c.productProfileVersion !== (local ? 3 : 2)) fail();
   const fixed = fixedChallengePolicy(c.paymentRequiredHeader), base = fields(c.configuration, ['storeOptions', 'fundingOptions', 'serviceOptions']);
   const f = fields(base.fundingOptions, nonDp
     ? ['readSessionOptions', 'expectedPublicKey', 'expectedAddress', 'deadlineMs', 'fundingTransportOptions']
     : ['readSessionOptions', 'materialOptions', 'materialWaitMs', 'expectedAddress', 'deadlineMs', 'fundingTransportOptions']);
   const { expectedAddress, ...fundingOptions } = f;
   const service = fields(base.serviceOptions, ['assetInfo', 'contextLimit', 'transportOptions', 'deadlineMs']);
-  const admitted = (nonDp ? captureNativeNonDpFundingServiceOperationalConfiguration : captureNativeFundingServiceOperationalConfiguration)({ storeOptions: base.storeOptions, fundingOptions,
+  const admitted = (local ? captureNativeNonDpFundingServiceOperationalConfigurationForLocalQualification
+    : nonDp ? captureNativeNonDpFundingServiceOperationalConfiguration : captureNativeFundingServiceOperationalConfiguration)({ storeOptions: base.storeOptions, fundingOptions,
     serviceOptions: { official: { validateChallenge: fixed.validateChallenge, assetInfo: service.assetInfo, contextLimit: service.contextLimit },
       transportOptions: service.transportOptions, deadlineMs: service.deadlineMs } });
   const file = captureOriginalFundingSpendingFileProfile(c.spendingFile), policy = file.storageProfile.policy;
@@ -93,12 +102,19 @@ function captureProductOperatorData(configuration, nonDp) {
   // The minimum service wire/custody budget therefore covers 100 distinct calls.
   const purchase = captureApiCreditPurchaseExpectation(c.purchaseExpectationJson, c.paymentRequiredHeader, store.resourceUrl);
   if (purchase.holderId !== expectedAddress || admitted.serviceOptions.transportOptions.ca.toString('base64').length > 8192) fail();
-  const profile = F({ productProfileVersion: 2, purchase, fundingResourceUrl: store.resourceUrl,
+  let localReadOptions = null;
+  if (local) {
+    const selected = captureNativeFundingServiceLoopbackReadSelection(c.localReadOptions, admitted.fundingOptions.fundingTransportOptions.ca);
+    try { localReadOptions = F({ port: selected.port, ca: admitted.fundingOptions.fundingTransportOptions.ca }); }
+    finally { Reflect.apply(FILL, selected.ca, [0]); }
+  }
+  const profile = F({ productProfileVersion: local ? 3 : 2, purchase, fundingResourceUrl: store.resourceUrl,
     serviceResourceUrl: store.custodyPolicy.serviceResourceUrl, network: requirement.network, asset: requirement.asset,
-    recipient: requirement.payTo, amount: requirement.amount, providerAuthentication: 'NOT_ESTABLISHED', nativeAcceptance: 'NOT_ESTABLISHED' });
+    recipient: requirement.payTo, amount: requirement.amount, providerAuthentication: 'NOT_ESTABLISHED', nativeAcceptance: 'NOT_ESTABLISHED',
+    ...(local ? { readSessionProfile: 'LOOPBACK_QUALIFICATION_V1', productionRouteQualified: false } : {}) });
   PROFILES.set(profile, F({ header: c.paymentRequiredHeader, challengeText: fixed.challengeText, nonDp }));
   return F({ configuration: admitted, walletIdentity: F({ expectedAddress, expectedPublicKey: nonDp ? admitted.fundingOptions.expectedPublicKey : admitted.fundingOptions.materialOptions.publicKey }),
-    spendingFile: file, spending: F(spending), purchaseExpectationJson: c.purchaseExpectationJson, profile });
+    spendingFile: file, spending: F(spending), purchaseExpectationJson: c.purchaseExpectationJson, profile, ...(local ? { localReadOptions } : {}) });
 }
 /** One fixed product selection with an exclusive EXISTING key and day reader.
  * The same keyless admission is used before operator credential acquisition. */
@@ -111,7 +127,8 @@ export function captureSdk105NonDpApiCreditProductSelection(configuration) {
   return captureProductSelection(configuration, true);
 }
 function captureProductSelection(configuration, nonDp) {
-  const c = fields(configuration, ['productProfileVersion', 'paymentRequiredHeader', 'purchaseExpectationJson', 'configuration', 'spendingFile', 'spending']);
+  const local = nonDp && productVersion(configuration) === 3;
+  const c = fields(configuration, ['productProfileVersion', 'paymentRequiredHeader', 'purchaseExpectationJson', 'configuration', 'spendingFile', 'spending', ...(local ? ['localReadOptions'] : [])]);
   const base = fields(c.configuration, ['storeOptions', 'fundingOptions', 'serviceOptions']);
   const f = fields(base.fundingOptions, nonDp
     ? ['readSessionOptions', 'expectedPublicKey', 'keyPair', 'expectedAddress', 'deadlineMs', 'fundingTransportOptions']
@@ -120,9 +137,11 @@ function captureProductSelection(configuration, nonDp) {
   const admitted = captureProductOperatorData({ ...c, configuration: { ...base, fundingOptions }, spending: { paymentId: spending.paymentId } }, nonDp);
   let selected = null;
   try {
-    selected = (nonDp ? captureSdk105NonDpApiCreditSelection : captureSdk105ApiCreditSelection)({ configuration: { ...admitted.configuration,
+    selected = (local ? captureSdk105NonDpApiCreditSelectionForLocalQualification
+      : nonDp ? captureSdk105NonDpApiCreditSelection : captureSdk105ApiCreditSelection)({ configuration: { ...admitted.configuration,
       fundingOptions: { ...admitted.configuration.fundingOptions, keyPair, expectedAddress: admitted.walletIdentity.expectedAddress } },
-      spendingFile: { storageProfile: admitted.spendingFile.storageProfile, allowedRoot: admitted.spendingFile.allowedRoot, filePolicy: admitted.spendingFile.filePolicy }, spending });
+      spendingFile: { storageProfile: admitted.spendingFile.storageProfile, allowedRoot: admitted.spendingFile.allowedRoot, filePolicy: admitted.spendingFile.filePolicy }, spending,
+      ...(local ? { localReadOptions: admitted.localReadOptions } : {}) });
     const state = { selected, profile: admitted.profile, consumed: false, released: false, nonDp };
     const release = F(function release() { if (arguments.length !== 0) fail(); if (!state.released) { state.released = true; selected.release(); } });
     const out = F({ configuration: selected.configuration, spendingFile: selected.spendingFile, spending: selected.spending, profile: admitted.profile, release });

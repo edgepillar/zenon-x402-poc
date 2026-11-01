@@ -7,7 +7,7 @@ import { createApiCreditOpeningFailureCustody } from '../api-credit-opening-fail
 import { createApiCreditReturnedOpeningCustody } from '../api-credit-returned-opening-custody.js';
 import { hrtime } from 'node:process';
 import { claimSdk105ApiCreditExistingKeyLease, bindSdk105ApiCreditExistingKeyLeaseOwner } from './sdk105-api-credit-existing-key-lease.js';
-import { consumeSdk105ApiCreditSelection, consumeSdk105NonDpApiCreditSelection } from './sdk105-api-credit-selection.js';
+import { consumeSdk105ApiCreditSelection, consumeSdk105NonDpApiCreditSelection, requireCurrentSdk105ApiCreditSelection } from './sdk105-api-credit-selection.js';
 import { consumeSdk105ApiCreditProductSelection, consumeSdk105NonDpApiCreditProductSelection, bindSdk105ApiCreditProductLifecycle, bindSdk105ApiCreditProductLifecycleWithRecordedResults } from './sdk105-api-credit-product-profile.js';
 import { captureSdk105FundingServiceConfiguration, captureSdk105NonDpFundingServiceConfiguration } from './sdk105-funding-service-lifecycle.js';
 import { createSdk105AgeBoundSignerContextWalletOwner } from './sdk105-prepared-hash-wallet-owner.js';
@@ -58,29 +58,36 @@ async function openApplication(selection, requireCurrentOpening, productProfile,
   if (failedApplication !== null || typeof requireCurrentOpening !== 'function'
       || types.isProxy(requireCurrentOpening) || !Object.isFrozen(requireCurrentOpening)) fail();
   const selected = (nonDp ? consumeSdk105NonDpApiCreditSelection : consumeSdk105ApiCreditSelection)(selection);
+  const localDescriptor = Object.getOwnPropertyDescriptor(selected, 'localReadOptions');
+  const localReadOptions = localDescriptor === undefined ? null : localDescriptor.value;
   let c, file = null, wallet = null, client = null, application = null, wireOwner = null;
   let walletOpeningEntered = false, clientOpeningEntered = false;
   try {
     c = (nonDp ? captureSdk105NonDpFundingServiceConfiguration : captureSdk105FundingServiceConfiguration)(selected.configuration);
     const lookupPolicy=productProfile===null?null:F({caBase64:c.serviceOptions.transportOptions.ca.toString('base64'),maxTotalMs:c.serviceOptions.deadlineMs});
     requireCurrentOpening();
+    if (localReadOptions !== null) requireCurrentSdk105ApiCreditSelection(selected);
     file = (productProfile === null ? openOriginalFundingSpendingSignerContextFileOwner : openOriginalFundingSpendingGrantRecoveryFileOwner)({ storageProfile: selected.spendingFile.storageProfile,
       allowedRoot: selected.spendingFile.allowedRoot, filePolicy: selected.spendingFile.filePolicy });
     requireCurrentOpening();
     wireOwner = createApiCreditWireOwnerGuard({ fileOwner: file, clock: SIGNER_ENTRY.clock });
     const nativeClient = await import('./dynamic-plasma-native-funding-service-client.js');
-    const openClient = nonDp ? nativeClient.openZenonNonDpNativeFundingServiceClientWithApiCreditWireOwner
+    const openClient = localReadOptions !== null ? nativeClient.openZenonNonDpNativeFundingServiceClientWithApiCreditWireOwnerForLocalQualification
+      : nonDp ? nativeClient.openZenonNonDpNativeFundingServiceClientWithApiCreditWireOwner
       : nativeClient.openZenonDynamicPlasmaNativeFundingServiceClientWithApiCreditWireOwner;
     // No new key capability is entered after an expired module-loading budget.
     requireCurrentOpening();
+    if (localReadOptions !== null) requireCurrentSdk105ApiCreditSelection(selected);
     claimSdk105ApiCreditExistingKeyLease(c.walletOptions.keyPair);
     walletOpeningEntered = true;
     wallet = createSdk105AgeBoundSignerContextWalletOwner(c.walletOptions, { paymentId: selected.spending.paymentId, backend: file.signerCustody }, SIGNER_ENTRY);
     bindSdk105ApiCreditExistingKeyLeaseOwner(c.walletOptions.keyPair, wallet);
     requireCurrentOpening();
+    if (localReadOptions !== null) requireCurrentSdk105ApiCreditSelection(selected);
     clientOpeningEntered = true;
-    client = await openClient({ storeOptions: c.storeOptions,
-      fundingOptions: { ...c.fundingOptions, wallet }, serviceOptions: c.serviceOptions }, wireOwner);
+    const clientConfiguration = { storeOptions: c.storeOptions, fundingOptions: { ...c.fundingOptions, wallet }, serviceOptions: c.serviceOptions };
+    client = localReadOptions === null ? await openClient(clientConfiguration, wireOwner)
+      : await openClient(clientConfiguration, wireOwner, localReadOptions);
     // Ownership of the returned native client/key is now known. A refusal
     // after this point must stop both of those original owners once.
     requireCurrentOpening();

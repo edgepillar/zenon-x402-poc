@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "currentDataFailures": 0,
+  "currentParserFailures": 0,
+  "unexpectedSkips": 0,
+  "inheritedInventory": {
+    "path": "qualification/linux-provider-acceptance.failure-inventory.json",
+    "bytes": 1027,
+    "sha256": "1c7f213f7255ddd78aceb62fbbf333a7e229c70fcc48ec36d2f8c44f11578604"
+  },
+  "newDataCommands": 1,
+  "affectedDataCommands": 26,
+  "parserCommands": 4,
+  "affectedExistingControlsReexecuted": 1019,
+  "unchangedControlsNotReexecuted": 1456,
+  "retainedFailedDATA": [],
+  "retainedPreparationRefusals": [
+    {
+      "rawReportSha256": "2770320f63d477ab33464f6179f91c931e67cf0249a025a4d2979f8061616d07",
+      "classification": "PREPARATION_LOGICAL_QUOTA_REFUSED_BEFORE_TASK_OR_NODE",
+      "plannedPeakBytes": 5053393,
+      "taskQuotaBytes": 4194304,
+      "actualDataCommands": 0,
+      "actualParserCommands": 0,
+      "reclassified": false,
+      "correctedBy": "SPLIT_ONLY_UNEXECUTED_REMAINING_GROUPS_WITH_SAME_LOGICAL_CAS_CHARGES_AND_QUOTA"
+    }
+  ],
+  "completedDATAOrCIRepeatedForMetadata": false,
+  "nativeQualification": "NOT_EXECUTED",
+  "scope": "SOURCE_AND_DECLARED_MEMORY_ONLY"
+}

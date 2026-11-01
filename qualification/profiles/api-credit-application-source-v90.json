@@ -1,0 +1,136 @@
+{
+  "version": 90,
+  "status": "SOURCE_AND_DECLARED_MEMORY_DATA_CANDIDATE",
+  "sourceMain": "9a464beacf09b5d3f6223f74317ee80cd6b6f7d4",
+  "sourceMainTree": "09173f041aa3c1478dc69594f826ad0f6d686255",
+  "predecessorProfile": {
+    "path": "qualification/profiles/api-credit-application-source-v89.json",
+    "bytes": 4429,
+    "sha256": "56da2055f8df2b843ab5282c040a9a73d939c095733e95a9a587875c62081c34"
+  },
+  "profileStorage": "EXACT_PREDECESSOR_PROOF_REFERENCE_WITH_EXPLICIT_SOURCE_AND_ROLE_REPLACEMENTS",
+  "product": "ONE_FUNDING_ONE_GRANT_MANY_METERED_CALLS_ORIGINAL_REPLAY_RECOVERY",
+  "nonDpLoopbackOperator": {
+    "path": "qualification/non-dp-loopback-operator.source-contract.json",
+    "bytes": 1343,
+    "sha256": "36b2d3392573a94c4ecec8f7ef9aaf71bfe92c049d7814288cb417c4d73ea6fa"
+  },
+  "proofManifest": {
+    "path": "qualification/non-dp-loopback-operator.proof-manifest.json",
+    "bytes": 228234,
+    "sha256": "6663789cb8681d3ffedd9b90033dadaa7048fd7d4af225881e6459d032fcaa7d"
+  },
+  "failureInventory": {
+    "path": "qualification/non-dp-loopback-operator.failure-inventory.json",
+    "bytes": 1128,
+    "sha256": "c8084b0821caed0777a8b3bbb27562dc09a88c7fa2aeec8430b7d607b932efb1"
+  },
+  "sourceDelta": [
+    {
+      "path": "docs/API_CREDIT_LINUX_ACCEPTANCE_HARNESS.md",
+      "bytes": 16995,
+      "sha256": "727de9da7a1d5cf0e230867585ec69307580153f0f45931980df23e080c9423d",
+      "gitBlob": "d44450ef1ffbb41fe0505734a01d8d0378c6714d"
+    },
+    {
+      "path": "docs/API_CREDIT_LOOPBACK_READ_BOOTSTRAP.md",
+      "bytes": 3674,
+      "sha256": "b3070327c48cd5a1b4a6409cbac1a38256c6a692c266e9b1b4f402ab4b043c74",
+      "gitBlob": "3434c81077a968fe0f7ef04f47a968004006c20d"
+    },
+    {
+      "path": "qualification/api-credit-linux-provider-contract.mjs",
+      "bytes": 7441,
+      "sha256": "293fc0944e39b8e48b7ef7857459e08167546308f20fddfbc1386f402ad96094",
+      "gitBlob": "ee413e4a387b8aad05e61280759a2c5200e88b77"
+    },
+    {
+      "path": "qualification/api-credit-loopback-operator.behavior.mjs",
+      "bytes": 16403,
+      "sha256": "a6cf6e99e369cd62e6edcd16ae7e6ac05ec484171153426a372dae69c5c7ae95",
+      "gitBlob": "4f52058df4aea76b5e7ad6a202e6c6c2ad53d41e"
+    },
+    {
+      "path": "src/api-credit-cli.js",
+      "bytes": 6249,
+      "sha256": "be1c7f390482add8d2b9299ebdad389f83c3daad3e4498f87f0f2773b9aeb1ed",
+      "gitBlob": "631211f547fdb42d12dbc297ba6ad35426a6b8a5"
+    },
+    {
+      "path": "src/api-credit-module-catalog.json",
+      "bytes": 121137,
+      "sha256": "41073c37170c5eb5520b873b7e73962b3880cd628f49d9fef64b56be773991b9",
+      "gitBlob": "7063bbb177ca80d0b04e145146918de8798ca523"
+    },
+    {
+      "path": "src/api-credit-native-package-admission.js",
+      "bytes": 6414,
+      "sha256": "0364cb4cc8a5dd2c4f91f8621676c7f2dc6d5956b536ea1bb961d0b3afcbac1e",
+      "gitBlob": "6cb28433c037bcf3285ffa2a4e0aec5831237d72"
+    },
+    {
+      "path": "src/api-credit-operator-bootstrap.js",
+      "bytes": 10200,
+      "sha256": "54c7c35cea82a46a8b593e07cf120bbc84301a16ae796a0b7d88c0266cba69ff",
+      "gitBlob": "feb2b890b9dbd2e317eb403ba5b4f1fe0ea766d7"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-native-funding-service-client.js",
+      "bytes": 36491,
+      "sha256": "a448c9988f43483bda0775a6f981445900fad3cd986b6fddac5dfceda888b623",
+      "gitBlob": "ef757aefcbfbce3a40fe75524bc3dbd7186f0f3b"
+    },
+    {
+      "path": "src/zenon/native-funding-service-configuration.js",
+      "bytes": 9155,
+      "sha256": "1fd36cd47120823ee9b9980dc9d5ccdcb3c041dba338c071bd8aeb3d8e28130e",
+      "gitBlob": "92e1f7f66b0e5b31bc618aa67847f9627115b0f5"
+    },
+    {
+      "path": "src/zenon/sdk105-api-credit-product-profile.js",
+      "bytes": 16743,
+      "sha256": "48de04ec62568effce674150f44e69de6abcc8509ee6e74ce7007f82d119b7fa",
+      "gitBlob": "50fe5d46abd62b1c23330d4a1fbc7fc9702025fe"
+    },
+    {
+      "path": "src/zenon/sdk105-api-credit-selection.js",
+      "bytes": 11218,
+      "sha256": "58292c07c016d5a5309e097288aa8a544ffbbaf4f4c63c994b5eb2a1a9ac031e",
+      "gitBlob": "cee9a9a93a93d40bc7cf85ef480b0ebebbacb06b"
+    },
+    {
+      "path": "src/zenon/sdk105-native-api-credit-application.js",
+      "bytes": 11643,
+      "sha256": "83692a5fdab5d6b823ec9ec5b57e8cacdbb4343fd2bb9fe8fc68a68fdd9d1ad5",
+      "gitBlob": "c2a37b2abf117c27a88cf4aa278cc0da8f5e49f3"
+    }
+  ],
+  "nativeSourceGraphs": {
+    "buyer": 179,
+    "provider": 105,
+    "union": 246,
+    "bytes": 3416427,
+    "sourceOnly": true
+  },
+  "buyerSourceGraphUnchanged": false,
+  "providerSourceGraphUnchanged": true,
+  "all404PackageRowsAndBareEdgesUnchanged": true,
+  "currentLocalData": {
+    "new": 27,
+    "reexecuted": 889,
+    "retainedExact": 1456,
+    "sourceBoundDistinct": 2372,
+    "separateHarnessRetained": 0,
+    "separateHarnessReexecuted": 130,
+    "allSourceBoundControls": 2502,
+    "newDATACommands": 27,
+    "newParserCommands": 4,
+    "parserSourceProofs": 54
+  },
+  "selectedHostedCIControls": 108,
+  "selectedHostedCISourceInputs": 22,
+  "hostedSelectionChanged": false,
+  "newCasesIncludedInHostedCI": false,
+  "nativeQualification": "NOT_EXECUTED",
+  "G0G5Acceptance": "OPEN"
+}

@@ -59,6 +59,12 @@ export function captureNativeNonDpFundingServiceOperationalConfiguration(configu
   if (arguments.length !== 1) fail();
   return captureOperational(configuration, 'PUBLIC', true);
 }
+/** Separately named non-DP local qualification. It retains the closed three
+ * role paths; no public-route fallback, work fields or native owner is added. */
+export function captureNativeNonDpFundingServiceOperationalConfigurationForLocalQualification(configuration) {
+  if (arguments.length !== 1) fail();
+  return captureOperational(configuration, 'LOCAL_QUALIFICATION', true);
+}
 function captureOperational(configuration, mode, nonDp) {
   const c = fields(configuration, ['storeOptions', 'fundingOptions', 'serviceOptions']);
   const store = fields(c.storeOptions, ['databasePath', 'allowedRoot', 'resourceUrl', 'custodyPolicy']);

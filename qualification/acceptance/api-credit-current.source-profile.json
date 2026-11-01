@@ -1,7 +1,7 @@
 {
   "profileVersion": 1,
   "profileId": "API_CREDIT_CURRENT_SOURCE_V1",
-  "sourceBaseline": "75bec4ad2e8fc576eb91e1fab7744d4889646b0c",
+  "sourceBaseline": "9a464beacf09b5d3f6223f74317ee80cd6b6f7d4",
   "application": {
     "buyerEntry": "src/api-credit-cli.js",
     "providerEntry": "src/issued-provider-cli.js"
@@ -10,8 +10,8 @@
     {
       "role": "buyer",
       "path": "src/api-credit-module-catalog.json",
-      "bytes": 121135,
-      "sha256": "37ba26fff5c7faa7d0c92d1b99538af57ff04a7399e82ae1c660bb3ba368147f",
+      "bytes": 121137,
+      "sha256": "41073c37170c5eb5520b873b7e73962b3880cd628f49d9fef64b56be773991b9",
       "sourceRows": 177,
       "packageRows": 404,
       "bareEdges": 9
@@ -30,7 +30,7 @@
     {
       "path": "src/api-credit-native-package-admission.js",
       "bytes": 6414,
-      "sha256": "18794a467f6cc4a7c39027c4c322c8fb92a5f70131c49af66d0507238baa28f9",
+      "sha256": "0364cb4cc8a5dd2c4f91f8621676c7f2dc6d5956b536ea1bb961d0b3afcbac1e",
       "format": "module"
     },
     {
@@ -48,19 +48,19 @@
   ],
   "dataQualification": {
     "sourceProfile": {
-      "path": "qualification/profiles/api-credit-application-source-v89.json",
-      "bytes": 4429,
-      "sha256": "56da2055f8df2b843ab5282c040a9a73d939c095733e95a9a587875c62081c34"
+      "path": "qualification/profiles/api-credit-application-source-v90.json",
+      "bytes": 5150,
+      "sha256": "09b1f306862200c4944f54ef362d899803cc1f938584e3a0c1d32d4ffc0fc3bb"
     },
     "result": {
-      "path": "qualification/original-observer-admission.actual-local-result.json",
-      "bytes": 92223,
-      "sha256": "62215b9cbab43a11a3b14b438f652407838b96bd8a0f1bd0308e8e977941aa1c"
+      "path": "qualification/non-dp-loopback-operator.actual-local-result.json",
+      "bytes": 113964,
+      "sha256": "8a4b4bb7636a8b5756683c4bb7c90809560ec1a1432dcb81044655e3d8542465"
     },
-    "sourceBoundControls": 2345,
-    "executedControls": 749,
-    "retainedControls": 1596,
-    "expectedResultQualification": "G1_ORIGINAL_OBSERVER_PREOPENING_CURRENT_SOURCE_DATA"
+    "sourceBoundControls": 2372,
+    "executedControls": 916,
+    "retainedControls": 1456,
+    "expectedResultQualification": "G1_NON_DP_LOOPBACK_OPERATOR_CURRENT_SOURCE_DATA"
   },
   "runtime": {
     "nodeVersion": "24.19.0",

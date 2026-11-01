@@ -17,7 +17,8 @@ import { captureOriginalFundingServiceHandoffRequest } from './dynamic-plasma-or
 import { openNativeOfficialV6FundingPostOriginalPaymentClientWithFundingHandoffGuard, openNativeOfficialV6FundingPostOriginalPaymentClientWithFundingAndApiCreditWireOwner } from '../x402-native-v6-funding-post-client.js';
 import { observeServiceCreditOperationDrain } from '../service-credit-bounded-operation-drain.js';
 import { createServiceCreditBoundedCloseCompletion } from '../service-credit-bounded-close-completion.js';
-import { captureNativeFundingServiceOperationalConfiguration, captureNativeNonDpFundingServiceOperationalConfiguration } from './native-funding-service-configuration.js';
+import { captureNativeFundingServiceOperationalConfiguration, captureNativeNonDpFundingServiceOperationalConfiguration,
+  captureNativeNonDpFundingServiceOperationalConfigurationForLocalQualification } from './native-funding-service-configuration.js';
 import { bindWalletOriginalFundingPreparation } from './original-funding-signer-context-bridge.js';
 
 const OPEN_STORE = openZenonFundingPayerRecoveryOriginalPaymentSqliteStoreV6;
@@ -102,10 +103,21 @@ export async function openZenonDynamicPlasmaNativeFundingServiceClientForLocalQu
  * No material/nonce/work/wait fields are admitted and no material producer
  * is constructed. New native execution/qualification is not implied. */
 export async function openZenonNonDpNativeFundingServiceClientWithApiCreditWireOwner(configuration, wireOwner) {
-  if (arguments.length !== 2) fail('configuration_or_owner_unavailable'); validateApiCreditWireOwnerGuard(wireOwner);
+  if (arguments.length !== 2) fail('configuration_or_owner_unavailable');
+  return openOwnedNonDp(configuration, wireOwner, null);
+}
+/** Separately named existing-owner local qualification. The same non-DP
+ * preparer receives the existing loopback read session; no nonce producer,
+ * injected factory or fallback to public reads is introduced. SOURCE ONLY. */
+export async function openZenonNonDpNativeFundingServiceClientWithApiCreditWireOwnerForLocalQualification(configuration, wireOwner, localReadOptions) {
+  if (arguments.length !== 3 || localReadOptions === null || typeof localReadOptions !== 'object') fail('configuration_or_owner_unavailable');
+  return openOwnedNonDp(configuration, wireOwner, localReadOptions);
+}
+async function openOwnedNonDp(configuration, wireOwner, localReadOptions) {
+  validateApiCreditWireOwnerGuard(wireOwner);
   const admission = createApiCreditStoreOwnerAdmission(wireOwner, 1000);
   try {
-    const client = await openClient(configuration, null, false, wireOwner, admission, true);
+    const client = await openClient(configuration, localReadOptions, localReadOptions !== null, wireOwner, admission, true);
     requireApiCreditStoreOwnerStage(admission, 'CLIENT_RETURN'); return client;
   } catch (caught) {
     if (applicationSlot !== null && applicationSlot.storeAdmission === admission
@@ -115,7 +127,7 @@ export async function openZenonNonDpNativeFundingServiceClientWithApiCreditWireO
 }
 
 async function openClient(configuration, localReadOptions, localQualification, wireOwner = null, storeAdmission = null, nonDp = false) {
-  if (!invariant() || applicationSlot !== null || nonDp && (wireOwner === null || localQualification)) fail('configuration_or_owner_unavailable');
+  if (!invariant() || applicationSlot !== null || nonDp && wireOwner === null) fail('configuration_or_owner_unavailable');
   let storeOptions, fundingOptions, serviceOptions, policy, materialOptions, fundingTransportOptions;
   let reads = null, post = null, session = null, funder = null, service = null, store = null;
   let fileIdentity = null, openingStore = false, transferred = false, held = false, checking = false;
@@ -176,7 +188,7 @@ async function openClient(configuration, localReadOptions, localQualification, w
       : ['readSessionOptions','materialOptions','materialWaitMs','wallet','deadlineMs','fundingTransportOptions']);
     const { wallet, ...operationalFunding } = incomingFunding;
     const operational = { storeOptions: c.storeOptions, fundingOptions: operationalFunding, serviceOptions: c.serviceOptions };
-    const selected = nonDp ? captureNativeNonDpFundingServiceOperationalConfiguration(operational)
+    const selected = nonDp ? (localQualification ? captureNativeNonDpFundingServiceOperationalConfigurationForLocalQualification : captureNativeNonDpFundingServiceOperationalConfiguration)(operational)
       : captureNativeFundingServiceOperationalConfiguration(operational, localQualification ? 'LOCAL_QUALIFICATION' : 'PUBLIC');
     storeOptions = selected.storeOptions; policy = storeOptions.custodyPolicy;
     fundingOptions = { ...selected.fundingOptions, wallet };

@@ -75,7 +75,9 @@ export function captureApiCreditProviderAcceptanceSelection(input){
       providerReplyPins:F(replyPins),providerProcesses:1,journalSetupProcesses:1,providerActivationCommands:1,afterBuyerReply:2,
       providerBeforeCredential:true,providerClosedBeforeLedgerProbe:true,providerLifecycleAcceptance:'NOT_EXECUTED',
       fundingAcknowledgementCreatesGrantAuthority:false,observerAuthentication:'NOT_ESTABLISHED',loopbackRPCAuthentication:'NOT_ESTABLISHED',
-      buyerReadRoutesIsolation:'NOT_ESTABLISHED',nativeFixtureAcceptance:'NOT_ESTABLISHED'});
+      buyerReadRoutesIsolation:'NOT_ESTABLISHED',nativeFixtureAcceptance:'NOT_ESTABLISHED',
+      selectedBuyerReadProfile:run.operatorBootstrapVersion===3?'LOOPBACK_QUALIFICATION_V1':'PUBLIC_PINNED_READS',
+      buyerPublicReadFallback:false,publicReadRoutePolicyChanged:false});
     const token=F({providerAcceptanceVersion:1,summary});STATES.set(token,{plan,signer});return token;
   }catch{fail(stage);}
 }

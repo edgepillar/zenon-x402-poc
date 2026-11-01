@@ -2451,8 +2451,8 @@
     },
     {
       "path": "src/api-credit-cli.js",
-      "bytes": 6128,
-      "sha256": "83dc9504f96b852b71ebea799257a80b7b4945d659f74dd8a486701d88df10cf",
+      "bytes": 6249,
+      "sha256": "be1c7f390482add8d2b9299ebdad389f83c3daad3e4498f87f0f2773b9aeb1ed",
       "format": "module"
     },
     {
@@ -2493,8 +2493,8 @@
     },
     {
       "path": "src/api-credit-operator-bootstrap.js",
-      "bytes": 9730,
-      "sha256": "54a1053993964d4516f182915631f7419b4e88bfd302c962744df5675932251a",
+      "bytes": 10200,
+      "sha256": "54c7c35cea82a46a8b593e07cf120bbc84301a16ae796a0b7d88c0266cba69ff",
       "format": "module"
     },
     {
@@ -3087,8 +3087,8 @@
     },
     {
       "path": "src/zenon/dynamic-plasma-native-funding-service-client.js",
-      "bytes": 35568,
-      "sha256": "59397b25c9db37ab8aca661e397c020ef49c09db2480c224195c7698ca740760",
+      "bytes": 36491,
+      "sha256": "a448c9988f43483bda0775a6f981445900fad3cd986b6fddac5dfceda888b623",
       "format": "module"
     },
     {
@@ -3339,8 +3339,8 @@
     },
     {
       "path": "src/zenon/native-funding-service-configuration.js",
-      "bytes": 8772,
-      "sha256": "c438358cfa811ad21d63772184f80c5f1c1af9f0a24752d9b615bbc38b68c5d2",
+      "bytes": 9155,
+      "sha256": "1fd36cd47120823ee9b9980dc9d5ccdcb3c041dba338c071bd8aeb3d8e28130e",
       "format": "module"
     },
     {
@@ -3447,14 +3447,14 @@
     },
     {
       "path": "src/zenon/sdk105-api-credit-product-profile.js",
-      "bytes": 15186,
-      "sha256": "3b4a8bf736148f35d020d43753d6dd2d086424b8afed58d333621bf324b565b7",
+      "bytes": 16743,
+      "sha256": "48de04ec62568effce674150f44e69de6abcc8509ee6e74ce7007f82d119b7fa",
       "format": "module"
     },
     {
       "path": "src/zenon/sdk105-api-credit-selection.js",
-      "bytes": 8695,
-      "sha256": "0a28beb05302009f61fe6dc0c32399c0f5f6783bce07dfbc264d8108303d4e95",
+      "bytes": 11218,
+      "sha256": "58292c07c016d5a5309e097288aa8a544ffbbaf4f4c63c994b5eb2a1a9ac031e",
       "format": "module"
     },
     {
@@ -3465,8 +3465,8 @@
     },
     {
       "path": "src/zenon/sdk105-native-api-credit-application.js",
-      "bytes": 10887,
-      "sha256": "3135dbb84008eca8b4918e9e86ba06b21293b1ff92806c11f4f8a9ea19de9299",
+      "bytes": 11643,
+      "sha256": "83692a5fdab5d6b823ec9ec5b57e8cacdbb4343fd2bb9fe8fc68a68fdd9d1ad5",
       "format": "module"
     },
     {
