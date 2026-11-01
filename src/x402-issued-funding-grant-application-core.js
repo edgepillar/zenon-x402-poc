@@ -265,6 +265,14 @@ async function createCore(options,ports,restoring){
     try{await c.promise;}catch{fail('construction_close_unknown');}fail('construction');
   }finally{fundingConfig=null;serviceConfig=null;transport=null;selection=null;route=null;}
   const NATIVE=ingress;ingress=null;
+  // No callback, store read or observer acquisition is entered here. Only the
+  // fixed native operator receives this local selection capability; HTTP never
+  // dispatches it. Activation repeats its actual current-owner/evidence checks.
+  const selectOriginalActivationObserver=F(function selectOriginalActivationObserver(input){
+    if(arguments.length!==1||restoring||!available()||fundingBusy||opening||active!==0||service!==null)
+      fail('observer_selection_unavailable');
+    return binding.captureOriginalActivationObserver(input);
+  });
   const admitCommittedServiceGrant=F(function admitCommittedServiceGrant(grantId,mode){
     const recordedOnly=arguments.length===2&&mode==='RECORDED_RESULT_ONLY';
     if((arguments.length!==1&&(!restoring||!recordedOnly))||typeof grantId!=='string'||!/^grant_[0-9a-f]{64}$/.test(grantId)
@@ -324,7 +332,7 @@ async function createCore(options,ports,restoring){
     try{nativeCloseReceipt=NATIVE.close();return nativeCloseReceipt;}
     catch{hold();nativeCloseReceipt=rejected('close_unknown');return nativeCloseReceipt;}
   });
-  return F({start:NATIVE.start,close,admitCommittedServiceGrant,resumeOriginalSettlement,snapshot});
+  return F({start:NATIVE.start,close,...(restoring?{}:{selectOriginalActivationObserver}),admitCommittedServiceGrant,resumeOriginalSettlement,snapshot});
 }
 function captureFreshRows(rows){
   if(rows===null||typeof rows!=='object'||IS_PROXY(rows)||!Array.isArray(rows)||P(rows)!==Array.prototype

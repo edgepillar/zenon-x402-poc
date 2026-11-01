@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "currentDataFailures": 0,
+  "currentParserFailures": 0,
+  "unexpectedSkips": 0,
+  "inheritedInventory": {
+    "path": "qualification/linux-signer-acceptance.failure-inventory.json",
+    "bytes": 952,
+    "sha256": "bedf6f1ad8309a102f41bdca46fa72c4d4658c5ad3a64bef951d357b4963ca74"
+  },
+  "newDataCommands": 1,
+  "affectedDataCommands": 27,
+  "parserCommands": 3,
+  "affectedExistingControlsReexecuted": 727,
+  "unchangedControlsNotReexecuted": 1704,
+  "retainedFailedDATA": [],
+  "retainedPreparationRefusals": [],
+  "completedDATAOrCIRepeatedForMetadata": false,
+  "nativeQualification": "NOT_EXECUTED",
+  "scope": "SOURCE_AND_DECLARED_MEMORY_ONLY"
+}

@@ -1,0 +1,117 @@
+{
+  "version": 89,
+  "status": "SOURCE_AND_DECLARED_MEMORY_DATA_CANDIDATE",
+  "sourceMain": "75bec4ad2e8fc576eb91e1fab7744d4889646b0c",
+  "sourceMainTree": "9bc96d0b9ebb4ea3d2bfc53426a3a147dccfa4b4",
+  "predecessorProfile": {
+    "path": "qualification/profiles/api-credit-application-source-v88.json",
+    "bytes": 3873,
+    "sha256": "e8502cd2a90dec74db9edd74e93037792f8f311dfaea52744c4c49d37a78022b"
+  },
+  "profileStorage": "EXACT_PREDECESSOR_PROOF_REFERENCE_WITH_EXPLICIT_SOURCE_AND_ROLE_REPLACEMENTS",
+  "product": "ONE_FUNDING_ONE_GRANT_MANY_METERED_CALLS_ORIGINAL_REPLAY_RECOVERY",
+  "originalObserverAdmission": {
+    "path": "qualification/original-observer-admission.source-contract.json",
+    "bytes": 1059,
+    "sha256": "d661ed20e3a4af4c2f73dcc8b1014cc62858ad225b84a5175c39ba6091bd4774"
+  },
+  "proofManifest": {
+    "path": "qualification/original-observer-admission.proof-manifest.json",
+    "bytes": 199705,
+    "sha256": "c47068a7b5b82a450c39dde3a2dc8581968d3d5c70569176262152d37ab3f1cb"
+  },
+  "failureInventory": {
+    "path": "qualification/original-observer-admission.failure-inventory.json",
+    "bytes": 672,
+    "sha256": "ad80fbf5b6d5213827440ffbee56d742ce2697da29b5f1bef37041355674c81c"
+  },
+  "sourceDelta": [
+    {
+      "path": "qualification/issued-provider-store-owner.behavior.mjs",
+      "bytes": 21888,
+      "sha256": "0b02d7a690878ea55bbfc904fb128390d02631fd214cb227729610e36fbcd44e",
+      "gitBlob": "b6d99cd18a3c06f5bdbd6b53e2786494d12889a1"
+    },
+    {
+      "path": "qualification/original-observer-admission.behavior.mjs",
+      "bytes": 10363,
+      "sha256": "cbf77deaf61702408ce96900d81547ce581bdf8826641ca0d2e5202f22294f41",
+      "gitBlob": "0edbe5703a01eb6e5e85adeb3b8a346085ddc296"
+    },
+    {
+      "path": "src/issued-provider-module-catalog.json",
+      "bytes": 104624,
+      "sha256": "5436c84898deeb2cc8ed746108636934a524227d1bccefe57cecd45d5ac8716a",
+      "gitBlob": "a29591469a7764499e770239a11d1f514620220b"
+    },
+    {
+      "path": "src/issued-provider-native-operator.js",
+      "bytes": 15462,
+      "sha256": "3d622c3fed81a488d5215e10eee19aa2b0dca24f541483faa81e901b76731869",
+      "gitBlob": "99efbc3b19110db6ed559e92aa8b227a945b9590"
+    },
+    {
+      "path": "src/issued-provider-native-package-admission.js",
+      "bytes": 6429,
+      "sha256": "edc233483628d1d279dc7fa4026bc09678b8e60c8939362373a802b80080216d",
+      "gitBlob": "a46d104b4d31936c86e2829a760a5fbac4dcc692"
+    },
+    {
+      "path": "src/issued-provider-original-observer-admission.js",
+      "bytes": 1783,
+      "sha256": "14c7d3b5c80d2d4ddec1c59cace4fea812fa3a0db355890828c3d2cf82e61862",
+      "gitBlob": "684f86602996fd677debc2a0fbb9ab7eeee0ea86"
+    },
+    {
+      "path": "src/issued-provider-owned-configuration.js",
+      "bytes": 8480,
+      "sha256": "6e7c910689cdbf7d163983ccfae813559df7b3a53ec492aed4b8baec1a17bca3",
+      "gitBlob": "cf9aca6fedcc241cdcdfd8d201d1e9d0d4196e62"
+    },
+    {
+      "path": "src/issued-provider-store-owner.js",
+      "bytes": 10738,
+      "sha256": "1753c9bdf41a9d1b1319c37735adfba5fbbd64a5815cdecfd92a201a885b989b",
+      "gitBlob": "0b2f14289e5dc115f92827eb1f794948926fd3dc"
+    },
+    {
+      "path": "src/x402-issued-funding-grant-application-core.js",
+      "bytes": 27278,
+      "sha256": "78d181ca366ce88f491af5c34776d590c68be32ea72205344188ca50250abe05",
+      "gitBlob": "4c196a36f2a15718e522fffc694ee1bd63b23611"
+    },
+    {
+      "path": "src/x402-issued-funding-post-application-binding.js",
+      "bytes": 10645,
+      "sha256": "51899cd30ed055d24d25bae5243d26514209312e13daaf7fcab521c0b0bb3f37",
+      "gitBlob": "27aac88bb30d98c402ce2116e64e1eae7c3bf2d6"
+    }
+  ],
+  "nativeSourceGraphs": {
+    "buyer": 179,
+    "provider": 105,
+    "union": 246,
+    "bytes": 3409694,
+    "sourceOnly": true
+  },
+  "buyerSourceGraphUnchanged": true,
+  "providerSourceGraphUnchanged": false,
+  "all404PackageRowsAndBareEdgesUnchanged": true,
+  "currentLocalData": {
+    "new": 22,
+    "reexecuted": 727,
+    "retainedExact": 1596,
+    "sourceBoundDistinct": 2345,
+    "separateHarnessRetained": 108,
+    "allSourceBoundControls": 2453,
+    "newDATACommands": 28,
+    "newParserCommands": 3,
+    "parserSourceProofs": 54
+  },
+  "selectedHostedCIControls": 108,
+  "selectedHostedCISourceInputs": 22,
+  "hostedSelectionChanged": false,
+  "newCasesIncludedInHostedCI": false,
+  "nativeQualification": "NOT_EXECUTED",
+  "G0G5Acceptance": "OPEN"
+}

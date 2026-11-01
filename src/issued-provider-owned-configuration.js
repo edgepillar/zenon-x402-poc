@@ -11,7 +11,7 @@ import { captureServiceCreditBoundedHttpsIngressLimits,SERVICE_CREDIT_BOUNDED_HT
 const F=Object.freeze,D=Object.getOwnPropertyDescriptor,O=Object.hasOwn,K=Reflect.ownKeys,A=Reflect.apply;
 const TP=Object.getPrototypeOf(Uint8Array.prototype),LENGTH=D(TP,'length').get,ARRAYBUFFER=D(TP,'buffer').get,SET=TP.set,FILL=Buffer.prototype.fill;
 const REGISTER=InMemoryServiceCreditModel.prototype.registerOffer;
-const METHODS=F({FRESH:F(['admitCommittedServiceGrant','resumeOriginalSettlement','activateOriginalCommittedFunding']),
+const METHODS=F({FRESH:F(['admitCommittedServiceGrant','resumeOriginalSettlement','activateOriginalCommittedFunding','selectOriginalActivationObserver']),
  RECORDED:F(['admitCommittedServiceGrant','resumeOriginalSettlement','inspectOriginalCommittedServiceGrant','admitOriginalCommittedServiceGrant','admitOriginalCommittedServiceGrantResults']),
  JOURNAL:F(['admitCommittedServiceGrant','resumeOriginalSettlement','inspectOriginalCommittedServiceGrant','admitOriginalCommittedServiceGrant','admitOriginalCommittedServiceGrantResults','reconcileOriginalFunding','recoverOriginalFundingFirstResult']),
  WITNESSED:F(['admitCommittedServiceGrant','resumeOriginalSettlement','inspectOriginalCommittedServiceGrant','admitOriginalCommittedServiceGrant','admitOriginalCommittedServiceGrantResults','reconcileOriginalFunding','recoverOriginalFundingFirstResult','inspectOriginalFundingHistory'])});

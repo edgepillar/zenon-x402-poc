@@ -90,6 +90,7 @@ check('owned-provider-actual-recorded-controller-and-reference-ledger-preserve-1
 
 check('owned-provider-partial-ingress-metrics-never-substitute-for-release-proof',async()=>{const f=fixture({view(s){return s.rootClosed?F({...view(s),ingress:F({phase:'CLOSED'})}):view(s);}});await f.owner.start();await assert.rejects(f.owner.close());assert.equal(f.owner.snapshot().held,true);assert.equal(f.owner.snapshot().intakeCloseCalls+f.owner.snapshot().serviceCloseCalls,0);assert.equal(f.s.claimed,true);});
 
+export const createIssuedProviderStoreOwnerDataFixture=fixture;
 export const issuedProviderStoreOwnerDataCases=F([...checks]);
 if(process.argv[1]===fileURLToPath(import.meta.url)){
  const cases=[];let current=null,reported=false;

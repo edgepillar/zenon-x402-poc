@@ -1,4 +1,5 @@
 import { requireIssuedProviderClosedOwners } from './issued-provider-close-observation.js';
+import { enterIssuedProviderOriginalObserver } from './issued-provider-original-observer-admission.js';
 // SOURCE/PARSER ONLY: actual journal/SQL/core/SDK/TLS/FIFO use is unexecuted.
 import process,{hrtime} from 'node:process';
 import { Buffer } from 'node:buffer';
@@ -111,10 +112,16 @@ export async function runNativeIssuedProviderOperator(args,readPackageState){
    resumeOriginalSettlement:F(()=>invoke('resumeOriginalSettlement',[])),inspectOriginalCommittedServiceGrant:F(()=>invoke('inspectOriginalCommittedServiceGrant',[])),admitOriginalCommittedServiceGrant:F(()=>invoke('admitOriginalCommittedServiceGrant',[])),admitOriginalCommittedServiceGrantResults:F(()=>invoke('admitOriginalCommittedServiceGrantResults',[])),
    reconcileOriginalFunding:F(()=>invoke('reconcileOriginalFunding',[])),recoverOriginalFundingFirstResult:F(()=>invoke('recoverOriginalFundingFirstResult',[])),inspectOriginalFundingHistory:F(()=>invoke('inspectOriginalFundingHistory',[])),
    activateOriginalCommittedFunding:F(async argument=>{guard();
-    if(frame.observer===null){if(frame.observerEntered)fail();frame.observerEntered=true;frame.observerName=argument.observerFileName;frame.observerKey=argument.recordKey;
-     frame.observer=openZenonFundingObserverSqliteStore({databasePath:join(c.funding.observerRoot,argument.observerFileName),allowedRoot:c.funding.observerRoot,
-      expectedRecordKey:argument.recordKey,authorityRecord:c.funding.authorityRecord,busyTimeoutMs:c.serviceStore.busyTimeoutMs,maxStateBytes:c.serviceStore.maxStateBytes});}
-    if(frame.observerClosed||frame.observerName!==argument.observerFileName||frame.observerKey!==argument.recordKey)fail();
+    // Resolve only the same retained original's observer tuple before any file
+    // entry. ACK, a syntactically valid filename or an operator-supplied key
+    // alone cannot choose another observer. Actual activation remains separate.
+    const enter=F(selected=>{
+     if(frame.observer===null){if(frame.observerEntered)fail();frame.observerEntered=true;frame.observerName=selected.observerFileName;frame.observerKey=selected.recordKey;
+      frame.observer=openZenonFundingObserverSqliteStore({databasePath:join(c.funding.observerRoot,selected.observerFileName),allowedRoot:c.funding.observerRoot,
+       expectedRecordKey:selected.recordKey,authorityRecord:c.funding.authorityRecord,busyTimeoutMs:c.serviceStore.busyTimeoutMs,maxStateBytes:c.serviceStore.maxStateBytes});}
+     if(frame.observerClosed||frame.observerName!==selected.observerFileName||frame.observerKey!==selected.recordKey)fail();return frame.observer;
+    });
+    enterIssuedProviderOriginalObserver(argument,F({check:guard,select:F(value=>frame.app.selectOriginalActivationObserver(value)),open:enter}));
     const value=await frame.app.activateOriginalCommittedFunding(frame.observer);guard();return value;}),
    readCommand:frame.channel.readCommand,writeResult:frame.channel.writeResult,closeChannel:frame.channel.close,inspectChannel:frame.channel.inspect,
    closeAuxiliary,inspectAuxiliary:F(()=>F({closed:frame.auxClosed,held:frame.auxHeld,active:frame.roles?.snapshot().busy??false})),clock,

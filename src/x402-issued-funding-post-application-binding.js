@@ -41,7 +41,7 @@ export function createIssuedFundingPostApplicationBinding(options) {
     funding:'sha256:'+selected.resource.tags[1]+selected.resource.tags[2]});
   const challenge=frame(402,'Payment Required',F({'PAYMENT-REQUIRED':selected.frame.paymentRequiredHeader}));
   const accepted=frame(202,'BOUND',F({}));
-  let held=false,boundHash=null,boundRecord=null,phase=null,serviceGrantPinned=false;
+  let held=false,boundHash=null,boundRecord=null,boundObserver=null,phase=null,serviceGrantPinned=false;
   function live(){if(held)fail();}
   const getChallenge=F(function getChallenge(){if(arguments.length!==0)fail();live();return challenge;});
   const captureBoundOutcome=F(function captureBoundOutcome(input){
@@ -70,8 +70,19 @@ export function createIssuedFundingPostApplicationBinding(options) {
       if(boundHash!==null&&(boundHash!==b.transactionHash||boundRecord!==fingerprint))fail();
       if(phase!==null&&phase!=='PENDING'&&next!==phase)fail();
       boundHash=b.transactionHash;boundRecord=fingerprint;phase=next;
+      boundObserver=F({observerFileName:b.observerFileName,recordKey:b.observerRecordKey});
       return accepted;
     }catch{held=true;fail();}
+  });
+  // Fixed local-operator pre-opening selection. This only compares the exact
+  // original BOUND tuple already retained by this binding. It authenticates
+  // neither an observer nor chain evidence, and never activates a grant.
+  const captureOriginalActivationObserver=F(function captureOriginalActivationObserver(input){
+    if(arguments.length!==1)fail();live();
+    if(boundObserver===null||phase!=='SETTLED'||serviceGrantPinned)fail();
+    const c=exact(input,['observerFileName','recordKey']);
+    if(c.observerFileName!==boundObserver.observerFileName||c.recordKey!==boundObserver.recordKey)fail();
+    return F({observerFileName:boundObserver.observerFileName,recordKey:boundObserver.recordKey});
   });
   const captureCommittedGrant=F(function captureCommittedGrant(input,expectedGrantId){
     if(arguments.length!==2||typeof expectedGrantId!=='string'||!/^grant_[0-9a-f]{64}$/.test(expectedGrantId))fail();live();
@@ -100,7 +111,7 @@ export function createIssuedFundingPostApplicationBinding(options) {
     return F({issuedFundingPostApplicationBindingVersion:1,held,boundRetained:boundHash!==null,
       transactionHash:boundHash,officialPhase:phase,serviceGrantPinned,issuanceAuthenticated:false,
       committedRecordAuthenticated:false,grantActivation:'NONE',authority:'NONE'});});
-  return F({getChallenge,captureBoundOutcome,captureCommittedGrant,inspect});
+  return F({getChallenge,captureBoundOutcome,captureOriginalActivationObserver,captureCommittedGrant,inspect});
 }
 function frame(statusCode,body,headers){return F({statusCode,contentType:TEXT,body,headers});}
 function identifier(value){return typeof value==='string'&&value.length<=128&&/^[A-Za-z0-9][A-Za-z0-9._:-]*$/.test(value)&&!value.includes('://');}
