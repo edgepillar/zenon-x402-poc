@@ -1,0 +1,88 @@
+{
+  "version": 92,
+  "status": "SOURCE_AND_DECLARED_MEMORY_DATA_CANDIDATE",
+  "sourceMain": "2a8f5fe92bdc055581770827a341c872bef23e9f",
+  "sourceMainTree": "b07688d22c287986b121f22df51fef216fd87083",
+  "predecessorProfile": {
+    "path": "qualification/profiles/api-credit-application-source-v91.json",
+    "bytes": 4902,
+    "sha256": "39485176117117d23f2efd1b5d04609e23674971ad5e92a1d77057c8d7d641e4"
+  },
+  "profileStorage": "EXACT_PREDECESSOR_PROOF_REFERENCE_WITH_EXPLICIT_SOURCE_AND_ROLE_REPLACEMENTS",
+  "product": "ONE_FUNDING_ONE_GRANT_MANY_METERED_CALLS_ORIGINAL_REPLAY_RECOVERY",
+  "prequeryCustodyHold": {
+    "path": "qualification/prequery-custody-hold.source-contract.json",
+    "bytes": 1285,
+    "sha256": "8567b9e17d6692d579f70d29866a7ec2c37eed2c4377bf3881579a298f57f177"
+  },
+  "proofManifest": {
+    "path": "qualification/prequery-custody-hold.proof-manifest.json",
+    "bytes": 288043,
+    "sha256": "d45009426f2b9d087ca880b5cc9f662038e2d9233bc0ae9c71eb7a0b4428466a"
+  },
+  "failureInventory": {
+    "path": "qualification/prequery-custody-hold.failure-inventory.json",
+    "bytes": 2678,
+    "sha256": "365d1ad971993a20f145fad87026dfd46d159bcbd859635a23003737a5bc0e13"
+  },
+  "sourceDelta": [
+    {
+      "path": "docs/API_CREDIT_PREQUERY_CUSTODY_HOLD.md",
+      "bytes": 2082,
+      "sha256": "3b0652826c8b204e92a4068005419a35e15d4f1de6e9798245c08dcf8b055ea3",
+      "gitBlob": "40faa575894842e0c568727352553ca1a2e56e13"
+    },
+    {
+      "path": "qualification/purchased-grant-prequery-custody.behavior.mjs",
+      "bytes": 8665,
+      "sha256": "d361fcb42de5c9e9e6833080ccdc009470065ac727fa4a1b171d47be32264239",
+      "gitBlob": "91c9e0c21e5436a292b061166b312289f2d367f7"
+    },
+    {
+      "path": "src/api-credit-funding-grant-recovery-application.js",
+      "bytes": 16371,
+      "sha256": "aa3f0f3e109ee8b4a67fde65319a6e2b9124b335fb2452d5d1a1b03ea9ca4d65",
+      "gitBlob": "c361613cf74da50eaf98253276b2fdb8afb82a8c"
+    },
+    {
+      "path": "src/api-credit-module-catalog.json",
+      "bytes": 121331,
+      "sha256": "cfef6acd7957cdbef92ebb30b008dac81c2754694c5afc257669bfff78551e37",
+      "gitBlob": "b7dec971587ca670024978d81ab5d754e29c2d98"
+    },
+    {
+      "path": "src/api-credit-native-package-admission.js",
+      "bytes": 6414,
+      "sha256": "c4c0fc4ffe8fcf8ea5af1e4d713e40334ff61c2b4a0f0a144121a0d302808fbf",
+      "gitBlob": "5ebca5d03eee1546c757b9abb891c73ed31ee165"
+    }
+  ],
+  "nativeSourceGraphs": {
+    "buyer": 180,
+    "provider": 105,
+    "union": 247,
+    "bytes": 3419098,
+    "sourceOnly": true
+  },
+  "buyerSourceGraphUnchanged": false,
+  "providerSourceGraphUnchanged": true,
+  "all404PackageRowsAndBareEdgesUnchanged": true,
+  "currentLocalData": {
+    "new": 18,
+    "reexecuted": 864,
+    "retainedExact": 1538,
+    "sourceBoundDistinct": 2420,
+    "separateHarnessRetained": 0,
+    "separateHarnessReexecuted": 181,
+    "allSourceBoundControls": 2601,
+    "newDATACommands": 40,
+    "newParserCommands": 1,
+    "parserSourceProofs": 55
+  },
+  "selectedHostedCIControls": 108,
+  "selectedHostedCISourceInputs": 22,
+  "hostedSelectionChanged": false,
+  "newCasesIncludedInHostedCI": false,
+  "nativeQualification": "NOT_EXECUTED",
+  "G0G5Acceptance": "OPEN"
+}

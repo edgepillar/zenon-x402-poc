@@ -1,7 +1,7 @@
 {
   "profileVersion": 1,
   "profileId": "API_CREDIT_CURRENT_SOURCE_V1",
-  "sourceBaseline": "b0ad978ea1675e412424ac654581e6568dbeb909",
+  "sourceBaseline": "2a8f5fe92bdc055581770827a341c872bef23e9f",
   "application": {
     "buyerEntry": "src/api-credit-cli.js",
     "providerEntry": "src/issued-provider-cli.js"
@@ -11,7 +11,7 @@
       "role": "buyer",
       "path": "src/api-credit-module-catalog.json",
       "bytes": 121331,
-      "sha256": "bf4374aa432a4eea83c8290b3a6533c4b5ae7873d5a8dc27e7f65a3d48633cdc",
+      "sha256": "cfef6acd7957cdbef92ebb30b008dac81c2754694c5afc257669bfff78551e37",
       "sourceRows": 178,
       "packageRows": 404,
       "bareEdges": 9
@@ -30,7 +30,7 @@
     {
       "path": "src/api-credit-native-package-admission.js",
       "bytes": 6414,
-      "sha256": "536306dba3c2141bdafe4959461b3bda0c6ce55a2a73cfc4b2cebfad2cabf94e",
+      "sha256": "c4c0fc4ffe8fcf8ea5af1e4d713e40334ff61c2b4a0f0a144121a0d302808fbf",
       "format": "module"
     },
     {
@@ -48,19 +48,19 @@
   ],
   "dataQualification": {
     "sourceProfile": {
-      "path": "qualification/profiles/api-credit-application-source-v91.json",
-      "bytes": 4902,
-      "sha256": "39485176117117d23f2efd1b5d04609e23674971ad5e92a1d77057c8d7d641e4"
+      "path": "qualification/profiles/api-credit-application-source-v92.json",
+      "bytes": 3226,
+      "sha256": "7ed35c45613062488843a7160722b040f176ff1959ce146ed4a1e970a5e36e34"
     },
     "result": {
-      "path": "qualification/public-profile-refusal.actual-local-result.json",
-      "bytes": 90158,
-      "sha256": "f4d0dd4be91d1a03f6986854f773b317b1ee224469e939098cddc1e8158a3caf"
+      "path": "qualification/prequery-custody-hold.actual-local-result.json",
+      "bytes": 108986,
+      "sha256": "fc895b5b796448932256b60c38f4f85130012a97900e2686ecc68ed55549bc10"
     },
-    "sourceBoundControls": 2402,
-    "executedControls": 722,
-    "retainedControls": 1680,
-    "expectedResultQualification": "G1_PUBLIC_PROFILE_REFUSAL_CURRENT_SOURCE_DATA"
+    "sourceBoundControls": 2420,
+    "executedControls": 882,
+    "retainedControls": 1538,
+    "expectedResultQualification": "G1_PREQUERY_CUSTODY_HOLD_CURRENT_SOURCE_DATA"
   },
   "runtime": {
     "nodeVersion": "24.19.0",

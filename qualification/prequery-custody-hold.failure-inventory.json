@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "currentDataFailures": 0,
+  "currentParserFailures": 0,
+  "unexpectedSkips": 0,
+  "inheritedInventory": {
+    "path": "qualification/public-profile-refusal.failure-inventory.json",
+    "bytes": 757,
+    "sha256": "029a865f1863a43210083b536757e7ba4ff5369ec46e6864e531af167e6cdef9"
+  },
+  "newDataCommands": 1,
+  "affectedDataCommands": 39,
+  "parserCommands": 1,
+  "affectedExistingControlsReexecuted": 1045,
+  "unchangedControlsNotReexecuted": 1538,
+  "retainedFailedDATA": [
+    {
+      "group": "new.0",
+      "entry": "qualification/purchased-grant-prequery-custody.behavior.mjs",
+      "classification": "PRODUCT_PREQUERY_CUSTODY_HOLD_GAP",
+      "actualExit": 1,
+      "outputComplete": true,
+      "passedCases": 9,
+      "failedCases": [
+        "prequery-malformed-custody-is-held-before-any-grant-lookup",
+        "prequery-empty-known-read-is-held-before-any-grant-lookup",
+        "prequery-foreign-payment-record-is-held-with-original-funding-unchanged",
+        "prequery-foreign-checkpoint-digest-is-held-without-another-proof-or-query",
+        "prequery-foreign-query-digest-is-held-before-service-ownership",
+        "prequery-exact-record-bytes-cannot-be-replaced-by-json-whitespace",
+        "restoring-custody-bytes-does-not-thaw-a-held-handoff",
+        "prequery-custody-failure-cannot-repeat-prepare-commit-or-funding",
+        "known-custody-mismatch-close-joins-the-original-child-once-and-stays-held"
+      ],
+      "sourceVariantRetainedInOwnedCAS": true,
+      "sourceVariantReclassified": false,
+      "automaticRetry": false,
+      "rawReportSha256": "2f8f75ecfe8da442cc574c13b05b2c608754eb5e2ce82bee8d801eb9f34e7be0",
+      "controllerStatus": "UNKNOWN",
+      "commandState": "COMPLETE",
+      "taskOutcome": "FAILURE"
+    }
+  ],
+  "retainedPreparationRefusals": [],
+  "preFixSource": "2a8f5fe92bdc055581770827a341c872bef23e9f",
+  "preFixCases": {
+    "passed": 9,
+    "failed": 9
+  },
+  "sameTestBytesAfterFix": true,
+  "retainedActualDATAFailures": 9,
+  "inheritedRefusalsPreserved": true,
+  "originalSourceVariantInOwnedCAS": true,
+  "packingOptimization": {
+    "method": "NEW_FIRST_THEN_LARGEST_SEED_AND_MINIMUM_ADDITIONAL_SOURCE_BYTES",
+    "originalTasks": 5,
+    "currentTasks": 4,
+    "originalChargedPeaks": 19735759,
+    "currentChargedPeaks": 15588887,
+    "taskQuotaBytesUnchanged": 4194304,
+    "commandLimitUnchanged": 16,
+    "completedDATARerunForPacking": false,
+    "unexecutedPriorPlanRawSha256": "4081c7e1e6eeae588f97af13a5dc588f9f69116d01ba65c3f0b799c950c32123"
+  },
+  "completedDATAOrCIRepeatedForMetadata": false,
+  "nativeQualification": "NOT_EXECUTED",
+  "scope": "SOURCE_AND_DECLARED_MEMORY_ONLY"
+}

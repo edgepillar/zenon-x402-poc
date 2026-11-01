@@ -143,7 +143,9 @@ function createApplication(configuration,purchased,nonDp=false){
     const request=F({originalPayment:checked.originalPayment,selectedGrantId:checked.selectedGrantId,paymentRequiredHeader:checked.paymentRequiredHeader});
     // All external originals, pins and grant shape are admitted before the
     // one query claim. The ready profile was purchase-bound before funding.
-    read();handoffClaimed=true;queryActive=true;const out=capability();
+    // Retain funded custody ambiguity before claiming or opening the lookup.
+    try{read();}catch{hold();fail();}
+    handoffClaimed=true;queryActive=true;const out=capability();
     const guard=F(function requireCurrentPurchasedGrantLookup(){
       if(arguments.length!==0||!queryActive||closed||held||closing!==null||!invariant())fail();
       current();const view=childView();if(closed||held||closing!==null||data(view,'lifecycle')!=='OPEN'||data(view,'publicOperationActive')!==false)fail();
