@@ -7,13 +7,13 @@ The harness has not been executed. Native execution remains disabled by the
 current user decision. Do not interpret its DATA preflight results as Linux,
 SDK/core, SQLite, HTTPS, signer, restart or release qualification.
 
-The explicit version-three candidate advances the G1 one-funding/100-request
-scenario, persisted provider-ledger and payer spending-budget observations,
+The explicit version-four candidate advances the G1 one-funding/100-request
+scenario, persisted provider-ledger, payer spending-budget and retained signer observations,
 and the normal fresh-process original-result read. Full G1 additionally
 requires the actual accepted native run, negative-case and concurrency evidence. G2 still requires
 its specified interruption cutpoints, signer loss,
 stale-owner and physical release or controlled HELD observations. Both gates
-remain OPEN; a `PROCESS_LEDGER_AND_SPENDING_OBSERVATIONS_MATCHED` report is insufficient
+remain OPEN; a `PROCESS_LEDGER_SPENDING_AND_SIGNER_OBSERVATIONS_MATCHED` report is insufficient
 to close them by itself.
 
 ## Exact scenario
@@ -31,6 +31,9 @@ An independently reviewed synthetic fixture supplies all bytes before launch:
 5. The exact expected historical response, including its no-authority fields.
 6. The explicit backend-ledger profile, matching the recovery database/limits
    and stating one expected unit per request. No unit-price default is inferred.
+7. An independently selected canonical signer-inspection V3 profile, requiring
+   `GRANT_RECOVERY_V1`, an explicit uncertainty-age maximum, the same existing
+   spending-file owner/policy/root/device/limits and original payment/digest/URL.
 
 The pure preflight uses the real non-DP bootstrap, command, service-wire,
 ready-query, original-checkpoint and recorded-result codecs. It validates the
@@ -63,7 +66,8 @@ transfers ownership, creates a missing file or falls back to a signer-only
 schema. The actual opener also validates its retained signer/grant-query rows;
 the probe has no signing, record-retention or grant-query-write operation.
 
-Three current-owner guards bracket two complete spending loads. Both strings
+Four current-owner guards bracket two complete spending loads and one retained
+signer read through the actual same-owned signer/age protocol. Both spending strings
 must be identical and pass the actual spending-history decoder and journal
 arithmetic. Exactly one SPENT row must bind the same payment ID, accepted
 network/asset/recipient/amount and preparation digest used by the real spending
@@ -72,14 +76,31 @@ unrelated sorted snapshot encoding must not replace it. RESERVED, UNKNOWN,
 missing, foreign, extra or changed originals fail the clean scenario. Money
 exposure and provider service units are separate observations.
 
-The journal observes only the stored last day, without a clock, new admission,
-expiry, release, replacement or write. The owner must return void current
-guards, fresh OPEN views, a void revoke and fresh REVOKED view, then one void
-close and fresh CLOSED view before publication. Unknown read/guard/view receipts
-retain uncertainty without a physical close or another acquisition. A known
-semantic mismatch may revoke/close once while still withholding output.
+The selected signer record must contain SIGNED_DATA for that same original.
+Its transaction hash, complete serialized checkpoint and all independent pins
+must equal the independently selected handoff checkpoint and commit pins. No byte or expectation is learned from actual child output or the database. An intent-only, missing,
+foreign or different signed original cannot qualify the clean scenario.
+
+The actual V3 selector and signer/age owner perform the existing read, UTC-day,
+current-owner, revoke and close protocol. A read-only facade records only its
+two bounded journal loads; it forwards original method returns unchanged and
+exposes no CAS, signing or record-retention method. The existing budget verifier
+checks those same bytes after the same known close. There is one payer owner,
+with no extra connection, probe process or database copy. Throwing or opaque
+reads retain the original protocol's UNKNOWN behavior without a forced close
+or another acquisition.
+
+Budget arithmetic observes the stored day. The signer owner separately checks
+its current UTC observations and selected uncertainty-age policy. The redacted
+stable history digest excludes the current day, so a normal read across midnight
+is not mistaken for changed history. No clock, expiry or age observation releases
+a reservation, replaces an original, authorizes a signer or permits dispatch.
 The provider owner must close before the payer owner opens; the two stores do
-not share an atomic snapshot. No extra probe process or database copy is added.
+not share an atomic snapshot.
+
+This normal retained-history observation is a prerequisite for G2 qualification,
+not a SIGNER-RESPONSE-LOSS result. No signer-response-loss or interruption
+cutpoint has been run, and no new signature is produced by either probe.
 
 The next application process uses only `--recorded-result-fd`
 and `--output-fd`; it receives no credential or service-command input. Its
@@ -115,16 +136,16 @@ launcher supplies `SPV_TASK_SCRATCH`, its lease, quota, mounted-volume identity,
 global reservations, ten-GiB floor and foreground process-group supervision.
 This harness neither creates/adopts a storage root nor supplies an OS sandbox.
 
-The private manifest has exactly `version: 3`, `node`, `repository`,
+The private manifest has exactly `version: 4`, `node`, `repository`,
 `sourcePins`, `fixturePins`, `bootstrapMs` and `totalMs`. `node` has an absolute
 path plus exact `bytes` and `sha256`; `repository` is the reviewed absolute
 ordinary source tree. `sourcePins` lists unique relative `path`, `bytes` and
 `sha256` rows, including the CLI, fixed preflight, pure contract, admission,
-catalog, fixed ledger and spending contracts/probe and every source/package row in that catalog. The manifest cannot
+catalog, fixed ledger, spending and signer contracts/probe and every source/package row in that catalog. The manifest cannot
 choose executable arguments, import conditions, a module or package resolver.
 Declared pins establish byte equality, not operator identity or authenticity.
 
-`fixturePins` binds the following seven fixed names in the owned scratch directory:
+`fixturePins` binds the following eight fixed names in the owned scratch directory:
 
 | Key | File | Maximum bytes |
 | --- | --- | ---: |
@@ -134,13 +155,19 @@ Declared pins establish byte equality, not operator identity or authenticity.
 | `recoveryProfile` | `recovery-profile.json` | 65536 |
 | `recoveryReply` | `recovery-reply.jsonl` | 4096 |
 | `ledgerProfile` | `ledger-profile.json` | 65536 |
+| `signerProfile` | `signer-profile.json` | 16384 |
 | `credential` | `credential.bin` | exactly 32 |
 
 Files must be private, owned regular files with one link and no symlink
 ancestors. Every payer, spending and recovery/backend database path and allowed
 root must remain beneath this task's own scratch; operator data directories
 are refused. Bootstrap is 1-60000 ms; one total deadline of 1-120000 ms spans
-preflight, both application processes and the two fixed ledger probes. No child
+preflight, both application processes and the two fixed ledger probes.
+Immediately before each probe launch, the parent wraps the seven selected text
+inputs with a remaining opening allowance in milliseconds. The fixed probe
+captures an observed local monotonic deadline before reading that envelope and
+checks it before acquisition and subsequent admission. Neither allowance is a
+preemptive timeout, a common-clock proof or an OS/process lifetime guarantee. No child
 entry starts after an observed total-deadline expiry. The original product byte limits
 remain unchanged. The operator must choose an adequate outer task quota for
 all retained fixtures, source aliases, outputs and receipts before admission.
@@ -159,7 +186,7 @@ Each exact reply has its existing aggregate cap; unexpected stdout is refused
 and application stderr is capped at 64 KiB. Preflight stdout/stderr are capped
 at 4096/128 bytes. Each ledger probe has a 4096-byte output and 64-KiB stderr
 cap. No full ledger snapshot or second database copy is written by the probe;
-only bounded observations/digests are retained. Raw bounded observations and per-process outcomes are kept
+only bounded observations/digests are retained; raw signer/checkpoint bytes never enter probe stdout. Raw bounded observations and per-process outcomes are kept
 under a newly created private `linux-cli-acceptance` directory. The first
 offending bounded prefix remains evidence. No historical output is overwritten,
 deleted, repackaged or reclassified, and no output or fixture is public by default.
@@ -174,5 +201,5 @@ cleared where possible; complete secret erasure is not established.
 
 The source candidate supplies no installer, TLS/key/proof generator, network
 discovery, provider launcher, real funding, SDK PREPARE, CI change or CI retry.
-Its current qualification is the pure transcript/ledger/spending preflight over declared
+Its current qualification is the pure transcript/ledger/spending/signer preflight over declared
 memory DATA plus parser checks. Runtime integration remains unexecuted.

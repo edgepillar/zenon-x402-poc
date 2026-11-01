@@ -1,0 +1,254 @@
+{
+  "version": 1,
+  "scope": "PURE_SAME_OWNER_SIGNER_SPENDING_AND_LEDGER_DATA_PLUS_SOURCE_PARSER_ONLY",
+  "status": "PASS",
+  "sourceBaseline": "cdf24f5912307c3a7536c825ca3ce639e2cb02c7",
+  "newPassed": 26,
+  "affectedPassed": 29,
+  "failed": 0,
+  "newCases": [
+    {
+      "id": "linux-signer-one-current-owner-binds-the-same-budget-and-original-packet",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-signer-selection-adds-only-one-explicit-profile-with-no-extra-process-or-connection",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-signer-legacy-schema-or-absent-age-selection-cannot-silently-open-current-data",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-signer-different-payment-digest-or-funding-url-is-rejected-before-open",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-signer-owner-policy-path-device-and-reservation-must-match-the-budget-selection",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-signer-explicit-age-policy-is-pinned-without-changing-the-original-payment",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-signer-current-budget-and-provider-file-selections-remain-separate",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-signer-selection-refuses-extra-properties-accessors-and-proxies-without-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-signer-internal-envelope-bounds-the-parent-selected-opening-allowance",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-signer-same-owned-read-uses-the-actual-four-guard-close-protocol",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-signer-historical-observation-is-stable-across-different-current-days",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-signer-output-hashes-do-not-publish-private-originals-signatures-or-paths",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-signer-existing-ordinary-unfrozen-backend-reader-is-admitted",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-signer-intent-only-or-missing-history-cannot-pass-a-clean-signed-scenario",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-signer-reserved-or-unknown-budget-is-preserved-without-a-clean-verdict",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-signer-changed-journal-between-reads-withholds-the-observation",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-signer-throwing-read-retains-unknown-without-a-physical-close",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-signer-opaque-read-is-forwarded-without-entering-then-getters",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-signer-current-owner-fencing-is-not-normalized-by-the-read-tap",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-signer-selected-opener-refusal-never-enters-a-schema-fallback",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-signer-opaque-owner-is-retained-by-the-actual-protocol-without-raw-close",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-signer-unknown-revoke-or-close-cannot-publish-or-retry",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-signer-expired-opening-and-clock-rollback-withhold-new-reads-or-results",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-signer-copied-tokens-and-proxy-ports-cannot-acquire-an-owner",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-signer-a-completed-phase-cannot-be-reentered-with-another-file",
+      "status": "PASS"
+    },
+    {
+      "id": "linux-signer-normal-history-does-not-become-a-signer-loss-or-release-proof",
+      "status": "PASS"
+    }
+  ],
+  "affectedCases": [
+    {
+      "id": "one-spent-original-uses-the-actual-journal-and-original-codec",
+      "status": "PASS"
+    },
+    {
+      "id": "spending-selection-reuses-six-inputs-and-the-two-existing-ledger-probes",
+      "status": "PASS"
+    },
+    {
+      "id": "existing-open-retains-the-declared-create-owner-policy-device-and-limits",
+      "status": "PASS"
+    },
+    {
+      "id": "an-existing-or-transferred-run-profile-cannot-replace-this-clean-scenario",
+      "status": "PASS"
+    },
+    {
+      "id": "foreign-payment-id-or-reordered-preparation-digest-refuses",
+      "status": "PASS"
+    },
+    {
+      "id": "changed-network-asset-or-recipient-cannot-describe-the-funded-original",
+      "status": "PASS"
+    },
+    {
+      "id": "a-different-permitted-amount-is-still-a-different-original",
+      "status": "PASS"
+    },
+    {
+      "id": "reserved-or-unknown-exposure-never-becomes-a-clean-spent-result",
+      "status": "PASS"
+    },
+    {
+      "id": "an-extra-original-cannot-hide-behind-the-same-total-record",
+      "status": "PASS"
+    },
+    {
+      "id": "empty-missing-malformed-or-oversized-state-is-never-created-as-a-fallback",
+      "status": "PASS"
+    },
+    {
+      "id": "policy-mutation-and-budget-overflow-are-rejected-by-the-actual-decoder",
+      "status": "PASS"
+    },
+    {
+      "id": "changed-canonical-revision-between-reads-is-not-a-stable-observation",
+      "status": "PASS"
+    },
+    {
+      "id": "a-recorded-later-day-does-not-refund-total-exposure-or-read-the-clock",
+      "status": "PASS"
+    },
+    {
+      "id": "observations-do-not-publish-payment-owner-account-path-or-proof-data",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-units-and-payer-money-are-checked-by-their-separate-real-contracts",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-read-guards-both-loads-before-revoke-and-one-close",
+      "status": "PASS"
+    },
+    {
+      "id": "a-throwing-load-retains-unknown-without-revoke-close-or-another-read",
+      "status": "PASS"
+    },
+    {
+      "id": "opaque-load-and-guard-receipts-do-not-run-then-getters-or-close",
+      "status": "PASS"
+    },
+    {
+      "id": "fencing-at-any-of-the-three-current-guards-withholds-close-and-output",
+      "status": "PASS"
+    },
+    {
+      "id": "held-busy-or-nonfrozen-owner-views-cannot-enter-a-load",
+      "status": "PASS"
+    },
+    {
+      "id": "a-reused-frozen-owner-view-is-not-a-fresh-close-barrier",
+      "status": "PASS"
+    },
+    {
+      "id": "known-semantic-conflict-may-revoke-close-once-but-never-publish",
+      "status": "PASS"
+    },
+    {
+      "id": "unknown-or-nonvoid-revoke-prevents-physical-close",
+      "status": "PASS"
+    },
+    {
+      "id": "a-missing-revoked-view-cannot-authorize-physical-close",
+      "status": "PASS"
+    },
+    {
+      "id": "throwing-or-nonvoid-close-never-publishes-or-retries",
+      "status": "PASS"
+    },
+    {
+      "id": "a-claimed-close-with-a-still-open-database-withholds-the-result",
+      "status": "PASS"
+    },
+    {
+      "id": "reentrant-load-cannot-start-another-owned-read",
+      "status": "PASS"
+    },
+    {
+      "id": "copied-tokens-extra-write-ports-accessors-and-proxies-enter-no-callbacks",
+      "status": "PASS"
+    },
+    {
+      "id": "matching-budget-history-does-not-establish-native-atomicity-release-or-authority",
+      "status": "PASS"
+    }
+  ],
+  "retainedExactControls": 2376,
+  "currentSourceBoundControls": 2431,
+  "actualPassingDATACommands": 2,
+  "allActualDATACommandsIncludingRetainedFailure": 3,
+  "actualNodeParserCommands": 2,
+  "retainedExactParserOrigins": 52,
+  "currentParserOrigins": 54,
+  "pythonSourceCompile": "PASS_NOT_EXECUTED",
+  "nativeExecutions": 0,
+  "actualSQLite": 0,
+  "installedSDKOrCoreEvaluation": 0,
+  "sockets": 0,
+  "keys": 0,
+  "signatures": 0,
+  "nonceSearches": 0,
+  "LinuxHarness": "NOT_EXECUTED",
+  "atomicSnapshotAcrossStores": false,
+  "physicalRelease": "NOT_ESTABLISHED",
+  "G0G5Acceptance": "OPEN",
+  "workflowChanged": false,
+  "hostedCIControls": 108
+}

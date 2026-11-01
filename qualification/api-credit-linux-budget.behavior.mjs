@@ -182,6 +182,7 @@ check('matching-budget-history-does-not-establish-native-atomicity-release-or-au
   assert.equal(v.physicalRelease, 'NOT_ESTABLISHED'); assert.equal(v.G1Acceptance, 'NOT_ESTABLISHED'); assert.equal(v.G2Acceptance, 'NOT_ESTABLISHED');
 });
 
+export const createApiCreditLinuxBudgetDataFixture = fixture;
 export const apiCreditLinuxBudgetDataCases = F(checks);
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const cases = [];

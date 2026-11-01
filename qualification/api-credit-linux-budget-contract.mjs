@@ -62,6 +62,10 @@ export function apiCreditBudgetProbeOptions(token) {
   if (arguments.length !== 1) fail(); const s = state(token);
   return F({ ledger: apiCreditLedgerProbeOptions(s.ledger), spending: s.options });
 }
+/** Selected original DATA only; this cannot authorize an opener or dispatch. */
+export function apiCreditBudgetExpectedOriginal(token) {
+  if (arguments.length !== 1) fail(); return state(token).original;
+}
 export function readApiCreditAcceptanceProviderLedger(token, ports) {
   if (arguments.length !== 2) fail(); return readApiCreditAcceptanceLedger(state(token).ledger, ports);
 }

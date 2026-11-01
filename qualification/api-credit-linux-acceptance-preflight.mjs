@@ -3,7 +3,7 @@ import { readSync } from 'node:fs';
 import { Buffer } from 'node:buffer';
 import { TextDecoder } from 'node:util';
 import process from 'node:process';
-import { captureApiCreditBudgetAcceptanceSelection } from './api-credit-linux-budget-contract.mjs';
+import { captureApiCreditSignerAcceptanceSelection } from './api-credit-linux-signer-contract.mjs';
 
 try {
   if (process.versions.node !== '24.19.0' || process.platform !== 'linux') throw new TypeError('RUNTIME');
@@ -16,7 +16,7 @@ try {
   }
   const bytes = Buffer.concat(chunks, total);
   const input = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
-  process.stdout.write(JSON.stringify(captureApiCreditBudgetAcceptanceSelection(input).summary) + '\n');
+  process.stdout.write(JSON.stringify(captureApiCreditSignerAcceptanceSelection(input).summary) + '\n');
 } catch {
   process.stderr.write('API_CREDIT_LINUX_ACCEPTANCE_PREFLIGHT_REFUSED\n'); process.exitCode = 1;
 }

@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "currentDATAFailures": [],
+  "retainedFailures": [
+    {
+      "rawQualificationStatus": "UNKNOWN",
+      "actualDATAStatus": "FAIL",
+      "passed": 0,
+      "failed": 1,
+      "classification": "DRAFT_EXPECTED_INTERNAL_PACKET_IN_FLATTENED_CLI_RESPONSE",
+      "taskState": "CLOSED",
+      "taskOutcome": "FAILURE",
+      "actualDATACommands": 1,
+      "actualParserCommands": 0,
+      "originalSourcePreserved": true,
+      "reclassified": false,
+      "correction": "Use the independently selected handoff checkpoint and commit pins already bound by the real transcript preflight. The wire grammar and original bytes are unchanged."
+    }
+  ],
+  "metadataRefusals": [],
+  "predecessor": {
+    "path": "qualification/signer-store-profile.failure-inventory.json",
+    "bytes": 1817,
+    "sha256": "37dce43dcad40631333fdefababc315c2b5f76c47ef08a2067afb6d61107230f"
+  },
+  "nativeRuns": [],
+  "nativeAcceptance": "NOT_ESTABLISHED"
+}

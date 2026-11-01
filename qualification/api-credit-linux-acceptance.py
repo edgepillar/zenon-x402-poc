@@ -17,13 +17,14 @@ import sys
 import time
 
 CAPS = {"runProfile": 262144, "commands": 2097152, "runReplies": 2097152,
-        "recoveryProfile": 65536, "recoveryReply": 4096, "ledgerProfile": 65536}
+        "recoveryProfile": 65536, "recoveryReply": 4096, "ledgerProfile": 65536, "signerProfile": 16384}
 FILES = {"runProfile": "run-profile.json", "commands": "run-commands.jsonl",
          "runReplies": "run-replies.jsonl", "recoveryProfile": "recovery-profile.json",
-         "recoveryReply": "recovery-reply.jsonl", "ledgerProfile": "ledger-profile.json", "credential": "credential.bin"}
+         "recoveryReply": "recovery-reply.jsonl", "ledgerProfile": "ledger-profile.json", "signerProfile": "signer-profile.json", "credential": "credential.bin"}
 ENTRY = "src/api-credit-cli.js"
 PREFLIGHT = "qualification/api-credit-linux-acceptance-preflight.mjs"
 CONTRACT = "qualification/api-credit-linux-acceptance-contract.mjs"
+SIGNER_CONTRACT = "qualification/api-credit-linux-signer-contract.mjs"
 BUDGET_CONTRACT = "qualification/api-credit-linux-budget-contract.mjs"
 LEDGER_CONTRACT = "qualification/api-credit-linux-ledger-contract.mjs"
 LEDGER_PROBE = "qualification/api-credit-linux-ledger-probe.mjs"
@@ -104,7 +105,7 @@ def verify_sources(repo, rows):
         pins[name] = {"bytes": row["bytes"], "sha256": row["sha256"]}
         data = checked(repo / name, 2097152)
         require(pin(data) == {"bytes": row["bytes"], "sha256": row["sha256"]})
-    require({ENTRY, PREFLIGHT, CONTRACT, LEDGER_CONTRACT, BUDGET_CONTRACT, LEDGER_PROBE,
+    require({ENTRY, PREFLIGHT, CONTRACT, LEDGER_CONTRACT, BUDGET_CONTRACT, SIGNER_CONTRACT, LEDGER_PROBE,
              "src/api-credit-native-package-admission.js", "src/api-credit-module-catalog.json"}.issubset(seen))
     catalog = json.loads(checked(repo / "src/api-credit-module-catalog.json", 262144))
     require(catalog["version"] == 1 and type(catalog["rows"]) is list and len(catalog["rows"]) <= 1024)
@@ -120,6 +121,8 @@ def fixture_paths(scratch, data):
     paths += [run["spendingFile"]["storageProfile"]["databasePath"], run["spendingFile"]["allowedRoot"]]
     paths += [recovery["payerOptions"][k] for k in ("databasePath", "allowedRoot")]
     paths += [recovery["backendOptions"]["databasePath"]]
+    signer = json.loads(data["signerProfile"])["spendingFile"]
+    paths += [signer["storageProfile"]["databasePath"], signer["allowedRoot"]]
     for text in paths:
         path = Path(text)
         require(path.is_absolute() and path != scratch and scratch in path.parents
@@ -134,7 +137,13 @@ def bounded_stage(node, repo, outdir, payload, deadline, environment, stage):
     # timeout can kill the child, and communicate accumulates complete output.
     require(stage in ("preflight", "ledger-before", "ledger-after"))
     require(time.monotonic() < deadline)
+    if stage != "preflight":
+        remaining = int((deadline - time.monotonic()) * 1000)
+        require(1 <= remaining <= 120000)
+        payload = json.dumps({"version": 1, "maximumOpenMs": remaining, "selection": json.loads(payload)},
+                             ensure_ascii=True, separators=(",", ":")).encode()
     entry = PREFLIGHT if stage == "preflight" else LEDGER_PROBE
+    require(time.monotonic() < deadline)
     child = subprocess.Popen([str(node), entry], cwd=repo, env=environment,
                              stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False)
     report = {"status": "UNKNOWN", "pid": child.pid, "signalsSent": 0, "childExit": None}
@@ -174,11 +183,11 @@ def bounded_stage(node, repo, outdir, payload, deadline, environment, stage):
         save(outdir / (stage + ".process.private.json"), report)
 
 
-def ledger_stage(node, repo, outdir, payload, deadline, environment, stage, expected_node, source_pins, selection_digest):
+def ledger_stage(node, repo, outdir, payload, deadline, environment, stage, expected_node, source_pins, selection_digest, budget_selection_digest):
     verify_sources(repo, source_pins); require(binary_pin(node) == expected_node)
     bounded_stage(node, repo, outdir, payload, deadline, environment, stage)
     observed = json.loads(checked(outdir / (stage + ".stdout.private.json"), 4096, True))
-    require(observed["version"] == 3 and observed["status"] == "LEDGER_AND_SPENDING_OBSERVATIONS_MATCHED"
+    require(observed["version"] == 4 and observed["status"] == "LEDGER_SPENDING_AND_SIGNER_OBSERVATIONS_MATCHED"
             and observed["selectionDigest"] == selection_digest and observed["snapshotAtomicAcrossStores"] is False
             and observed["authority"] == "NONE")
     ledger = observed["ledger"]; spending = observed["spending"]
@@ -187,11 +196,20 @@ def ledger_stage(node, repo, outdir, payload, deadline, environment, stage, expe
             and ledger["requests"] == ledger["successfulExecutions"] == 100
             and ledger["physicalRelease"] == "NOT_ESTABLISHED" and ledger["atomicSnapshot"] is False)
     require(spending["status"] == "SPENDING_OBSERVATION_MATCHED" and spending["selectionDigest"] == selection_digest
+            and spending["budgetSelectionDigest"] == budget_selection_digest
             and spending["storeCloseReturned"] is True and spending["authority"] == "NONE"
             and spending["records"] == spending["spent"] == 1 and spending["unresolved"] == 0
             and spending["physicalRelease"] == "NOT_ESTABLISHED" and spending["atomicSnapshot"] is False
             and spending["daySource"] == "RECORDED_HISTORY_ONLY" and spending["mayPrepareFunding"] is False
             and spending["mayDispatchService"] is False)
+    signer = observed["signer"]
+    require(signer["status"] == "SIGNED_HISTORY_OBSERVATION_MATCHED" and signer["sharedExistingFileOwner"] is True
+            and signer["storeCloseReturned"] is True and signer["existingFileProfile"] == "GRANT_RECOVERY_V1"
+            and signer["agePolicyCheckedByOwner"] is True and signer["authority"] == "NONE"
+            and signer["mayStartPayment"] is False and signer["automaticRetry"] is False
+            and signer["maySignPayment"] is False and signer["mayDispatchFunding"] is False
+            and signer["mayDispatchService"] is False and signer["physicalRelease"] == "NOT_ESTABLISHED"
+            and signer["signatureValidation"] == "NOT_PERFORMED" and signer["signerResponseLoss"] == "NOT_ESTABLISHED")
     return observed
 
 
@@ -330,7 +348,7 @@ def main():
     require(scratch.is_absolute() and scratch.is_dir() and scratch.stat().st_uid == os.getuid() and scratch.stat().st_mode & 0o077 == 0)
     manifest_path = Path(sys.argv[2]); require(manifest_path.parent == scratch)
     manifest = json.loads(checked(manifest_path, 262144, True))
-    require(set(manifest) == {"version", "node", "repository", "sourcePins", "fixturePins", "bootstrapMs", "totalMs"} and manifest["version"] == 3)
+    require(set(manifest) == {"version", "node", "repository", "sourcePins", "fixturePins", "bootstrapMs", "totalMs"} and manifest["version"] == 4)
     require(type(manifest["bootstrapMs"]) is int and 1 <= manifest["bootstrapMs"] <= 60000)
     require(type(manifest["totalMs"]) is int and 1 <= manifest["totalMs"] <= 120000)
     require(set(manifest["node"]) == {"path", "bytes", "sha256"})
@@ -352,7 +370,7 @@ def main():
     payload = json.dumps({k: v.decode("utf-8") for k, v in data.items()}, ensure_ascii=True, separators=(",", ":")).encode()
     bounded_stage(node, repo, outdir, payload, deadline, environment, "preflight")
     preflight = json.loads(checked(outdir / "preflight.stdout.private.json", 4096, True))
-    require(preflight["status"] == "PREFLIGHT_PASS" and preflight["version"] == 3
+    require(preflight["status"] == "PREFLIGHT_PASS" and preflight["version"] == 4
             and preflight["inputPins"] == {k: pin(v) for k, v in data.items()})
     credential = bytearray(checked(scratch / FILES["credential"], 32, True))
     require(len(credential) == 32 and pin(credential) == manifest["fixturePins"]["credential"])
@@ -367,19 +385,19 @@ def main():
         credential[:] = b"\0" * len(credential)
     require(run["status"] == "PROCESS_PROTOCOL_PASS" and run["childObservedLive"] is False)
     before = ledger_stage(node, repo, outdir, payload, deadline, environment, "ledger-before",
-                          expected_node, manifest["sourcePins"], preflight["selectionDigest"])
+                          expected_node, manifest["sourcePins"], preflight["selectionDigest"], preflight["budgetSelectionDigest"])
     verify_sources(repo, manifest["sourcePins"])
     require(binary_pin(node) == expected_node)
     recovery = exchange(node, repo, outdir, "recovery", data["recoveryProfile"], None, [],
                         [data["recoveryReply"]], manifest["bootstrapMs"], deadline, environment)
     require(recovery["status"] == "PROCESS_PROTOCOL_PASS" and recovery["childObservedLive"] is False)
     after = ledger_stage(node, repo, outdir, payload, deadline, environment, "ledger-after",
-                         expected_node, manifest["sourcePins"], preflight["selectionDigest"])
+                         expected_node, manifest["sourcePins"], preflight["selectionDigest"], preflight["budgetSelectionDigest"])
     require(before == after)
-    save(outdir / "result.private.json", {"version": 3, "status": "PROCESS_LEDGER_AND_SPENDING_OBSERVATIONS_MATCHED", "preflight": preflight,
-         "applicationProcesses": 2, "preflightProcesses": 1, "ledgerProbeProcesses": 2, "ledgerAndSpendingObservation": after,
+    save(outdir / "result.private.json", {"version": 4, "status": "PROCESS_LEDGER_SPENDING_AND_SIGNER_OBSERVATIONS_MATCHED", "preflight": preflight,
+         "applicationProcesses": 2, "preflightProcesses": 1, "ledgerProbeProcesses": 2, "ledgerSpendingAndSignerObservation": after,
          "signalsSent": 0, "automaticRetries": 0, "G1Acceptance": "NOT_ESTABLISHED", "G2Acceptance": "NOT_ESTABLISHED"})
-    print("API_CREDIT_LINUX_PROCESS_LEDGER_AND_SPENDING_OBSERVATIONS_MATCHED")
+    print("API_CREDIT_LINUX_PROCESS_LEDGER_SPENDING_AND_SIGNER_OBSERVATIONS_MATCHED")
 
 
 if __name__ == "__main__":
