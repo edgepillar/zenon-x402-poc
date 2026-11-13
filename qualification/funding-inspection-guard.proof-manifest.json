@@ -1,0 +1,824 @@
+{
+  "G0G5": "OPEN",
+  "counts": {
+    "additionalSupervisorHarnessControls": 43,
+    "allSupportedDataControls": 2702,
+    "applicationControls": 2521,
+    "focusedCandidateControls": 50,
+    "freshBroadControls": 1054,
+    "freshCandidateControls": 1104,
+    "retainedUnchangedControls": 1598,
+    "separateLinuxHarnessDataControls": 181
+  },
+  "currentBroadCommand": {
+    "actualExit": 0,
+    "cases": 1054,
+    "commandReceiptSha256": "f27813b63b2dabf98dbdb3e3046643e1e9adf5065d5bc88be4f1797fb6ef55e2",
+    "freshNodeChildren": 24,
+    "launchManifest": {
+      "bytes": 32857,
+      "sha256": "f9b35d9acabe570890bc030c3f0c3e0b214c7a2a151804d24d5441dcb3b14d0a"
+    },
+    "managedCommands": 1,
+    "outputComplete": true,
+    "sourceBundle": {
+      "bytes": 639461,
+      "sha256": "879d29f82cb053389f143d147294bc596a16653765ed9c73ef38feaba27a6de6"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "stdout": {
+      "bytes": 170736,
+      "sha256": "6e6e16758c87b57c9ed116e02a2af2dedf570d30c9f72429c7bbac245a9cff22"
+    },
+    "taskOutcome": "SUCCESS",
+    "taskQuotaBytes": 8388608
+  },
+  "distinctCaseIdSetSha256": "4aa4badac42472b36696a7056e067343fc91f77ffdb948bd2c7d9449f4dd7048",
+  "focusedComparison": {
+    "bytes": 51068,
+    "path": "qualification/funding-inspection-guard.focused.actual-local-result.json",
+    "sha256": "bd40c824f7694b008e663f9722ed302958e21707f20c3ae548c0dffb42279b19"
+  },
+  "groups": [
+    {
+      "caseIdsSha256": "1c43f3fb7eaf47c24801271c40ed8df01b9dde4056559ca16b923664e4771034",
+      "cases": 37,
+      "entry": "qualification/purchased-grant-recovery.behavior.mjs",
+      "originalRole": "RETAINED_V2_COMMAND_SCOPE",
+      "role": "CURRENT_BROAD_REGRESSION",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "070d172c419e79e98623f212d233a4c540b764e58dc44eb012c0e3e24db5c87c",
+      "cases": 21,
+      "entry": "qualification/recovery-channel-close.behavior.mjs",
+      "originalRole": "RETAINED_V2_COMMAND_SCOPE",
+      "role": "CURRENT_BROAD_REGRESSION",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "435fa1776f724faa32133b1f995596a58c712970717eeb21567bf8bb0802f3f9",
+      "cases": 41,
+      "entry": "qualification/stored-grant-query.behavior.mjs",
+      "originalRole": "RETAINED_V2_COMMAND_SCOPE",
+      "role": "CURRENT_BROAD_REGRESSION",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "1eaea9c2f3685451dfd94f1807802b1873e8c1ac35513a47e7496cf415c4820e",
+      "cases": 24,
+      "entry": "qualification/query-opening-guard.behavior.mjs",
+      "originalRole": "RETAINED_V2_COMMAND_SCOPE",
+      "role": "CURRENT_BROAD_REGRESSION",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "28195016c6841a3864e2e60ecb99fa293be5c00f27af14b10decf5e0314de676",
+      "cases": 47,
+      "entry": "qualification/original-grant-query-cli.behavior.mjs",
+      "originalRole": "RETAINED_V2_COMMAND_SCOPE",
+      "role": "CURRENT_BROAD_REGRESSION",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "c5437fa0e36acd74896740023969b1ba799956420a243a3e919f983d9a857149",
+      "cases": 31,
+      "entry": "qualification/api-credit-funding-inspection.behavior.mjs",
+      "originalRole": "RETAINED_V2_COMMAND_SCOPE",
+      "role": "CURRENT_FOCUSED_COMPARISON",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "425105176f85e5d0b4a8f2748a2d332a20c5496e5d3e970ffd666ddaaa650d24",
+      "cases": 20,
+      "entry": "qualification/recovery-inspection-stop.behavior.mjs",
+      "originalRole": "RETAINED_V2_COMMAND_SCOPE",
+      "role": "CURRENT_BROAD_REGRESSION",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "54805621f77849cfbe94495f3eb7c1d0641c0023f9e91e23eaa6b12db7736434",
+      "cases": 33,
+      "entry": "qualification/signer-uncertainty-age.behavior.mjs",
+      "originalRole": "RETAINED_V2_COMMAND_SCOPE",
+      "role": "CURRENT_BROAD_REGRESSION",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "06551327cc7bba187b43aa1470a34048867d105d9c553bcb97ab5bf010dbfe45",
+      "cases": 22,
+      "entry": "qualification/signer-store-profile.behavior.mjs",
+      "originalRole": "RETAINED_V2_COMMAND_SCOPE",
+      "role": "CURRENT_BROAD_REGRESSION",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "2e5195fe9d44a7a8f8f737a55006cc0d015085636f6970daabab1c2b3a87fb80",
+      "cases": 26,
+      "entry": "qualification/api-credit-linux-signer.behavior.mjs",
+      "originalRole": "RETAINED_V2_COMMAND_SCOPE",
+      "role": "CURRENT_BROAD_REGRESSION",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "f4cea4c4fc3e78b6567742870fda78057f3ec7838f3396273380d1a1843c12b1",
+      "cases": 29,
+      "entry": "qualification/api-credit-linux-budget.behavior.mjs",
+      "originalRole": "RETAINED_V2_COMMAND_SCOPE",
+      "role": "CURRENT_BROAD_REGRESSION",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "2d90d80ec149f63430b341876cac02ca6960ab7493c684a847e4b0645adb9752",
+      "cases": 25,
+      "entry": "qualification/api-credit-linux-ledger.behavior.mjs",
+      "originalRole": "RETAINED_V2_COMMAND_SCOPE",
+      "role": "CURRENT_BROAD_REGRESSION",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "99c4ca511c57d344c59c2e2d55a42b605d5a254bc7494f1ecb276949f50cf820",
+      "cases": 25,
+      "entry": "qualification/api-credit-recorded-result-inspection.behavior.mjs",
+      "originalRole": "RETAINED_V2_COMMAND_SCOPE",
+      "role": "CURRENT_BROAD_REGRESSION",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "0109e8cf9543de07fdf309e25d7e858f89e359c1ed5fe5fe355b8ab5e3c670e4",
+      "cases": 23,
+      "entry": "qualification/recovery-response-provenance.behavior.mjs",
+      "originalRole": "RETAINED_V2_COMMAND_SCOPE",
+      "role": "CURRENT_BROAD_REGRESSION",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "d26e20d6fb3d92efe73a09bc6ebaee9414fba5eda9e81f4394a007a846b8d727",
+      "cases": 18,
+      "entry": "qualification/recorded-execution-binding.behavior.mjs",
+      "originalRole": "RETAINED_V2_COMMAND_SCOPE",
+      "role": "CURRENT_BROAD_REGRESSION",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "dfb07a704f237dbb2006501d5ebdd324db9228933ed11fa47262ed0127ca37bb",
+      "cases": 27,
+      "entry": "qualification/api-credit-loopback-operator.behavior.mjs",
+      "originalRole": "RETAINED_V2_COMMAND_SCOPE",
+      "role": "CURRENT_BROAD_REGRESSION",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "acc4a1aec1931bb778f309bb72528e058d5e5d151988a733d77180d071bd145a",
+      "cases": 15,
+      "entry": "qualification/api-credit-linux-offer-refusal.behavior.mjs",
+      "originalRole": "RETAINED_V2_COMMAND_SCOPE",
+      "role": "CURRENT_BROAD_REGRESSION",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "c00882d4991066dea156220c96ad606a80bc96a845c6114b8cd48634ce836002",
+      "cases": 22,
+      "entry": "qualification/api-credit-linux-provider.behavior.mjs",
+      "originalRole": "RETAINED_V2_COMMAND_SCOPE",
+      "role": "CURRENT_BROAD_REGRESSION",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "1415666c6171b06b7fc6412488c36fc5d28e7818a132148154c78cf314988a5f",
+      "cases": 12,
+      "entry": "qualification/api-credit-late-inspection-close.behavior.mjs",
+      "originalRole": "RETAINED_V2_COMMAND_SCOPE",
+      "role": "CURRENT_BROAD_REGRESSION",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "9231a0f68c184937108c37befc99a292c8008f73408f941909debd70388841a4",
+      "cases": 15,
+      "entry": "qualification/api-credit-exact-checkpoint-query.behavior.mjs",
+      "originalRole": "RETAINED_V2_COMMAND_SCOPE",
+      "role": "CURRENT_BROAD_REGRESSION",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "538bbcad9908826182b8162119490b11fda4589e73c6c0b51a542ba803ec6e33",
+      "cases": 18,
+      "entry": "qualification/recorded-result-commitment.behavior.mjs",
+      "originalRole": "RETAINED_V2_COMMAND_SCOPE",
+      "role": "CURRENT_BROAD_REGRESSION",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "c364de4a522cf255e317b5bf1312463224d56fa755aeb96645a5133dff45ac6f",
+      "cases": 28,
+      "entry": "qualification/api-credit-linux-acceptance.behavior.mjs",
+      "originalRole": "RETAINED_V2_COMMAND_SCOPE",
+      "role": "CURRENT_BROAD_REGRESSION",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "bb0c5a439091443f5c1dd0b77d3c3040b5313457aaca6028e6d1c1ef058cd4a0",
+      "cases": 36,
+      "entry": "qualification/api-credit-linux-negative.behavior.mjs",
+      "originalRole": "RETAINED_V2_COMMAND_SCOPE",
+      "role": "CURRENT_BROAD_REGRESSION",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "0e64d4254de7125f3d9afa7282876fec57bce4176f5915ff56620c89cb8a27e6",
+      "cases": 22,
+      "entry": "qualification/buyer-operator-stop.behavior.mjs",
+      "originalRole": "RETAINED_V2_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "7faede082e216f6aed4a8469cc3396dcf2773394f67d08f37b1ea45532110b81",
+      "cases": 13,
+      "entry": "qualification/buyer-stop-command-admission.behavior.mjs",
+      "originalRole": "RETAINED_V2_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "1d0d42a8be0a1ac4a00071d09f13f9e4dd50d28000a1272c0d3fc21f5a9d1ae0",
+      "cases": 18,
+      "entry": "qualification/operator-command-byte-budget.behavior.mjs",
+      "originalRole": "RETAINED_V2_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "df2c7fdcb3edaf15ed9626a3c266bb414dffc04b4acc3b049192180b8deab704",
+      "cases": 22,
+      "entry": "qualification/recorded-response-provenance.behavior.mjs",
+      "originalRole": "RETAINED_V2_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "9f179e0be42b2391654f24e3a47c99ed4f705716c39084b68548c54fbf4c541d",
+      "cases": 478,
+      "entry": "qualification/api-credit-exact-request-budget.behavior.mjs",
+      "originalRole": "RETAINED_V2_COMMAND_SCOPE",
+      "role": "CURRENT_BROAD_REGRESSION",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "13919740bef4b87646839a314e617f467724a33e3b4de8cbb1cb55c5e37f17fc",
+      "cases": 31,
+      "entry": "qualification/inactive-grant-recorded-result.behavior.mjs",
+      "originalRole": "RETAINED_V2_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "085df9e258de4193aff23234c1ea18c366c3495702fa18026c0d9db68898fb18",
+      "cases": 26,
+      "entry": "qualification/issued-original-grant-admission.behavior.mjs",
+      "originalRole": "RETAINED_V2_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "2d3f0289485d6aaefc08f7b9bc88b2e85ea7e98fdd2bcde7b312395dfd8b225f",
+      "cases": 36,
+      "entry": "qualification/execution-revision-owner.behavior.mjs",
+      "originalRole": "RETAINED_V2_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "03679685259cd930133df978a32fb502f181d8aed48a004f6b373d5860e850f0",
+      "cases": 38,
+      "entry": "qualification/issued-provider-recovery.behavior.mjs",
+      "originalRole": "RETAINED_V2_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "d32a381d64ccdb0fa3ad2db5eb96ad22037e07e5e1e0df06e1662529e51d3914",
+      "cases": 28,
+      "entry": "qualification/first-funding-journal-recovery.behavior.mjs",
+      "originalRole": "RETAINED_V2_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "90e8e513130c09d76086dc56ba021bd6c839e75b2c70bd7452f38d0bc216d3ca",
+      "cases": 28,
+      "entry": "qualification/funding-transition-witness.behavior.mjs",
+      "originalRole": "RETAINED_V2_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "47eb763f5025272f1a9027476e0ed75e10fd57986cca5f7a3afbc3e60bec18a4",
+      "cases": 29,
+      "entry": "qualification/original-journal-observation.behavior.mjs",
+      "originalRole": "RETAINED_V2_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "c0c34e64136fae96e7074f3621f5a237f4823f21b38c41548530e6a5fa43636b",
+      "cases": 16,
+      "entry": "qualification/journal-momentum-confirmation-advance.behavior.mjs",
+      "originalRole": "RETAINED_V2_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "082cd97f5a63ac4cd9ea31ff45f8a0d57d71eaed0213fc3c9f061020034c8ca1",
+      "cases": 26,
+      "entry": "qualification/issued-provider-journal-setup.behavior.mjs",
+      "originalRole": "RETAINED_V2_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "f22c8a1380cbfd19d1ef1287ddc31ea557dceac1b9d0c95c6177c4a381ac8334",
+      "cases": 50,
+      "entry": "qualification/original-grant-channel.behavior.mjs",
+      "originalRole": "RETAINED_V2_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "26728bd4802b1c621ee98f62633d439f7ba6164f5f7d342d6a22afcc6dc4ac42",
+      "cases": 45,
+      "entry": "qualification/original-funding-grant.behavior.mjs",
+      "originalRole": "RETAINED_V2_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "0f5c7e2e3a3c6aa757cfcf5312885eea3cda9f25d080fb25d482c23af71f9015",
+      "cases": 25,
+      "entry": "qualification/api-credit-returned-opening-custody.behavior.mjs",
+      "originalRole": "RETAINED_V2_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "23cecc62c9aa59f63ed0f483c167414cf691c0169ca1640d0436355afa66f444",
+      "cases": 28,
+      "entry": "qualification/api-credit-module-source.behavior.mjs",
+      "originalRole": "RETAINED_V2_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "607a343bdd077cf23d66d0c4d27f55bdbd2676ff95819be04d85f0464a1d6dbd",
+      "cases": 12,
+      "entry": "qualification/api-credit-execution-context.behavior.mjs",
+      "originalRole": "RETAINED_V2_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "969dd6cfc83d871704ee2cc8b8aed797b79e0cb3dc7f3e09b7dfcfe0872abb38",
+      "cases": 10,
+      "entry": "qualification/api-credit-runtime-admission.behavior.mjs",
+      "originalRole": "RETAINED_V2_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "a05fc79e56afbcfdce22d3e0d6e4c33490fbe48734f56727b40d2ee320d260b0",
+      "cases": 12,
+      "entry": "qualification/inspection-clock-admission.behavior.mjs",
+      "originalRole": "RETAINED_V2_COMMAND_SCOPE",
+      "role": "CURRENT_BROAD_REGRESSION",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "6bea067f742830638a9606ed21d30a424dbdeb0ee692e22e54a3ea71548fc386",
+      "cases": 45,
+      "entry": "qualification/expired-funding-retention.behavior.mjs",
+      "originalRole": "RETAINED_V1_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "b54e2615ae71840e809658c90bdc08117c395df7071847887ea33a869b1bafa5",
+      "cases": 22,
+      "entry": "qualification/original-grant-inspection.behavior.mjs",
+      "originalRole": "RETAINED_V1_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "adceee4c002d132a4706bffc783c1ab9bb04577c92e68ced369e05d84cefd6f2",
+      "cases": 24,
+      "entry": "qualification/active-original-results.behavior.mjs",
+      "originalRole": "RETAINED_V1_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "acd6b5bf04fdf21c663bd8e250b882d654aadb1eb80bcec423051343b6021ce8",
+      "cases": 17,
+      "entry": "qualification/expired-funding-history.behavior.mjs",
+      "originalRole": "RETAINED_V1_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "4383e1319dce2f831a5b8fc37598cbd3fb8d498e0fd0d6accf4d69acc5b06396",
+      "cases": 26,
+      "entry": "qualification/issued-provider-funding-roles.behavior.mjs",
+      "originalRole": "RETAINED_V1_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "01cf1b62c61e4cf8c2bd09b9dc82c903937b31aecd7669972a473b61df554699",
+      "cases": 33,
+      "entry": "qualification/reserved-original-funding-observer.behavior.mjs",
+      "originalRole": "RETAINED_V1_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "d7f046254f3a404c63c24b44eae196a6333257530c171be9244617801d391edf",
+      "cases": 31,
+      "entry": "qualification/original-funding-chain-observer.behavior.mjs",
+      "originalRole": "RETAINED_V1_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "f3fdf026be8b64d26f90f36e1b98883b185faef2cc64060c515ec6af507e3f64",
+      "cases": 26,
+      "entry": "qualification/issued-provider-execution-setup.behavior.mjs",
+      "originalRole": "RETAINED_V1_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "d2a46146d392d40588ce259ce60ed80777045dc863bc713401b3f176e21d39da",
+      "cases": 12,
+      "entry": "qualification/api-credit-service-command.behavior.mjs",
+      "originalRole": "RETAINED_V1_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "70cf0010184098dfe9fdf3f246c92f027ade0c0a0cc4e18d4d9d88830f85be7d",
+      "cases": 4,
+      "entry": "qualification/provider-funding-close-budget.behavior.mjs",
+      "originalRole": "RETAINED_V1_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "efdcc9b463d4de1e47f445d0bd139d7b0b35ef378caa6614324666ae0d99251d",
+      "cases": 31,
+      "entry": "qualification/issued-provider-cli.behavior.mjs",
+      "originalRole": "RETAINED_V1_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "7fa7f2b4a27400d6dac4534057a49d899b56fa21c24eabe9e2a90a1481075f80",
+      "cases": 8,
+      "entry": "qualification/provider-wire-route.behavior.mjs",
+      "originalRole": "RETAINED_V1_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "b4932d09e4f6dce3ab7445d9495bc4278cb9646b3b8a9b2883d80397761bb195",
+      "cases": 22,
+      "entry": "qualification/original-observer-admission.behavior.mjs",
+      "originalRole": "RETAINED_V1_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "009504159b11093a2c10a67a5b863e3aa78175d9f0330901e51886db35b99e75",
+      "cases": 34,
+      "entry": "qualification/issued-provider-store-owner.behavior.mjs",
+      "originalRole": "RETAINED_V1_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "9102ba9ee4c7f8bd8ed8c196d7cb9237ab0e2914f0db5943293553e197566cc6",
+      "cases": 27,
+      "entry": "qualification/service-command-result.behavior.mjs",
+      "originalRole": "RETAINED_V1_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "7fac78ec81daf540b8e5260cedf3bf0338bef3469cef6cfd89b2d6a4c5fed303",
+      "cases": 38,
+      "entry": "qualification/purchased-grant-handoff.behavior.mjs",
+      "originalRole": "RETAINED_V1_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "5fe53d00174346838530dbff02c1b7559503d1e4d1bb068eb9c8c6c01dc7870e",
+      "cases": 15,
+      "entry": "qualification/recovery-application-admission.behavior.mjs",
+      "originalRole": "RETAINED_V1_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "d96e7f49b242455cfa7e0abf4476d8f5c4771d1b2d0e99c205e9bef610acebc0",
+      "cases": 16,
+      "entry": "qualification/original-offer-admission.behavior.mjs",
+      "originalRole": "RETAINED_V1_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "3a1ffa07af07c98d436410d475d45af8af6fd9979b48d6ee6758060f6fd1e4bd",
+      "cases": 18,
+      "entry": "qualification/purchased-grant-prequery-custody.behavior.mjs",
+      "originalRole": "RETAINED_V1_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "433e507d7e61b4dff2a885b5f0ffcbf194ad74bdc5dd44ac6c47e3629685025d",
+      "cases": 32,
+      "entry": "qualification/official-outcome-custody.behavior.mjs",
+      "originalRole": "RETAINED_V1_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "426e8a4123036b6f174d59b6c927e9312a9e7c2cd99adf250e843e656a1eaa20",
+      "cases": 40,
+      "entry": "qualification/funding-grant-custody.behavior.mjs",
+      "originalRole": "RETAINED_V1_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "19be89a1780d0c8f1e7ff6dd653dffe8c33a9c088281e91b7f6a78b34f2820e6",
+      "cases": 19,
+      "entry": "qualification/non-dp-prepare-admission.behavior.mjs",
+      "originalRole": "RETAINED_V1_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "bbfb280d1e415c75cd633c2cd418afc1bd8ca0947cb375546602a5432ff0ef6b",
+      "cases": 29,
+      "entry": "qualification/non-dp-configuration.behavior.mjs",
+      "originalRole": "RETAINED_V1_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "a8f432c792559e1fb20e6d6318505db77b28a7595b528ebcde89ecba2fd35945",
+      "cases": 28,
+      "entry": "qualification/fixed-purchase-expectation.behavior.mjs",
+      "originalRole": "RETAINED_V1_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "7a99fc98fdd26e82a41580b51b7f9051220ceefbcae8802b60446b203778dd48",
+      "cases": 30,
+      "entry": "qualification/api-credit-public-profile-refusal.behavior.mjs",
+      "originalRole": "RETAINED_V1_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "7b3e4ad504f74c0f91366bc06efa58a527824307e8abf480650e0c80c7508541",
+      "cases": 26,
+      "entry": "qualification/provider-current-close-owners.behavior.mjs",
+      "originalRole": "RETAINED_422_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "7bb076df42a9522fb7fda960bfa53e140da5529a54ca23ddbd3c63bdd94c4889",
+      "cases": 22,
+      "entry": "qualification/issued-provider-startup-stop.behavior.mjs",
+      "originalRole": "RETAINED_422_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "11a4bd3ebcddf367f3a1e4234200df09ddc4fcfca1abf45ba1fac07acd7e159c",
+      "cases": 24,
+      "entry": "qualification/non-dp-fused-strategy.behavior.mjs",
+      "originalRole": "RETAINED_422_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "39d45475230d300607d79fba9a2f8b0084690206eb3078f0a80ee577c218b8d0",
+      "cases": 76,
+      "entry": "qualification/non-dp-retained-native-options.behavior.mjs",
+      "originalRole": "RETAINED_422_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "176005f1215ac0d18a72d0368c46f120f9ccda75c3f499c59c2408f8cb8b56d6",
+      "cases": 12,
+      "entry": "qualification/opening-file-borrow.behavior.mjs",
+      "originalRole": "RETAINED_422_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "2803886e4a91d82a57d76bb2be3dd128ce5fc935e9322ee528dd616892099f50",
+      "cases": 20,
+      "entry": "qualification/api-credit-opening-failure-custody.behavior.mjs",
+      "originalRole": "RETAINED_422_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "94b3c5d4c40ac50951cb76490eee82d17dddfd16b8a0fd504644e57fcec1ece6",
+      "cases": 20,
+      "entry": "qualification/opening-current-close.behavior.mjs",
+      "originalRole": "RETAINED_422_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "cb698fe83fdd9d092ede10a04557a65e3d1cebee05869d9b59702b73d86cc1f9",
+      "cases": 25,
+      "entry": "qualification/issued-original-activation.behavior.mjs",
+      "originalRole": "RETAINED_422_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "dacf17ec46dfaac334ddf5de72bd19b8f228968bf0c7d89f3f6c7c099fe91a24",
+      "cases": 41,
+      "entry": "qualification/issued-grant-provider.behavior.mjs",
+      "originalRole": "RETAINED_422_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "f51b63b990af9996e9335ed6a7c7a44f8aff3ba43739dd62ef273a7f39d83703",
+      "cases": 31,
+      "entry": "qualification/verification-expiry.behavior.mjs",
+      "originalRole": "RETAINED_422_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "f7610cb5d1b0e4e392b0db1c057d4846dee8f4cb20fe9b4f5b39e9a67edb6500",
+      "cases": 20,
+      "entry": "qualification/expired-original-funding.behavior.mjs",
+      "originalRole": "RETAINED_422_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "87c0bf101145abdd81e67a2d5210803d3879db9b9b7dea7520a272bba3fd7694",
+      "cases": 22,
+      "entry": "qualification/issued-provider-retained-resource.behavior.mjs",
+      "originalRole": "RETAINED_422_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "e7f6f24083ba24e5a1f94fb0ed9d411b8ea86e3f43a87a080bd588bd82187a8f",
+      "cases": 24,
+      "entry": "qualification/spending-historical-day-events.behavior.mjs",
+      "originalRole": "RETAINED_422_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "b48a406374533fdcbae750d4ed872a0047ce4847a7bf4870882cdf95a3babe0a",
+      "cases": 15,
+      "entry": "qualification/recorded-result-borrows.behavior.mjs",
+      "originalRole": "RETAINED_422_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "4be22056e5bf7bf920a304531ea03feb9ef50b8d81e026cbe602eaabb84cb9bd",
+      "cases": 2,
+      "entry": "qualification/recorded-result-wire.behavior.mjs",
+      "originalRole": "RETAINED_422_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "0d84a5495e51a2c3226403d6f055cbd8be6f19802183d181e3f969f31f01ab95",
+      "cases": 18,
+      "entry": "qualification/original-funding-receipt.behavior.mjs",
+      "originalRole": "RETAINED_422_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "a3ce61ae4c510915b0b38985618f7e57f960eea8cbbcc2eea633a43e8ac9eab3",
+      "cases": 24,
+      "entry": "qualification/funding-uncertainty-age.behavior.mjs",
+      "originalRole": "RETAINED_422_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "6ee7cf8716521f525280f56ff5b2c0977aeddc6989cad74a1e1dc1ec65ced65d",
+      "cases": 13,
+      "entry": "qualification/recovery-completion-admission.behavior.mjs",
+      "originalRole": "RETAINED_COMPONENT_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "46752bf7c3b5a2e1725307e60e9f3d9e08917784b580d98cf27c1ab77612dd8f",
+      "cases": 16,
+      "entry": "qualification/operator-timer-receipts.behavior.mjs",
+      "originalRole": "RETAINED_COMPONENT_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "11191886088d8d9f25b804a65579007bc5590e3f1991670ec83a22a024db4273",
+      "cases": 3,
+      "entry": "qualification/recovery-core-close-intrinsics.behavior.mjs",
+      "originalRole": "RETAINED_INTRINSIC_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "1b9e7008e12afa349115f99950c5b9c8d320a2d623abde8a40037f9654f39c7c",
+      "cases": 14,
+      "entry": "qualification/recovery-core-close-legs.behavior.mjs",
+      "originalRole": "RETAINED_INTRINSIC_COMMAND_SCOPE",
+      "role": "RETAINED_EXACT_SOURCE_AND_COMMAND_ROLE",
+      "sourceGraphIdentityRequired": true
+    },
+    {
+      "caseIdsSha256": "2d356516cc2e10ec356425449ec87208230f1de560907eca49db83f96eaf8818",
+      "cases": 19,
+      "entry": "qualification/funding-inspection-guard-receipts.behavior.mjs",
+      "originalRole": "NEW_FOCUSED_COMPARISON",
+      "role": "CURRENT_FOCUSED_COMPARISON",
+      "sourceGraphIdentityRequired": true
+    }
+  ],
+  "nativeQualification": "NOT_EXECUTED",
+  "nodeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25",
+  "oldExecutionsRelabeledAsNew": false,
+  "packageRowsAndBareEdgesUnchanged": true,
+  "predecessorProfile": {
+    "bytes": 4776,
+    "path": "qualification/profiles/api-credit-application-source-v94.json",
+    "sha256": "844b14017963f16583c3792b6c12746a68a96b0e66fc273afe46886458f1d636"
+  },
+  "predecessorProofManifest": {
+    "bytes": 30100,
+    "path": "qualification/recovery-completion-close.proof-manifest.json",
+    "sha256": "609f4089f572859f4f2550276ff5529185a8b18c10be4d9a96fc703f2083d4ca"
+  },
+  "productAcceptance": "NOT_ESTABLISHED",
+  "qualifiedCodeRevision": "0f572893111fcd387afb0576a19827286e7d4e20",
+  "rawCompleteAuditSha256": "8b6a458cb6fefdc781fe683209d6042964a39733e16844223d038d02772d1604",
+  "retainedEvidenceRequiresUnchangedGraphs": true,
+  "sourceBaseline": "c3298fbf63299106d4ad42bf00272a6d9cea5c76",
+  "sourceBaselineTree": "1d670e6d012bb862de1e895dde200a7d6f2d7d43",
+  "sourceDelta": [
+    {
+      "bytes": 11693,
+      "gitBlob": "236740b15a98f62d8fb7efb142ebb8d16e64dc8e",
+      "path": "src/api-credit-funding-inspection-owner.js",
+      "sha256": "0244a551fb9cf6599c7885d85160eff72d8383149077319e87398a57d5cedce7"
+    },
+    {
+      "bytes": 9368,
+      "gitBlob": "d1870d53d0a01ee525c52a9c6dc348e572e284e4",
+      "path": "qualification/funding-inspection-guard-receipts.behavior.mjs",
+      "sha256": "b13fe7be07cf6ad5b990b83751c225c5ab438a48a50290fb19ac449c6ec6e571"
+    },
+    {
+      "bytes": 121331,
+      "gitBlob": "e9b537f9e17628a2a33e8a31c77294d66fbe75f8",
+      "path": "src/api-credit-module-catalog.json",
+      "sha256": "b3bc66f82ac2bf55c73ca8e8fea1a2d6bedc3375b9b45200c9160a09ddcb0e90"
+    },
+    {
+      "bytes": 6414,
+      "gitBlob": "ee56aa7e31a3d94f38ed782310a006d990f7861b",
+      "path": "src/api-credit-native-package-admission.js",
+      "sha256": "78a7fe2225053e9b5d04b74d656b97de6d5de16014c62eb4a79e9cf2f0955a08"
+    }
+  ],
+  "sourceOnlyNativeRecords": 247,
+  "version": 1,
+  "wholeFailedTasksReclassified": false
+}

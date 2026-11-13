@@ -1,78 +1,78 @@
 {
-  "profileVersion": 1,
-  "profileId": "API_CREDIT_CURRENT_SOURCE_V1",
-  "sourceBaseline": "b56ebf9247f9a2bdd130a42aa57be649ddcd8486",
+  "acceptance": {
+    "G0G5": "OPEN",
+    "acceptedEntryCommand": null,
+    "installedNamespace": "NOT_ESTABLISHED",
+    "linuxProductAcceptance": "NOT_ESTABLISHED",
+    "nativeQualification": "NOT_EXECUTED",
+    "supportedProfileEstablished": false
+  },
   "application": {
     "buyerEntry": "src/api-credit-cli.js",
     "providerEntry": "src/issued-provider-cli.js"
   },
   "catalogs": [
     {
-      "role": "buyer",
-      "path": "src/api-credit-module-catalog.json",
+      "bareEdges": 9,
       "bytes": 121331,
-      "sha256": "fb7daafe73ad6b25c1594e3ffeba8a76c327e32cdcae1798990cd5a91297547a",
-      "sourceRows": 178,
       "packageRows": 404,
-      "bareEdges": 9
+      "path": "src/api-credit-module-catalog.json",
+      "role": "buyer",
+      "sha256": "b3bc66f82ac2bf55c73ca8e8fea1a2d6bedc3375b9b45200c9160a09ddcb0e90",
+      "sourceRows": 178
     },
     {
-      "role": "provider",
-      "path": "src/issued-provider-module-catalog.json",
+      "bareEdges": 4,
       "bytes": 104624,
-      "sha256": "5436c84898deeb2cc8ed746108636934a524227d1bccefe57cecd45d5ac8716a",
-      "sourceRows": 103,
       "packageRows": 404,
-      "bareEdges": 4
-    }
-  ],
-  "supplementalSources": [
-    {
-      "path": "src/api-credit-native-package-admission.js",
-      "bytes": 6414,
-      "sha256": "d843e6c0bc18b440a2d9768c43c2a1c362085365f66c0c4b7c0a84cc5bbecf60",
-      "format": "module"
-    },
-    {
-      "path": "src/issued-provider-native-package-admission.js",
-      "bytes": 6429,
-      "sha256": "edc233483628d1d279dc7fa4026bc09678b8e60c8939362373a802b80080216d",
-      "format": "module"
-    },
-    {
-      "path": "src/api-credit-module-source-guard.js",
-      "bytes": 9649,
-      "sha256": "158bbc788502bf35394ce6972c619308ade70fc1584d52e1cd907f25acd2364a",
-      "format": "module"
+      "path": "src/issued-provider-module-catalog.json",
+      "role": "provider",
+      "sha256": "5436c84898deeb2cc8ed746108636934a524227d1bccefe57cecd45d5ac8716a",
+      "sourceRows": 103
     }
   ],
   "dataQualification": {
-    "sourceProfile": {
-      "path": "qualification/profiles/api-credit-application-source-v94.json",
-      "bytes": 4776,
-      "sha256": "844b14017963f16583c3792b6c12746a68a96b0e66fc273afe46886458f1d636"
-    },
+    "executedControls": 923,
+    "expectedResultQualification": "G2_FUNDING_INSPECTION_GUARD_CURRENT_SOURCE_DATA",
     "result": {
-      "path": "qualification/recovery-completion-close.actual-local-result.json",
-      "bytes": 162073,
-      "sha256": "8ea91c9d6800a2eae7d508bd2decc1f2e4c376273fc8885be517932ab7c94cd8"
+      "bytes": 109606,
+      "path": "qualification/funding-inspection-guard.actual-local-result.json",
+      "sha256": "525c3efa7fb84699a71bc69b264979cda5c433242b238609b66648590d7086d4"
     },
-    "sourceBoundControls": 2502,
-    "executedControls": 1453,
-    "retainedControls": 1049,
-    "expectedResultQualification": "G2_RECOVERY_COMPLETION_CURRENT_SOURCE_DATA"
+    "retainedControls": 1598,
+    "sourceBoundControls": 2521,
+    "sourceProfile": {
+      "bytes": 3041,
+      "path": "qualification/profiles/api-credit-application-source-v95.json",
+      "sha256": "4dec1ac8873eb48b5f00afda00590d211d589c08d10de95f37367b60d96b0fc7"
+    }
   },
+  "profileId": "API_CREDIT_CURRENT_SOURCE_V1",
+  "profileVersion": 1,
   "runtime": {
     "nodeVersion": "24.19.0",
     "sdkVersion": "1.0.5",
     "x402CoreVersion": "2.23.0"
   },
-  "acceptance": {
-    "supportedProfileEstablished": false,
-    "acceptedEntryCommand": null,
-    "nativeQualification": "NOT_EXECUTED",
-    "installedNamespace": "NOT_ESTABLISHED",
-    "linuxProductAcceptance": "NOT_ESTABLISHED",
-    "G0G5": "OPEN"
-  }
+  "sourceBaseline": "c3298fbf63299106d4ad42bf00272a6d9cea5c76",
+  "supplementalSources": [
+    {
+      "bytes": 6414,
+      "format": "module",
+      "path": "src/api-credit-native-package-admission.js",
+      "sha256": "78a7fe2225053e9b5d04b74d656b97de6d5de16014c62eb4a79e9cf2f0955a08"
+    },
+    {
+      "bytes": 6429,
+      "format": "module",
+      "path": "src/issued-provider-native-package-admission.js",
+      "sha256": "edc233483628d1d279dc7fa4026bc09678b8e60c8939362373a802b80080216d"
+    },
+    {
+      "bytes": 9649,
+      "format": "module",
+      "path": "src/api-credit-module-source-guard.js",
+      "sha256": "158bbc788502bf35394ce6972c619308ade70fc1584d52e1cd907f25acd2364a"
+    }
+  ]
 }

@@ -1,5 +1,38 @@
 # Current API-credit source profile
 
+The current manifest selects the V95 source and declared-memory DATA candidate.
+Its independent SHA-256 is `8485edfebf41725e33e14ea88f943332c62211f4b320eef3b2f63995711c8f4e`.
+
+```sh
+node scripts/report-current-api-credit-profile.mjs --profile-sha256 8485edfebf41725e33e14ea88f943332c62211f4b320eef3b2f63995711c8f4e
+```
+
+This Node source-check command was not executed for V95. The metadata builder
+compared the selected source bytes in Python. The application selection retains
+246 source modules plus one root package.json record: 247 records and 3,427,531
+bytes. Per-role module counts remain buyer 180 and provider 105. Catalog package
+rows and bare edges are unchanged metadata; installed packages were not opened.
+
+The [V95 result](../qualification/funding-inspection-guard.actual-local-result.json)
+covers 2,521 application controls and 181 separate Linux-harness DATA controls.
+The [proof manifest](../qualification/funding-inspection-guard.proof-manifest.json)
+separates 1,104 current candidate passes from 1,598 retained exact source/command
+roles. The focused comparison retains its sixteen reference failures and actual
+exit 1. Another 43 supervisor memory controls remain separate. The earlier V94
+files remain unchanged. See [the opening-guard contract](FUNDING_INSPECTION_OPENING_GUARD.md).
+
+Native application/runtime acceptance, installed namespace, physical release,
+an accepted entry command and Linux product acceptance remain unestablished.
+All G0-G5 gates remain OPEN. The unchanged 108-control/22-input hosted selection
+requires its own exact-head result.
+
+## Retained source-profile history
+
+Descriptions below retain their original observation scopes. References to
+"current" describe the recorded version and are not fresh V95 observations.
+
+### V94 recorded source description
+
 The current manifest selects the V94 source and declared-memory DATA candidate.
 Its independent SHA-256 is `927ead1f548f4b582bb533245d7a77e18687e701470d83d4057933dd8a19d22c`.
 
@@ -27,7 +60,9 @@ namespace, physical release and Linux product acceptance remain unestablished.
 All G0-G5 gates remain OPEN. The existing 108-control/22-input hosted selection
 is unchanged and requires an exact-head result.
 
-## Retained source-profile history
+
+
+
 
 The following descriptions preserve their original pins and observation
 scopes. References to "current" below refer to the version being recorded;

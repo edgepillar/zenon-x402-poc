@@ -57,3 +57,18 @@ This focused record excludes the other 1,054 affected regression controls.
 Broader supported-profile completion requires separate command/source evidence.
 The unchanged hosted selection covers 108 controls and excludes these entries.
 Native application execution and all G0-G5 product acceptance remain open.
+
+## Complete declared-memory source lineage
+
+The [V95 result](../qualification/funding-inspection-guard.actual-local-result.json)
+and [proof manifest](../qualification/funding-inspection-guard.proof-manifest.json)
+cover 2,702 source-bound DATA controls: 2,521 application controls and 181 separate
+Linux-harness controls. The current source contributes 1,104 candidate passes,
+including the fifty focused passes above and 1,054 broad regression passes.
+The remaining 1,598 controls retain unchanged graphs and original command/CAS
+origins. Forty-three supervisor memory controls remain separate. Expected
+reference failures and old FAILURE/UNKNOWN outcomes are preserved.
+
+This declared-memory lineage does not establish native application execution,
+physical release, fresh-process store recovery or Linux product acceptance.
+All G0-G5 product gates remain OPEN.

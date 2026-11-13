@@ -1,0 +1,82 @@
+{
+  "G0G5Acceptance": "OPEN",
+  "all404PackageRowsAndBareEdgesUnchanged": true,
+  "buyerSourceGraphUnchanged": false,
+  "currentLocalData": {
+    "additionalSupervisorHarnessControls": 43,
+    "allSourceBoundControls": 2702,
+    "freshRegressionManagedCommands": 1,
+    "freshRegressionNodeChildren": 24,
+    "new": 19,
+    "reexecuted": 904,
+    "retainedExact": 1598,
+    "separateHarnessReexecuted": 181,
+    "separateHarnessRetained": 0,
+    "sourceBoundDistinct": 2521
+  },
+  "currentReporterCoreMetadataPlan": "NOT_EXECUTED",
+  "failureInventory": {
+    "bytes": 1504,
+    "path": "qualification/funding-inspection-guard.failure-inventory.json",
+    "sha256": "20d0fc4fbf0f5f808da081bdb71815a0204ddb9f2e30bb751bed9f98d3acbb16"
+  },
+  "hostedSelectionChanged": false,
+  "nativeQualification": "NOT_EXECUTED",
+  "nativeSourceGraphs": {
+    "buyer": 180,
+    "bytes": 3427531,
+    "provider": 105,
+    "rootMetadataFiles": 1,
+    "sourceModules": 246,
+    "sourceOnly": true,
+    "union": 247,
+    "unionIncludesRootMetadata": true
+  },
+  "newCasesIncludedInHostedCI": false,
+  "predecessorProfile": {
+    "bytes": 4776,
+    "path": "qualification/profiles/api-credit-application-source-v94.json",
+    "sha256": "844b14017963f16583c3792b6c12746a68a96b0e66fc273afe46886458f1d636"
+  },
+  "product": "ONE_FUNDING_ONE_GRANT_MANY_METERED_CALLS_ORIGINAL_REPLAY_RECOVERY",
+  "profileStorage": "EXACT_PREDECESSOR_PROOF_REFERENCE_WITH_EXPLICIT_SOURCE_AND_ROLE_REPLACEMENTS",
+  "proofManifest": {
+    "bytes": 34608,
+    "path": "qualification/funding-inspection-guard.proof-manifest.json",
+    "sha256": "613d03234475eb9494ac240a9995bef4666aa2b7dee8799ab9c40b5e51801f69"
+  },
+  "providerSourceGraphUnchanged": true,
+  "qualifiedCodeRevision": "0f572893111fcd387afb0576a19827286e7d4e20",
+  "selectedHostedCIControls": 108,
+  "selectedHostedCISourceInputs": 22,
+  "sourceDelta": [
+    {
+      "bytes": 11693,
+      "gitBlob": "236740b15a98f62d8fb7efb142ebb8d16e64dc8e",
+      "path": "src/api-credit-funding-inspection-owner.js",
+      "sha256": "0244a551fb9cf6599c7885d85160eff72d8383149077319e87398a57d5cedce7"
+    },
+    {
+      "bytes": 9368,
+      "gitBlob": "d1870d53d0a01ee525c52a9c6dc348e572e284e4",
+      "path": "qualification/funding-inspection-guard-receipts.behavior.mjs",
+      "sha256": "b13fe7be07cf6ad5b990b83751c225c5ab438a48a50290fb19ac449c6ec6e571"
+    },
+    {
+      "bytes": 121331,
+      "gitBlob": "e9b537f9e17628a2a33e8a31c77294d66fbe75f8",
+      "path": "src/api-credit-module-catalog.json",
+      "sha256": "b3bc66f82ac2bf55c73ca8e8fea1a2d6bedc3375b9b45200c9160a09ddcb0e90"
+    },
+    {
+      "bytes": 6414,
+      "gitBlob": "ee56aa7e31a3d94f38ed782310a006d990f7861b",
+      "path": "src/api-credit-native-package-admission.js",
+      "sha256": "78a7fe2225053e9b5d04b74d656b97de6d5de16014c62eb4a79e9cf2f0955a08"
+    }
+  ],
+  "sourceMain": "c3298fbf63299106d4ad42bf00272a6d9cea5c76",
+  "sourceMainTree": "1d670e6d012bb862de1e895dde200a7d6f2d7d43",
+  "status": "SOURCE_AND_DECLARED_MEMORY_DATA_CANDIDATE",
+  "version": 95
+}

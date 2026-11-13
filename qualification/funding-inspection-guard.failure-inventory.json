@@ -1,0 +1,39 @@
+{
+  "inheritedInventory": {
+    "bytes": 1443,
+    "path": "qualification/recovery-completion-close.failure-inventory.json",
+    "sha256": "b9e0827f258b6339dbb62ca41c896b8efac53bf1b5853003b61161e41501d049"
+  },
+  "nativeQualification": "NOT_EXECUTED",
+  "originalFailureAndUnknownReportsPreserved": true,
+  "publicationObservation": {
+    "auditSha256": "beb8aa46209e01c06932d76439d20bd6507837e4770f855215cb20c9cfc65241",
+    "laterReadOnlyBranchBodyAndBlobVerification": true,
+    "mutatingRequestsRepeated": 0,
+    "originalRecordPreserved": true,
+    "originalStatus": "UNKNOWN"
+  },
+  "referenceActualExit": 1,
+  "referenceComparison": {
+    "bytes": 51068,
+    "path": "qualification/funding-inspection-guard.focused.actual-local-result.json",
+    "sha256": "bd40c824f7694b008e663f9722ed302958e21707f20c3ae548c0dffb42279b19"
+  },
+  "referenceFailedCases": 16,
+  "referencePassedCases": 3,
+  "scope": "EXACT_DECLARED_MEMORY_DATA_COMMAND_ROLES",
+  "setupCorrection": {
+    "actualManagerGrammarPreflightAdded": true,
+    "classification": "PROJECT_IDENTIFIER_EXCEEDED_UNCHANGED_MANAGER_GRAMMAR",
+    "originalAuditSha256": "6363b8def63eb1e41a8060bd5caef2c04678d00880c1d2d2cda5bc8ff3a75b9a",
+    "originalManagedTasksCreated": 0,
+    "originalStatus": "UNKNOWN",
+    "originalTestCommands": 0,
+    "policyChanged": false,
+    "sourceCaseSelectionChanged": false
+  },
+  "unexpectedCurrentDataFailures": 0,
+  "unexpectedSkipsOrCancellations": 0,
+  "version": 1,
+  "wholeFailedTasksReclassified": false
+}
