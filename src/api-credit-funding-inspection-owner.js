@@ -4,7 +4,10 @@ import { canonicalJson } from './canonical.js';
 import { encodeOriginalPaymentCheckpoint } from './service-credit-pilot-original-payment-checkpoint.js';
 
 const F = Object.freeze, D = Object.getOwnPropertyDescriptor, OWN = Object.hasOwn, USED = new WeakSet(), HELD = new Set();
-const THEN = Promise.prototype.then;
+const NP = Promise, PP = NP.prototype, THEN = PP.then;
+const APPLY = Reflect.apply, PROTOTYPE = Object.getPrototypeOf, KEYS = Reflect.ownKeys;
+const OBJECT_PROTOTYPE = Object.prototype, IS_PROXY = types.isProxy, IS_PROMISE = types.isPromise;
+const THEN_DESCRIPTOR = D(PP, 'then'), CONSTRUCTOR_DESCRIPTOR = D(PP, 'constructor'), SPECIES_DESCRIPTOR = D(NP, Symbol.species);
 const STATUSES = F(['PREPARED', 'ATTEMPT_FENCED', 'OUTCOME_UNKNOWN', 'BOUND', 'PAYMENT_REJECTED', 'PAYMENT_CONFLICT']);
 const RESULT = ['apiCreditFundingInspectionVersion', 'fundingResourceUrl', 'paymentHash', 'recordPresent', 'localStatus', 'revision',
   'ambiguityLatched', 'originalCheckpointMatched', 'serializedCheckpoint', 'historicalObservation', 'reconciliationRequired',
@@ -40,11 +43,32 @@ function checkpoint(raw) {
   for (const value of [...Object.values(binding), ...Object.values(originalBytes), ...Object.values(digests)]) if (typeof value !== 'string') fail();
   return encodeOriginalPaymentCheckpoint(F({ version: c.version, authorization: c.authorization, binding: F(binding), originalBytes: F(originalBytes), digests: F(digests) }));
 }
+function sameDescriptor(actual, expected) {
+  if (actual === undefined || expected === undefined) return false;
+  const actualKeys = KEYS(actual), expectedKeys = KEYS(expected);
+  if (actualKeys.length !== expectedKeys.length) return false;
+  for (let i = 0; i < expectedKeys.length; i++) {
+    const key = expectedKeys[i];
+    if (!OWN(actual, key) || actual[key] !== expected[key]) return false;
+  }
+  return true;
+}
 function discard(value) {
-  if (types.isProxy(value) || !types.isPromise(value) || Object.getPrototypeOf(value) !== Promise.prototype
-      || Reflect.ownKeys(value).some(key => key !== 'constructor') || Promise.prototype.then !== THEN) return;
-  const ctor = D(value, 'constructor'); if (ctor && (!OWN(ctor, 'value') || ctor.value !== Promise)) return;
-  try { const bridge = Reflect.apply(THEN, value, [() => {}, () => {}]); Reflect.apply(THEN, bridge, [() => {}, () => {}]); } catch {}
+  // Retain an unsupported receipt without looking up then, constructor,
+  // mutable array methods or an altered promise species getter.
+  try {
+    if (IS_PROXY(value) || !IS_PROMISE(value) || PROTOTYPE(value) !== PP
+        || D(OBJECT_PROTOTYPE, 'then') !== undefined || D(OBJECT_PROTOTYPE, 'toJSON') !== undefined
+        || !sameDescriptor(D(PP, 'then'), THEN_DESCRIPTOR)
+        || !sameDescriptor(D(PP, 'constructor'), CONSTRUCTOR_DESCRIPTOR)
+        || !sameDescriptor(D(NP, Symbol.species), SPECIES_DESCRIPTOR)) return;
+    const keys = KEYS(value);
+    for (let i = 0; i < keys.length; i++) if (keys[i] !== 'constructor') return;
+    const ctor = D(value, 'constructor');
+    if (ctor && (!OWN(ctor, 'value') || ctor.value !== NP)) return;
+    const bridge = APPLY(THEN, value, [() => {}, () => {}]);
+    APPLY(THEN, bridge, [() => {}, () => {}]);
+  } catch {}
 }
 /** Synchronous existing-V6 owner: four bounded reads, same external pins and
  * exact original bytes before/after. No restart normalization, writer, SDK,
@@ -56,9 +80,16 @@ export function runApiCreditFundingInspectionOwner(configuration) {
   const p = fields(c.ports, ['openExisting', 'readState', 'readCheckpoint', 'inspectStore', 'closeStore']);
   for (const fn of [...Object.values(p), c.requireOpening]) if (typeof fn !== 'function' || types.isProxy(fn) || !Object.isFrozen(fn)) fail();
   if (USED.has(c.profile)) fail(); USED.add(c.profile);
-  const frame = { profile: c.profile, store: null, openEntered: false, closeEntered: false, closeReturned: false, closed: false, unknown: false, opaqueOpen: null, opaqueClose: null, opaqueRead: null };
+  const frame = { profile: c.profile, store: null, openEntered: false, closeEntered: false, closeReturned: false, closed: false, unknown: false, opaqueOpen: null, opaqueClose: null, opaqueRead: null, opaqueGuard: null };
   let result = null, failed = false;
-  const guard = () => c.requireOpening();
+  const guard = () => {
+    const receipt = c.requireOpening();
+    if (receipt !== undefined) {
+      // Opening permission is synchronous and void. An unjoined guard receipt
+      // cannot authorize a store/read or a competing close of the same owner.
+      frame.opaqueGuard = receipt; frame.unknown = true; discard(receipt); fail();
+    }
+  };
   function read(invoke) {
     guard(); const value = invoke();
     if (types.isProxy(value) || types.isPromise(value)) { frame.opaqueRead = value; frame.unknown = true; discard(value); fail(); }
