@@ -89,8 +89,16 @@ function createApplication(configuration,purchased,nonDp=false){
     const out=capability();active=true;
     function bad(){hold();active=false;out.reject(error());}
     try{const pending=work(input);observe(pending,value=>{
-      active=false;if(closed||held||!invariant()){hold();out.reject(error());return;}
-      try{childView();if(held)fail();out.resolve(value);}catch{bad();}
+      if(closed||held||!invariant()){bad();return;}
+      try{
+        // Completion still borrows this operation. A final inspection may
+        // observe a stopped/busy child or reenter parent close; neither is
+        // permission to deliver a success or admit another original request.
+        const view=childView();
+        if(closed||held||closing!==null||!invariant()||data(view,'lifecycle')!=='OPEN'
+            ||data(view,'publicOperationActive')!==false)fail();
+        active=false;out.resolve(value);
+      }catch{bad();}
     },bad);}catch{active=false;out.reject(error());}
     return out.promise;
   }

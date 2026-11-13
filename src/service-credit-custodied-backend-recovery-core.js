@@ -1,4 +1,5 @@
 import { Buffer } from 'node:buffer';
+import { types as utilTypes } from 'node:util';
 import {
   snapshotOriginalServiceRequestCustodyKey,
   serializeOriginalServiceRequestCustody,
@@ -18,6 +19,55 @@ const SERIALIZE = serializeOriginalServiceRequestCustody;
 const SERIALIZE_INTENT = serializeOriginalServiceDispatchIntent;
 const CHECKPOINT_TEXT = encodeOriginalPaymentCheckpoint;
 const EXACT_CHECKPOINT_READERS = new WeakMap();
+const CLOSE_PROMISE_PROTOTYPE = NativePromise.prototype;
+const CLOSE_DESCRIPTOR = Object.getOwnPropertyDescriptor;
+const CLOSE_PROTOTYPE = Object.getPrototypeOf;
+const CLOSE_NAMES = Object.getOwnPropertyNames;
+const CLOSE_OWN = Object.hasOwn;
+const CLOSE_KEYS = Reflect.ownKeys;
+const CLOSE_IS_PROMISE = utilTypes.isPromise;
+const CLOSE_IS_PROXY = utilTypes.isProxy;
+const CLOSE_THEN = CLOSE_DESCRIPTOR(CLOSE_PROMISE_PROTOTYPE, 'then');
+const CLOSE_CONSTRUCTOR = CLOSE_DESCRIPTOR(CLOSE_PROMISE_PROTOTYPE, 'constructor');
+const CLOSE_SPECIES = CLOSE_DESCRIPTOR(NativePromise, Symbol.species);
+
+function sameCloseDescriptor(left, right) {
+  if (left === undefined || right === undefined) return false;
+  const leftKeys = CLOSE_KEYS(left), rightKeys = CLOSE_KEYS(right);
+  if (leftKeys.length !== rightKeys.length) return false;
+  for (let index = 0; index < rightKeys.length; index++) {
+    const key = rightKeys[index];
+    if (!CLOSE_OWN(left, key) || left[key] !== right[key]) return false;
+  }
+  return true;
+}
+
+// A failed backend stop must not suppress the known client stop. Retain its
+// receipt and observe only a supported genuine promise, without assimilating
+// an opaque receipt or treating it as replacement cleanup authority.
+function observeFailedCloseReceipt(value) {
+  try {
+    if (CLOSE_IS_PROXY(value) || !CLOSE_IS_PROMISE(value)
+        || CLOSE_PROTOTYPE(value) !== CLOSE_PROMISE_PROTOTYPE
+        || CLOSE_DESCRIPTOR(Object.prototype, 'then') !== undefined
+        || CLOSE_DESCRIPTOR(Object.prototype, 'toJSON') !== undefined
+        || !sameCloseDescriptor(CLOSE_DESCRIPTOR(CLOSE_PROMISE_PROTOTYPE, 'then'), CLOSE_THEN)
+        || !sameCloseDescriptor(CLOSE_DESCRIPTOR(CLOSE_PROMISE_PROTOTYPE, 'constructor'), CLOSE_CONSTRUCTOR)
+        || !sameCloseDescriptor(CLOSE_DESCRIPTOR(NativePromise, Symbol.species), CLOSE_SPECIES)) return;
+    // These arrays come from captured intrinsics. Do not look up mutable array
+    // methods after a borrowed stop callback has had an opportunity to change
+    // the realm; that lookup could itself enter an unrelated callback or make
+    // a changed promise descriptor appear supported.
+    const names = CLOSE_NAMES(value);
+    for (let index = 0; index < names.length; index++) {
+      if (names[index] !== 'constructor') return;
+    }
+    const constructor = CLOSE_DESCRIPTOR(value, 'constructor');
+    if (constructor !== undefined && (!CLOSE_OWN(constructor, 'value') || constructor.value !== NativePromise)) return;
+    const ignored = APPLY(CLOSE_THEN.value, value, [() => {}, () => {}]);
+    APPLY(CLOSE_THEN.value, ignored, [() => {}, () => {}]);
+  } catch {}
+}
 
 /**
  * Internal connection for already captured private child capabilities.
@@ -82,6 +132,15 @@ export function createServiceCreditCustodiedBackendRecoveryCore(client, backend,
   client = null;
   backend = null;
   let closed = false, reading = false, unavailable = false;
+  let closeRequested = false, closeComplete = false, closeFailed = false, closeFailure;
+  let closeReceipt;
+  const closeFailures = { backend: null, local: null, reentry: null };
+  function rememberCloseFailure(owner, value) {
+    unavailable = true;
+    if (closeFailures[owner] === null) closeFailures[owner] = FREEZE({ value });
+    if (!closeFailed) { closeFailed = true; closeFailure = value; }
+    observeFailedCloseReceipt(value);
+  }
 
   function readBackendRecoveryState(keyValue, authorizationHeader, expectedPins, exactCheckpoint, actualArity) {
     if (closed) throw failure('CLOSED');
@@ -220,8 +279,24 @@ export function createServiceCreditCustodiedBackendRecoveryCore(client, backend,
   });
   const close = FREEZE(function close(...args) {
     if (args.length !== 0) return APPLY(LOCAL_CLOSE, undefined, args);
-    if (!closed) { closed = true; BACKEND_CLOSE(); }
-    return LOCAL_CLOSE();
+    if (closeRequested) {
+      if (!closeComplete && !closeFailed) rememberCloseFailure('reentry', failure('CLOSE_REENTRY'));
+      if (closeFailed) throw closeFailure;
+      return closeReceipt;
+    }
+    // Cache entry and revoke reads before either borrowed stop can reenter.
+    // The backend reader is borrowed; its refusal cannot suppress the same
+    // known client's cleanup, authorize another stop or repair a prior failure.
+    closeRequested = true;
+    closed = true;
+    try { BACKEND_CLOSE(); } catch (value) { rememberCloseFailure('backend', value); }
+    try { closeReceipt = LOCAL_CLOSE(); } catch (value) { rememberCloseFailure('local', value); }
+    closeComplete = true;
+    if (closeFailed) {
+      observeFailedCloseReceipt(closeReceipt);
+      throw closeFailure;
+    }
+    return closeReceipt;
   });
   const snapshot = FREEZE(function snapshot() {
     if (arguments.length !== 0) throw failure('INVALID_INPUT');

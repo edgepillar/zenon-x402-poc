@@ -52,7 +52,7 @@ function createCoordinator(configuration, nonDp) {
   const frame = { stage: 'PROFILE', prepared: null, profileBytes: null, credential: null, key: null, selection: null, session: null, host: null,
     opening: true, unknown: false, accepted: false, timer: null, current: null, deadline: null, lastClock: null,
     stops: new Map(), inputStop: null, stopUnknown: false, stopTerminal: false, observed: null, selectionTransferred: false,
-    lateOwners: [], lateFacts: [], publicProfileAdmission: 'NOT_ATTEMPTED', credentialReadEntered: false, keyCreationEntered: false, sessionOpeningEntered: false,
+    lateOwners: [], lateFacts: [], opaqueTimers: [], publicProfileAdmission: 'NOT_ATTEMPTED', credentialReadEntered: false, keyCreationEntered: false, sessionOpeningEntered: false,
     started: false, finished: false, stopRequested: false, runPromise: null, executionReceipt: null,
     currentHost: null, hostReceipt: null, lateHostReceipt: null, closeWindowEntered: false, closeWindow: null };
   function clock() { const n = p.clock(); if (typeof n !== 'bigint' || frame.lastClock !== null && n < frame.lastClock) fail(); frame.lastClock = n; return n; }
@@ -115,6 +115,29 @@ function createCoordinator(configuration, nonDp) {
     } catch { frame.stopUnknown = true; }
     return frame.closeWindow;
   }
+  function keepTimerReceipt(value, token = null) {
+    // A failed retirement must retain the same known handle after its active
+    // slot was cleared. The failure receipt is not replacement cleanup authority.
+    frame.opaqueTimers.push(F({ token, value }));
+    // Retain unknown receipts without assimilating thenables or treating them
+    // as cleanup capabilities. Observe only a genuine, supported promise.
+    try { observe(value, () => {}, () => {}); } catch {}
+  }
+  function timerToken(value) {
+    if (value === null || value === undefined || types.isPromise(value) || types.isProxy(value)) {
+      frame.stopUnknown = true; keepTimerReceipt(value); fail();
+    }
+    return value;
+  }
+  function cancelOwnedTimer(token) {
+    let value;
+    try { value = p.cancelTimer(token); }
+    catch (thrown) {
+      frame.stopUnknown = true; keepTimerReceipt(thrown, token);
+      throw new TypeError('API_CREDIT_TIMER_CANCEL_UNKNOWN');
+    }
+    if (value !== undefined) { frame.stopUnknown = true; keepTimerReceipt(value, token); fail(); }
+  }
   async function closeKnown() {
     const window = beginCloseWindow();
     if (frame.session !== null) requestOwnerStop(frame.session);
@@ -123,16 +146,25 @@ function createCoordinator(configuration, nonDp) {
     const inputs = { terminal: false, clean: false };
     try { observe(frame.inputStop, v => { inputs.terminal = true; inputs.clean = v === undefined; if (!inputs.clean) frame.stopUnknown = true; }, () => { inputs.terminal = true; frame.stopUnknown = true; }); }
     catch { inputs.terminal = true; frame.stopUnknown = true; }
-    const done = capability(); let timer = null;
+    const done = capability(); let timer = null, arming = false, finishing = false, requested = false, failed = false;
     function finish(clean) {
       if (frame.stopTerminal) return;
-      frame.stopTerminal = true;
-      if (timer !== null) {
-        try { p.cancelTimer(timer); } catch { clean = false; }
-        timer = null;
-      }
-      if (!clean) frame.stopUnknown = true;
-      done.resolve(clean && !frame.stopUnknown);
+      requested = true; if (clean !== true) failed = true;
+      if (arming || finishing) return;
+      finishing = true;
+      try {
+        if (!failed && (window === null || clock() >= window.deadline || frame.stopUnknown)) failed = true;
+        if (timer !== null) {
+          const token = timer; timer = null;
+          // Cancellation may synchronously report expiry. Latch that failure
+          // before publishing a terminal verdict, then retire this handle once.
+          cancelOwnedTimer(token);
+        }
+        if (!failed && (window === null || clock() >= window.deadline || frame.stopUnknown)) failed = true;
+      } catch { failed = true; }
+      frame.stopTerminal = true; finishing = false;
+      if (failed) frame.stopUnknown = true;
+      done.resolve(!failed);
     }
     function decide() {
       if (frame.stopTerminal) return;
@@ -149,9 +181,13 @@ function createCoordinator(configuration, nonDp) {
       const remaining = window === null ? 0n : window.deadline - clock();
       if (remaining <= 0n) finish(false);
       else {
-        const handle = p.armTimer(Number((remaining + 999999n) / 1000000n), F(() => finish(false)));
-        if (frame.stopTerminal) { try { p.cancelTimer(handle); } catch { frame.stopUnknown = true; } }
-        else timer = handle;
+        arming = true;
+        try { timer = timerToken(p.armTimer(Number((remaining + 999999n) / 1000000n), F(() => finish(false)))); }
+        catch { finish(false); }
+        finally { arming = false; }
+        // A callback can fire before armTimer returns its handle. Join that
+        // latched outcome only after the known handle can be retired once.
+        if (requested) finish(!failed);
       }
     } catch { finish(false); }
     decide(); return native(done.promise);
@@ -187,7 +223,8 @@ function createCoordinator(configuration, nonDp) {
       if (frame.stopRequested) fail();
       frame.deadline = clock() + BigInt(a.bootstrapMs) * 1000000n;
       if (frame.stopRequested) fail();
-      frame.timer = p.armTimer(a.bootstrapMs, F(rejectOpening));
+      try { frame.timer = p.armTimer(a.bootstrapMs, F(rejectOpening)); timerToken(frame.timer); }
+      catch { frame.unknown = true; frame.timer = null; throw new TypeError('API_CREDIT_TIMER_ARM_UNKNOWN'); }
       await opening('PROFILE', stageGuard => p.readProfile(stageGuard)); frame.profileBytes = frame.observed; frame.observed = null; guard();
       if (types.isProxy(frame.profileBytes) || !Buffer.isBuffer(frame.profileBytes) || Object.getPrototypeOf(frame.profileBytes) !== Buffer.prototype
           || Reflect.apply(LENGTH, frame.profileBytes, []) > 262144 || types.isSharedArrayBuffer(Reflect.apply(ARRAY_BUFFER, frame.profileBytes, []))) fail();
@@ -208,7 +245,8 @@ function createCoordinator(configuration, nonDp) {
       frame.stage = 'SESSION'; await opening('SESSION', stageGuard => { frame.sessionOpeningEntered = true; frame.selectionTransferred = true; return p.openSession(frame.selection, stageGuard, frame.prepared.limits); });
       frame.session = frame.observed; frame.observed = null; guard();
       method(frame.session, 'close'); method(frame.session, 'inspect');
-      frame.accepted = true; frame.opening = false; if (frame.timer !== null) { p.cancelTimer(frame.timer); frame.timer = null; }
+      frame.accepted = true; frame.opening = false;
+      if (frame.timer !== null) { const token = frame.timer; frame.timer = null; cancelOwnedTimer(token); }
       frame.stage = 'COMMANDS';
       if (frame.stopRequested) fail();
       const hostDone = capability(); frame.currentHost = hostDone;
@@ -227,7 +265,10 @@ function createCoordinator(configuration, nonDp) {
     } catch { frame.unknown = frame.unknown || frame.keyCreationEntered || frame.sessionOpeningEntered || frame.key !== null || frame.session !== null; }
     finally {
       frame.opening = false;
-      if (frame.timer !== null) { try { p.cancelTimer(frame.timer); } catch { frame.unknown = true; } frame.timer = null; }
+      if (frame.timer !== null) {
+        const token = frame.timer; frame.timer = null;
+        try { cancelOwnedTimer(token); } catch { frame.unknown = true; }
+      }
       wipe(frame.profileBytes); wipe(frame.credential);
       if (frame.selection !== null && !frame.selectionTransferred) { try { frame.selection.release(); } catch { frame.unknown = true; } }
       if (frame.prepared !== null) { try { frame.prepared.release(); } catch { frame.unknown = true; } }

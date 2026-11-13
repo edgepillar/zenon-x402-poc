@@ -82,7 +82,12 @@ function createCoordinator(configuration, signer, recorded = false, funding = fa
     if (frame.current !== null) frame.current.reject(Error('inspection expired')); FAILED.add(frame); }
   const guard = F(function requireOpening() {
     if (arguments.length !== 0 || !frame.opening || frame.unknown) fail();
-    try { if (clock() >= frame.deadline) { expire(); fail(); } } catch { expire(); fail(); }
+    try {
+      const now = clock();
+      // The borrowed clock may synchronously stop or expire this run. Its
+      // numeric result cannot restore permission to enter the next port.
+      if (!frame.opening || frame.unknown || now >= frame.deadline) { expire(); fail(); }
+    } catch { expire(); fail(); }
   });
   function stage(invoke) {
     guard(); const out = signal(); frame.current = out;
