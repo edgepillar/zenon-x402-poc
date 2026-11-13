@@ -41,7 +41,9 @@ function digest(domain, raw) { return 'sha256:' + createHash('sha256').update(do
 function policy(raw) {
   const p = decode(raw, POLICY_FIELDS);
   if (p.version !== 1 || p.compensationRule !== 'PRO_RATA_CEILING_ATOMIC_V1') fail();
-  id(p.quantityUnit); integer(p.offerExpiresAtMs, 1); integer(p.reservationExpiresAtMs, 1); integer(p.maximumDeliveries, 1, 64);
+  // Admission permits the 100-request product profile. Existing orders still
+  // enforce their own immutable maximumDeliveries and unchanged policy digest.
+  id(p.quantityUnit); integer(p.offerExpiresAtMs, 1); integer(p.reservationExpiresAtMs, 1); integer(p.maximumDeliveries, 1, 128);
   return p;
 }
 export function purchasedFulfillmentPolicyDigest(policyJson) {
