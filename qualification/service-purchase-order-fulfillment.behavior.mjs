@@ -277,6 +277,6 @@ for (const { id, run } of checks) {
 const failed = cases.filter(c => c.status !== 'PASS').length;
 console.log(JSON.stringify({ qualification: 'PURCHASE_ORDER_GRANT_FREE_FULFILLMENT_DATA', passed: cases.length - failed, failed, cases,
   fundingAndOriginalCodecs: 'ACTUAL', selectedStoresAndAuthentication: 'SYNTHETIC_DATA', nativeExecutions: 0, SDK: 0, SQLite: 0,
-  keys: 0, signatures: 0, sockets: 0, nonceSearches: 0, nodeChildren: 0, grants: 0, serviceExecutions: 0, payouts: 0,
+  keys: 0, signatures: 0, sockets: 0, nonceSearches: 0, nodeChildren: 0, actualPrepare: 0, grants: 0, serviceExecutions: 0, payouts: 0,
   nativeDurability: 'NOT_ESTABLISHED', production: 'NOT_ACCEPTED' }));
 if (failed) process.exitCode = 1;
