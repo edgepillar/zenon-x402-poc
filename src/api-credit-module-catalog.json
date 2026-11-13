@@ -2583,8 +2583,8 @@
     },
     {
       "path": "src/api-credit-stored-grant-query-owner.js",
-      "bytes": 8775,
-      "sha256": "6e2c28c8613f5242ddf4201652e4640fdd8dbd17293ecb45af6f47464ade685e",
+      "bytes": 9689,
+      "sha256": "1c21c8e2af412a377bb424a346c5eecf84b67cd4333ec35836bf4dc4b51d5b1a",
       "format": "module"
     },
     {

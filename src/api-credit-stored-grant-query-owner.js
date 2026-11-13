@@ -8,15 +8,25 @@ import { claimApiCreditPurchasedGrantRecoverySelection,bindApiCreditPurchasedGra
 
 const F=Object.freeze,D=Object.getOwnPropertyDescriptor,O=Object.hasOwn,A=Reflect.apply,NP=Promise,PP=NP.prototype;
 const THEN=D(PP,'then'),CTOR=D(PP,'constructor'),SPECIES=D(NP,Symbol.species),ACTIVE=new Set(),HELD=new Set(),SEEN=new WeakSet();
+const PROTOTYPE=Object.getPrototypeOf,KEYS=Reflect.ownKeys,OBJECT_PROTOTYPE=Object.prototype,IS_PROXY=types.isProxy,IS_PROMISE=types.isPromise;
 function fail(){throw new TypeError('API_CREDIT_STORED_GRANT_QUERY_UNAVAILABLE');}
 function fields(v,names,frozen=false){if(v===null||typeof v!=='object'||types.isProxy(v)||Object.getPrototypeOf(v)!==Object.prototype||Reflect.ownKeys(v).length!==names.length||frozen&&!Object.isFrozen(v))fail();
   const out={};for(const name of names)Object.defineProperty(out,name,{value:data(v,name),enumerable:true});return out;}
 function data(v,key){if(v===null||typeof v!=='object'||types.isProxy(v))fail();const d=D(v,key);if(!d?.enumerable||!O(d,'value'))fail();return d.value;}
 function method(v,key){if(v===null||typeof v!=='object'||types.isProxy(v)||Object.getPrototypeOf(v)!==Object.prototype||!Object.isFrozen(v))fail();const fn=data(v,key);if(typeof fn!=='function'||types.isProxy(fn)||!Object.isFrozen(fn))fail();return fn;}
-function same(a,b){return !!a&&!!b&&Reflect.ownKeys(a).length===Reflect.ownKeys(b).length&&Reflect.ownKeys(b).every(k=>O(a,k)&&a[k]===b[k]);}
+function same(a,b){if(a===undefined||b===undefined)return false;const ak=KEYS(a),bk=KEYS(b);if(ak.length!==bk.length)return false;
+  for(let i=0;i<bk.length;i++){const key=bk[i];if(!O(a,key)||a[key]!==b[key])return false;}return true;}
 function invariant(){return D(Object.prototype,'then')===undefined&&same(D(PP,'then'),THEN)&&same(D(PP,'constructor'),CTOR)&&same(D(NP,Symbol.species),SPECIES);}
-function discardPromise(v){try{if(invariant()&&types.isPromise(v)&&!types.isProxy(v)&&Object.getPrototypeOf(v)===PP){const c=D(v,'constructor');
-  if(c===undefined||O(c,'value')&&c.value===NP){const p=A(THEN.value,v,[()=>{},()=>{}]);A(THEN.value,p,[()=>{},()=>{}]);}}}catch{}}
+function discardPromise(v){
+  // Observe only supported native promises. Keeping an opaque receipt must not
+  // enter then/constructor/species getters or borrowed mutable array methods.
+  try{if(IS_PROXY(v)||!IS_PROMISE(v)||PROTOTYPE(v)!==PP||D(OBJECT_PROTOTYPE,'then')!==undefined||D(OBJECT_PROTOTYPE,'toJSON')!==undefined
+      ||!same(D(PP,'then'),THEN)||!same(D(PP,'constructor'),CTOR)||!same(D(NP,Symbol.species),SPECIES))return;
+    const keys=KEYS(v);for(let i=0;i<keys.length;i++)if(keys[i]!=='constructor')return;
+    const c=D(v,'constructor');if(c!==undefined&&(!O(c,'value')||c.value!==NP))return;
+    const p=A(THEN.value,v,[()=>{},()=>{}]);A(THEN.value,p,[()=>{},()=>{}]);
+  }catch{}
+}
 
 /** Read one original query record, validate independently pinned full profile,
  * revoke and physically close the SAME known file owner before returning the
@@ -31,10 +41,14 @@ export function resolveApiCreditStoredGrantQueryOwner(configuration){
   const fileConfiguration=F({storageProfile:file.storageProfile,allowedRoot:file.allowedRoot,filePolicy:file.filePolicy});
   for(const fn of [ports.openFile,c.requireOpening])if(typeof fn!=='function'||types.isProxy(fn)||!Object.isFrozen(fn))fail();
   if(purchased)claimApiCreditPurchasedGrantRecoverySelection(p.purchaseSelection,expected,file.storageProfile.policy.accountId);
-  const frame={owner:null,openEntered:false,known:false,borrowerActive:false,borrowerUnknown:false,opaque:[],view:null,current:null,revoke:null,close:null,
+  const frame={profile:c.profile,owner:null,openEntered:false,known:false,borrowerActive:false,borrowerUnknown:false,guardReceipt:null,opaque:[],view:null,current:null,revoke:null,close:null,
     read:null,custody:null,revokeEntered:false,closeEntered:false,revoked:false,closed:false,captured:null,raw:null};
   ACTIVE.add(frame);let bad=false;
-  function opening(){const value=A(c.requireOpening,undefined,[]);if(value!==undefined){discardPromise(value);fail();}if(!invariant())fail();}
+  function opening(){const value=A(c.requireOpening,undefined,[]);if(value!==undefined){
+    // An unjoined opening result cannot authorize any later owner call, even
+    // a cleanup close. Retain the exact profile/receipt within the same bound.
+    frame.guardReceipt=value;frame.borrowerUnknown=true;discardPromise(value);fail();
+  }if(!invariant())fail();}
   function unknown(value){frame.borrowerUnknown=true;frame.opaque.push(value);discardPromise(value);}
   function call(fn,receiver,args,kind){
     if(frame.borrowerActive||frame.borrowerUnknown)fail();frame.borrowerActive=true;
@@ -87,7 +101,7 @@ export function resolveApiCreditStoredGrantQueryOwner(configuration){
         frame.closeEntered=true;call(frame.close,frame.owner,[],'void');state('CLOSED',false);frame.closed=true;
       }catch{bad=true;}
     }
-    ACTIVE.delete(frame);if(frame.openEntered&&(!frame.closed||frame.borrowerUnknown))HELD.add(frame);
+    ACTIVE.delete(frame);if(frame.borrowerUnknown||frame.openEntered&&!frame.closed)HELD.add(frame);
   }
   if(bad||frame.captured===null||!frame.closed)fail();
   try{opening();state('CLOSED',false);opening();}catch{HELD.add(frame);fail();}
