@@ -26,9 +26,12 @@ payment authority. Original recovery still uses both existing fenced journals
 and their independently pinned recovery digest; creating this wrapper does not
 authenticate a replacement ledger or recover an uncertain external effect.
 
-This is source development only. Its focused memory-port controls have not run.
-The separate 100-request candidate and its 163 controls are also still awaiting
-execution. The wrapper is not selected by the native application, changes no
+This component remains source development only; its 14 focused memory-port
+controls have not run. The predecessor's first selected batch ended FAILURE:
+83 controls were accepted, 35 reported PASS but omitted a required output field,
+and the final 45 were not started. The failed record remains immutable. A source
+reporting correction leaves all 35 assertions unchanged. A fresh combined
+177-control selection is planned, with no new completion claim. The wrapper is not selected by the native application, changes no
 package catalog or default source profile, and establishes no G0-G5 acceptance.
 No native application, installed SDK/core, SQLite, socket, key/signature, nonce,
 PREPARE, payment or process-reopen test is part of this source step.
