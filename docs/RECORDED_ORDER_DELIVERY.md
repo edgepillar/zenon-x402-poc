@@ -53,6 +53,28 @@ settlement, provider, signature or real service effect. The funding receipt and
 liability record remain separate local commits. This adapter is not selected by
 the current native application profile and does not close G1 or G2.
 
+## Delivery-policy admission
+
+The shared purchased-fulfillment policy now admits an explicit
+`maximumDeliveries` from 1 through 128, allowing the 100-distinct-request product
+case. The previous global ceiling of 64 rejected that profile before any ledger
+could be opened. This is a bounded policy-admission extension, not an automatic
+increase of an existing order's own limit.
+
+Each order still retains its original policy and conditions digest. An old
+64-record policy keeps that same checksum and still refuses its 65th delivery.
+Rebinding its terms/context or reopening its existing journal as a 128-record
+order remains invalid. Counts above 128, non-integers and noncanonical encodings
+are refused. Quantities, prices, funding identity, record-byte caps, compensation
+rules and per-order limits are unchanged.
+
+The policy module and this adapter are outside the currently selected native
+application source graph. Its 246 source modules plus root package metadata and
+583-row admission catalog remain unchanged. No package-admission or installed
+package update is part of this change. The existing 2,723-control profile also
+has no changed source graph; these product-contract controls are a separate
+focused DATA scope, not new qualification of that native application.
+
 ## Validation scope
 
 The accompanying DATA entries exercise the actual in-memory credit model,
@@ -62,7 +84,8 @@ funding and grant, exact repeats, memory reconstruction, unresolved results,
 foreign bindings, reader failures, close/reentry and the attempt bound.
 
 The prepared selection contains 21 adapter controls, six paired-application
-composition controls and 80 existing dependency controls. It has not been executed yet. Memory reconstruction is not fresh
+controls, seven policy-boundary controls and 129 dependency/contract regressions
+(163 controls in seven fresh Node processes). It has not been executed yet. Memory reconstruction is not fresh
 process/SQLite recovery. No native application, installed SDK/core package,
 SQLite, HTTPS, socket, key, signature, nonce search or payment is selected.
 Hosted CI and product acceptance remain separate evidence lanes.
