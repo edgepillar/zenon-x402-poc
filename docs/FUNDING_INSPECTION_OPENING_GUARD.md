@@ -44,3 +44,16 @@ They do not open SQLite, evaluate SDK/x402 packages, create keys or signatures,
 search a nonce, use sockets or run the native application. They do not reproduce
 the complete supported regression lineage. Native release, fresh-process store
 recovery, Linux product acceptance and all G0-G5 product gates remain open.
+
+## Executed focused comparison
+
+The [recorded comparison](../qualification/funding-inspection-guard.focused.actual-local-result.json)
+binds the actual case records and source hashes to Node 24.19.0 on darwin-arm64.
+The candidate passed nineteen new controls and thirty-one existing controls.
+The same new entry with the main runtime reproduced sixteen assertion failures
+and three passes; its reference child exited 1. Those failures stay recorded.
+
+This focused record excludes the other 1,054 affected regression controls.
+Broader supported-profile completion requires separate command/source evidence.
+The unchanged hosted selection covers 108 controls and excludes these entries.
+Native application execution and all G0-G5 product acceptance remain open.
