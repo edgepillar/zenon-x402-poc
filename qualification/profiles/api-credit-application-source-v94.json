@@ -1,0 +1,124 @@
+{
+  "version": 94,
+  "status": "SOURCE_AND_DECLARED_MEMORY_DATA_CANDIDATE",
+  "sourceMain": "b56ebf9247f9a2bdd130a42aa57be649ddcd8486",
+  "sourceMainTree": "2913d435d5e7d21757bf1df0821e339b42686f6e",
+  "qualifiedCodeRevision": "2454d8677a2995b60f492fc31ae74595c3152888",
+  "predecessorProfile": {
+    "path": "qualification/profiles/api-credit-application-source-v93.json",
+    "bytes": 3218,
+    "sha256": "ce55fb57e389d97a8511f745c7b89807ffe352709c9b446ecfaf5f610457973e"
+  },
+  "profileStorage": "EXACT_PREDECESSOR_PROOF_REFERENCE_WITH_EXPLICIT_SOURCE_AND_ROLE_REPLACEMENTS",
+  "product": "ONE_FUNDING_ONE_GRANT_MANY_METERED_CALLS_ORIGINAL_REPLAY_RECOVERY",
+  "proofManifest": {
+    "path": "qualification/recovery-completion-close.proof-manifest.json",
+    "bytes": 30100,
+    "sha256": "609f4089f572859f4f2550276ff5529185a8b18c10be4d9a96fc703f2083d4ca"
+  },
+  "failureInventory": {
+    "path": "qualification/recovery-completion-close.failure-inventory.json",
+    "bytes": 1443,
+    "sha256": "b9e0827f258b6339dbb62ca41c896b8efac53bf1b5853003b61161e41501d049"
+  },
+  "sourceDelta": [
+    {
+      "path": "src/api-credit-funding-grant-recovery-application.js",
+      "bytes": 16752,
+      "sha256": "6a44fbae93795ac959d7b2ebe8bd6e1e7c127e0280e1b834d7d608d0c9b15e90",
+      "gitBlob": "950f0af8db9d565229b015b0dbb1f9617ff32ce1"
+    },
+    {
+      "path": "src/api-credit-recovery-inspection-coordinator.js",
+      "bytes": 16081,
+      "sha256": "9a0d600444cdec12291908909bc9b9a09aabe03550024b7d5e7f5e99d309b9a7",
+      "gitBlob": "6d310ced4cde161d682c17ae6794e98b812a99d7"
+    },
+    {
+      "path": "src/api-credit-operator-coordinator.js",
+      "bytes": 20472,
+      "sha256": "21c6881e73d7d4fb49538c15d6e623ca35fe1dcd74cbe8e97ccc3940db272b6e",
+      "gitBlob": "bfb8b00b1a7b6027b6f0b4db8d7e99c089bb4dc8"
+    },
+    {
+      "path": "src/service-credit-custodied-backend-recovery-core.js",
+      "bytes": 15299,
+      "sha256": "6ad5f9c636adcbd7afcace7e26c578631cf0478a04383e9b579cbe3020cbc60e",
+      "gitBlob": "72d20f1d3b78de6748167a21a099c260a1f1fcb9"
+    },
+    {
+      "path": "qualification/recovery-completion-admission.behavior.mjs",
+      "bytes": 7103,
+      "sha256": "41c8788b1d37c89d896ea84a23bbb9ae81320253b5620b6dadb6618277c1e528",
+      "gitBlob": "403fd03aaf6859321a492d57e5ef433bdac9b027"
+    },
+    {
+      "path": "qualification/inspection-clock-admission.behavior.mjs",
+      "bytes": 9600,
+      "sha256": "a60e6649364687544cb8cafdae14a74b62ec61bc60a34245a56e340b620a1e8b",
+      "gitBlob": "03db19a5b36890efbe7f5f34c23fbcb1700f2d81"
+    },
+    {
+      "path": "qualification/operator-timer-receipts.behavior.mjs",
+      "bytes": 7170,
+      "sha256": "b2c422462d9d47a879fec31f39c31429b5e4162dc9947eaace71145ac0f72f6c",
+      "gitBlob": "fd0c900be9a61733a6802c588e69dd7b1eaf098c"
+    },
+    {
+      "path": "qualification/recovery-core-close-legs.behavior.mjs",
+      "bytes": 8716,
+      "sha256": "ca8625fff2bebb127d4d01d646fd651b953a02624cc097cc28d4067eb098a298",
+      "gitBlob": "df629f07dba8d931d51f90c873c0ff310efc47dd"
+    },
+    {
+      "path": "qualification/recovery-core-close-intrinsics.behavior.mjs",
+      "bytes": 3938,
+      "sha256": "02d6a062bcf62fdbcd29f3d3be3fa38c7b52f90acfc81f96022f01f0c164e272",
+      "gitBlob": "56477370d93f469fcc975ff9beadd609bce769e0"
+    },
+    {
+      "path": "src/api-credit-module-catalog.json",
+      "bytes": 121331,
+      "sha256": "fb7daafe73ad6b25c1594e3ffeba8a76c327e32cdcae1798990cd5a91297547a",
+      "gitBlob": "8375d6950efa290e582ac6c08d7cfc8c79e8eee8"
+    },
+    {
+      "path": "src/api-credit-native-package-admission.js",
+      "bytes": 6414,
+      "sha256": "d843e6c0bc18b440a2d9768c43c2a1c362085365f66c0c4b7c0a84cc5bbecf60",
+      "gitBlob": "d476896be408c2eec04d5df962cb80444ea75729"
+    }
+  ],
+  "nativeSourceGraphs": {
+    "buyer": 180,
+    "bytes": 3426042,
+    "provider": 105,
+    "rootMetadataFiles": 1,
+    "sourceModules": 246,
+    "sourceOnly": true,
+    "union": 247,
+    "unionIncludesRootMetadata": true
+  },
+  "buyerSourceGraphUnchanged": false,
+  "providerSourceGraphUnchanged": true,
+  "all404PackageRowsAndBareEdgesUnchanged": true,
+  "currentLocalData": {
+    "new": 58,
+    "reexecuted": 1395,
+    "retainedExact": 1049,
+    "sourceBoundDistinct": 2502,
+    "separateHarnessRetained": 0,
+    "separateHarnessReexecuted": 181,
+    "allSourceBoundControls": 2683,
+    "freshRegressionManagedCommands": 4,
+    "freshRegressionNodeChildren": 44,
+    "additionalSupervisorHarnessControls": 43
+  },
+  "selectedHostedCIControls": 108,
+  "selectedHostedCISourceInputs": 22,
+  "hostedSelectionChanged": false,
+  "newCasesIncludedInHostedCI": false,
+  "currentReporterCoreMetadataPlan": "NOT_EXECUTED",
+  "nativeQualification": "NOT_EXECUTED",
+  "G0G5Acceptance": "OPEN"
+}

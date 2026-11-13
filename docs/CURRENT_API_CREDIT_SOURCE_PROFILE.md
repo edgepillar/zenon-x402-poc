@@ -1,5 +1,40 @@
 # Current API-credit source profile
 
+The current manifest selects the V94 source and declared-memory DATA candidate.
+Its independent SHA-256 is `927ead1f548f4b582bb533245d7a77e18687e701470d83d4057933dd8a19d22c`.
+
+```sh
+node scripts/report-current-api-credit-profile.mjs --profile-sha256 927ead1f548f4b582bb533245d7a77e18687e701470d83d4057933dd8a19d22c
+```
+
+This source-check command is available for a separate observation; it was not
+executed for V94. The metadata builder compared actual source bytes in Python.
+The application selection contains 246 source modules plus one shared root
+package.json record: 247 records and 3,426,042 bytes. Per-role module counts
+remain buyer 180 and provider 105. Both catalog documents are referenced
+separately. The 404 package rows are unchanged metadata; installed package
+files were not opened or evaluated.
+
+The [V94 result](../qualification/recovery-completion-close.actual-local-result.json)
+covers 2,502 application controls and 181 separate Linux-harness DATA controls.
+The [proof manifest](../qualification/recovery-completion-close.proof-manifest.json)
+separates fresh execution from unchanged retained command roles. Another 43
+supervisor memory controls remain separate. The prior V93 files are immutable.
+See [the recovery and close contract](RECOVERY_COMPLETION_AND_CLOSE.md).
+
+Supported application/runtime acceptance, an accepted entry command, installed
+namespace, physical release and Linux product acceptance remain unestablished.
+All G0-G5 gates remain OPEN. The existing 108-control/22-input hosted selection
+is unchanged and requires an exact-head result.
+
+## Retained source-profile history
+
+The following descriptions preserve their original pins and observation
+scopes. References to "current" below refer to the version being recorded;
+they are not fresh V94 observations.
+
+### V69 retained source observation
+
 The builtin-only source checker compares reviewed buyer/provider source bytes
 without importing an application or installed package. Obtain the manifest
 SHA-256 independently from the reviewed change. No installation is needed.

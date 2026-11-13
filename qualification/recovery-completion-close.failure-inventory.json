@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "unexpectedCurrentDataFailures": 0,
+  "unexpectedSkipsOrCancellations": 0,
+  "retainedComponentReferenceFailedCases": 44,
+  "retainedIntrinsicReferenceFailedCases": 3,
+  "actualIntrinsicReferenceExit": 1,
+  "originalFailureAndUnknownReportsPreserved": true,
+  "wholeFailedTasksReclassified": false,
+  "sourcePreparationCorrection": {
+    "classification": "ROOT_PACKAGE_JSON_METADATA_COUNT_DEFINITION",
+    "priorSourceSha256": "f34a423bc5fd3acf27f0e83fa7e140557fad610afb3c3f280b52cef1495d4596",
+    "applicationCommands": 0,
+    "testsExecuted": 0,
+    "originalSourcePreserved": true
+  },
+  "publicRecordBuildCorrection": {
+    "classification": "TEST_DECLARATION_FIELD_IS_NOT_A_SOURCE_IDENTITY_FIELD",
+    "sourceSha256": "a2d8dbc22217cabc1b1f2023e3a156bd17382f1258dc927649fbd4d971bcbb1b",
+    "originalRefusalsPreserved": 2,
+    "publicFilesWrittenByRefusedAttempts": 0,
+    "dataTestsRepeated": 0,
+    "CIRepeated": false
+  },
+  "publicationVerificationReconciliation": {
+    "originalUNKNOWNReportPreserved": true,
+    "freshReadOnlyStateVerified": true,
+    "commitWrittenAgain": false,
+    "CIRepeated": false
+  },
+  "inheritedInventory": {
+    "path": "qualification/spending-day-events.failure-inventory.json",
+    "bytes": 2170,
+    "sha256": "51f4b7809e475a02f972da20943984a3c89dc5be28efc1db6f64d3008570ec59"
+  },
+  "nativeQualification": "NOT_EXECUTED",
+  "scope": "EXACT_DECLARED_MEMORY_DATA_COMMAND_ROLES"
+}

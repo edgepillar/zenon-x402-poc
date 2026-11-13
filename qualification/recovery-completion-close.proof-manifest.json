@@ -1,0 +1,767 @@
+{
+  "version": 1,
+  "sourceBaseline": "b56ebf9247f9a2bdd130a42aa57be649ddcd8486",
+  "sourceBaselineTree": "2913d435d5e7d21757bf1df0821e339b42686f6e",
+  "qualifiedCodeRevision": "2454d8677a2995b60f492fc31ae74595c3152888",
+  "nodeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25",
+  "rawCompleteAuditSha256": "245efa72705dcd0c6e509e5b40eee81f483e1cc0bf925bf4a357aa224411c626",
+  "sourceDelta": [
+    {
+      "path": "src/api-credit-funding-grant-recovery-application.js",
+      "bytes": 16752,
+      "sha256": "6a44fbae93795ac959d7b2ebe8bd6e1e7c127e0280e1b834d7d608d0c9b15e90",
+      "gitBlob": "950f0af8db9d565229b015b0dbb1f9617ff32ce1"
+    },
+    {
+      "path": "src/api-credit-recovery-inspection-coordinator.js",
+      "bytes": 16081,
+      "sha256": "9a0d600444cdec12291908909bc9b9a09aabe03550024b7d5e7f5e99d309b9a7",
+      "gitBlob": "6d310ced4cde161d682c17ae6794e98b812a99d7"
+    },
+    {
+      "path": "src/api-credit-operator-coordinator.js",
+      "bytes": 20472,
+      "sha256": "21c6881e73d7d4fb49538c15d6e623ca35fe1dcd74cbe8e97ccc3940db272b6e",
+      "gitBlob": "bfb8b00b1a7b6027b6f0b4db8d7e99c089bb4dc8"
+    },
+    {
+      "path": "src/service-credit-custodied-backend-recovery-core.js",
+      "bytes": 15299,
+      "sha256": "6ad5f9c636adcbd7afcace7e26c578631cf0478a04383e9b579cbe3020cbc60e",
+      "gitBlob": "72d20f1d3b78de6748167a21a099c260a1f1fcb9"
+    },
+    {
+      "path": "qualification/recovery-completion-admission.behavior.mjs",
+      "bytes": 7103,
+      "sha256": "41c8788b1d37c89d896ea84a23bbb9ae81320253b5620b6dadb6618277c1e528",
+      "gitBlob": "403fd03aaf6859321a492d57e5ef433bdac9b027"
+    },
+    {
+      "path": "qualification/inspection-clock-admission.behavior.mjs",
+      "bytes": 9600,
+      "sha256": "a60e6649364687544cb8cafdae14a74b62ec61bc60a34245a56e340b620a1e8b",
+      "gitBlob": "03db19a5b36890efbe7f5f34c23fbcb1700f2d81"
+    },
+    {
+      "path": "qualification/operator-timer-receipts.behavior.mjs",
+      "bytes": 7170,
+      "sha256": "b2c422462d9d47a879fec31f39c31429b5e4162dc9947eaace71145ac0f72f6c",
+      "gitBlob": "fd0c900be9a61733a6802c588e69dd7b1eaf098c"
+    },
+    {
+      "path": "qualification/recovery-core-close-legs.behavior.mjs",
+      "bytes": 8716,
+      "sha256": "ca8625fff2bebb127d4d01d646fd651b953a02624cc097cc28d4067eb098a298",
+      "gitBlob": "df629f07dba8d931d51f90c873c0ff310efc47dd"
+    },
+    {
+      "path": "qualification/recovery-core-close-intrinsics.behavior.mjs",
+      "bytes": 3938,
+      "sha256": "02d6a062bcf62fdbcd29f3d3be3fa38c7b52f90acfc81f96022f01f0c164e272",
+      "gitBlob": "56477370d93f469fcc975ff9beadd609bce769e0"
+    },
+    {
+      "path": "src/api-credit-module-catalog.json",
+      "bytes": 121331,
+      "sha256": "fb7daafe73ad6b25c1594e3ffeba8a76c327e32cdcae1798990cd5a91297547a",
+      "gitBlob": "8375d6950efa290e582ac6c08d7cfc8c79e8eee8"
+    },
+    {
+      "path": "src/api-credit-native-package-admission.js",
+      "bytes": 6414,
+      "sha256": "d843e6c0bc18b440a2d9768c43c2a1c362085365f66c0c4b7c0a84cc5bbecf60",
+      "gitBlob": "d476896be408c2eec04d5df962cb80444ea75729"
+    }
+  ],
+  "groups": [
+    {
+      "entry": "qualification/purchased-grant-recovery.behavior.mjs",
+      "cases": 37,
+      "caseIdsSha256": "1c43f3fb7eaf47c24801271c40ed8df01b9dde4056559ca16b923664e4771034",
+      "role": "FRESH_V2_REGRESSION_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/recovery-channel-close.behavior.mjs",
+      "cases": 21,
+      "caseIdsSha256": "070d172c419e79e98623f212d233a4c540b764e58dc44eb012c0e3e24db5c87c",
+      "role": "FRESH_V2_REGRESSION_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/stored-grant-query.behavior.mjs",
+      "cases": 41,
+      "caseIdsSha256": "435fa1776f724faa32133b1f995596a58c712970717eeb21567bf8bb0802f3f9",
+      "role": "FRESH_V2_REGRESSION_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/query-opening-guard.behavior.mjs",
+      "cases": 24,
+      "caseIdsSha256": "1eaea9c2f3685451dfd94f1807802b1873e8c1ac35513a47e7496cf415c4820e",
+      "role": "FRESH_V2_REGRESSION_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/original-grant-query-cli.behavior.mjs",
+      "cases": 47,
+      "caseIdsSha256": "28195016c6841a3864e2e60ecb99fa293be5c00f27af14b10decf5e0314de676",
+      "role": "FRESH_V2_REGRESSION_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/api-credit-funding-inspection.behavior.mjs",
+      "cases": 31,
+      "caseIdsSha256": "c5437fa0e36acd74896740023969b1ba799956420a243a3e919f983d9a857149",
+      "role": "FRESH_V2_REGRESSION_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/recovery-inspection-stop.behavior.mjs",
+      "cases": 20,
+      "caseIdsSha256": "425105176f85e5d0b4a8f2748a2d332a20c5496e5d3e970ffd666ddaaa650d24",
+      "role": "FRESH_V2_REGRESSION_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/signer-uncertainty-age.behavior.mjs",
+      "cases": 33,
+      "caseIdsSha256": "54805621f77849cfbe94495f3eb7c1d0641c0023f9e91e23eaa6b12db7736434",
+      "role": "FRESH_V2_REGRESSION_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/signer-store-profile.behavior.mjs",
+      "cases": 22,
+      "caseIdsSha256": "06551327cc7bba187b43aa1470a34048867d105d9c553bcb97ab5bf010dbfe45",
+      "role": "FRESH_V2_REGRESSION_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/api-credit-linux-signer.behavior.mjs",
+      "cases": 26,
+      "caseIdsSha256": "2e5195fe9d44a7a8f8f737a55006cc0d015085636f6970daabab1c2b3a87fb80",
+      "role": "FRESH_V2_REGRESSION_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/api-credit-linux-budget.behavior.mjs",
+      "cases": 29,
+      "caseIdsSha256": "f4cea4c4fc3e78b6567742870fda78057f3ec7838f3396273380d1a1843c12b1",
+      "role": "FRESH_V2_REGRESSION_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/api-credit-linux-ledger.behavior.mjs",
+      "cases": 25,
+      "caseIdsSha256": "2d90d80ec149f63430b341876cac02ca6960ab7493c684a847e4b0645adb9752",
+      "role": "FRESH_V2_REGRESSION_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/api-credit-recorded-result-inspection.behavior.mjs",
+      "cases": 25,
+      "caseIdsSha256": "99c4ca511c57d344c59c2e2d55a42b605d5a254bc7494f1ecb276949f50cf820",
+      "role": "FRESH_V2_REGRESSION_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/recovery-response-provenance.behavior.mjs",
+      "cases": 23,
+      "caseIdsSha256": "0109e8cf9543de07fdf309e25d7e858f89e359c1ed5fe5fe355b8ab5e3c670e4",
+      "role": "FRESH_V2_REGRESSION_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/recorded-execution-binding.behavior.mjs",
+      "cases": 18,
+      "caseIdsSha256": "d26e20d6fb3d92efe73a09bc6ebaee9414fba5eda9e81f4394a007a846b8d727",
+      "role": "FRESH_V2_REGRESSION_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/api-credit-loopback-operator.behavior.mjs",
+      "cases": 27,
+      "caseIdsSha256": "dfb07a704f237dbb2006501d5ebdd324db9228933ed11fa47262ed0127ca37bb",
+      "role": "FRESH_V2_REGRESSION_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/api-credit-linux-offer-refusal.behavior.mjs",
+      "cases": 15,
+      "caseIdsSha256": "acc4a1aec1931bb778f309bb72528e058d5e5d151988a733d77180d071bd145a",
+      "role": "FRESH_V2_REGRESSION_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/api-credit-linux-provider.behavior.mjs",
+      "cases": 22,
+      "caseIdsSha256": "c00882d4991066dea156220c96ad606a80bc96a845c6114b8cd48634ce836002",
+      "role": "FRESH_V2_REGRESSION_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/api-credit-late-inspection-close.behavior.mjs",
+      "cases": 12,
+      "caseIdsSha256": "1415666c6171b06b7fc6412488c36fc5d28e7818a132148154c78cf314988a5f",
+      "role": "FRESH_V2_REGRESSION_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/api-credit-exact-checkpoint-query.behavior.mjs",
+      "cases": 15,
+      "caseIdsSha256": "9231a0f68c184937108c37befc99a292c8008f73408f941909debd70388841a4",
+      "role": "FRESH_V2_REGRESSION_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/recorded-result-commitment.behavior.mjs",
+      "cases": 18,
+      "caseIdsSha256": "538bbcad9908826182b8162119490b11fda4589e73c6c0b51a542ba803ec6e33",
+      "role": "FRESH_V2_REGRESSION_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/api-credit-linux-acceptance.behavior.mjs",
+      "cases": 28,
+      "caseIdsSha256": "c364de4a522cf255e317b5bf1312463224d56fa755aeb96645a5133dff45ac6f",
+      "role": "FRESH_V2_REGRESSION_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/api-credit-linux-negative.behavior.mjs",
+      "cases": 36,
+      "caseIdsSha256": "bb0c5a439091443f5c1dd0b77d3c3040b5313457aaca6028e6d1c1ef058cd4a0",
+      "role": "FRESH_V2_REGRESSION_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/buyer-operator-stop.behavior.mjs",
+      "cases": 22,
+      "caseIdsSha256": "0e64d4254de7125f3d9afa7282876fec57bce4176f5915ff56620c89cb8a27e6",
+      "role": "FRESH_V2_REGRESSION_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/buyer-stop-command-admission.behavior.mjs",
+      "cases": 13,
+      "caseIdsSha256": "7faede082e216f6aed4a8469cc3396dcf2773394f67d08f37b1ea45532110b81",
+      "role": "FRESH_V2_REGRESSION_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/operator-command-byte-budget.behavior.mjs",
+      "cases": 18,
+      "caseIdsSha256": "1d0d42a8be0a1ac4a00071d09f13f9e4dd50d28000a1272c0d3fc21f5a9d1ae0",
+      "role": "FRESH_V2_REGRESSION_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/recorded-response-provenance.behavior.mjs",
+      "cases": 22,
+      "caseIdsSha256": "df2c7fdcb3edaf15ed9626a3c266bb414dffc04b4acc3b049192180b8deab704",
+      "role": "FRESH_V2_REGRESSION_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/api-credit-exact-request-budget.behavior.mjs",
+      "cases": 478,
+      "caseIdsSha256": "9f179e0be42b2391654f24e3a47c99ed4f705716c39084b68548c54fbf4c541d",
+      "role": "FRESH_V2_REGRESSION_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/inactive-grant-recorded-result.behavior.mjs",
+      "cases": 31,
+      "caseIdsSha256": "13919740bef4b87646839a314e617f467724a33e3b4de8cbb1cb55c5e37f17fc",
+      "role": "FRESH_V2_REGRESSION_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/issued-original-grant-admission.behavior.mjs",
+      "cases": 26,
+      "caseIdsSha256": "085df9e258de4193aff23234c1ea18c366c3495702fa18026c0d9db68898fb18",
+      "role": "FRESH_V2_REGRESSION_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/execution-revision-owner.behavior.mjs",
+      "cases": 36,
+      "caseIdsSha256": "2d3f0289485d6aaefc08f7b9bc88b2e85ea7e98fdd2bcde7b312395dfd8b225f",
+      "role": "FRESH_V2_REGRESSION_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/issued-provider-recovery.behavior.mjs",
+      "cases": 38,
+      "caseIdsSha256": "03679685259cd930133df978a32fb502f181d8aed48a004f6b373d5860e850f0",
+      "role": "FRESH_V2_REGRESSION_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/first-funding-journal-recovery.behavior.mjs",
+      "cases": 28,
+      "caseIdsSha256": "d32a381d64ccdb0fa3ad2db5eb96ad22037e07e5e1e0df06e1662529e51d3914",
+      "role": "FRESH_V2_REGRESSION_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/funding-transition-witness.behavior.mjs",
+      "cases": 28,
+      "caseIdsSha256": "90e8e513130c09d76086dc56ba021bd6c839e75b2c70bd7452f38d0bc216d3ca",
+      "role": "FRESH_V2_REGRESSION_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/original-journal-observation.behavior.mjs",
+      "cases": 29,
+      "caseIdsSha256": "47eb763f5025272f1a9027476e0ed75e10fd57986cca5f7a3afbc3e60bec18a4",
+      "role": "FRESH_V2_REGRESSION_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/journal-momentum-confirmation-advance.behavior.mjs",
+      "cases": 16,
+      "caseIdsSha256": "c0c34e64136fae96e7074f3621f5a237f4823f21b38c41548530e6a5fa43636b",
+      "role": "FRESH_V2_REGRESSION_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/issued-provider-journal-setup.behavior.mjs",
+      "cases": 26,
+      "caseIdsSha256": "082cd97f5a63ac4cd9ea31ff45f8a0d57d71eaed0213fc3c9f061020034c8ca1",
+      "role": "FRESH_V2_REGRESSION_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/original-grant-channel.behavior.mjs",
+      "cases": 50,
+      "caseIdsSha256": "f22c8a1380cbfd19d1ef1287ddc31ea557dceac1b9d0c95c6177c4a381ac8334",
+      "role": "FRESH_V2_REGRESSION_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/original-funding-grant.behavior.mjs",
+      "cases": 45,
+      "caseIdsSha256": "26728bd4802b1c621ee98f62633d439f7ba6164f5f7d342d6a22afcc6dc4ac42",
+      "role": "FRESH_V2_REGRESSION_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/api-credit-returned-opening-custody.behavior.mjs",
+      "cases": 25,
+      "caseIdsSha256": "0f5c7e2e3a3c6aa757cfcf5312885eea3cda9f25d080fb25d482c23af71f9015",
+      "role": "FRESH_V2_REGRESSION_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/api-credit-module-source.behavior.mjs",
+      "cases": 28,
+      "caseIdsSha256": "23cecc62c9aa59f63ed0f483c167414cf691c0169ca1640d0436355afa66f444",
+      "role": "FRESH_V2_REGRESSION_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/api-credit-execution-context.behavior.mjs",
+      "cases": 12,
+      "caseIdsSha256": "607a343bdd077cf23d66d0c4d27f55bdbd2676ff95819be04d85f0464a1d6dbd",
+      "role": "FRESH_V2_REGRESSION_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/api-credit-runtime-admission.behavior.mjs",
+      "cases": 10,
+      "caseIdsSha256": "969dd6cfc83d871704ee2cc8b8aed797b79e0cb3dc7f3e09b7dfcfe0872abb38",
+      "role": "FRESH_V2_REGRESSION_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/inspection-clock-admission.behavior.mjs",
+      "cases": 12,
+      "caseIdsSha256": "a05fc79e56afbcfdce22d3e0d6e4c33490fbe48734f56727b40d2ee320d260b0",
+      "role": "FRESH_V2_REGRESSION_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/expired-funding-retention.behavior.mjs",
+      "cases": 45,
+      "caseIdsSha256": "6bea067f742830638a9606ed21d30a424dbdeb0ee692e22e54a3ea71548fc386",
+      "role": "UNCHANGED_V1_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/original-grant-inspection.behavior.mjs",
+      "cases": 22,
+      "caseIdsSha256": "b54e2615ae71840e809658c90bdc08117c395df7071847887ea33a869b1bafa5",
+      "role": "UNCHANGED_V1_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/active-original-results.behavior.mjs",
+      "cases": 24,
+      "caseIdsSha256": "adceee4c002d132a4706bffc783c1ab9bb04577c92e68ced369e05d84cefd6f2",
+      "role": "UNCHANGED_V1_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/expired-funding-history.behavior.mjs",
+      "cases": 17,
+      "caseIdsSha256": "acd6b5bf04fdf21c663bd8e250b882d654aadb1eb80bcec423051343b6021ce8",
+      "role": "UNCHANGED_V1_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/issued-provider-funding-roles.behavior.mjs",
+      "cases": 26,
+      "caseIdsSha256": "4383e1319dce2f831a5b8fc37598cbd3fb8d498e0fd0d6accf4d69acc5b06396",
+      "role": "UNCHANGED_V1_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/reserved-original-funding-observer.behavior.mjs",
+      "cases": 33,
+      "caseIdsSha256": "01cf1b62c61e4cf8c2bd09b9dc82c903937b31aecd7669972a473b61df554699",
+      "role": "UNCHANGED_V1_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/original-funding-chain-observer.behavior.mjs",
+      "cases": 31,
+      "caseIdsSha256": "d7f046254f3a404c63c24b44eae196a6333257530c171be9244617801d391edf",
+      "role": "UNCHANGED_V1_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/issued-provider-execution-setup.behavior.mjs",
+      "cases": 26,
+      "caseIdsSha256": "f3fdf026be8b64d26f90f36e1b98883b185faef2cc64060c515ec6af507e3f64",
+      "role": "UNCHANGED_V1_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/api-credit-service-command.behavior.mjs",
+      "cases": 12,
+      "caseIdsSha256": "d2a46146d392d40588ce259ce60ed80777045dc863bc713401b3f176e21d39da",
+      "role": "UNCHANGED_V1_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/provider-funding-close-budget.behavior.mjs",
+      "cases": 4,
+      "caseIdsSha256": "70cf0010184098dfe9fdf3f246c92f027ade0c0a0cc4e18d4d9d88830f85be7d",
+      "role": "UNCHANGED_V1_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/issued-provider-cli.behavior.mjs",
+      "cases": 31,
+      "caseIdsSha256": "efdcc9b463d4de1e47f445d0bd139d7b0b35ef378caa6614324666ae0d99251d",
+      "role": "UNCHANGED_V1_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/provider-wire-route.behavior.mjs",
+      "cases": 8,
+      "caseIdsSha256": "7fa7f2b4a27400d6dac4534057a49d899b56fa21c24eabe9e2a90a1481075f80",
+      "role": "UNCHANGED_V1_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/original-observer-admission.behavior.mjs",
+      "cases": 22,
+      "caseIdsSha256": "b4932d09e4f6dce3ab7445d9495bc4278cb9646b3b8a9b2883d80397761bb195",
+      "role": "UNCHANGED_V1_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/issued-provider-store-owner.behavior.mjs",
+      "cases": 34,
+      "caseIdsSha256": "009504159b11093a2c10a67a5b863e3aa78175d9f0330901e51886db35b99e75",
+      "role": "UNCHANGED_V1_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/service-command-result.behavior.mjs",
+      "cases": 27,
+      "caseIdsSha256": "9102ba9ee4c7f8bd8ed8c196d7cb9237ab0e2914f0db5943293553e197566cc6",
+      "role": "UNCHANGED_V1_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/purchased-grant-handoff.behavior.mjs",
+      "cases": 38,
+      "caseIdsSha256": "7fac78ec81daf540b8e5260cedf3bf0338bef3469cef6cfd89b2d6a4c5fed303",
+      "role": "UNCHANGED_V1_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/recovery-application-admission.behavior.mjs",
+      "cases": 15,
+      "caseIdsSha256": "5fe53d00174346838530dbff02c1b7559503d1e4d1bb068eb9c8c6c01dc7870e",
+      "role": "UNCHANGED_V1_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/original-offer-admission.behavior.mjs",
+      "cases": 16,
+      "caseIdsSha256": "d96e7f49b242455cfa7e0abf4476d8f5c4771d1b2d0e99c205e9bef610acebc0",
+      "role": "UNCHANGED_V1_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/purchased-grant-prequery-custody.behavior.mjs",
+      "cases": 18,
+      "caseIdsSha256": "3a1ffa07af07c98d436410d475d45af8af6fd9979b48d6ee6758060f6fd1e4bd",
+      "role": "UNCHANGED_V1_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/official-outcome-custody.behavior.mjs",
+      "cases": 32,
+      "caseIdsSha256": "433e507d7e61b4dff2a885b5f0ffcbf194ad74bdc5dd44ac6c47e3629685025d",
+      "role": "UNCHANGED_V1_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/funding-grant-custody.behavior.mjs",
+      "cases": 40,
+      "caseIdsSha256": "426e8a4123036b6f174d59b6c927e9312a9e7c2cd99adf250e843e656a1eaa20",
+      "role": "UNCHANGED_V1_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/non-dp-prepare-admission.behavior.mjs",
+      "cases": 19,
+      "caseIdsSha256": "19be89a1780d0c8f1e7ff6dd653dffe8c33a9c088281e91b7f6a78b34f2820e6",
+      "role": "UNCHANGED_V1_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/non-dp-configuration.behavior.mjs",
+      "cases": 29,
+      "caseIdsSha256": "bbfb280d1e415c75cd633c2cd418afc1bd8ca0947cb375546602a5432ff0ef6b",
+      "role": "UNCHANGED_V1_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/fixed-purchase-expectation.behavior.mjs",
+      "cases": 28,
+      "caseIdsSha256": "a8f432c792559e1fb20e6d6318505db77b28a7595b528ebcde89ecba2fd35945",
+      "role": "UNCHANGED_V1_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/api-credit-public-profile-refusal.behavior.mjs",
+      "cases": 30,
+      "caseIdsSha256": "7a99fc98fdd26e82a41580b51b7f9051220ceefbcae8802b60446b203778dd48",
+      "role": "UNCHANGED_V1_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/provider-current-close-owners.behavior.mjs",
+      "cases": 26,
+      "caseIdsSha256": "7b3e4ad504f74c0f91366bc06efa58a527824307e8abf480650e0c80c7508541",
+      "role": "UNCHANGED_PREDECESSOR_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/issued-provider-startup-stop.behavior.mjs",
+      "cases": 22,
+      "caseIdsSha256": "7bb076df42a9522fb7fda960bfa53e140da5529a54ca23ddbd3c63bdd94c4889",
+      "role": "UNCHANGED_PREDECESSOR_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/non-dp-fused-strategy.behavior.mjs",
+      "cases": 24,
+      "caseIdsSha256": "11a4bd3ebcddf367f3a1e4234200df09ddc4fcfca1abf45ba1fac07acd7e159c",
+      "role": "UNCHANGED_PREDECESSOR_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/non-dp-retained-native-options.behavior.mjs",
+      "cases": 76,
+      "caseIdsSha256": "39d45475230d300607d79fba9a2f8b0084690206eb3078f0a80ee577c218b8d0",
+      "role": "UNCHANGED_PREDECESSOR_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/opening-file-borrow.behavior.mjs",
+      "cases": 12,
+      "caseIdsSha256": "176005f1215ac0d18a72d0368c46f120f9ccda75c3f499c59c2408f8cb8b56d6",
+      "role": "UNCHANGED_PREDECESSOR_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/api-credit-opening-failure-custody.behavior.mjs",
+      "cases": 20,
+      "caseIdsSha256": "2803886e4a91d82a57d76bb2be3dd128ce5fc935e9322ee528dd616892099f50",
+      "role": "UNCHANGED_PREDECESSOR_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/opening-current-close.behavior.mjs",
+      "cases": 20,
+      "caseIdsSha256": "94b3c5d4c40ac50951cb76490eee82d17dddfd16b8a0fd504644e57fcec1ece6",
+      "role": "UNCHANGED_PREDECESSOR_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/issued-original-activation.behavior.mjs",
+      "cases": 25,
+      "caseIdsSha256": "cb698fe83fdd9d092ede10a04557a65e3d1cebee05869d9b59702b73d86cc1f9",
+      "role": "UNCHANGED_PREDECESSOR_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/issued-grant-provider.behavior.mjs",
+      "cases": 41,
+      "caseIdsSha256": "dacf17ec46dfaac334ddf5de72bd19b8f228968bf0c7d89f3f6c7c099fe91a24",
+      "role": "UNCHANGED_PREDECESSOR_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/verification-expiry.behavior.mjs",
+      "cases": 31,
+      "caseIdsSha256": "f51b63b990af9996e9335ed6a7c7a44f8aff3ba43739dd62ef273a7f39d83703",
+      "role": "UNCHANGED_PREDECESSOR_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/expired-original-funding.behavior.mjs",
+      "cases": 20,
+      "caseIdsSha256": "f7610cb5d1b0e4e392b0db1c057d4846dee8f4cb20fe9b4f5b39e9a67edb6500",
+      "role": "UNCHANGED_PREDECESSOR_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/issued-provider-retained-resource.behavior.mjs",
+      "cases": 22,
+      "caseIdsSha256": "87c0bf101145abdd81e67a2d5210803d3879db9b9b7dea7520a272bba3fd7694",
+      "role": "UNCHANGED_PREDECESSOR_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/spending-historical-day-events.behavior.mjs",
+      "cases": 24,
+      "caseIdsSha256": "e7f6f24083ba24e5a1f94fb0ed9d411b8ea86e3f43a87a080bd588bd82187a8f",
+      "role": "UNCHANGED_PREDECESSOR_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/recorded-result-borrows.behavior.mjs",
+      "cases": 15,
+      "caseIdsSha256": "b48a406374533fdcbae750d4ed872a0047ce4847a7bf4870882cdf95a3babe0a",
+      "role": "UNCHANGED_PREDECESSOR_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/recorded-result-wire.behavior.mjs",
+      "cases": 2,
+      "caseIdsSha256": "4be22056e5bf7bf920a304531ea03feb9ef50b8d81e026cbe602eaabb84cb9bd",
+      "role": "UNCHANGED_PREDECESSOR_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/original-funding-receipt.behavior.mjs",
+      "cases": 18,
+      "caseIdsSha256": "0d84a5495e51a2c3226403d6f055cbd8be6f19802183d181e3f969f31f01ab95",
+      "role": "UNCHANGED_PREDECESSOR_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/funding-uncertainty-age.behavior.mjs",
+      "cases": 24,
+      "caseIdsSha256": "a3ce61ae4c510915b0b38985618f7e57f960eea8cbbcc2eea633a43e8ac9eab3",
+      "role": "UNCHANGED_PREDECESSOR_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/recovery-completion-admission.behavior.mjs",
+      "cases": 13,
+      "caseIdsSha256": "6ee7cf8716521f525280f56ff5b2c0977aeddc6989cad74a1e1dc1ec65ced65d",
+      "role": "UNCHANGED_FOCUSED_COMPONENT_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/operator-timer-receipts.behavior.mjs",
+      "cases": 16,
+      "caseIdsSha256": "46752bf7c3b5a2e1725307e60e9f3d9e08917784b580d98cf27c1ab77612dd8f",
+      "role": "UNCHANGED_FOCUSED_COMPONENT_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/recovery-core-close-intrinsics.behavior.mjs",
+      "cases": 3,
+      "caseIdsSha256": "11191886088d8d9f25b804a65579007bc5590e3f1991670ec83a22a024db4273",
+      "role": "FOCUSED_V2_COMPONENT_COMMAND_SCOPE"
+    },
+    {
+      "entry": "qualification/recovery-core-close-legs.behavior.mjs",
+      "cases": 14,
+      "caseIdsSha256": "1b9e7008e12afa349115f99950c5b9c8d320a2d623abde8a40037f9654f39c7c",
+      "role": "FOCUSED_V2_COMPONENT_COMMAND_SCOPE"
+    }
+  ],
+  "distinctCaseIdSetSha256": "1c8add8fab0ec350e210d5e1237d2071a635ea569d500ab8dafccfc8f2562c99",
+  "freshV2Batches": [
+    {
+      "part": 0,
+      "cases": 422,
+      "freshNodeChildren": 15,
+      "actualManagedCommands": 1,
+      "state": "COMPLETE",
+      "actualExit": 0,
+      "outputComplete": true,
+      "taskOutcome": "SUCCESS",
+      "sourceBundle": {
+        "bytes": 462793,
+        "members": 129,
+        "sha256": "a5c0c0e7e9303a7f7ebfd05647a6f39542f32053145b7a07bf8ff5f08135d851",
+        "unpackedBytes": 1537520
+      },
+      "launchManifest": {
+        "bytes": 22785,
+        "sha256": "f55d9b61681e0fcb5eecaff24e54324fdfd77c7ae7cb151f1c3444f6388edf22"
+      },
+      "stdout": {
+        "bytes": 76367,
+        "sha256": "57dc3517cd21b1ada20ee4003b82bbde7fe630add9fb775f688fbd856a3b07cf"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "commandReceiptSha256": "27592117f9b55c729bb59e41536f8a10f2c50df8d2c04c958123800bbe867b8d"
+    },
+    {
+      "part": 1,
+      "cases": 248,
+      "freshNodeChildren": 12,
+      "actualManagedCommands": 1,
+      "state": "COMPLETE",
+      "actualExit": 0,
+      "outputComplete": true,
+      "taskOutcome": "SUCCESS",
+      "sourceBundle": {
+        "bytes": 447297,
+        "members": 132,
+        "sha256": "bb2a7a291db5abb1c272a26f3361020f04d3951663822686cf0c1786498c4cfe",
+        "unpackedBytes": 1462626
+      },
+      "launchManifest": {
+        "bytes": 22357,
+        "sha256": "ee485ce0a7e40e9efac961862d81686b1f81688ac37075372e4d9681554a7296"
+      },
+      "stdout": {
+        "bytes": 49505,
+        "sha256": "278e468dcd9d75eaaa3e09870e4ca8704e662f2edc067e6f09ffb8be2fde9d5b"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "commandReceiptSha256": "875874be444c34661fa2006c1fb7f2863a374e68d9b349dd12cf4351db434175"
+    },
+    {
+      "part": 2,
+      "cases": 609,
+      "freshNodeChildren": 5,
+      "actualManagedCommands": 1,
+      "state": "COMPLETE",
+      "actualExit": 0,
+      "outputComplete": true,
+      "taskOutcome": "SUCCESS",
+      "sourceBundle": {
+        "bytes": 534254,
+        "members": 150,
+        "sha256": "c1e7dae748a7eb84a4665a011656db3d65f79ffb226848e44b0928a8d95fd593",
+        "unpackedBytes": 1743251
+      },
+      "launchManifest": {
+        "bytes": 23099,
+        "sha256": "e2fecc3d7c4ab35996d2476b8586f40645d9d3289d37539a2c9ce7b0987c9716"
+      },
+      "stdout": {
+        "bytes": 87093,
+        "sha256": "c6e5a355dc10f187879e696fc8cbb54f0bee207a6dfa66b62e658eb2fa4eca0a"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "commandReceiptSha256": "e63425566e53b534916579d29be8d0d3333cc4c3fcb56520356d1a476e895c0d"
+    },
+    {
+      "part": 3,
+      "cases": 309,
+      "freshNodeChildren": 12,
+      "actualManagedCommands": 1,
+      "state": "COMPLETE",
+      "actualExit": 0,
+      "outputComplete": true,
+      "taskOutcome": "SUCCESS",
+      "sourceBundle": {
+        "bytes": 344482,
+        "members": 103,
+        "sha256": "dbaa06a53410dabe6ba2e36fba596f7b309d049c885546c9cd672ad1f9227e07",
+        "unpackedBytes": 1123953
+      },
+      "launchManifest": {
+        "bytes": 18329,
+        "sha256": "3cd30a6002e8aad22561c0ee03c9cb49b0df0f9160750923232c387195b98ae8"
+      },
+      "stdout": {
+        "bytes": 58159,
+        "sha256": "0c756ea5dc3c5df08a042468b2f99acd2cf92957171ae305b0bc40c3d449dbdf"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "commandReceiptSha256": "bf412ba0be8bb7b80c840cdcfe8d574ebb7f30574ecafda219d2ab42ac90885f"
+    }
+  ],
+  "counts": {
+    "applicationControls": 2502,
+    "separateLinuxHarnessDataControls": 181,
+    "allSupportedDataControls": 2683,
+    "freshV2RegressionCases": 1588,
+    "unchangedV1Cases": 627,
+    "earlierRetainedCases": 422,
+    "unchangedFocusedComponentCases": 29,
+    "focusedV2ComponentCases": 17,
+    "additionalSupervisorHarnessControls": 43
+  },
+  "predecessorProfile": {
+    "path": "qualification/profiles/api-credit-application-source-v93.json",
+    "bytes": 3218,
+    "sha256": "ce55fb57e389d97a8511f745c7b89807ffe352709c9b446ecfaf5f610457973e"
+  },
+  "predecessorProofManifest": {
+    "path": "qualification/spending-day-events.proof-manifest.json",
+    "bytes": 398180,
+    "sha256": "21f7db46484345c6ed33f711944fb1940d83c79f5ea4f0988ea04f034d6e2c08"
+  },
+  "retainedEvidenceRequiresUnchangedGraphs": true,
+  "oldExecutionsRelabeledAsNew": false,
+  "wholeFailedTasksReclassified": false,
+  "packageRowsAndBareEdgesUnchanged": true,
+  "nativePinUpdateDataImpact": "ALL_90_DECLARED_DATA_IMPORT_GRAPHS_UNCHANGED",
+  "sourceOnlyNativeRecords": 247,
+  "nativeQualification": "NOT_EXECUTED",
+  "productAcceptance": "NOT_ESTABLISHED",
+  "G0G5": "OPEN"
+}

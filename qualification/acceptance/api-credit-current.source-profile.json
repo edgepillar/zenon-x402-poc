@@ -1,7 +1,7 @@
 {
   "profileVersion": 1,
   "profileId": "API_CREDIT_CURRENT_SOURCE_V1",
-  "sourceBaseline": "23bd09a3d55d9a1e677f3cf3887fe0e1ae3a5c9c",
+  "sourceBaseline": "b56ebf9247f9a2bdd130a42aa57be649ddcd8486",
   "application": {
     "buyerEntry": "src/api-credit-cli.js",
     "providerEntry": "src/issued-provider-cli.js"
@@ -11,7 +11,7 @@
       "role": "buyer",
       "path": "src/api-credit-module-catalog.json",
       "bytes": 121331,
-      "sha256": "1dfb08bfe228492fd2b686a6511bf02d6e5e8274d2cf8bf6bfdc460c988460d9",
+      "sha256": "fb7daafe73ad6b25c1594e3ffeba8a76c327e32cdcae1798990cd5a91297547a",
       "sourceRows": 178,
       "packageRows": 404,
       "bareEdges": 9
@@ -30,7 +30,7 @@
     {
       "path": "src/api-credit-native-package-admission.js",
       "bytes": 6414,
-      "sha256": "24547810db7d21fb7fd559253aeb2f4ec03ede58c1d723321621a009d79a0227",
+      "sha256": "d843e6c0bc18b440a2d9768c43c2a1c362085365f66c0c4b7c0a84cc5bbecf60",
       "format": "module"
     },
     {
@@ -48,19 +48,19 @@
   ],
   "dataQualification": {
     "sourceProfile": {
-      "path": "qualification/profiles/api-credit-application-source-v93.json",
-      "bytes": 3218,
-      "sha256": "ce55fb57e389d97a8511f745c7b89807ffe352709c9b446ecfaf5f610457973e"
+      "path": "qualification/profiles/api-credit-application-source-v94.json",
+      "bytes": 4776,
+      "sha256": "844b14017963f16583c3792b6c12746a68a96b0e66fc273afe46886458f1d636"
     },
     "result": {
-      "path": "qualification/spending-day-events.actual-local-result.json",
-      "bytes": 231624,
-      "sha256": "0bf1682a4986e6e7626c137598c2285c681cd8a9b04f52de57af20a09010a465"
+      "path": "qualification/recovery-completion-close.actual-local-result.json",
+      "bytes": 162073,
+      "sha256": "8ea91c9d6800a2eae7d508bd2decc1f2e4c376273fc8885be517932ab7c94cd8"
     },
-    "sourceBoundControls": 2444,
-    "executedControls": 1893,
-    "retainedControls": 551,
-    "expectedResultQualification": "G1_SPENDING_DAY_EVENTS_CURRENT_SOURCE_DATA"
+    "sourceBoundControls": 2502,
+    "executedControls": 1453,
+    "retainedControls": 1049,
+    "expectedResultQualification": "G2_RECOVERY_COMPLETION_CURRENT_SOURCE_DATA"
   },
   "runtime": {
     "nodeVersion": "24.19.0",
