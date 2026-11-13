@@ -168,10 +168,12 @@ check('recorded-delivery-changed-stored-request-is-not-the-original', () => {
     const h = fixture(), o = h.original(); h.execute(o); h.requestHook = ref => ({ ...h.model.getRequest(ref), [key]: key === 'maxCostUnits' ? 2 : 'foreign' });
     assert.throws(() => h.d.verifyDelivery(o.recordDigest, h.context(o)), code('REQUEST_CONFLICT')); }
 });
-check('recorded-delivery-another-original-url-cannot-claim-the-selected-ledger-result', () => {
-  const h = fixture(), o = h.original('request.recorded.1', 'https://order-funding.invalid/another-api'); h.execute(o);
-  assert.throws(() => h.d.verifyDelivery(o.recordDigest, h.context(o)), code('ORIGINAL_CONFLICT'));
-  assert.equal(h.calls.grant + h.calls.request, 0);
+check('recorded-delivery-alternate-service-path-is-refused-by-original-custody', () => {
+  const h = fixture();
+  // The actual custody codec fixes /service-credit/v1/execute. Reject an
+  // alternate path while capturing the original, before any ledger access.
+  assert.throws(() => h.original('request.recorded.1', 'https://order-funding.invalid/another-api'));
+  assert.equal(h.calls.grant + h.calls.request, 0); assert.equal(h.d.snapshot().attempts, 0);
 });
 check('recorded-delivery-cost-and-request-digest-cannot-be-replaced', () => {
   for (const edit of [r => { r.costUnits = 2; }, r => { r.requestDigest = 'sha256:' + 'f'.repeat(64); }]) {
