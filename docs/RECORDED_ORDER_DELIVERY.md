@@ -55,14 +55,51 @@ the current native application profile and does not close G1 or G2.
 
 ## Validation scope
 
-The accompanying DATA entry exercises the actual in-memory credit model,
+The accompanying DATA entries exercise the actual in-memory credit model,
 purchase codecs and funding/fulfillment owners with declared memory stores and
 authentication ports. It includes 100 distinct metered calls under one original
 funding and grant, exact repeats, memory reconstruction, unresolved results,
 foreign bindings, reader failures, close/reentry and the attempt bound.
 
-The prepared selection contains 21 new controls and 80 existing dependency
-controls. It has not been executed yet. Memory reconstruction is not fresh
+The prepared selection contains 21 adapter controls, six paired-application
+composition controls and 80 existing dependency controls. It has not been executed yet. Memory reconstruction is not fresh
 process/SQLite recovery. No native application, installed SDK/core package,
 SQLite, HTTPS, socket, key, signature, nonce search or payment is selected.
 Hosted CI and product acceptance remain separate evidence lanes.
+
+
+## Application composition
+
+Use the same pinned purchase that appears in the application selection. Select
+an already recorded provider ledger and the exact service URL independently:
+
+```js
+const p = selection.funding.purchase;
+const delivery = createPurchasedOrderRecordedDeliveryVerifier(
+  p.termsJson, p.termsDigest, p.paymentCheckpointJson, p.paymentPinsJson,
+  p.fundingContextJson,
+  { ledger, serviceResourceUrl, maximumAttempts: 256 },
+);
+const app = createPurchasedOrderApplicationCore({
+  selection, fundingBackend, fulfillmentBackend, originalStore,
+  verifyFundingEvidence, clock, deadlines,
+  verifier: {
+    verifyDelivery: delivery.verifyDelivery,
+    verifyCompensation: separatelyAcceptedCompensationVerifier,
+  },
+});
+```
+
+The caller retains lifecycle ownership of the read adapter. Revoke it with
+`delivery.close()` before closing the application, including when close is
+requested during a ledger callback. Neither close operation is evidence of
+physical release of the borrowed ledger.
+
+The paired-application DATA entry uses the actual application core and both
+actual fencing contracts over memory ports. It prepares cases for 100 distinct
+deliveries, unchanged exact repeats, explicit same-record memory recovery,
+delivery-commit acknowledgement loss, pending liability after unknown execution,
+and close during a ledger read. Its grant is preloaded through the model's
+explicit trusted-record test boundary; it does not establish real funding to
+grant activation, authentication or fresh-process recovery. These cases have not
+yet been executed. No new hosted CI or native scope is implied.
