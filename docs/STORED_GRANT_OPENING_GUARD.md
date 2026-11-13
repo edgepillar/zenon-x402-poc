@@ -48,3 +48,17 @@ The remaining 229 affected regression controls require a separate proof and are
 outside this focused record. The source candidate does not establish a complete
 current application profile, fresh-process recovery, native release or product
 acceptance. The existing 16-frame bound and all G0-G5 gates remain unchanged.
+
+
+## Complete current source/DATA profile
+
+The [V96 record](../qualification/stored-grant-opening-guard.actual-local-result.json) now joins the separate 229-control broad
+regression with the 99 focused candidate controls. The complete source-bound
+set is 2,723 distinct controls: 2,542 application and 181 separate Linux memory
+harness controls. Within that set, 2,395 controls retain exact source graphs and freshly
+reconsumed original command/CAS provenance. They were not rerun or relabeled as
+new executions. The [proof manifest](../qualification/stored-grant-opening-guard.proof-manifest.json) records those roles.
+
+This is source and declared-memory DATA qualification. Native ownership/release,
+fresh-process application recovery and product acceptance remain unestablished;
+all G0-G5 gates remain OPEN.

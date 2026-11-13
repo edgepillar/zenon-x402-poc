@@ -1,0 +1,96 @@
+{
+  "G0G5": "OPEN",
+  "currentCandidateUnexpectedCancellations": 0,
+  "currentCandidateUnexpectedFailures": 0,
+  "currentCandidateUnexpectedSkips": 0,
+  "earlierReferenceFailuresPreserved": 16,
+  "historicalFailureAndUNKNOWNRecordsUnchanged": true,
+  "nativeQualification": "NOT_EXECUTED",
+  "predecessorInventory": {
+    "bytes": 1504,
+    "path": "qualification/funding-inspection-guard.failure-inventory.json",
+    "sha256": "20d0fc4fbf0f5f808da081bdb71815a0204ddb9f2e30bb751bed9f98d3acbb16"
+  },
+  "qualification": "G2_STORED_GRANT_OPENING_GUARD_FAILURE_CLASSIFICATION",
+  "reference": {
+    "actualExit": 1,
+    "failed": 13,
+    "failedCases": [
+      {
+        "errorType": "AssertionError",
+        "id": "stored-opening-unjoined-guard-stops-after-open",
+        "status": "FAIL"
+      },
+      {
+        "errorType": "AssertionError",
+        "id": "stored-opening-unjoined-guard-stops-before-read",
+        "status": "FAIL"
+      },
+      {
+        "errorType": "AssertionError",
+        "id": "stored-opening-unjoined-guard-stops-after-read",
+        "status": "FAIL"
+      },
+      {
+        "errorType": "AssertionError",
+        "id": "stored-opening-unjoined-guard-stops-before-projection",
+        "status": "FAIL"
+      },
+      {
+        "errorType": "AssertionError",
+        "id": "stored-opening-unjoined-guard-stops-after-projection",
+        "status": "FAIL"
+      },
+      {
+        "errorType": "AssertionError",
+        "id": "stored-opening-unjoined-guard-stops-before-cleanup",
+        "status": "FAIL"
+      },
+      {
+        "errorType": "AssertionError",
+        "id": "stored-opening-purchased-profile-receipt-stops-after-read",
+        "status": "FAIL"
+      },
+      {
+        "errorType": "AssertionError",
+        "id": "stored-opening-nonvoid-null-retains-without-hooks",
+        "status": "FAIL"
+      },
+      {
+        "errorType": "AssertionError",
+        "id": "stored-opening-nonvoid-thenable-retains-without-hooks",
+        "status": "FAIL"
+      },
+      {
+        "errorType": "AssertionError",
+        "id": "stored-opening-nonvoid-proxy-retains-without-hooks",
+        "status": "FAIL"
+      },
+      {
+        "errorType": "AssertionError",
+        "id": "stored-opening-nonvoid-species-retains-without-hooks",
+        "status": "FAIL"
+      },
+      {
+        "errorType": "AssertionError",
+        "id": "stored-opening-nonvoid-array-retains-without-hooks",
+        "status": "FAIL"
+      },
+      {
+        "errorType": "AssertionError",
+        "id": "stored-opening-sixteen-held-frames-refuse-new-owner-acquisition",
+        "status": "FAIL"
+      }
+    ],
+    "failuresReclassified": false,
+    "focusedResult": {
+      "bytes": 44325,
+      "path": "qualification/stored-grant-opening-guard.focused.actual-local-result.json",
+      "sha256": "84bbaf324d9a325ce7802f514ea8fd7aac173f614b345e8bf4106f6e7085f773"
+    },
+    "passed": 8,
+    "sourceBaseline": "bc45c650a2cc63ebbed3fe098fd7faf5bb677ace"
+  },
+  "version": 1,
+  "wholeFailedTasksReclassified": false
+}

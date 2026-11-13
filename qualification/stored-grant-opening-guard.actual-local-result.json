@@ -1,0 +1,1471 @@
+{
+  "G0G5Acceptance": "OPEN",
+  "LinuxAcceptance": "NOT_ESTABLISHED",
+  "SDK": 0,
+  "SQLite": 0,
+  "actualKnownRuntimeCodeWithDeclaredMemoryPorts": true,
+  "actualPrepare": 0,
+  "additionalSupervisorHarnessControls": 43,
+  "additionalSupervisorHarnessIncludedIn2723": false,
+  "cases": [
+    {
+      "id": "stored-opening-void-guard-preserves-v2-profile-and-one-close",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-opening-void-guard-preserves-v3-profile-and-one-close",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-opening-sync-revocation-before-open-acquires-no-file",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-opening-sync-revocation-after-read-keeps-known-quiescent-cleanup",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-opening-unjoined-guard-stops-before-open",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-opening-unjoined-guard-stops-after-open",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-opening-unjoined-guard-stops-before-read",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-opening-unjoined-guard-stops-after-read",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-opening-unjoined-guard-stops-before-projection",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-opening-unjoined-guard-stops-after-projection",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-opening-unjoined-guard-stops-before-cleanup",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-opening-unjoined-guard-stops-after-close",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-opening-unjoined-guard-stops-after-closed-view",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-opening-purchased-profile-receipt-stops-after-read",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-opening-nonvoid-false-retains-without-hooks",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-opening-nonvoid-null-retains-without-hooks",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-opening-nonvoid-thenable-retains-without-hooks",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-opening-nonvoid-proxy-retains-without-hooks",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-opening-nonvoid-species-retains-without-hooks",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-opening-nonvoid-array-retains-without-hooks",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-opening-sixteen-held-frames-refuse-new-owner-acquisition",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-profile-uses-the-existing-query-mode-and-closed-version-two",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-profile-is-one-use-and-release-revokes-future-consumption",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-profile-rejects-key-module-transport-and-callback-selection",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-profile-refuses-creation-without-owner-discovery-or-migration",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-profile-requires-all-independent-original-and-full-profile-pins",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-profile-refuses-noncanonical-duplicate-oversized-and-invalid-hash-input",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-profile-detaches-caller-owned-file-and-expected-objects",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-profile-proxy-and-getter-pins-never-run-input-hooks",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-read-validates-and-closes-the-same-owner-before-returning-ready-profile",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-ready-profile-enters-the-actual-one-query-owner-after-file-close",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-coordinator-keeps-one-input-query-and-redacted-history-output",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-missing-record-closes-known-owner-without-query-or-payment-authority",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-foreign-record-digest-is-refused-before-any-transport-opens",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-wrong-independent-full-profile-hash-cannot-select-row-transport",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-changed-ca-with-matching-row-digests-still-fails-full-profile-pin",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-changed-row-timer-budgets-cannot-become-new-authority",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-expected-payment-request-and-route-are-rebound-after-projection",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-bad-spending-policy-cannot-be-replaced-by-a-row-policy",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-expired-opening-before-file-entry-acquires-no-owner",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-expiry-after-known-read-closes-owner-but-starts-no-query",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-file-configuration-is-detached-before-opening-guard-callback",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-pointer-envelopes-cannot-be-retained-as-recursive-ready-profiles",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-wrong-full-profile-pin-reaches-no-network-or-history-output",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-pre-resource-mode-and-pins-are-admitted-before-file-port-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-normal-ready-version-one-profile-remains-keyless-and-unchanged",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-file-policy-keeps-the-existing-free-floor-and-allocation-bounds",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-opaque-opener-promise-is-retained-without-a-competing-closer",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-proxy-owner-is-rejected-without-reflection-traps",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-pending-read-borrower-never-competes-with-revoke-or-close",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-throwing-read-retains-the-original-owner-without-reopen",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-opaque-owner-view-prevents-read-and-cleanup",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-nonvoid-current-owner-receipt-prevents-read-and-cleanup",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-nonvoid-logical-revoke-prevents-physical-close",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-throwing-logical-revoke-is-never-retried-or-followed-by-close",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-promise-physical-close-is-not-a-synchronous-release-receipt",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-throwing-physical-close-is-not-retried-or-replaced",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-bad-closed-view-cannot-publish-a-ready-profile",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-post-close-guard-mutation-is-caught-by-a-fresh-closed-view",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-held-owner-view-is-not-raw-closed-by-the-reader",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-reused-owner-capability-cannot-reopen-or-close-again",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-grant-accessor-owner-views-are-rejected-without-calling-getters",
+      "status": "PASS"
+    },
+    {
+      "id": "purchased-recovery-version-three-binds-the-independent-literal-purchase-vector",
+      "status": "PASS"
+    },
+    {
+      "id": "purchased-recovery-reads-and-closes-one-original-owner-before-the-one-query",
+      "status": "PASS"
+    },
+    {
+      "id": "purchased-recovery-expired-history-retains-absolute-terms-and-outstanding-units",
+      "status": "PASS"
+    },
+    {
+      "id": "purchased-recovery-revoked-history-is-observation-without-restored-authority",
+      "status": "PASS"
+    },
+    {
+      "id": "purchased-recovery-absence-is-not-a-new-payment-or-forgotten-liability",
+      "status": "PASS"
+    },
+    {
+      "id": "purchased-recovery-unit-drift-is-withheld-after-known-owner-and-query-close",
+      "status": "PASS"
+    },
+    {
+      "id": "purchased-recovery-expiry-refresh-is-refused-even-in-expired-history",
+      "status": "PASS"
+    },
+    {
+      "id": "purchased-recovery-expiry-shortening-cannot-replace-the-purchased-term",
+      "status": "PASS"
+    },
+    {
+      "id": "purchased-recovery-original-payment-checkpoint-and-resource-pins-are-pre-open",
+      "status": "PASS"
+    },
+    {
+      "id": "purchased-recovery-modified-original-bytes-or-independent-digests-refuse",
+      "status": "PASS"
+    },
+    {
+      "id": "purchased-recovery-mutated-purchase-terms-are-not-rebuilt-from-the-store",
+      "status": "PASS"
+    },
+    {
+      "id": "purchased-recovery-purchase-holder-must-match-the-selected-spending-account",
+      "status": "PASS"
+    },
+    {
+      "id": "purchased-recovery-v3-cannot-omit-terms-original-or-add-key-and-transport-ports",
+      "status": "PASS"
+    },
+    {
+      "id": "purchased-recovery-version-three-canonical-and-byte-bounds-are-explicit",
+      "status": "PASS"
+    },
+    {
+      "id": "purchased-recovery-consumption-is-one-use-and-release-is-idempotent",
+      "status": "PASS"
+    },
+    {
+      "id": "purchased-recovery-caller-mutation-does-not-replace-captured-independent-terms",
+      "status": "PASS"
+    },
+    {
+      "id": "purchased-recovery-forged-selection-is-refused-before-the-file-opener",
+      "status": "PASS"
+    },
+    {
+      "id": "purchased-recovery-repeated-selection-does-not-reopen-the-original-owner",
+      "status": "PASS"
+    },
+    {
+      "id": "purchased-recovery-selection-is-claimed-before-reentrant-opening-callbacks",
+      "status": "PASS"
+    },
+    {
+      "id": "purchased-recovery-manual-profile-pin-drift-is-refused-before-opening",
+      "status": "PASS"
+    },
+    {
+      "id": "purchased-recovery-full-profile-ca-pin-still-precedes-any-query",
+      "status": "PASS"
+    },
+    {
+      "id": "purchased-recovery-row-offer-cannot-override-independently-purchased-offer",
+      "status": "PASS"
+    },
+    {
+      "id": "purchased-recovery-query-result-original-and-query-digests-must-still-match",
+      "status": "PASS"
+    },
+    {
+      "id": "purchased-recovery-foreign-history-does-not-become-the-original-grant",
+      "status": "PASS"
+    },
+    {
+      "id": "purchased-recovery-result-cannot-add-payment-or-service-authority",
+      "status": "PASS"
+    },
+    {
+      "id": "purchased-recovery-result-is-consumed-once-and-late-data-cannot-repair-it",
+      "status": "PASS"
+    },
+    {
+      "id": "purchased-recovery-output-is-not-observable-before-the-bound-original-query",
+      "status": "PASS"
+    },
+    {
+      "id": "purchased-recovery-original-proxy-and-accessor-hooks-never-run",
+      "status": "PASS"
+    },
+    {
+      "id": "purchased-recovery-missing-row-closes-the-known-file-without-any-query",
+      "status": "PASS"
+    },
+    {
+      "id": "purchased-recovery-unknown-read-never-competes-with-the-original-file-close",
+      "status": "PASS"
+    },
+    {
+      "id": "purchased-recovery-unknown-file-close-cannot-start-query-or-publish-history",
+      "status": "PASS"
+    },
+    {
+      "id": "purchased-recovery-pending-query-withholds-output-and-late-history-never-repairs-unknown",
+      "status": "PASS"
+    },
+    {
+      "id": "purchased-recovery-query-close-must-complete-before-purchase-output",
+      "status": "PASS"
+    },
+    {
+      "id": "purchased-recovery-existing-coordinator-emits-one-redacted-matching-history",
+      "status": "PASS"
+    },
+    {
+      "id": "purchased-recovery-coordinator-withholds-mismatched-purchase-history-without-retry",
+      "status": "PASS"
+    },
+    {
+      "id": "purchased-recovery-independent-invocations-preserve-the-same-original-and-balances",
+      "status": "PASS"
+    },
+    {
+      "id": "purchased-recovery-generic-version-two-and-ready-version-one-remain-unchanged",
+      "status": "PASS"
+    },
+    {
+      "id": "channel-close-clean-requires-two-known-timer-cancels-and-fresh-closed-views",
+      "status": "PASS"
+    },
+    {
+      "id": "channel-close-stored-profile-uses-the-same-coordinator-and-result-binding",
+      "status": "PASS"
+    },
+    {
+      "id": "channel-close-known-invalid-profile-remains-bootstrap-refusal-after-clean-shutdown",
+      "status": "PASS"
+    },
+    {
+      "id": "channel-close-startup-timer-retirement-consumes-the-single-close-window",
+      "status": "PASS"
+    },
+    {
+      "id": "channel-close-known-pending-shutdown-may-settle-once-within-the-same-window",
+      "status": "PASS"
+    },
+    {
+      "id": "channel-close-nonvoid-startup-timer-cancel-cannot-report-success",
+      "status": "PASS"
+    },
+    {
+      "id": "channel-close-late-startup-cancel-promise-cannot-repair-unknown",
+      "status": "PASS"
+    },
+    {
+      "id": "channel-close-throwing-startup-cancel-retains-unknown-with-one-channel-stop",
+      "status": "PASS"
+    },
+    {
+      "id": "channel-close-nonvoid-close-timer-cancel-is-not-a-clean-receipt",
+      "status": "PASS"
+    },
+    {
+      "id": "channel-close-rejected-cancel-promise-is-observed-without-cleanup-retry",
+      "status": "PASS"
+    },
+    {
+      "id": "channel-close-throwing-close-timer-cancel-cannot-repeat-or-renew-the-close",
+      "status": "PASS"
+    },
+    {
+      "id": "channel-close-held-view-created-during-cancel-is-rechecked-before-success",
+      "status": "PASS"
+    },
+    {
+      "id": "channel-close-cancel-reaching-the-exact-deadline-cannot-renew-the-window",
+      "status": "PASS"
+    },
+    {
+      "id": "channel-close-clock-regression-during-cancel-is-sticky-unknown",
+      "status": "PASS"
+    },
+    {
+      "id": "channel-close-reentrant-expiry-during-cancel-cannot-publish-provisional-clean",
+      "status": "PASS"
+    },
+    {
+      "id": "channel-close-accessor-closed-view-is-refused-without-calling-getters",
+      "status": "PASS"
+    },
+    {
+      "id": "channel-close-opaque-close-thenable-is-not-assimilated-or-retried",
+      "status": "PASS"
+    },
+    {
+      "id": "channel-close-expiry-during-timer-arm-retires-the-returned-handle-once",
+      "status": "PASS"
+    },
+    {
+      "id": "channel-close-opaque-arm-promise-is-held-without-using-it-as-a-timer-handle",
+      "status": "PASS"
+    },
+    {
+      "id": "channel-close-expired-pending-stop-stays-unknown-after-late-clean-return",
+      "status": "PASS"
+    },
+    {
+      "id": "channel-close-microtask-gap-after-cancel-requires-a-fresh-post-await-view",
+      "status": "PASS"
+    },
+    {
+      "id": "loopback-bootstrap-v3-admits-only-the-explicit-non-dp-profile-without-credentials",
+      "status": "PASS"
+    },
+    {
+      "id": "loopback-bootstrap-version-profile-marker-and-shape-must-all-match",
+      "status": "PASS"
+    },
+    {
+      "id": "loopback-bootstrap-cannot-select-the-dp-or-legacy-public-decoder",
+      "status": "PASS"
+    },
+    {
+      "id": "loopback-bootstrap-keeps-the-existing-v2-public-route-selection",
+      "status": "PASS"
+    },
+    {
+      "id": "loopback-bootstrap-has-no-external-address-or-hostname-fallback",
+      "status": "PASS"
+    },
+    {
+      "id": "loopback-bootstrap-retains-the-closed-three-role-paths",
+      "status": "PASS"
+    },
+    {
+      "id": "loopback-bootstrap-port-is-explicit-unprivileged-and-canonical",
+      "status": "PASS"
+    },
+    {
+      "id": "loopback-bootstrap-timing-does-not-relax-the-existing-owner-bounds",
+      "status": "PASS"
+    },
+    {
+      "id": "loopback-bootstrap-purchase-and-original-terms-are-unchanged",
+      "status": "PASS"
+    },
+    {
+      "id": "loopback-bootstrap-binding-enters-no-key-or-day-method",
+      "status": "PASS"
+    },
+    {
+      "id": "loopback-selection-captures-three-equal-distinct-owned-ca-copies",
+      "status": "PASS"
+    },
+    {
+      "id": "loopback-selection-has-no-work-material-or-nonce-switch",
+      "status": "PASS"
+    },
+    {
+      "id": "loopback-selection-cannot-be-consumed-as-another-original-or-twice",
+      "status": "PASS"
+    },
+    {
+      "id": "loopback-selection-input-mutation-cannot-change-the-captured-routes",
+      "status": "PASS"
+    },
+    {
+      "id": "loopback-selection-ca-mutation-before-consumption-refuses-without-a-key-call",
+      "status": "PASS"
+    },
+    {
+      "id": "loopback-selection-deferred-guard-refuses-any-of-the-three-changed-ca-copies",
+      "status": "PASS"
+    },
+    {
+      "id": "loopback-selection-changing-all-ca-copies-does-not-rebind-the-deferred-trust",
+      "status": "PASS"
+    },
+    {
+      "id": "loopback-selection-repeated-current-checks-cannot-renew-or-consume-an-owner",
+      "status": "PASS"
+    },
+    {
+      "id": "loopback-selection-copied-or-proxy-tokens-enter-no-hooks-or-guards",
+      "status": "PASS"
+    },
+    {
+      "id": "loopback-selection-legacy-low-selector-refuses-an-added-local-capability",
+      "status": "PASS"
+    },
+    {
+      "id": "loopback-selection-explicit-low-selector-requires-the-same-ca-and-port",
+      "status": "PASS"
+    },
+    {
+      "id": "loopback-selection-explicit-low-selector-does-not-read-accessors-or-proxies",
+      "status": "PASS"
+    },
+    {
+      "id": "loopback-selection-current-check-before-consumption-does-not-spend-the-token",
+      "status": "PASS"
+    },
+    {
+      "id": "loopback-coordinator-refuses-incompatible-routes-before-credential-key-and-session",
+      "status": "PASS"
+    },
+    {
+      "id": "loopback-coordinator-binds-the-existing-product-path-with-declared-owners-only",
+      "status": "PASS"
+    },
+    {
+      "id": "loopback-linux-provider-selection-binds-v3-through-the-existing-full-transcript",
+      "status": "PASS"
+    },
+    {
+      "id": "loopback-bootstrap-result-is-source-selection-not-native-or-chain-acceptance",
+      "status": "PASS"
+    }
+  ],
+  "casesScope": "EXECUTED_APPLICATION_CONTROLS_RETAINED_ROLES_ARE_IN_THE_PROOF_MANIFEST",
+  "currentBroadTaskQuotaBytes": 4194304,
+  "failed": 0,
+  "failureInventory": {
+    "bytes": 3019,
+    "path": "qualification/stored-grant-opening-guard.failure-inventory.json",
+    "sha256": "da767d128d2bd269a692b4296de1862eb3927cf06bef2e4a66f1b2e0e1dbc745"
+  },
+  "focusedComparison": {
+    "bytes": 44325,
+    "path": "qualification/stored-grant-opening-guard.focused.actual-local-result.json",
+    "sha256": "84bbaf324d9a325ce7802f514ea8fd7aac173f614b345e8bf4106f6e7085f773"
+  },
+  "focusedNewCases": [
+    {
+      "id": "stored-opening-void-guard-preserves-v2-profile-and-one-close",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-opening-void-guard-preserves-v3-profile-and-one-close",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-opening-sync-revocation-before-open-acquires-no-file",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-opening-sync-revocation-after-read-keeps-known-quiescent-cleanup",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-opening-unjoined-guard-stops-before-open",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-opening-unjoined-guard-stops-after-open",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-opening-unjoined-guard-stops-before-read",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-opening-unjoined-guard-stops-after-read",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-opening-unjoined-guard-stops-before-projection",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-opening-unjoined-guard-stops-after-projection",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-opening-unjoined-guard-stops-before-cleanup",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-opening-unjoined-guard-stops-after-close",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-opening-unjoined-guard-stops-after-closed-view",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-opening-purchased-profile-receipt-stops-after-read",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-opening-nonvoid-false-retains-without-hooks",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-opening-nonvoid-null-retains-without-hooks",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-opening-nonvoid-thenable-retains-without-hooks",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-opening-nonvoid-proxy-retains-without-hooks",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-opening-nonvoid-species-retains-without-hooks",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-opening-nonvoid-array-retains-without-hooks",
+      "status": "PASS"
+    },
+    {
+      "id": "stored-opening-sixteen-held-frames-refuse-new-owner-acquisition",
+      "status": "PASS"
+    }
+  ],
+  "freshRegressionCases": 229,
+  "freshRegressionManagedCommands": 1,
+  "freshRegressionNodeChildren": 9,
+  "freshRegressionTaskClosedSuccess": true,
+  "installedNamespace": "NOT_ESTABLISHED",
+  "keys": 0,
+  "nativeExecutions": 0,
+  "nativeQualification": "NOT_EXECUTED",
+  "newCasesIncludedIn108CI": false,
+  "newControls": 21,
+  "nodeChildren": 0,
+  "nodeChildrenScope": "INSIDE_APPLICATION_TESTS_SUPERVISOR_CHILDREN_RECORDED_SEPARATELY",
+  "nodeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25",
+  "nodeVersion": "24.19.0",
+  "nonceSearches": 0,
+  "passed": 147,
+  "payouts": 0,
+  "physicalRelease": "NOT_ESTABLISHED",
+  "platform": "darwin-arm64",
+  "proofManifest": {
+    "bytes": 47113,
+    "path": "qualification/stored-grant-opening-guard.proof-manifest.json",
+    "sha256": "c55beb11e09dc20e2a1bc3a99db9bffd88d63d2d2f6334c9df49d5b58ebae86e"
+  },
+  "qualification": "G2_STORED_GRANT_OPENING_GUARD_CURRENT_SOURCE_DATA",
+  "recordedAtUTC": "2026-11-13T16:27:11.479422+00:00",
+  "reexecutedRelevantControls": 126,
+  "retainedExactControls": 2395,
+  "retainedFailedContainersKeepTheirOriginalOutcomes": true,
+  "separateHarness": {
+    "allSourceBoundDistinctControls": 2723,
+    "cases": [
+      {
+        "id": "linux-signer-one-current-owner-binds-the-same-budget-and-original-packet",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-signer-selection-adds-only-one-explicit-profile-with-no-extra-process-or-connection",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-signer-legacy-schema-or-absent-age-selection-cannot-silently-open-current-data",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-signer-different-payment-digest-or-funding-url-is-rejected-before-open",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-signer-owner-policy-path-device-and-reservation-must-match-the-budget-selection",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-signer-explicit-age-policy-is-pinned-without-changing-the-original-payment",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-signer-current-budget-and-provider-file-selections-remain-separate",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-signer-selection-refuses-extra-properties-accessors-and-proxies-without-entry",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-signer-internal-envelope-bounds-the-parent-selected-opening-allowance",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-signer-same-owned-read-uses-the-actual-four-guard-close-protocol",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-signer-historical-observation-is-stable-across-different-current-days",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-signer-output-hashes-do-not-publish-private-originals-signatures-or-paths",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-signer-existing-ordinary-unfrozen-backend-reader-is-admitted",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-signer-intent-only-or-missing-history-cannot-pass-a-clean-signed-scenario",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-signer-reserved-or-unknown-budget-is-preserved-without-a-clean-verdict",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-signer-changed-journal-between-reads-withholds-the-observation",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-signer-throwing-read-retains-unknown-without-a-physical-close",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-signer-opaque-read-is-forwarded-without-entering-then-getters",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-signer-current-owner-fencing-is-not-normalized-by-the-read-tap",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-signer-selected-opener-refusal-never-enters-a-schema-fallback",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-signer-opaque-owner-is-retained-by-the-actual-protocol-without-raw-close",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-signer-unknown-revoke-or-close-cannot-publish-or-retry",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-signer-expired-opening-and-clock-rollback-withhold-new-reads-or-results",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-signer-copied-tokens-and-proxy-ports-cannot-acquire-an-owner",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-signer-a-completed-phase-cannot-be-reentered-with-another-file",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-signer-normal-history-does-not-become-a-signer-loss-or-release-proof",
+        "status": "PASS"
+      },
+      {
+        "id": "one-spent-original-uses-the-actual-journal-and-original-codec",
+        "status": "PASS"
+      },
+      {
+        "id": "spending-selection-reuses-six-inputs-and-the-two-existing-ledger-probes",
+        "status": "PASS"
+      },
+      {
+        "id": "existing-open-retains-the-declared-create-owner-policy-device-and-limits",
+        "status": "PASS"
+      },
+      {
+        "id": "an-existing-or-transferred-run-profile-cannot-replace-this-clean-scenario",
+        "status": "PASS"
+      },
+      {
+        "id": "foreign-payment-id-or-reordered-preparation-digest-refuses",
+        "status": "PASS"
+      },
+      {
+        "id": "changed-network-asset-or-recipient-cannot-describe-the-funded-original",
+        "status": "PASS"
+      },
+      {
+        "id": "a-different-permitted-amount-is-still-a-different-original",
+        "status": "PASS"
+      },
+      {
+        "id": "reserved-or-unknown-exposure-never-becomes-a-clean-spent-result",
+        "status": "PASS"
+      },
+      {
+        "id": "an-extra-original-cannot-hide-behind-the-same-total-record",
+        "status": "PASS"
+      },
+      {
+        "id": "empty-missing-malformed-or-oversized-state-is-never-created-as-a-fallback",
+        "status": "PASS"
+      },
+      {
+        "id": "policy-mutation-and-budget-overflow-are-rejected-by-the-actual-decoder",
+        "status": "PASS"
+      },
+      {
+        "id": "changed-canonical-revision-between-reads-is-not-a-stable-observation",
+        "status": "PASS"
+      },
+      {
+        "id": "a-recorded-later-day-does-not-refund-total-exposure-or-read-the-clock",
+        "status": "PASS"
+      },
+      {
+        "id": "observations-do-not-publish-payment-owner-account-path-or-proof-data",
+        "status": "PASS"
+      },
+      {
+        "id": "provider-units-and-payer-money-are-checked-by-their-separate-real-contracts",
+        "status": "PASS"
+      },
+      {
+        "id": "owned-read-guards-both-loads-before-revoke-and-one-close",
+        "status": "PASS"
+      },
+      {
+        "id": "a-throwing-load-retains-unknown-without-revoke-close-or-another-read",
+        "status": "PASS"
+      },
+      {
+        "id": "opaque-load-and-guard-receipts-do-not-run-then-getters-or-close",
+        "status": "PASS"
+      },
+      {
+        "id": "fencing-at-any-of-the-three-current-guards-withholds-close-and-output",
+        "status": "PASS"
+      },
+      {
+        "id": "held-busy-or-nonfrozen-owner-views-cannot-enter-a-load",
+        "status": "PASS"
+      },
+      {
+        "id": "a-reused-frozen-owner-view-is-not-a-fresh-close-barrier",
+        "status": "PASS"
+      },
+      {
+        "id": "known-semantic-conflict-may-revoke-close-once-but-never-publish",
+        "status": "PASS"
+      },
+      {
+        "id": "unknown-or-nonvoid-revoke-prevents-physical-close",
+        "status": "PASS"
+      },
+      {
+        "id": "a-missing-revoked-view-cannot-authorize-physical-close",
+        "status": "PASS"
+      },
+      {
+        "id": "throwing-or-nonvoid-close-never-publishes-or-retries",
+        "status": "PASS"
+      },
+      {
+        "id": "a-claimed-close-with-a-still-open-database-withholds-the-result",
+        "status": "PASS"
+      },
+      {
+        "id": "reentrant-load-cannot-start-another-owned-read",
+        "status": "PASS"
+      },
+      {
+        "id": "copied-tokens-extra-write-ports-accessors-and-proxies-enter-no-callbacks",
+        "status": "PASS"
+      },
+      {
+        "id": "matching-budget-history-does-not-establish-native-atomicity-release-or-authority",
+        "status": "PASS"
+      },
+      {
+        "id": "one-original-grant-100-real-model-debits-and-execution-contract-results-match",
+        "status": "PASS"
+      },
+      {
+        "id": "selection-retains-the-existing-106-command-and-independent-original-preflight",
+        "status": "PASS"
+      },
+      {
+        "id": "database-and-limits-are-the-same-explicit-recovery-backend",
+        "status": "PASS"
+      },
+      {
+        "id": "missing-cost-or-a-raised-unit-price-cannot-select-a-different-scenario",
+        "status": "PASS"
+      },
+      {
+        "id": "snapshot-payload-and-output-digests-do-not-echo-originals-or-proof-data",
+        "status": "PASS"
+      },
+      {
+        "id": "stale-execution-revision-refuses",
+        "status": "PASS"
+      },
+      {
+        "id": "changed-ledger-between-bracketing-reads-refuses-even-with-a-new-valid-checksum",
+        "status": "PASS"
+      },
+      {
+        "id": "tampered-public-ledger-checksum-refuses",
+        "status": "PASS"
+      },
+      {
+        "id": "missing-or-extra-request-cannot-be-counted-as-100",
+        "status": "PASS"
+      },
+      {
+        "id": "missing-execution-with-100-successful-ledger-rows-refuses",
+        "status": "PASS"
+      },
+      {
+        "id": "another-original-payment-cannot-be-used-for-the-selected-grant",
+        "status": "PASS"
+      },
+      {
+        "id": "changed-purchase-lifetime-does-not-renew-the-original-grant",
+        "status": "PASS"
+      },
+      {
+        "id": "changed-request-identity-refuses-even-with-the-same-request-count",
+        "status": "PASS"
+      },
+      {
+        "id": "cached-result-must-match-the-original-response-and-execution-commitment",
+        "status": "PASS"
+      },
+      {
+        "id": "a-successful-execution-with-another-result-commitment-refuses",
+        "status": "PASS"
+      },
+      {
+        "id": "unit-counters-must-preserve-the-purchased-total-and-no-held-units",
+        "status": "PASS"
+      },
+      {
+        "id": "unknown-or-unfenced-execution-never-becomes-a-successful-run",
+        "status": "PASS"
+      },
+      {
+        "id": "canonical-bounded-snapshot-strings-are-required",
+        "status": "PASS"
+      },
+      {
+        "id": "one-owned-read-orders-ledger-execution-ledger-and-void-close-before-output",
+        "status": "PASS"
+      },
+      {
+        "id": "throwing-read-retains-the-owner-without-close-or-a-second-attempt",
+        "status": "PASS"
+      },
+      {
+        "id": "opaque-read-receipts-do-not-enter-then-getters-or-force-close",
+        "status": "PASS"
+      },
+      {
+        "id": "known-semantic-conflict-closes-once-and-withholds-observation",
+        "status": "PASS"
+      },
+      {
+        "id": "nonvoid-or-throwing-close-never-publishes-or-retries",
+        "status": "PASS"
+      },
+      {
+        "id": "copied-tokens-and-proxy-callbacks-cannot-acquire-a-store-read",
+        "status": "PASS"
+      },
+      {
+        "id": "successful-history-retains-none-authority-and-open-native-gates",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-offer-refusal-retains-the-whole-v6-and-existing-original-transcript",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-offer-refusal-changes-only-the-preselected-public-purchase-offer-version",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-offer-refusal-uses-the-real-decoder-with-a-valid-positive-control",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-offer-refusal-requires-the-specific-clean-precredential-cli-marker-and-exit",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-offer-refusal-keeps-provider-and-credential-ports-unentered-in-its-plan",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-offer-refusal-profile-is-explicit-canonical-closed-and-versioned",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-offer-refusal-version-must-be-a-different-positive-safe-integer",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-offer-refusal-does-not-adopt-or-repair-an-invalid-positive-purchase",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-offer-refusal-retains-the-same-signer-ledger-and-provider-selection-digests",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-offer-refusal-does-not-learn-an-expectation-from-child-output",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-offer-refusal-binds-preselected-mutation-and-preserves-the-original-inputs",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-offer-refusal-summary-exposes-pins-and-no-private-profile-or-proof-bytes",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-offer-refusal-token-copies-proxies-and-extra-arguments-do-not-select-a-plan",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-offer-refusal-selection-refuses-accessors-and-proxies-without-hooks",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-offer-refusal-keeps-native-payment-concurrency-and-product-gates-open",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-provider-selection-binds-the-same-ten-independent-text-inputs",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-provider-keeps-the-existing-signer-and-budget-observation-bindings",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-provider-start-and-close-frames-match-the-existing-control-protocol",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-provider-explicit-journal-initialization-retains-no-authority-or-release-claim",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-provider-activate-ack-is-selected-before-output-and-matches-the-original-grant",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-provider-declared-observer-key-is-bound-but-not-authenticated-by-data-preflight",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-provider-summary-does-not-expose-private-originals-command-frames-or-paths",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-provider-frozen-plan-and-internal-token-cannot-be-forged",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-provider-selection-refuses-extra-input-accessors-and-proxies-without-hooks",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-provider-profile-is-explicit-v3-fresh-and-journal-only",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-provider-offer-and-funding-terms-must-equal-the-independent-purchase",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-provider-rejects-a-different-product-or-cost-policy",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-provider-service-store-file-root-and-all-limits-must-match-the-ledger-probe",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-provider-intake-cannot-alias-the-payer-or-spending-database",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-provider-https-origin-bind-port-and-original-funding-url-are-fixed",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-provider-rpc-selection-refuses-external-hosts-credentials-paths-and-query",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-provider-journal-selection-cannot-change-directory-or-selected-device",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-provider-activation-rejects-another-command-id-operation-or-observer-file",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-provider-activation-rejects-traversal-and-incomplete-original-key",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-provider-added-inputs-refuse-noncanonical-or-oversized-frames",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-provider-reply-pins-cover-every-selected-bootstrap-activation-and-close-frame",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-provider-data-never-claims-linux-transport-chain-authentication-or-gate-completion",
+        "status": "PASS"
+      },
+      {
+        "id": "real-106-command-grammar-validates-100-distinct-originals-one-replay-and-keyless-read",
+        "status": "PASS"
+      },
+      {
+        "id": "fixture-pins-bind-every-exact-private-input-without-echoing-it",
+        "status": "PASS"
+      },
+      {
+        "id": "accessor-proxy-and-extra-field-inputs-never-enter-user-code",
+        "status": "PASS"
+      },
+      {
+        "id": "missing-or-extra-command-never-becomes-a-shorter-product-scenario",
+        "status": "PASS"
+      },
+      {
+        "id": "missing-close-and-a-second-funding-attempt-refuse",
+        "status": "PASS"
+      },
+      {
+        "id": "duplicate-correlation-ids-refuse-before-a-child-or-key",
+        "status": "PASS"
+      },
+      {
+        "id": "99-distinct-requests-plus-an-early-repeat-cannot-count-as-100",
+        "status": "PASS"
+      },
+      {
+        "id": "a-replay-must-retain-the-complete-original-proof-and-request-bytes",
+        "status": "PASS"
+      },
+      {
+        "id": "modified-grant-and-proof-identities-refuse",
+        "status": "PASS"
+      },
+      {
+        "id": "a-first-call-marked-replayed-cannot-hide-absent-dispatch-observation",
+        "status": "PASS"
+      },
+      {
+        "id": "the-exact-replay-cannot-claim-another-dispatch",
+        "status": "PASS"
+      },
+      {
+        "id": "changed-replay-result-bytes-are-not-the-historical-response",
+        "status": "PASS"
+      },
+      {
+        "id": "unexpected-missing-or-a-close-result-frame-refuses",
+        "status": "PASS"
+      },
+      {
+        "id": "reply-correlation-and-order-are-exact",
+        "status": "PASS"
+      },
+      {
+        "id": "unknown-funding-is-not-a-clean-handoff-fixture",
+        "status": "PASS"
+      },
+      {
+        "id": "declared-success-does-not-become-delivery-or-grant-authority",
+        "status": "PASS"
+      },
+      {
+        "id": "prepare-output-cannot-silently-select-new-independent-pins",
+        "status": "PASS"
+      },
+      {
+        "id": "committed-pins-and-submit-pins-must-be-the-same-predeclared-original",
+        "status": "PASS"
+      },
+      {
+        "id": "ready-query-profile-must-pass-the-existing-original-byte-contract",
+        "status": "PASS"
+      },
+      {
+        "id": "fresh-read-uses-the-same-checkpoint-grant-and-original-header",
+        "status": "PASS"
+      },
+      {
+        "id": "fresh-read-cannot-select-a-second-request-or-a-new-proof",
+        "status": "PASS"
+      },
+      {
+        "id": "fresh-read-must-reopen-the-original-payer-file",
+        "status": "PASS"
+      },
+      {
+        "id": "backend-only-cache-does-not-prove-the-retained-local-response",
+        "status": "PASS"
+      },
+      {
+        "id": "recovered-result-must-match-the-first-original-result-byte-for-byte",
+        "status": "PASS"
+      },
+      {
+        "id": "recovered-success-retains-all-no-authority-and-uncertainty-fields",
+        "status": "PASS"
+      },
+      {
+        "id": "canonical-framing-and-eof-are-required-in-each-transcript",
+        "status": "PASS"
+      },
+      {
+        "id": "non-dp-public-bootstrap-keeps-work-fields-out-of-the-product-run",
+        "status": "PASS"
+      },
+      {
+        "id": "configured-byte-limits-are-not-raised-for-the-harness",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-negative-selection-retains-the-whole-v5-provider-and-v4-signer-bindings",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-negative-selection-adds-only-three-keyless-service-mutations-after-buyer-close",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-negative-mutations-preserve-the-original-signature-key-and-unselected-fields",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-negative-plan-retains-the-same-explicit-ca-origin-and-selected-transport-bounds",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-negative-summary-binds-mutations-without-logging-proof-or-private-paths",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-negative-profile-cannot-select-the-legacy-public-read-profile",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-negative-profile-is-closed-canonical-and-versioned",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-negative-grant-mutation-must-be-different-and-retain-valid-identity-grammar",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-negative-request-mutation-cannot-collide-with-any-original-request",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-negative-cost-mutation-is-explicit-bounded-and-different",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-negative-selection-refuses-to-raise-an-insufficient-provider-transport-budget",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-negative-selection-cannot-replace-the-original-purchase-provider-or-activation",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-negative-selection-rejects-accessors-and-proxies-without-entering-hooks",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-negative-token-copies-proxies-and-extra-arguments-cannot-acquire-a-plan",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-negative-input-mutation-does-not-rebind-a-captured-plan",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-negative-sequence-observes-three-exact-refusals-and-known-client-closes",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-negative-sequence-has-no-repeat-or-resume-after-success",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-negative-sequence-stops-on-an-opaque-reply-and-cannot-resume",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-negative-sequence-stops-on-a-thrown-or-rejected-exchange",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-negative-sequence-requires-the-exact-401-and-body-not-any-error-response",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-negative-sequence-requires-all-interface-close-and-completeness-observations",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-negative-sequence-refuses-bad-port-shapes-before-spending-the-token",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-negative-sequence-reentry-cannot-create-a-fourth-request",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-negative-result-keeps-authentication-offer-payment-release-and-product-gates-open",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-negative-http-collector-sends-one-selected-empty-post-and-never-a-body",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-negative-http-collector-waits-for-both-close-events",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-negative-http-collector-accepts-bounded-split-body-and-case-insensitive-header-names",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-negative-http-collector-refuses-any-success-or-unexpected-error-status",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-negative-http-collector-requires-exact-authentication-and-private-header-policy",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-negative-http-collector-refuses-duplicate-extra-or-non-close-connection-headers",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-negative-http-collector-refuses-changed-truncated-or-oversized-body",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-negative-http-collector-refuses-incomplete-end-early-close-and-bad-chunk-types",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-negative-http-collector-refuses-request-response-errors-and-abort",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-negative-http-collector-refuses-a-duplicate-response-before-completion",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-negative-http-collector-refuses-nonlocal-query-body-or-credential-bearing-targets",
+        "status": "PASS"
+      },
+      {
+        "id": "linux-negative-http-collector-refuses-extra-options-and-proxy-port-without-hooks",
+        "status": "PASS"
+      }
+    ],
+    "failed": 0,
+    "passed": 181,
+    "reexecutedControls": 181,
+    "retainedExactControls": 0
+  },
+  "signatures": 0,
+  "sockets": 0,
+  "sourceBoundDistinctControls": 2542,
+  "sourceProfile": {
+    "bytes": 3036,
+    "path": "qualification/profiles/api-credit-application-source-v96.json",
+    "sha256": "c1639a33599ec23c79f2a0a3867b1bfa6eb29b14992d41195b372c38ec169195"
+  },
+  "sourceTransforms": false,
+  "status": "PASS"
+}

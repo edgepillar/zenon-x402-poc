@@ -18,7 +18,7 @@
       "packageRows": 404,
       "path": "src/api-credit-module-catalog.json",
       "role": "buyer",
-      "sha256": "b3bc66f82ac2bf55c73ca8e8fea1a2d6bedc3375b9b45200c9160a09ddcb0e90",
+      "sha256": "0440701f9125ee75602e631b6d4395c6d8b95200d0874ddb3676babbf0025a21",
       "sourceRows": 178
     },
     {
@@ -32,19 +32,19 @@
     }
   ],
   "dataQualification": {
-    "executedControls": 923,
-    "expectedResultQualification": "G2_FUNDING_INSPECTION_GUARD_CURRENT_SOURCE_DATA",
+    "executedControls": 147,
+    "expectedResultQualification": "G2_STORED_GRANT_OPENING_GUARD_CURRENT_SOURCE_DATA",
     "result": {
-      "bytes": 109606,
-      "path": "qualification/funding-inspection-guard.actual-local-result.json",
-      "sha256": "525c3efa7fb84699a71bc69b264979cda5c433242b238609b66648590d7086d4"
+      "bytes": 45761,
+      "path": "qualification/stored-grant-opening-guard.actual-local-result.json",
+      "sha256": "21985ad4dfffe5b31916eb826ec52886f79b03b0bba213db756484f10507899b"
     },
-    "retainedControls": 1598,
-    "sourceBoundControls": 2521,
+    "retainedControls": 2395,
+    "sourceBoundControls": 2542,
     "sourceProfile": {
-      "bytes": 3041,
-      "path": "qualification/profiles/api-credit-application-source-v95.json",
-      "sha256": "4dec1ac8873eb48b5f00afda00590d211d589c08d10de95f37367b60d96b0fc7"
+      "bytes": 3036,
+      "path": "qualification/profiles/api-credit-application-source-v96.json",
+      "sha256": "c1639a33599ec23c79f2a0a3867b1bfa6eb29b14992d41195b372c38ec169195"
     }
   },
   "profileId": "API_CREDIT_CURRENT_SOURCE_V1",
@@ -54,13 +54,13 @@
     "sdkVersion": "1.0.5",
     "x402CoreVersion": "2.23.0"
   },
-  "sourceBaseline": "c3298fbf63299106d4ad42bf00272a6d9cea5c76",
+  "sourceBaseline": "bc45c650a2cc63ebbed3fe098fd7faf5bb677ace",
   "supplementalSources": [
     {
       "bytes": 6414,
       "format": "module",
       "path": "src/api-credit-native-package-admission.js",
-      "sha256": "78a7fe2225053e9b5d04b74d656b97de6d5de16014c62eb4a79e9cf2f0955a08"
+      "sha256": "5a8055a21a22215fcece9d6ff9d94e28cf5f0a8312772393353ea235ffad2473"
     },
     {
       "bytes": 6429,

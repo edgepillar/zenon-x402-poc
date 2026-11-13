@@ -1,5 +1,41 @@
 # Current API-credit source profile
 
+The current manifest selects the V96 source and declared-memory DATA candidate.
+Its independent SHA-256 is `3c9b1a94f9f567ddaedab1364cb7c44e45462e94c5baffec163c3e0160e49796`.
+
+```sh
+node scripts/report-current-api-credit-profile.mjs --profile-sha256 3c9b1a94f9f567ddaedab1364cb7c44e45462e94c5baffec163c3e0160e49796
+```
+
+This Node source-check command was not executed for V96. The metadata builder
+compared the selected source bytes and existing reporter schema in Python.
+The source selection contains 246 modules plus one root package.json record:
+247 records and 3,428,445 bytes; buyer 180 and provider 105 modules. The 404 fixed
+package rows and bare edges are unchanged metadata. Installed package files were
+not opened or evaluated.
+
+The [V96 result](../qualification/stored-grant-opening-guard.actual-local-result.json) covers 2,542 application controls and
+181 separate Linux memory-harness controls. The [proof manifest](../qualification/stored-grant-opening-guard.proof-manifest.json)
+binds 328 current candidate passes to their actual closed command/source records
+and 2,395 retained controls to exact unchanged graphs and reconsumed original
+command objects. Of the current application controls, 147 were executed now and
+2,395 retain their original observations. The 43 supervisor memory controls are
+separate. The reference comparison preserves 13 failures, 8 passes and exit 1.
+
+See [the stored-query guard contract](STORED_GRANT_OPENING_GUARD.md).
+The V95 files and all historical failures/UNKNOWN outcomes remain unchanged.
+Native application/runtime acceptance, installed namespace, fresh-process
+recovery, physical release, Linux product acceptance and an accepted entry
+command remain unestablished. All G0-G5 product gates remain OPEN. The unchanged
+108-control/22-input hosted selection requires its own exact-head check.
+
+## Retained source-profile history
+
+Descriptions below keep their recorded version scopes. References to current
+describe that recorded version and are not new V96 observations.
+
+### V95 recorded source description
+
 The current manifest selects the V95 source and declared-memory DATA candidate.
 Its independent SHA-256 is `8485edfebf41725e33e14ea88f943332c62211f4b320eef3b2f63995711c8f4e`.
 
@@ -26,7 +62,6 @@ an accepted entry command and Linux product acceptance remain unestablished.
 All G0-G5 gates remain OPEN. The unchanged 108-control/22-input hosted selection
 requires its own exact-head result.
 
-## Retained source-profile history
 
 Descriptions below retain their original observation scopes. References to
 "current" describe the recorded version and are not fresh V95 observations.
