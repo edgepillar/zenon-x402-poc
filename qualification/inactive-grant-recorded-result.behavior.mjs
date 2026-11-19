@@ -222,12 +222,58 @@ check('recorded-http-close-is-cached-and-closes-only-the-reader-once', async () 
   assert.equal(f.s.closes, 1); await f.root.handle(F({}), F({})); assert.equal(f.s.reads, 0); assert.equal(f.s.frames[0].statusCode, 503);
 });
 check('recorded-http-reentrant-close-during-read-cannot-publish-a-success', async () => {
-  let closing; const f = reader({ read(state, root) { closing = root.close(); return result(); } });
-  await held(f); await assert.rejects(closing); assert.equal(f.s.frames[0].statusCode, 503); assert.equal(f.s.closes, 1);
+  const order = [];
+  let closing;
+  const f = reader({
+    read(state, root) {
+      order.push('read');
+      closing = root.close();
+      order.push(state.closes, root.close() === closing);
+      return result();
+    },
+    write() { order.push('write'); },
+    close() { order.push('close'); return result('CLOSED'); },
+  });
+  await held(f);
+  await assert.rejects(closing, /SERVICE_CREDIT_RECORDED_HTTP_SESSION_CLOSE_HELD/);
+  assert.deepEqual(order, ['read', 0, true, 'write', 'close']);
+  assert.equal(f.s.frames[0].statusCode, 503);
+  assert.equal(f.s.closes, 1);
 });
 check('recorded-http-reentrant-close-during-write-cannot-claim-clean-completion', async () => {
-  let closing; const f = reader({ write(state, root) { closing = root.close(); } }); await held(f); await assert.rejects(closing);
-  assert.equal(f.s.frames.length, 1); assert.equal(f.s.closes, 1);
+  const order = [];
+  let closing;
+  const f = reader({
+    write(state, root) {
+      order.push('write');
+      closing = root.close();
+      order.push(state.closes, 'write-return');
+    },
+    close() { order.push('close'); return result('CLOSED'); },
+  });
+  await held(f);
+  await assert.rejects(closing, /SERVICE_CREDIT_RECORDED_HTTP_SESSION_CLOSE_HELD/);
+  assert.deepEqual(order, ['write', 0, 'write-return', 'close']);
+  assert.equal(f.s.frames.length, 1);
+  assert.equal(f.s.closes, 1);
+});
+check('recorded-http-refusal-writer-defers-reader-close-and-retains-held', async () => {
+  const order = [];
+  let closing;
+  const f = reader({
+    write(state, root) {
+      closing = root.close();
+      order.push(state.closes, root.close() === closing, 'write-return');
+    },
+    close() { order.push('close'); return result('CLOSED'); },
+  });
+  await assert.rejects(f.root.handle(F({})), /SERVICE_CREDIT_RECORDED_HTTP_SESSION/);
+  await assert.rejects(closing, /SERVICE_CREDIT_RECORDED_HTTP_SESSION_CLOSE_HELD/);
+  assert.equal(f.root.close(), closing);
+  assert.deepEqual(order, [0, true, 'write-return', 'close']);
+  assert.equal(f.s.reads, 0);
+  assert.equal(f.s.frames[0].statusCode, 503);
+  assert.equal(f.s.closes, 1);
 });
 check('recorded-http-promise-read-is-retained-with-no-late-reply-or-retry', async () => {
   const p = deferred(), f = reader({ read: () => p.promise }); await assert.rejects(f.root.handle(F({}), F({})));

@@ -89,32 +89,34 @@ export function createServiceCreditRecordedHttpSessionCore(options) {
   const methods = [c.readOriginal, c.closeReader, c.writeResponse];
   if (methods.some(fn => typeof fn !== 'function' || types.isProxy(fn) || !Object.isFrozen(fn)) || new Set(methods).size !== 3) fail();
   const grantId = c.admittedGrantId, READ = c.readOriginal, CLOSE = c.closeReader, WRITE = c.writeResponse;
-  let closed = false, held = false, active = false, closing = null;
+  let closed = false, held = false, activeHandles = 0, closing = null, readerCloseStarted = false;
   const opaque = [], retained = F(() => [READ, CLOSE, WRITE, opaque]);
   function hold(value) { held = true; HELD.add(retained); if (value !== undefined) { opaque.push(value); discard(value); } }
   const handle = F(async function handle(request, destination) {
-    let selected = UNAVAILABLE, claimed = false;
-    if (!invariant()) hold();
-    if (arguments.length === 2 && invariant() && !closed && !held && !active) {
-      active = true; claimed = true;
-      try {
-        const value = A(READ, undefined, [request]);
-        if (types.isPromise(value)) { hold(value); fail(); }
-        if (!invariant()) { hold(); fail(); }
-        if (!closed && !held && invariant()) selected = response(value, grantId);
-      } catch { hold(); }
-    }
+    const admitted = arguments.length === 2 && invariant() && !closed && !held && activeHandles === 0;
+    activeHandles++;
     try {
+      let selected = UNAVAILABLE;
+      if (!invariant()) hold();
+      if (admitted) {
+        try {
+          const value = A(READ, undefined, [request]);
+          if (types.isPromise(value)) { hold(value); fail(); }
+          if (!invariant()) { hold(); fail(); }
+          if (!closed && !held && invariant()) selected = response(value, grantId);
+        } catch { hold(); }
+      }
       const value = A(WRITE, undefined, [destination, selected]);
       if (value !== undefined) { hold(value); fail(); }
     } catch { hold(); }
-    finally { if (claimed) active = false; }
+    finally { activeHandles--; finishClose(); }
     if (held) fail();
   });
-  const close = F(function close() {
-    if (arguments.length !== 0) { const out = capability(); out.reject(new TypeError('SERVICE_CREDIT_RECORDED_HTTP_SESSION')); return out.promise; }
-    if (closing !== null) return closing.promise;
-    closing = capability(); closed = true; if (active || !invariant()) hold();
+  function finishClose() {
+    // A refusal still borrows the writer. Do not enter reader close while a
+    // read or a response callback is on the stack.
+    if (closing === null || activeHandles !== 0 || readerCloseStarted) return;
+    readerCloseStarted = true;
     try {
       const value = A(CLOSE, undefined, []);
       if (types.isPromise(value)) { hold(value); fail(); }
@@ -122,6 +124,12 @@ export function createServiceCreditRecordedHttpSessionCore(options) {
       if (result.status !== 'CLOSED' || [result.revision, result.originalRequest, result.execution, result.cachedResult].some(v => v !== null)) fail();
       if (held || !invariant()) fail(); closing.resolve(undefined);
     } catch { hold(); closing.reject(new TypeError('SERVICE_CREDIT_RECORDED_HTTP_SESSION_CLOSE_HELD')); }
+  }
+  const close = F(function close() {
+    if (arguments.length !== 0) { const out = capability(); out.reject(new TypeError('SERVICE_CREDIT_RECORDED_HTTP_SESSION')); return out.promise; }
+    if (closing !== null) return closing.promise;
+    closing = capability(); closed = true; if (activeHandles !== 0 || !invariant()) hold();
+    finishClose();
     return closing.promise;
   });
   return F({ handle, close });

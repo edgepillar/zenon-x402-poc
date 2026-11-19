@@ -2823,8 +2823,8 @@
     },
     {
       "path": "src/service-credit-recorded-http-session-core.js",
-      "bytes": 7918,
-      "sha256": "ff848fb69e433da59b9220ceed1264d39def6be16fa0bfff45fd085028496d4b",
+      "bytes": 8284,
+      "sha256": "9a93de3a4edd8fea7c14ad0a96e486530fbc540297ea84bb3e117ac0f75397dd",
       "format": "module"
     },
     {
