@@ -1,0 +1,1086 @@
+{
+  "G0G5Acceptance": "OPEN",
+  "SDK": 0,
+  "SQLite": 0,
+  "actualPrepare": 0,
+  "cases": [
+    {
+      "id": "inactive-binding-captures-no-clock-or-application-effect",
+      "status": "PASS"
+    },
+    {
+      "id": "inactive-binding-pins-revoked-original-without-changing-units-or-terms",
+      "status": "PASS"
+    },
+    {
+      "id": "inactive-binding-pins-expired-original-without-refreshing-expiry",
+      "status": "PASS"
+    },
+    {
+      "id": "inactive-binding-does-not-become-an-active-grant-admission-path",
+      "status": "PASS"
+    },
+    {
+      "id": "fresh-binding-still-rejects-expired-and-revoked-grants",
+      "status": "PASS"
+    },
+    {
+      "id": "inactive-binding-rejects-every-foreign-original-funding-field",
+      "status": "PASS"
+    },
+    {
+      "id": "inactive-binding-rejects-foreign-id-hash-intent-scheme-flow-and-payer",
+      "status": "PASS"
+    },
+    {
+      "id": "inactive-binding-never-invokes-grant-getters-or-proxy-hooks",
+      "status": "PASS"
+    },
+    {
+      "id": "revoked-original-result-reaches-same-provider-route-with-no-new-debit-or-execution",
+      "status": "PASS"
+    },
+    {
+      "id": "expired-at-current-grant-read-can-recover-even-when-stored-history-was-active",
+      "status": "PASS"
+    },
+    {
+      "id": "inactive-recorded-mode-refuses-new-request-id-without-reserving-credit",
+      "status": "PASS"
+    },
+    {
+      "id": "inactive-unknown-original-remains-held-without-success-or-new-execution",
+      "status": "PASS"
+    },
+    {
+      "id": "inactive-unresolved-original-does-not-enter-an-execution-owner",
+      "status": "PASS"
+    },
+    {
+      "id": "inactive-admission-cannot-upgrade-stored-revocation-to-dispatch-mode",
+      "status": "PASS"
+    },
+    {
+      "id": "active-original-still-selects-per-request-durable-execution",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-http-construction-is-inert-and-rejects-executor-or-clock-ports",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-http-returns-only-the-existing-canonical-success-body",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-http-authentication-refusals-do-not-become-history-success",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-http-missing-conflicting-or-not-invoked-originals-cannot-execute",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-http-pending-and-unknown-never-expose-a-success-body",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-http-known-unavailable-keeps-the-same-reader-for-a-later-original-query",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-http-rejects-foreign-grant-and-broken-execution-cross-links",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-http-rejects-cache-conflicts-and-action-authority",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-http-never-evaluates-result-accessors-or-proxies",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-http-wrong-arity-returns-unavailable-before-reader-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-http-close-is-cached-and-closes-only-the-reader-once",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-http-reentrant-close-during-read-cannot-publish-a-success",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-http-reentrant-close-during-write-cannot-claim-clean-completion",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-http-refusal-writer-defers-reader-close-and-retains-held",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-http-promise-read-is-retained-with-no-late-reply-or-retry",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-http-unknown-read-is-not-retried-after-a-later-success",
+      "status": "PASS"
+    },
+    {
+      "id": "recorded-http-nonvoid-writer-and-close-receipts-stay-held",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-admission-capture-is-inert-and-refuses-extra-or-aliased-ports",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-admission-takes-no-caller-grant-or-payment-argument",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-admission-derives-all-original-identity-pins-from-retained-header",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-admission-not-recorded-keeps-funding-and-ledger-unchanged",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-admission-known-absence-is-bounded-and-never-activates",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-admission-pending-exhausted-and-inflight-never-enter-lookup",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-admission-independent-outcome-pin-precedes-lookup",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-admission-independent-bound-pin-precedes-lookup",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-admission-budget-policy-is-not-renewed-from-store",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-admission-bound-change-during-lookup-stops-before-admission",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-admission-outcome-change-during-lookup-stops-before-admission",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-admission-foreign-or-authoritative-history-is-rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-admission-revoked-history-selects-results-without-refresh-or-dispatch",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-admission-history-getters-are-never-invoked",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-admission-promise-lookup-is-observed-and-never-admitted",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-admission-reentrant-second-lookup-is-refused",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-admission-manual-grant-method-is-fenced-during-lookup",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-admission-close-reentry-stops-with-no-service-session",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-admission-lost-admission-result-does-not-repeat",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-admission-changed-row-after-session-creation-closes-provider",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-admission-second-call-cannot-create-another-session",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-admission-manual-ID-path-keeps-its-contract-when-idle",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-admission-normal-close-caches-receipt-and-preserves-borrowed-stores",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-admission-state-reconstruction-finds-grant-after-lost-local-ID-without-activation",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-admission-preserves-consumption-across-controller-reconstruction-and-exact-replay",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-admission-exhausted-100-unit-grant-still-replays-without-unit-reset",
+      "status": "PASS"
+    },
+    {
+      "id": "revision-owner-construction-is-inert-with-no-reusable-economic-authority",
+      "status": "PASS"
+    },
+    {
+      "id": "revision-owner-first-initialized-read-claims-once-and-requires-readback",
+      "status": "PASS"
+    },
+    {
+      "id": "revision-owner-disabled-execution-does-not-claim-or-initialize",
+      "status": "PASS"
+    },
+    {
+      "id": "revision-owner-repeated-current-reads-never-reclaim",
+      "status": "PASS"
+    },
+    {
+      "id": "revision-owner-second-worker-retires-the-first-reader-without-rebasing",
+      "status": "PASS"
+    },
+    {
+      "id": "revision-owner-stale-writer-enters-only-cas-comparison-and-does-not-write",
+      "status": "PASS"
+    },
+    {
+      "id": "revision-owner-advances-only-on-exact-own-applied-receipts",
+      "status": "PASS"
+    },
+    {
+      "id": "revision-owner-unchanged-receipt-preserves-the-owned-revision",
+      "status": "PASS"
+    },
+    {
+      "id": "revision-owner-jumped-or-regressed-ack-cannot-advance-ownership",
+      "status": "PASS"
+    },
+    {
+      "id": "revision-owner-stale-ack-cannot-use-a-later-snapshot-as-write-success",
+      "status": "PASS"
+    },
+    {
+      "id": "revision-owner-unknown-write-error-preserves-ambiguity-without-read-repair",
+      "status": "PASS"
+    },
+    {
+      "id": "revision-owner-known-unchanged-refusal-keeps-its-prior-business-error",
+      "status": "PASS"
+    },
+    {
+      "id": "revision-owner-known-refusal-with-foreign-revision-is-still-retired",
+      "status": "PASS"
+    },
+    {
+      "id": "revision-owner-nonboolean-error-classification-never-becomes-permission",
+      "status": "PASS"
+    },
+    {
+      "id": "revision-owner-lost-claim-ack-cannot-be-repaired-by-seeing-its-revision",
+      "status": "PASS"
+    },
+    {
+      "id": "revision-owner-claim-requires-applied-exact-increment-and-nonnull-state",
+      "status": "PASS"
+    },
+    {
+      "id": "revision-owner-claim-readback-mismatch-never-publishes-ownership",
+      "status": "PASS"
+    },
+    {
+      "id": "revision-owner-promise-claim-is-not-awaited-or-promoted-later",
+      "status": "PASS"
+    },
+    {
+      "id": "revision-owner-thenable-receipt-does-not-run-user-hooks",
+      "status": "PASS"
+    },
+    {
+      "id": "revision-owner-reentrant-claim-does-not-acquire-a-second-claim",
+      "status": "PASS"
+    },
+    {
+      "id": "revision-owner-reentrant-writer-keeps-an-entered-write-held",
+      "status": "PASS"
+    },
+    {
+      "id": "revision-owner-query-is-fenced-on-both-sides-of-the-read",
+      "status": "PASS"
+    },
+    {
+      "id": "revision-owner-assert-current-stops-a-retired-worker-before-application-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "revision-owner-input-accessors-never-run-or-enter-the-store",
+      "status": "PASS"
+    },
+    {
+      "id": "revision-owner-snapshot-proxy-and-accessors-never-run-hooks",
+      "status": "PASS"
+    },
+    {
+      "id": "revision-owner-rejects-unknown-method-and-direct-claim-dispatch",
+      "status": "PASS"
+    },
+    {
+      "id": "revision-owner-revision-exhaustion-cannot-wrap-or-reserve",
+      "status": "PASS"
+    },
+    {
+      "id": "revision-owner-invalid-revisions-never-start-the-claim",
+      "status": "PASS"
+    },
+    {
+      "id": "revision-owner-port-accessors-and-proxies-are-refused-without-hooks",
+      "status": "PASS"
+    },
+    {
+      "id": "revision-owner-metadata-claim-preserves-the-actual-memory-credit-ledger",
+      "status": "PASS"
+    },
+    {
+      "id": "revision-owner-retired-worker-cannot-reserve-from-the-actual-memory-ledger",
+      "status": "PASS"
+    },
+    {
+      "id": "revision-owner-pure-claim-selector-retains-exact-ledger-and-execution-objects",
+      "status": "PASS"
+    },
+    {
+      "id": "revision-owner-pure-claim-selector-stale-input-produces-no-write-candidate",
+      "status": "PASS"
+    },
+    {
+      "id": "revision-owner-pure-claim-selector-does-not-initialize-a-disabled-contract",
+      "status": "PASS"
+    },
+    {
+      "id": "revision-owner-pure-claim-selector-rejects-revision-exhaustion",
+      "status": "PASS"
+    },
+    {
+      "id": "revision-owner-pure-claim-selector-rejects-accessors-without-hooks",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-independent-expectation-is-closed-and-descriptor-safe",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-requires-one-exact-selected-bound-row",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-foreign-selection-origin-or-row-pin-is-refused",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-row-getters-and-json-hooks-never-run",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-outcome-digest-precedes-parsing-the-record",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-full-original-publication-is-compared",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-settled-replay-is-the-full-exact-original-outcome",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-pending-keeps-consumed-observations-and-has-no-continuation",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-exhausted-budget-is-never-renewed",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-first-inflight-remains-outcome-unknown",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-observation-inflight-does-not-publish-the-previous-pending-outcome",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-zero-observer-budget-remains-zero",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-policy-change-is-not-a-budget-reset",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-changed-frame-is-not-a-new-issued-context",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-missing-record-never-falls-back-to-fresh-funding",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-foreign-original-header-is-rejected-before-store-read",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-wrong-method-or-host-is-rejected-before-store-read",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-changed-record-latches-held-without-repair",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-row-change-across-read-is-held",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-lost-read-receipt-is-not-retried",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-rejected-promise-read-is-observed-with-no-late-repair",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-opaque-thenable-is-retained-without-invoking-hooks",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-reentrant-close-during-read-prevents-a-reply",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-close-is-logical-idempotent-and-never-closes-borrowed-store",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-actual-controller-starts-with-history-and-no-service-session",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-unpaid-request-cannot-issue-another-challenge",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-original-paid-replay-returns-bound-with-no-sdk-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-pending-controller-never-creates-grant-or-observes-again",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-inflight-http-remains-503-with-controlled-history",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-service-needs-the-external-committed-original-grant",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-foreign-committed-grant-is-refused-before-session",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-outcome-change-during-grant-read-prevents-session",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-grant-read-reentrant-close-prevents-session",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-model-100-requests-and-exact-replay-use-one-original-grant",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-second-controller-preserves-model-counters-and-exact-replay",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-model-unknown-execution-stays-reserved-after-state-reconstruction",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-startup-row-change-after-factory-await-refuses-listener",
+      "status": "PASS"
+    },
+    {
+      "id": "provider-recovery-inflight-refusal-uses-one-snapshot-before-settling-completion",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-inspection-is-inert-and-takes-no-grant-or-payment-input",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-inspection-returns-existing-history-without-admission-or-dispatch",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-inspection-not-recorded-does-not-discharge-payment-or-liability",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-inspection-preserves-revocation-expiry-and-all-unit-counters",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-inspection-result-is-detached-frozen-and-keeps-all-original-pins",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-inspection-and-admission-share-the-existing-sixteen-attempt-budget",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-inspection-does-not-implicitly-admit-but-allows-a-later-explicit-admission",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-inspection-pending-exhausted-and-inflight-enter-no-history-reader",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-inspection-independent-bound-and-outcome-pins-precede-lookup",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-inspection-row-or-outcome-drift-cannot-return-old-success",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-inspection-same-provider-hash-is-rechecked-after-the-lookup",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-inspection-rejects-foreign-or-authoritative-history",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-inspection-accessors-are-not-invoked",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-inspection-observes-and-refuses-an-asynchronous-history-result",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-inspection-fences-recursive-read-admission-and-manual-grant-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-inspection-close-during-lookup-remains-held-with-one-original-stop",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-inspection-reconstructs-consumed-history-without-opening-a-session",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-inspection-command-is-explicit-and-unavailable-in-fresh-mode",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-inspection-control-composes-with-the-actual-memory-original-owner",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-inspection-control-duplicate-id-never-repeats-the-read",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-inspection-lost-output-stays-held-without-automatic-read-or-admission",
+      "status": "PASS"
+    },
+    {
+      "id": "original-grant-inspection-owned-store-wrapper-preserves-zero-argument-read-only-routing",
+      "status": "PASS"
+    },
+    {
+      "id": "active-original-results-binding-is-explicit-and-inactive-default-stays-strict",
+      "status": "PASS"
+    },
+    {
+      "id": "active-original-results-binding-accepts-all-three-original-lifecycles-without-refresh",
+      "status": "PASS"
+    },
+    {
+      "id": "active-original-results-binding-keeps-original-payer-scheme-flow-and-identity",
+      "status": "PASS"
+    },
+    {
+      "id": "active-original-results-binding-refuses-caller-mode-clock-and-getter-options",
+      "status": "PASS"
+    },
+    {
+      "id": "active-original-results-opens-only-the-recorded-reader-for-an-active-grant",
+      "status": "PASS"
+    },
+    {
+      "id": "active-original-results-rejects-new-request-ids-without-debit-or-execution",
+      "status": "PASS"
+    },
+    {
+      "id": "active-original-results-reconstructed-success-replays-canonical-cache-with-no-new-effect",
+      "status": "PASS"
+    },
+    {
+      "id": "active-original-results-preserves-one-hundred-consumed-units-and-can-still-replay",
+      "status": "PASS"
+    },
+    {
+      "id": "active-original-results-unknown-and-unfinished-originals-remain-unavailable-and-held",
+      "status": "PASS"
+    },
+    {
+      "id": "active-original-results-does-not-disable-normal-admission-and-new-metered-calls",
+      "status": "PASS"
+    },
+    {
+      "id": "active-original-results-cannot-upgrade-or-open-a-second-session",
+      "status": "PASS"
+    },
+    {
+      "id": "active-original-results-root-rejects-unknown-mode-and-extra-arguments-before-store-read",
+      "status": "PASS"
+    },
+    {
+      "id": "active-original-results-takes-no-caller-grant-id-or-payment",
+      "status": "PASS"
+    },
+    {
+      "id": "active-original-results-absent-record-and-pending-state-never-open-a-session",
+      "status": "PASS"
+    },
+    {
+      "id": "active-original-results-shares-read-and-admission-budget-without-resetting-it",
+      "status": "PASS"
+    },
+    {
+      "id": "active-original-results-independent-bound-and-outcome-pins-precede-lookup",
+      "status": "PASS"
+    },
+    {
+      "id": "active-original-results-provider-or-row-drift-stops-before-result-admission",
+      "status": "PASS"
+    },
+    {
+      "id": "active-original-results-a-miswired-execution-admission-is-never-accepted",
+      "status": "PASS"
+    },
+    {
+      "id": "active-original-results-lost-admission-receipt-is-not-retried-or-upgraded",
+      "status": "PASS"
+    },
+    {
+      "id": "active-original-results-close-during-history-lookup-fences-both-admission-paths",
+      "status": "PASS"
+    },
+    {
+      "id": "active-original-results-command-is-recorded-only-and-rejects-caller-arguments",
+      "status": "PASS"
+    },
+    {
+      "id": "active-original-results-command-routes-to-the-actual-local-result-admission-owner",
+      "status": "PASS"
+    },
+    {
+      "id": "active-original-results-lost-command-output-never-enters-the-next-admission",
+      "status": "PASS"
+    },
+    {
+      "id": "active-original-results-duplicate-command-id-never-repeats-admission",
+      "status": "PASS"
+    },
+    {
+      "id": "expired-funding-history-preserves-obligation-when-no-grant-was-recorded",
+      "status": "PASS"
+    },
+    {
+      "id": "expired-funding-history-keeps-existing-grant-counters-separate-from-liability",
+      "status": "PASS"
+    },
+    {
+      "id": "expired-funding-history-preserves-revocation-and-original-absolute-expiries",
+      "status": "PASS"
+    },
+    {
+      "id": "expired-funding-history-v1-original-keeps-the-existing-closed-grant-history-bytes",
+      "status": "PASS"
+    },
+    {
+      "id": "expired-funding-history-requires-the-pinned-original-challenge-before-lookup",
+      "status": "PASS"
+    },
+    {
+      "id": "expired-funding-history-rejects-receipt-expiry-that-differs-from-the-original-challenge",
+      "status": "PASS"
+    },
+    {
+      "id": "expired-funding-history-requires-the-original-challenge-funding-commitment",
+      "status": "PASS"
+    },
+    {
+      "id": "expired-funding-history-old-v1-digest-cannot-silently-select-the-new-record",
+      "status": "PASS"
+    },
+    {
+      "id": "expired-funding-history-after-lookup-row-drift-is-withheld",
+      "status": "PASS"
+    },
+    {
+      "id": "expired-funding-history-after-lookup-record-drift-is-withheld",
+      "status": "PASS"
+    },
+    {
+      "id": "expired-funding-history-close-during-lookup-cannot-publish-a-late-obligation",
+      "status": "PASS"
+    },
+    {
+      "id": "expired-funding-history-thenable-lookup-does-not-run-hooks-or-retry",
+      "status": "PASS"
+    },
+    {
+      "id": "expired-funding-history-remains-detached-and-deeply-frozen",
+      "status": "PASS"
+    },
+    {
+      "id": "expired-funding-history-shares-the-existing-sixteen-attempt-budget",
+      "status": "PASS"
+    },
+    {
+      "id": "expired-funding-history-existing-control-operation-returns-the-closed-history",
+      "status": "PASS"
+    },
+    {
+      "id": "expired-funding-history-lost-command-output-does-not-read-or-admit-again",
+      "status": "PASS"
+    },
+    {
+      "id": "expired-funding-history-memory-reconstruction-retains-identical-obligation-and-balances",
+      "status": "PASS"
+    },
+    {
+      "id": "original-observer-same-retained-tuple-precedes-one-declared-file-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "original-observer-selection-does-not-read-or-write-a-store-or-activate-a-grant",
+      "status": "PASS"
+    },
+    {
+      "id": "original-observer-before-funding-has-no-file-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "original-observer-pending-bound-ack-cannot-choose-an-observer",
+      "status": "PASS"
+    },
+    {
+      "id": "original-observer-active-funding-cannot-enter-another-owner",
+      "status": "PASS"
+    },
+    {
+      "id": "original-observer-foreign-filename-is-refused-before-file-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "original-observer-foreign-record-key-is-refused-before-file-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "original-observer-extra-path-or-loader-fields-are-not-an-opening-capability",
+      "status": "PASS"
+    },
+    {
+      "id": "original-observer-malformed-or-partial-tuples-are-refused-before-selection",
+      "status": "PASS"
+    },
+    {
+      "id": "original-observer-accessor-and-proxy-inputs-invoke-no-hooks",
+      "status": "PASS"
+    },
+    {
+      "id": "original-observer-current-guard-is-required-again-after-selection",
+      "status": "PASS"
+    },
+    {
+      "id": "original-observer-nonvoid-guard-never-enters-the-opener",
+      "status": "PASS"
+    },
+    {
+      "id": "original-observer-different-selected-tuple-cannot-replace-the-command",
+      "status": "PASS"
+    },
+    {
+      "id": "original-observer-opaque-selection-does-not-read-then-or-open",
+      "status": "PASS"
+    },
+    {
+      "id": "original-observer-actual-opener-return-is-forwarded-without-normalization",
+      "status": "PASS"
+    },
+    {
+      "id": "original-observer-opening-failure-never-retries-or-closes-another-owner",
+      "status": "PASS"
+    },
+    {
+      "id": "original-observer-closed-provider-cannot-select-a-file",
+      "status": "PASS"
+    },
+    {
+      "id": "original-observer-service-admission-retires-new-activation-file-selection",
+      "status": "PASS"
+    },
+    {
+      "id": "original-observer-tuple-is-not-exposed-by-public-provider-snapshots",
+      "status": "PASS"
+    },
+    {
+      "id": "original-observer-selected-capability-is-forwarded-through-the-real-store-owner",
+      "status": "PASS"
+    },
+    {
+      "id": "original-observer-extra-arguments-do-not-enter-the-store-owner-target",
+      "status": "PASS"
+    },
+    {
+      "id": "original-observer-arbitrary-open-close-or-signing-ports-are-rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-configuration-and-owner-creation-have-no-operational-callbacks",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-configuration-captures-paths-offer-and-bounds-before-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-recorded-mode-is-explicit-existing-only-with-independent-pins",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-configuration-getters-never-run",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-tls-byte-copies-are-independent-and-release-clears-only-the-copies",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-claims-before-stores-and-starts-one-actual-selected-root",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-clean-close-orders-root-intake-service-and-lease-release",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-close-before-start-acquires-no-store-or-provider",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-known-lease-refusal-has-no-store-opening-or-fallback",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-promised-service-opening-is-not-adopted-and-rejection-is-observed",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-intake-opening-loss-retains-first-store-without-force-close",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-aliased-store-handles-never-reach-provider-opening",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-opaque-opening-result-does-not-invoke-then-getters",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-close-during-opening-rejects-and-closes-late-root-once-with-stores-held",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-returned-root-accessors-are-not-invoked",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-listen-result-must-match-real-listening-contract",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-listen-rejection-never-closes-borrowed-or-unknown-opening-resources",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-root-close-must-be-a-genuine-promise",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-nonvoid-root-close-is-held-before-sql-close",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-live-native-metrics-prevent-sql-close-despite-closed-label",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-close-view-getters-never-run",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-intake-close-loss-prevents-service-close-and-lease-release",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-asynchronous-intake-close-is-observed-but-never-a-sync-ack",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-service-close-nonvoid-result-keeps-lease-held",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-unknown-release-is-not-retried-or-reported-released",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-reentrant-start-during-sql-close-is-fenced",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-rejected-operator-result-is-held-and-active-count-is-not-negative",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-close-during-operator-work-fences-late-success-and-keeps-stores",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-sync-operator-close-reentry-cannot-release-stores",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-method-arity-refusal-has-no-operator-entry",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-successful-operator-result-preserves-captured-method-contract",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-operator-admission-is-bounded-without-reentering-target",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-actual-recorded-controller-and-reference-ledger-preserve-100-calls-and-replay-before-store-close",
+      "status": "PASS"
+    },
+    {
+      "id": "owned-provider-partial-ingress-metrics-never-substitute-for-release-proof",
+      "status": "PASS"
+    }
+  ],
+  "failed": 0,
+  "failureInventory": {
+    "bytes": 544,
+    "path": "qualification/recorded-http-close.failure-inventory.json",
+    "sha256": "7849bd877914223fcfa21b719f741fc14cb0c072a48e4b6b24e60cb0825812ec"
+  },
+  "groups": [
+    {
+      "entry": "qualification/inactive-grant-recorded-result.behavior.mjs",
+      "passed": 32
+    },
+    {
+      "entry": "qualification/issued-original-grant-admission.behavior.mjs",
+      "passed": 26
+    },
+    {
+      "entry": "qualification/execution-revision-owner.behavior.mjs",
+      "passed": 36
+    },
+    {
+      "entry": "qualification/issued-provider-recovery.behavior.mjs",
+      "passed": 38
+    },
+    {
+      "entry": "qualification/original-grant-inspection.behavior.mjs",
+      "passed": 22
+    },
+    {
+      "entry": "qualification/active-original-results.behavior.mjs",
+      "passed": 24
+    },
+    {
+      "entry": "qualification/expired-funding-history.behavior.mjs",
+      "passed": 17
+    },
+    {
+      "entry": "qualification/original-observer-admission.behavior.mjs",
+      "passed": 22
+    },
+    {
+      "entry": "qualification/issued-provider-store-owner.behavior.mjs",
+      "passed": 34
+    }
+  ],
+  "keys": 0,
+  "nativeExecutions": 0,
+  "nativeQualification": "NOT_EXECUTED",
+  "newControls": 1,
+  "nodeChildren": 0,
+  "nonceSearches": 0,
+  "passed": 251,
+  "payouts": 0,
+  "proofManifest": {
+    "bytes": 37299,
+    "path": "qualification/recorded-http-close.proof-manifest.json",
+    "sha256": "68a9d79b2a30c347ea9920757284ea2cd4fe92b4e6e418e7451552b2db0f4ac9"
+  },
+  "qualification": "G2_RECORDED_HTTP_CLOSE_CURRENT_SOURCE_DATA",
+  "reexecutedRelevantControls": 250,
+  "retainedExactControls": 2292,
+  "separateHarness": {
+    "allSourceBoundDistinctControls": 2724,
+    "reexecutedControls": 0,
+    "retainedExactControls": 181
+  },
+  "signatures": 0,
+  "sockets": 0,
+  "sourceBoundDistinctControls": 2543,
+  "sourceProfile": {
+    "bytes": 3041,
+    "path": "qualification/profiles/api-credit-application-source-v97.json",
+    "sha256": "f15693c37de0b1712db355a5206d9e7821696ccd683f4b7146c231eea0cdc33f"
+  },
+  "status": "PASS"
+}

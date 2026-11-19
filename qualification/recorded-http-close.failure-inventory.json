@@ -1,0 +1,15 @@
+{
+  "G0G5": "OPEN",
+  "currentCandidateUnexpectedCancellations": 0,
+  "currentCandidateUnexpectedFailures": 0,
+  "currentCandidateUnexpectedSkips": 0,
+  "historicalFailureAndUNKNOWNRecordsUnchanged": true,
+  "nativeQualification": "NOT_EXECUTED",
+  "predecessorInventory": {
+    "bytes": 3019,
+    "path": "qualification/stored-grant-opening-guard.failure-inventory.json",
+    "sha256": "da767d128d2bd269a692b4296de1862eb3927cf06bef2e4a66f1b2e0e1dbc745"
+  },
+  "qualification": "G2_RECORDED_HTTP_CLOSE_FAILURE_CLASSIFICATION",
+  "version": 1
+}

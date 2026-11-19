@@ -1,0 +1,82 @@
+{
+  "G0G5Acceptance": "OPEN",
+  "all404PackageRowsAndBareEdgesUnchanged": true,
+  "buyerSourceGraphUnchanged": true,
+  "currentLocalData": {
+    "additionalSupervisorHarnessControls": 43,
+    "allSourceBoundControls": 2724,
+    "freshRegressionManagedCommands": 1,
+    "freshRegressionNodeChildren": 9,
+    "new": 1,
+    "reexecuted": 250,
+    "retainedExact": 2292,
+    "separateHarnessReexecuted": 0,
+    "separateHarnessRetained": 181,
+    "sourceBoundDistinct": 2543
+  },
+  "currentReporterCoreMetadataPlan": "NOT_EXECUTED",
+  "failureInventory": {
+    "bytes": 544,
+    "path": "qualification/recorded-http-close.failure-inventory.json",
+    "sha256": "7849bd877914223fcfa21b719f741fc14cb0c072a48e4b6b24e60cb0825812ec"
+  },
+  "hostedSelectionChanged": false,
+  "nativeQualification": "NOT_EXECUTED",
+  "nativeSourceGraphs": {
+    "buyer": 180,
+    "bytes": 3428811,
+    "provider": 105,
+    "rootMetadataFiles": 1,
+    "sourceModules": 246,
+    "sourceOnly": true,
+    "union": 247,
+    "unionIncludesRootMetadata": true
+  },
+  "newCasesIncludedInHostedCI": false,
+  "predecessorProfile": {
+    "bytes": 3036,
+    "path": "qualification/profiles/api-credit-application-source-v96.json",
+    "sha256": "c1639a33599ec23c79f2a0a3867b1bfa6eb29b14992d41195b372c38ec169195"
+  },
+  "product": "ONE_FUNDING_ONE_GRANT_MANY_METERED_CALLS_ORIGINAL_REPLAY_RECOVERY",
+  "profileStorage": "EXACT_PREDECESSOR_PROOF_REFERENCE_WITH_EXPLICIT_SOURCE_AND_ROLE_REPLACEMENTS",
+  "proofManifest": {
+    "bytes": 37299,
+    "path": "qualification/recorded-http-close.proof-manifest.json",
+    "sha256": "68a9d79b2a30c347ea9920757284ea2cd4fe92b4e6e418e7451552b2db0f4ac9"
+  },
+  "providerSourceGraphUnchanged": false,
+  "qualifiedCodeRevision": "d0a595e2ee6f94f63522df95a0ac045977eafdbc",
+  "selectedHostedCIControls": 108,
+  "selectedHostedCISourceInputs": 22,
+  "sourceDelta": [
+    {
+      "bytes": 22909,
+      "gitBlob": "6d1ab3cd4d71fbb8b8290652580ad8d292b1f5c7",
+      "path": "qualification/inactive-grant-recorded-result.behavior.mjs",
+      "sha256": "68fa621dc7eabeead744695a16e84b3a19f1d5056ce3d1a9904368a861152b17"
+    },
+    {
+      "bytes": 104624,
+      "gitBlob": "f5a3c505dda6bc587ad12c99599a35701fc0b573",
+      "path": "src/issued-provider-module-catalog.json",
+      "sha256": "81513f2e81449819e05ef2641e6993aea2b74cac97cfc4e01ec5f6e1407f194d"
+    },
+    {
+      "bytes": 6429,
+      "gitBlob": "86f1af5ec0c57c740048f75fb9f99ccbdad5361f",
+      "path": "src/issued-provider-native-package-admission.js",
+      "sha256": "2d61d624365b3cc665839de2a99a0f00de749dc8db71fd57b4357c9a4a34d49b"
+    },
+    {
+      "bytes": 8284,
+      "gitBlob": "0ac1e933b7443fdb1163f5fa66955af3246c15d0",
+      "path": "src/service-credit-recorded-http-session-core.js",
+      "sha256": "9a93de3a4edd8fea7c14ad0a96e486530fbc540297ea84bb3e117ac0f75397dd"
+    }
+  ],
+  "sourceMain": "b62308868729b83847a382ba2314dcaf743e2979",
+  "sourceMainTree": "ddbf84fcaacf5ae6ec9a14fe9317ec217e2f1285",
+  "status": "SOURCE_AND_DECLARED_MEMORY_DATA_CANDIDATE",
+  "version": 97
+}
