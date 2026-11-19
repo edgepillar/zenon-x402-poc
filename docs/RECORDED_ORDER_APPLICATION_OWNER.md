@@ -14,6 +14,13 @@ returns the underlying application's exact close promise. Repeated close calls
 share that promise; no new timeout, retry, store close or recovery owner is
 introduced. A construction refusal also revokes only the newly created adapter.
 
+An exact repeat of a committed delivery uses the retained receipt from the
+validated fulfillment journal. Reuse requires the same original digest, selected
+route, one-call quantity, and recorded-result receipt format. It preserves the
+recorded outcome when the inspection allowance has been spent or the application
+recovers the same journal with a new owner. Unresolved deliveries require the
+selected ledger reader. A held reader continues to refuse operations.
+
 This ordering also applies when a selected ledger callback requests application
 close. A late returned row cannot authorize delivery, and no later ledger reader
 may be entered through the revoked adapter. The underlying application's journal
@@ -26,12 +33,14 @@ payment authority. Original recovery still uses both existing fenced journals
 and their independently pinned recovery digest; creating this wrapper does not
 authenticate a replacement ledger or recover an uncertain external effect.
 
-This component remains source development only; its 14 focused memory-port
-controls have not run. The predecessor's first selected batch ended FAILURE:
-83 controls were accepted, 35 reported PASS but omitted a required output field,
-and the final 45 were not started. The failed record remains immutable. A source
-reporting correction leaves all 35 assertions unchanged. A fresh combined
-177-control selection is planned, with no new completion claim. The wrapper is not selected by the native application, changes no
-package catalog or default source profile, and establishes no G0-G5 acceptance.
-No native application, installed SDK/core, SQLite, socket, key/signature, nonce,
-PREPARE, payment or process-reopen test is part of this source step.
+An independent review of the prior revision reported 11 passes and three
+failures. Source inspection traced the three expectations to a read of the
+ledger on each repeat, including after memory recovery. The fulfillment owner
+compared the retained receipt after rechecking it through the read adapter.
+That path performs a read and consumes an inspection attempt.
+
+The updated selection includes 15 focused memory controls. The combined batch
+plans 178 controls, including the predecessor's 163, on the pinned local Node
+runtime. The predecessor's first batch remains recorded as a failure because
+one output packet omitted a required field. These controls cover synthetic
+memory stores and original records. Native product acceptance remains open.

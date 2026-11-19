@@ -69,7 +69,7 @@ check('recorded-owned-construction-borrows-no-ledger-and-opens-no-funding', asyn
   assert.equal(f.h.calls.closes, 0); f.h.d.close();
 });
 check('recorded-owned-one-funding-one-grant-one-hundred-originals-and-replay', async () => {
-  const f = await fixture(), app = await f.ready();
+  const f = await fixture({ maximumAttempts: 100 }), app = await f.ready();
   let last;
   for (let i = 0; i < 100; i++) {
     const o = f.h.original('owned.request.' + i), deliveryId = 'owned.delivery.' + i;
@@ -77,11 +77,14 @@ check('recorded-owned-one-funding-one-grant-one-hundred-originals-and-replay', a
     app.recordDelivery(deliveryId, o.recordDigest); last = { o, deliveryId };
   }
   const journal = f.journal, writes = f.calls.writes, state = JSON.stringify(f.h.model.exportState());
+  f.h.grantHook = () => assert.fail('repeat must use the retained receipt');
+  f.h.requestHook = () => assert.fail('repeat must use the retained receipt');
   app.recordDelivery(last.deliveryId, last.o.recordDigest);
   assert.equal(f.journal, journal); assert.equal(f.calls.writes, writes); assert.equal(JSON.stringify(f.h.model.exportState()), state);
   assert.equal(app.readFunding().quantityOwed, 0); assert.equal(app.readLiability().deliveredQuantity, 100);
   assert.equal(f.calls.funding, 1); assert.equal(f.h.model.exportState().grants.length, 1);
   assert.equal(f.h.calls.debit, 100); assert.equal(f.h.calls.execute, 100);
+  assert.equal(f.h.calls.grant, 100); assert.equal(f.h.calls.request, 100);
   assert.equal(f.h.model.getGrant(last.o.grantId).consumedUnits, 100);
   assert.equal(app.recordedDeliverySnapshot().attempts, 100);
   assert.equal(await app.close(), undefined); assert.equal(app.recordedDeliverySnapshot().closed, true);
@@ -93,9 +96,11 @@ check('recorded-owned-delivery-and-exact-repeat-use-one-funding-and-one-model-ef
   app.recordDelivery('delivery.owned.1', o.recordDigest);
   const journal = f.journal, writes = f.calls.writes;
   app.recordDelivery('delivery.owned.1', o.recordDigest);
+  assert.throws(() => app.recordDelivery('delivery.owned.1', 'sha256:' + 'f'.repeat(64)), /PROOF_REJECTED/);
   assert.equal(f.journal, journal); assert.equal(f.calls.writes, writes);
   assert.equal(app.readFunding().quantityOwed, 99); assert.equal(f.calls.funding, 1);
   assert.equal(f.h.calls.debit, 1); assert.equal(f.h.calls.execute, 1);
+  assert.equal(f.h.calls.grant, 1); assert.equal(f.h.calls.request, 1);
   assert.equal(f.h.model.getGrant(o.grantId).consumedUnits, 1); assert.equal(app.recordedDeliverySnapshot().attempts, 1);
   assert.equal(await app.close(), undefined); assert.equal(f.h.calls.closes, 0); f.h.d.close();
 });
@@ -170,11 +175,30 @@ check('recorded-owned-memory-recovery-keeps-the-receipt-with-no-new-verification
   app.beginDelivery(o.recordJson, o.recordDigest, 'delivery.owned.1', 1); f.h.execute(o); app.recordDelivery('delivery.owned.1', o.recordDigest);
   const record = app.exportRecoveryRecord(), original = f.row().deliveries[0].originalJson;
   assert.equal(await app.close(), undefined); const next = f.restore(record); next.start();
+  f.h.grantHook = () => assert.fail('recovery repeat must use the retained receipt');
+  f.h.requestHook = () => assert.fail('recovery repeat must use the retained receipt');
   next.recordDelivery('delivery.owned.1', o.recordDigest);
   assert.equal(next.readFunding().quantityOwed, 99); assert.equal(f.row().deliveries[0].originalJson, original);
   assert.equal(f.calls.funding, 1); assert.equal(f.h.calls.debit, 1); assert.equal(f.h.calls.execute, 1);
+  assert.equal(f.h.calls.grant, 1); assert.equal(f.h.calls.request, 1);
   assert.equal(next.recordedDeliverySnapshot().attempts, 0); assert.equal(app.recordedDeliverySnapshot().closed, true);
   assert.equal(await next.close(), undefined); assert.equal(f.h.calls.closes, 0); f.h.d.close();
+});
+check('recorded-owned-held-reader-refuses-even-an-exact-committed-delivery', async () => {
+  const f = await fixture(), app = await f.ready(), original = f.h.original();
+  app.beginDelivery(original.recordJson, original.recordDigest, 'delivery.owned.1', 1);
+  f.h.execute(original); app.recordDelivery('delivery.owned.1', original.recordDigest);
+  const pending = f.h.original('request.owned.pending');
+  app.beginDelivery(pending.recordJson, pending.recordDigest, 'delivery.owned.2', 1);
+  const journal = f.journal, writes = f.calls.writes;
+  f.h.grantHook = () => { throw Error('declared ledger failure'); };
+  assert.throws(() => app.recordDelivery('delivery.owned.2', pending.recordDigest), /PROOF_REJECTED/);
+  assert.equal(app.recordedDeliverySnapshot().held, true);
+  const reads = [f.h.calls.grant, f.h.calls.request];
+  assert.throws(() => app.recordDelivery('delivery.owned.1', original.recordDigest), /PROOF_REJECTED/);
+  assert.deepEqual([f.h.calls.grant, f.h.calls.request], reads);
+  assert.equal(f.journal, journal); assert.equal(f.calls.writes, writes);
+  assert.equal(await app.close(), undefined); f.h.d.close();
 });
 check('recorded-owned-delivery-ack-loss-recovers-the-same-committed-original', async () => {
   const f = await fixture(), app = await f.ready(), o = f.h.original();

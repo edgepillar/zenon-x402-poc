@@ -2,7 +2,7 @@ import { types } from 'node:util';
 import { capturePurchasedOrderApplicationSelection, createPurchasedOrderApplicationCore } from './service-purchase-order-application-core.js';
 import { createPurchasedOrderRecordedDeliveryVerifier } from './service-purchase-order-recorded-delivery.js';
 
-const F = Object.freeze, D = Object.getOwnPropertyDescriptor;
+const F = Object.freeze, D = Object.getOwnPropertyDescriptor, parse = JSON.parse;
 const OPTIONS = ['selection', 'fundingBackend', 'fulfillmentBackend', 'originalStore',
   'verifyFundingEvidence', 'verifyCompensation', 'recordedDelivery', 'clock', 'deadlines'];
 const PURCHASE = ['termsJson', 'termsDigest', 'paymentCheckpointJson', 'paymentPinsJson', 'fundingContextJson'];
@@ -41,12 +41,26 @@ export function createPurchasedOrderRecordedApplicationCore(options) {
   const o = fields(options), selection = capturePurchasedOrderApplicationSelection(o.selection);
   if (typeof o.verifyCompensation !== 'function' || types.isProxy(o.verifyCompensation)) fail();
   const adapter = createPurchasedOrderRecordedDeliveryVerifier(...PURCHASE.map(key => selection.funding.purchase[key]), o.recordedDelivery);
+  const serviceResourceUrl = D(o.recordedDelivery, 'serviceResourceUrl').value;
+  function verifyDelivery(candidate, delivery) {
+    // The owner supplies the context from its validated journal. A terminal,
+    // matching receipt can be returned for the owner's existing equality check.
+    if (delivery.status === 'DELIVERED' && candidate === delivery.originalDigest
+        && delivery.serviceResourceUrl === serviceResourceUrl && delivery.quantity === 1) {
+      const state = adapter.snapshot();
+      if (!state.closed && !state.held) {
+        const receipt = parse(delivery.proofJson);
+        if (receipt.evidenceId === 'recorded.' + receipt.resultDigest.slice(7)) return delivery.proofJson;
+      }
+    }
+    return adapter.verifyDelivery(candidate, delivery);
+  }
   let app;
   try {
     app = createPurchasedOrderApplicationCore({ selection, fundingBackend: o.fundingBackend,
       fulfillmentBackend: o.fulfillmentBackend, originalStore: o.originalStore,
       verifyFundingEvidence: o.verifyFundingEvidence,
-      verifier: { verifyDelivery: adapter.verifyDelivery, verifyCompensation: o.verifyCompensation },
+      verifier: { verifyDelivery, verifyCompensation: o.verifyCompensation },
       clock: o.clock, deadlines: o.deadlines });
   } catch (error) {
     // Only the adapter created here is retired. No partially selected borrowed
