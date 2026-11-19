@@ -37,6 +37,12 @@ refused. A concurrent ownership change causes the exact subsequent claim to fail
 the application does not retry or silently read a newer envelope to take over.
 The new recovery profile does not replace the older funding-only record format.
 
+The paired application holds its synchronous operation guard through both
+backend reads. Nested exports and live operations are refused during capture.
+A close that starts during either read invalidates that capture and defers
+logical journal retirement until the read returns. An explicit export after
+close settlement can read the same original records.
+
 Close first revokes liability access and requests the actual bounded funding
 close. A late success cannot create a liability copy or repair a rejected close.
 Borrowed backends and native database handles are never closed here. Logical

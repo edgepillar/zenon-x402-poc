@@ -180,9 +180,16 @@ export function createPurchasedOrderApplicationCore(options) {
     return closing.promise;
   });
   const exportRecoveryRecord = F(function exportRecoveryRecord() {
-    if (arguments.length !== 0) fail(); if (!startRequested) fail('NOT_STARTED'); if (starting || active || synchronous) fail('BUSY');
+    if (arguments.length !== 0) fail();
+    if (!startRequested) fail('NOT_STARTED');
+    if (starting || active || synchronous || closeOutcome === 'PENDING') fail('BUSY');
+    const closeAtEntry = closing;
+    synchronous = true;
     try {
-      const f = funding.exportRecoveryRecord(), raw = readJournal(purchase.orderId, purchase.paymentScope);
+      const f = funding.exportRecoveryRecord();
+      if (closing !== closeAtEntry) fail('RECOVERY_READ_UNKNOWN');
+      const raw = readJournal(purchase.orderId, purchase.paymentScope);
+      if (closing !== closeAtEntry) fail('RECOVERY_READ_UNKNOWN');
       const selectedFunding = purchasedOrderFundingSelectionFromRecovery(f.recordJson, f.recordDigest, selection.funding.ownership.ownerId);
       bindJournal({ ...selection, funding: selectedFunding }, purchase, raw, selectedFunding.ownership.expectedEnvelopeJson);
       const recordJson = JSON.stringify({ version: 1, profile: 'PURCHASE_ORDER_APPLICATION_V1', fundingRecoveryJson: f.recordJson,
@@ -190,6 +197,10 @@ export function createPurchasedOrderApplicationCore(options) {
       return F({ recordJson, recordDigest: purchasedOrderApplicationRecoveryDigest(recordJson), authority: 'NONE',
         snapshotAtomicAcrossStores: false, mayDispatch: false });
     } catch { held = true; fail('RECOVERY_READ_UNKNOWN'); }
+    finally {
+      synchronous = false;
+      if (closing !== closeAtEntry) closeJournal();
+    }
   });
   return F({ start, verifyFunding, close, exportRecoveryRecord,
     readFunding: F(function readFunding() { if (arguments.length !== 0) fail(); available(); return view(); }),

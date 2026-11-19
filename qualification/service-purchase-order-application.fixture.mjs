@@ -15,11 +15,25 @@ export async function stop(app) { try { await app.close(); } catch { assert.equa
 export function applicationHarness() {
   const h = orderFulfillmentCasHarness(), calls = { verifies: 0, fundingReads: 0, fundingCAS: 0 };
   let verifier = () => Promise.resolve(h.f.verifiedRecord), fundingMode = 'normal', onFundingWrite = null;
+  let onFundingRead = null, onJournalRead = null;
   const fundingBackend = {
-    readEnvelope(...args) { calls.fundingReads++; return h.backend.readEnvelope(...args); },
+    readEnvelope(...args) {
+      calls.fundingReads++;
+      const raw = h.backend.readEnvelope(...args);
+      onFundingRead?.();
+      return raw;
+    },
     compareAndSwapEnvelope(...args) {
       calls.fundingCAS++; const raw = h.backend.compareAndSwapEnvelope(...args); onFundingWrite?.(raw);
       if (fundingMode === 'lostVerifiedAck' && JSON.parse(inspectPurchasedOrderFundingEnvelope(raw).receiptJson ?? '{}').phase === 'VERIFIED') throw Error('synthetic funding acknowledgement loss');
+      return raw;
+    },
+  };
+  const fulfillmentBackend = {
+    ...h.journalBackend,
+    readEnvelope(...args) {
+      const raw = h.journalBackend.readEnvelope(...args);
+      onJournalRead?.();
       return raw;
     },
   };
@@ -34,7 +48,7 @@ export function applicationHarness() {
     const deadlines = createServiceCreditApplicationDeadlineOwnerCore({ maxScheduleStarts: 1, maxConcurrentTimers: 1, maxDelayMs: 10,
       armTimer(wake, ms) { const handle = { wake, ms, cancelled: false }; timers.push(handle); return handle; },
       cancelTimer(handle) { handle.cancelled = true; }, readMonotonicTime() { return time; } });
-    const common = { fundingBackend, fulfillmentBackend: h.journalBackend, originalStore: h.originalStore,
+    const common = { fundingBackend, fulfillmentBackend, originalStore: h.originalStore,
       verifyFundingEvidence: value => { calls.verifies++; return verifier(value); }, verifier: h.verifier, clock, deadlines };
     const app = http ? createPurchasedOrderHttpApplicationCore({ purchaseHttp: { selection: selected.funding, fundingCandidateJson: proof() }, fulfillmentOwnership: selected.fulfillmentOwnership, ...common })
       : createPurchasedOrderApplicationCore({ selection: selected, ...common });
@@ -64,7 +78,8 @@ export function applicationHarness() {
       rawHeaders: ['Host', 'order-funding.invalid', 'Content-Length', '0', ...(signature === null ? [] : ['PAYMENT-SIGNATURE', signature])] };
   }
   return { h, calls, fundingBackend, selection, create, record, delivery, compensate, request,
-    set verifier(value) { verifier = value; }, set fundingMode(value) { fundingMode = value; }, set onFundingWrite(value) { onFundingWrite = value; } };
+    set verifier(value) { verifier = value; }, set fundingMode(value) { fundingMode = value; }, set onFundingWrite(value) { onFundingWrite = value; },
+    set onFundingRead(value) { onFundingRead = value; }, set onJournalRead(value) { onJournalRead = value; } };
 }
 export function dispatch(app, request, lost = false) {
   const state = { status: null, body: null, ends: 0, success: 0, failure: 0 }, headers = {};

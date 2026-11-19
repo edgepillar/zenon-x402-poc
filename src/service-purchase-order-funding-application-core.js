@@ -130,7 +130,7 @@ export function createPurchasedOrderFundingApplicationCore(options) {
   if (member(fresh, 'phase') !== 'OPEN' || member(fresh, 'unknown') !== false || member(fresh, 'activeTimers') !== 0
       || member(fresh, 'deliveringCallbacks') !== 0 || member(fresh, 'scheduleStarts') !== 0
       || member(fresh, 'closePromiseOutcome') !== 'NOT_REQUESTED') fail('DEADLINE_OWNER_NOT_FRESH');
-  let held = false, starting = false, startRequested = false, started = false, active = false;
+  let held = false, starting = false, startRequested = false, started = false, active = false, readingRecovery = false;
   let owner = null, port = null, claim = null, last = null, calls = 0, closing = null, closeOutcome = 'NOT_REQUESTED';
   let ownerStop = 'NOT_REQUESTED', deadlineStop = 'NOT_REQUESTED', portClosed = false, timer = null, timerState = 'NONE';
   let closeDeadline = null, terminal = false, deadlineClean = false;
@@ -154,7 +154,7 @@ export function createPurchasedOrderFundingApplicationCore(options) {
   }
   function finishClose() {
     if (closing === null) return;
-    if (starting || active || !['DRAINED', 'NOT_CREATED'].includes(ownerStop)) return;
+    if (starting || active || readingRecovery || !['DRAINED', 'NOT_CREATED'].includes(ownerStop)) return;
     if (port !== null && !portClosed) {
       try { if (port.close() !== undefined) fail('PORT_CLOSE_UNKNOWN'); portClosed = true; }
       catch { hold(); settleClose(false); return; }
@@ -171,7 +171,7 @@ export function createPurchasedOrderFundingApplicationCore(options) {
     else if (deadlineStop === 'UNKNOWN') settleClose(false);
   }
   function requestOwnerStop() {
-    if (ownerStop !== 'NOT_REQUESTED') return;
+    if (readingRecovery || ownerStop !== 'NOT_REQUESTED') return;
     if (owner === null) { ownerStop = 'NOT_CREATED'; finishClose(); return; }
     ownerStop = 'PENDING'; let promise;
     try { promise = owner.close(); } catch { ownerStop = 'UNKNOWN'; hold(); settleClose(false); return; }
@@ -182,7 +182,7 @@ export function createPurchasedOrderFundingApplicationCore(options) {
   const close = F(function close() {
     if (arguments.length !== 0) fail(); if (closing !== null) return closing.promise;
     closing = pending(); closeOutcome = 'PENDING';
-    if (starting || active) hold();
+    if (starting || active || readingRecovery) hold();
     try {
       const before = now(); if (typeof before !== 'bigint' || before < 0n) fail('CLOCK_UNKNOWN');
       closeDeadline = before + BigInt(selection.closeBudgetMs) * 1000000n; timerState = 'ARMING';
@@ -211,7 +211,8 @@ export function createPurchasedOrderFundingApplicationCore(options) {
   const verifyFunding = F(function verifyFunding(raw) {
     const done = pending(); let launched = false;
     try {
-      if (arguments.length !== 1) fail(); live(); if (!started) fail('NOT_STARTED'); if (active) fail('BUSY'); candidate(raw);
+      if (arguments.length !== 1) fail(); live(); if (!started) fail('NOT_STARTED');
+      if (active || readingRecovery) fail('BUSY'); candidate(raw);
       active = true; launched = true; calls++; const promise = owner.verifyFunding(raw);
       observe(promise, value => {
         active = false;
@@ -226,20 +227,32 @@ export function createPurchasedOrderFundingApplicationCore(options) {
     return done.promise;
   });
   const readFunding = F(function readFunding() {
-    if (arguments.length !== 0) fail(); live(); if (!started) fail('NOT_STARTED'); if (active) fail('BUSY'); return last;
+    if (arguments.length !== 0) fail(); live(); if (!started) fail('NOT_STARTED');
+    if (active || readingRecovery) fail('BUSY'); return last;
   });
   const exportRecoveryRecord = F(function exportRecoveryRecord() {
-    if (arguments.length !== 0) fail(); if (!startRequested || starting || active || ownerStop === 'PENDING') fail('BUSY');
-    let raw; try { raw = backendRead(purchase.orderId, purchase.paymentScope); } catch { hold(); fail('RECOVERY_READ_UNKNOWN'); }
-    try { return capturePurchasedOrderFundingApplicationRecoveryRecord(selection, raw); } catch { hold(); fail('RECOVERY_READ_UNKNOWN'); }
+    if (arguments.length !== 0) fail();
+    if (!startRequested || starting || active || readingRecovery || closeOutcome === 'PENDING' || ownerStop === 'PENDING') fail('BUSY');
+    const closeAtEntry = closing;
+    readingRecovery = true;
+    try {
+      const raw = backendRead(purchase.orderId, purchase.paymentScope);
+      if (closing !== closeAtEntry) fail('RECOVERY_READ_UNKNOWN');
+      return capturePurchasedOrderFundingApplicationRecoveryRecord(selection, raw);
+    } catch { hold(); fail('RECOVERY_READ_UNKNOWN'); }
+    finally {
+      readingRecovery = false;
+      if (closing !== closeAtEntry) { requestOwnerStop(); finishClose(); }
+    }
   });
   const snapshot = F(function snapshot() {
     if (arguments.length !== 0) fail();
-    const eligible = closing !== null && !starting && !active && ['DRAINED', 'NOT_CREATED'].includes(ownerStop)
+    const eligible = closing !== null && !starting && !active && !readingRecovery && ['DRAINED', 'NOT_CREATED'].includes(ownerStop)
       && (port === null || portClosed) && deadlineStop === 'DRAINED' && deadlineClean;
     return F({ profile: 'PURCHASE_ORDER_FUNDING_APPLICATION_V1', phase: held ? 'HELD' : terminal ? 'CLOSED' : closing !== null ? 'CLOSING' : started ? 'OPEN' : 'CREATED',
       startRequested, startupComplete: started, startupActive: starting, verificationActive: active, verificationCalls: calls,
-      claimAcknowledged: claim !== null, lastObservedFundingPhase: last?.phase ?? null, fundingObservationCurrent: started && !held && closing === null && !active,
+      claimAcknowledged: claim !== null, lastObservedFundingPhase: last?.phase ?? null,
+      fundingObservationCurrent: started && !held && closing === null && !active && !readingRecovery,
       ownerClose: ownerStop, receiptPortClosed: portClosed, deadlineOwnerClose: deadlineStop, closeOutcome,
       closeBudgetMs: selection.closeBudgetMs, watchdog: timerState, logicalBackendRetirementEligible: eligible,
       automaticOwnershipRefresh: false, automaticFundingRetry: false, grantActivation: 'NOT_ESTABLISHED', serviceDelivery: 'NOT_ESTABLISHED',

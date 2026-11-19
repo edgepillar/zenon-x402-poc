@@ -22,9 +22,14 @@ async function stopped(app) { try { await app.close(); } catch { assert.equal(ap
 function harness() {
   const f = fixture(), p = capturePurchasedOrderPayment(...inputs(f));
   const counts = { reads: 0, cas: 0, commits: 0, verifies: 0, backendCloses: 0 }, rows = new Map(), scopes = new Map();
-  let afterWrite = null, verifier = () => Promise.resolve(f.verifiedRecord), clock = () => NOW + 30000;
+  let afterRead = null, afterWrite = null, verifier = () => Promise.resolve(f.verifiedRecord), clock = () => NOW + 30000;
   const backend = {
-    readEnvelope(orderId, scope) { counts.reads++; const raw = rows.get(orderId) ?? null; return raw === null || envelope(raw).paymentScope === scope ? raw : null; },
+    readEnvelope(orderId, scope) {
+      counts.reads++;
+      const raw = rows.get(orderId) ?? null;
+      afterRead?.();
+      return raw === null || envelope(raw).paymentScope === scope ? raw : null;
+    },
     compareAndSwapEnvelope(orderId, scope, expected, proposed) {
       counts.cas++; transition(expected, proposed);
       if ((rows.get(orderId) ?? null) !== expected || (scopes.has(scope) && scopes.get(scope) !== orderId)) return null;
@@ -49,7 +54,8 @@ function harness() {
     return { app, deadlines, timers, setTime(value) { time = value; }, wake() { assert.equal(timers.length, 1); timers[0].wake(); } };
   }
   return { f, p, backend, counts, selection, create, raw: () => rows.get(p.orderId) ?? null,
-    set afterWrite(value) { afterWrite = value; }, set verifier(value) { verifier = value; }, set clock(value) { clock = value; } };
+    set afterRead(value) { afterRead = value; }, set afterWrite(value) { afterWrite = value; },
+    set verifier(value) { verifier = value; }, set clock(value) { clock = value; } };
 }
 const checks = [];
 function check(id, run) { checks.push({ id, run }); }
@@ -187,8 +193,52 @@ check('late-verifier-rejection-after-timeout-never-repairs-close', async () => {
   await assert.rejects(closing, /CLOSE_UNKNOWN/); gate.reject(Error('synthetic late failure'));
   await assert.rejects(operation, /OPERATION_CLOSED/); await drain(); assert.equal(a.app.snapshot().closeOutcome, 'REJECTED');
 });
+check('recovery-export-refuses-nested-capture-and-verification-during-funding-read', async () => {
+  const h = harness(), { app } = h.create(); app.start();
+  const before = { ...h.counts };
+  let verification;
+  h.afterRead = () => {
+    assert.equal(app.snapshot().fundingObservationCurrent, false);
+    assert.throws(() => app.exportRecoveryRecord(), /BUSY/);
+    verification = app.verifyFunding(proof());
+  };
+  const saved = app.exportRecoveryRecord();
+  h.afterRead = null;
+  await assert.rejects(verification, /BUSY/);
+  assert.equal(JSON.parse(saved.recordJson).expectedEnvelopeJson, h.raw());
+  assert.deepEqual(h.counts, { ...before, reads: before.reads + 1 });
+  assert.equal(app.snapshot().phase, 'OPEN');
+  await stopped(app);
+});
+check('close-during-funding-recovery-read-discards-capture-until-owner-drains', async () => {
+  const h = harness(), { app } = h.create(); app.start(); await app.verifyFunding(proof());
+  const committed = h.raw(), before = { ...h.counts };
+  let closing;
+  h.afterRead = () => {
+    closing = app.close();
+    const view = app.snapshot();
+    assert.equal(view.phase, 'HELD');
+    assert.equal(view.ownerClose, 'NOT_REQUESTED');
+    assert.equal(view.receiptPortClosed, false);
+    assert.equal(view.logicalBackendRetirementEligible, false);
+  };
+  assert.throws(() => app.exportRecoveryRecord(), /RECOVERY_READ_UNKNOWN/);
+  h.afterRead = null;
+  await assert.rejects(closing, /CLOSE_UNKNOWN/);
+  assert.equal(app.snapshot().ownerClose, 'DRAINED');
+  assert.equal(app.snapshot().receiptPortClosed, true);
+  const saved = app.exportRecoveryRecord();
+  assert.equal(JSON.parse(saved.recordJson).expectedEnvelopeJson, committed);
+  assert.equal(h.raw(), committed);
+  assert.deepEqual(h.counts, { ...before, reads: before.reads + 2 });
+});
 check('clean-close-is-idempotent-and-never-closes-borrowed-backend', async () => {
-  const h = harness(), a = h.create(); a.app.start(); const closing = a.app.close(); assert.equal(a.app.close(), closing); await closing;
+  const h = harness(), a = h.create(); a.app.start();
+  const reads = h.counts.reads, closing = a.app.close();
+  assert.equal(a.app.close(), closing);
+  assert.throws(() => a.app.exportRecoveryRecord(), /BUSY/);
+  assert.equal(h.counts.reads, reads);
+  await closing;
   const s = a.app.snapshot(); assert.equal(s.phase, 'CLOSED'); assert.equal(s.receiptPortClosed, true);
   assert.equal(s.deadlineOwnerClose, 'DRAINED'); assert.equal(s.logicalBackendRetirementEligible, true); assert.equal(h.counts.backendCloses, 0);
   assert.throws(() => a.app.readFunding(), /UNAVAILABLE/); await assert.rejects(a.app.verifyFunding(proof()), /UNAVAILABLE/);
@@ -260,6 +310,7 @@ for (const { id, run } of checks) {
 const failed = cases.filter(r => r.status !== 'PASS').length;
 process.stdout.write(JSON.stringify({ qualification: 'PURCHASE_ORDER_FUNDING_APPLICATION_DATA', passed: cases.length - failed, failed, cases,
   actualApplicationOwnerEnvelopeAndDeadlineCores: true, selectedAuthenticator: 'SYNTHETIC', backend: 'SYNTHETIC_ATOMIC_UNIQUE_PAYMENT_CAS',
-  timerActuators: 'SYNTHETIC', nativeExecutions: 0, SDK: 0, SQLite: 0, keys: 0, signatures: 0, sockets: 0, nonceSearches: 0, grants: 0,
+  timerActuators: 'SYNTHETIC', nativeExecutions: 0, SDK: 0, SQLite: 0, keys: 0, signatures: 0, sockets: 0, nonceSearches: 0,
+  nodeChildren: 0, actualPrepare: 0, grants: 0,
   serviceExecutions: 0, payouts: 0, nativeApplicationEntryExecuted: false, physicalResourceRelease: 'NOT_QUALIFIED' }) + '\n');
 if (failed) process.exitCode = 1;

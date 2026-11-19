@@ -95,6 +95,66 @@ check('concurrent-verification-and-liability-mutation-are-refused-without-cleari
   await assert.rejects(a.app.verifyFunding(proof()), /BUSY/); assert.throws(() => a.app.readLiability(), /BUSY/); assert.throws(() => a.app.exportRecoveryRecord(), /BUSY/);
   assert.equal(a.app.snapshot().verificationActive, true); gate.resolve(h.h.f.verifiedRecord); assert.equal((await first).fulfillmentRecorded, true); await stop(a.app);
 });
+check('paired-recovery-reads-refuse-nested-export-and-live-verification', async () => {
+  const h = harness(), { app } = h.create(); app.start();
+  const before = { funding: { ...h.calls }, journal: { ...h.h.calls } }, attempts = [];
+  const onRead = () => {
+    assert.equal(app.snapshot().journalOperationActive, true);
+    assert.throws(() => app.exportRecoveryRecord(), /BUSY/);
+    attempts.push(app.verifyFunding(proof()));
+  };
+  h.onFundingRead = onRead; h.onJournalRead = onRead;
+  const saved = app.exportRecoveryRecord();
+  h.onFundingRead = null; h.onJournalRead = null;
+  assert.equal(attempts.length, 2);
+  for (const attempt of attempts) await assert.rejects(attempt, /BUSY/);
+  assert.equal(saved.authority, 'NONE');
+  assert.deepEqual(h.calls, { ...before.funding, fundingReads: before.funding.fundingReads + 1 });
+  assert.deepEqual(h.h.calls, { ...before.journal, reads: before.journal.reads + 1 });
+  assert.equal(app.snapshot().phase, 'OPEN'); await stop(app);
+});
+check('close-during-paired-funding-recovery-read-stops-before-the-journal', async () => {
+  const h = harness(), { app } = h.create(); app.start(); await app.verifyFunding(proof());
+  const before = app.exportRecoveryRecord(), reads = h.h.calls.reads;
+  let closing;
+  h.onFundingRead = () => {
+    closing = app.close();
+    const view = app.snapshot();
+    assert.equal(view.journalClosed, false);
+    assert.equal(view.funding.ownerClose, 'NOT_REQUESTED');
+    assert.equal(view.logicalBackendRetirementEligible, false);
+  };
+  assert.throws(() => app.exportRecoveryRecord(), /RECOVERY_READ_UNKNOWN/);
+  h.onFundingRead = null;
+  assert.equal(h.h.calls.reads, reads);
+  await assert.rejects(closing, /CLOSE_UNKNOWN/);
+  assert.equal(app.snapshot().phase, 'HELD');
+  assert.equal(app.snapshot().journalClosed, true);
+  const saved = app.exportRecoveryRecord();
+  assert.equal(saved.recordJson, before.recordJson);
+  assert.equal(saved.recordDigest, before.recordDigest);
+  assert.equal(h.calls.verifies, 1);
+});
+check('close-during-paired-journal-recovery-read-withholds-record-until-quiescent', async () => {
+  const h = harness(), { app } = h.create(); app.start(); await app.verifyFunding(proof());
+  const before = app.exportRecoveryRecord(), journal = h.h.row, funding = h.h.fundingRow;
+  let closing;
+  h.onJournalRead = () => {
+    closing = app.close();
+    assert.equal(app.snapshot().journalClosed, false);
+    assert.equal(app.snapshot().logicalBackendRetirementEligible, false);
+  };
+  assert.throws(() => app.exportRecoveryRecord(), /RECOVERY_READ_UNKNOWN/);
+  h.onJournalRead = null;
+  await assert.rejects(closing, /CLOSE_UNKNOWN/);
+  assert.equal(h.h.row, journal); assert.equal(h.h.fundingRow, funding);
+  assert.equal(app.snapshot().journalClosed, true); assert.equal(app.snapshot().phase, 'HELD');
+  const saved = app.exportRecoveryRecord();
+  assert.equal(saved.recordJson, before.recordJson);
+  const recovered = h.create(next(saved));
+  assert.equal(recovered.app.start().fulfillmentRecorded, true);
+  assert.equal(h.calls.verifies, 1); await stop(recovered.app);
+});
 check('close-during-verification-never-copies-a-late-success-into-the-journal', async () => {
   const h = harness(), gate = deferred(), a = h.create(); a.app.start(); h.verifier = () => gate.promise; const op = a.app.verifyFunding(proof()), before = h.h.row, closing = a.app.close();
   a.expire(); await assert.rejects(closing, /CLOSE_UNKNOWN/); gate.resolve(h.h.f.verifiedRecord); await assert.rejects(op, /OPERATION_CLOSED/); await drain();
@@ -122,7 +182,12 @@ check('close-during-liability-copy-holds-and-preserves-the-committed-copy-for-re
   assert.equal(h.calls.verifies, 1); await stop(b.app);
 });
 check('clean-close-is-idempotent-and-never-closes-either-borrowed-backend', async () => {
-  const h = harness(), a = h.create(); a.app.start(); const closing = a.app.close(); assert.equal(a.app.close(), closing); assert.equal(await closing, undefined);
+  const h = harness(), a = h.create(); a.app.start();
+  const reads = [h.calls.fundingReads, h.h.calls.reads], closing = a.app.close();
+  assert.equal(a.app.close(), closing);
+  assert.throws(() => a.app.exportRecoveryRecord(), /BUSY/);
+  assert.deepEqual([h.calls.fundingReads, h.h.calls.reads], reads);
+  assert.equal(await closing, undefined);
   assert.equal(a.app.snapshot().logicalBackendRetirementEligible, true); assert.equal(a.app.snapshot().journalClosed, true); assert.equal(h.h.calls.closes, 0);
 });
 check('http-bound-response-follows-both-commits-and-has-the-existing-post-wire-format', async () => {
@@ -159,6 +224,7 @@ for (const { id, run } of checks) {
 const failed = cases.filter(c => c.status !== 'PASS').length;
 console.log(JSON.stringify({ qualification: 'PURCHASE_ORDER_PAIRED_APPLICATION_DATA', passed: cases.length - failed, failed, cases,
   actualFundingLiabilityHttpAndDeadlineCores: true, selectedBackendVerifierResponseAndTimerActuators: 'SYNTHETIC_DATA',
-  nativeExecutions: 0, SDK: 0, SQLite: 0, keys: 0, signatures: 0, sockets: 0, nonceSearches: 0, nodeChildren: 0, grants: 0, serviceExecutions: 0, payouts: 0,
+  nativeExecutions: 0, SDK: 0, SQLite: 0, keys: 0, signatures: 0, sockets: 0, nonceSearches: 0, nodeChildren: 0, actualPrepare: 0,
+  grants: 0, serviceExecutions: 0, payouts: 0,
   atomicAcrossStores: false, nativeDurability: 'NOT_ESTABLISHED', physicalResourceRelease: 'NOT_QUALIFIED', production: 'NOT_ACCEPTED' }));
 if (failed) process.exitCode = 1;

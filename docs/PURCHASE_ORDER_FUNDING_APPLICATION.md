@@ -32,6 +32,12 @@ nextOwnerId)` requires a digest selected through a separate trusted channel.
 The public funding view and status do not include checkpoint or recovery bytes.
 Do not serve protected recovery records through public HTTP responses or logs.
 
+The application refuses nested exports and live funding reads or verification
+while a recovery read is active. A close that starts inside the read invalidates
+that capture and defers owner stop and receipt-port retirement until the callback
+returns. An explicit export can read the same original receipt after close
+settlement and pending owner work.
+
 `close()` revokes ingress before draining the actual owner and receipt port. One
 watchdog bounds cooperative observation of a stuck verifier. Timer delivery and
 monotonic time are checked; a delayed watchdog cannot turn an elapsed deadline
