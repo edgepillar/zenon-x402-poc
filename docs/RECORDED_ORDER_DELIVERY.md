@@ -92,14 +92,13 @@ field. The supervisor rejected that packet and did not start the final 45
 original-funding lookup controls. There is no complete 163-control acceptance
 from that attempt; its failure and complete original streams remain retained.
 
-The reporting correction adds the missing field without changing any of those
-35 assertions or rewriting the old packet. A fresh 177-control selection is
-planned: the original 163 controls plus the separate owned-application
-component's 14 controls, each entry in a fresh Node process. No result for that
-new selection is claimed yet. Memory reconstruction is not fresh
-process/SQLite recovery. No native application, installed SDK/core package,
-SQLite, HTTPS, socket, key, signature, nonce search or payment is selected.
-Hosted CI and product acceptance remain separate evidence lanes.
+The next batch passed all 178 selected controls on Node 24.19.0. The
+[delivery result](../qualification/recorded-order-delivery.actual-local-result.json) records the 163 controls scoped
+to this change, including 45 original-funding lookup controls. The other 15
+controls cover the owned application composition. These results use memory
+ports with synthetic original records. Native Linux product acceptance remains
+open.
+
 
 
 ## Application composition

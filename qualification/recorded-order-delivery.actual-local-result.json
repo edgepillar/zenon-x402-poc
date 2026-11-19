@@ -1,0 +1,491 @@
+{
+  "batch": {
+    "childProcesses": 8,
+    "command": {
+      "actualExit": 0,
+      "closedTaskOutcome": "SUCCESS",
+      "outputComplete": true,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutSha256": "91714bfb6772603b8440c011971573f2d3acf02722efcaaa4703739ea34cc585"
+    },
+    "evidence": {
+      "bundleSha256": "8452ef54357f0e327661a37fb94ddd721a067075dad2f874dadb126c40161631",
+      "commandRecordSha256": "5e9bdc3b2172614593e0ee28ea19c042d98d9637f9c1841526d4cece2d648c82",
+      "launchSha256": "b67f0c39a4e4d549d28b3f3d020ab9d9dbabf97d0af89371a4e6571f9f8afbf6",
+      "planSha256": "41ae000ce82d0d671c74b57fabbe3c5624ce616d3ae3481cd324f1d6062c8484",
+      "privateReportSha256": "78f7e763e1cddbe4185a9670519d9c1586ab33b26d39eb6d5672451112247a84",
+      "taskRecordSha256": "bf57b0045b4dfb51e143e0384fe4abf996292fd46578607180481295b6603859"
+    },
+    "failed": 0,
+    "passed": 178,
+    "runtime": {
+      "nodeSha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25",
+      "nodeVersion": "24.19.0",
+      "platform": "darwin-arm64",
+      "pythonSha256": "820634ae6a7bb6c3174b1c85f4f447c11e148154a7e813ce0130485c0fddb5f8",
+      "pythonVersion": "3.12.14"
+    },
+    "sourceBundleBytes": 160928,
+    "sourceRevision": "c9b4bef8beb29aee9fcb30fc74628e343c649ba1",
+    "sourceTree": "213e0eaf9b04c110761e98245f383a5f267927b2",
+    "taskQuotaBytes": 4194304
+  },
+  "entries": [
+    {
+      "caseIds": [
+        "recorded-delivery-actual-ledger-success-produces-only-one-delivery-receipt",
+        "recorded-delivery-receipt-connects-to-actual-funding-and-liability-owners",
+        "recorded-delivery-one-funding-one-grant-one-hundred-distinct-results",
+        "recorded-delivery-exact-repeat-does-not-debit-execute-or-write-liability-twice",
+        "recorded-delivery-memory-reconstruction-preserves-original-result-and-liability",
+        "recorded-delivery-expired-or-revoked-history-never-refreshes-time-or-pricing",
+        "recorded-delivery-unfinished-and-released-requests-never-become-compensation-evidence",
+        "recorded-delivery-absent-request-refuses-without-inferring-not-performed",
+        "recorded-delivery-non-success-http-result-does-not-discharge-liability",
+        "recorded-delivery-foreign-grant-stops-before-reading-a-request",
+        "recorded-delivery-original-and-quantity-bindings-precede-all-ledger-calls",
+        "recorded-delivery-changed-stored-request-is-not-the-original",
+        "recorded-delivery-alternate-service-path-is-refused-by-original-custody",
+        "recorded-delivery-cost-and-request-digest-cannot-be-replaced",
+        "recorded-delivery-accessor-result-is-refused-without-invoking-it",
+        "recorded-delivery-reader-throw-remains-held-and-is-not-retried",
+        "recorded-delivery-asynchronous-reader-is-observed-but-never-repaired",
+        "recorded-delivery-close-during-grant-read-refuses-before-request-and-does-not-close-ledger",
+        "recorded-delivery-swallowed-reader-reentry-still-fences-the-outer-result",
+        "recorded-delivery-explicit-attempt-bound-stops-before-another-ledger-read",
+        "recorded-delivery-port-getters-and-invalid-limits-are-refused-before-use"
+      ],
+      "entry": "qualification/service-purchase-order-recorded-delivery.behavior.mjs",
+      "passed": 21,
+      "qualification": "G1_RECORDED_ORDER_DELIVERY_DATA"
+    },
+    {
+      "caseIds": [
+        "recorded-application-one-funding-one-grant-one-hundred-exact-deliveries",
+        "recorded-application-result-repeat-does-not-change-either-original-journal",
+        "recorded-application-memory-recovery-keeps-delivery-without-a-second-verification",
+        "recorded-application-delivery-ack-loss-recovers-only-the-committed-original",
+        "recorded-application-unknown-execution-retains-pending-liability",
+        "recorded-application-close-during-ledger-read-cannot-discharge-late-delivery"
+      ],
+      "entry": "qualification/service-purchase-order-recorded-delivery.application.mjs",
+      "passed": 6,
+      "qualification": "G1_RECORDED_ORDER_DELIVERY_APPLICATION_DATA"
+    },
+    {
+      "caseIds": [
+        "delivery-policy-existing-sixty-four-byte-digest-is-unchanged",
+        "delivery-policy-sixty-five-one-hundred-and-one-twenty-eight-are-admitted",
+        "delivery-policy-invalid-and-above-one-twenty-eight-counts-remain-refused",
+        "delivery-policy-larger-admission-does-not-accept-numeric-or-json-aliases",
+        "delivery-policy-existing-sixty-four-order-still-denies-its-sixty-fifth-delivery",
+        "delivery-policy-new-context-cannot-upgrade-independently-pinned-old-terms",
+        "delivery-policy-recovery-does-not-rewrite-an-old-sixty-four-order-as-one-twenty-eight"
+      ],
+      "entry": "qualification/purchased-delivery-policy.boundaries.mjs",
+      "passed": 7,
+      "qualification": "G1_PURCHASED_DELIVERY_POLICY_128_DATA"
+    },
+    {
+      "caseIds": [
+        "RECOVERY-AND-ACCEPTED-POLICY-ARE-REQUIRED-BEFORE-TRANSITIONS",
+        "EXPIRED-UNVERIFIED-PAYMENT-DOES-NOT-BECOME-A-DELIVERY-CLAIM",
+        "LATE-VERIFIED-PAYMENT-CREATES-THE-FULL-OWED-QUANTITY",
+        "OFFER-AND-RESERVATION-EXPIRY-CANNOT-ERASE-FUNDED-LIABILITY",
+        "FUNDING-IS-BOUND-TO-EXACT-CHAIN-PAYMENT-AND-TERMS",
+        "EXACT-FUNDING-REPEAT-DOES-NOT-CREATE-ANOTHER-OBLIGATION",
+        "ONE-PAYMENT-DELIVERS-SEVERAL-DISTINCT-ORIGINAL-REQUESTS",
+        "ORIGINAL-RETENTION-IS-CHECKED-BEFORE-A-DELIVERY-INTENT",
+        "A-FOREIGN-GRANT-OR-PAYMENT-CANNOT-BECOME-THIS-DELIVERY",
+        "REPEATED-DELIVERY-INTENT-DOES-NOT-AUTHORIZE-ANOTHER-EXECUTION",
+        "UNKNOWN-DELIVERY-KEEPS-BOTH-QUANTITY-AND-COMPENSATION-HELD",
+        "NOT-PERFORMED-RESOLVES-AN-UNKNOWN-WITHOUT-AUTOMATIC-REDISPATCH",
+        "DECLARED-CACHED-SUCCESS-IS-NOT-DELIVERY-PROOF",
+        "DELIVERY-PROOF-CANNOT-CHANGE-ORIGINAL-QUANTITY-OR-RESULT",
+        "QUANTITY-AND-ENTRY-LIMITS-REJECT-WITHOUT-CHANGING-THE-RECORD",
+        "PARTIAL-DELIVERY-COMPENSATION-USES-EXPLICIT-ATOMIC-CEILING-RULE",
+        "LOST-COMPENSATION-REPLY-PRESERVES-ONE-EXACT-ORIGINAL",
+        "CONFIRMED-ORIGINAL-COMPENSATION-SATISFIES-ONLY-REMAINING-QUANTITY",
+        "COMPENSATION-CANNOT-SUBSTITUTE-PROOF-TYPE-TRANSACTION-OR-PAYEE",
+        "LOST-FUNDING-CAS-ACK-FENCES-OWNER-AND-RECOVERS-SAME-RECORD",
+        "LOST-COMPENSATION-CAS-ACK-CANNOT-CREATE-A-SECOND-PAYOUT",
+        "STALE-OWNER-CAS-CONFLICT-DOES-NOT-OVERWRITE-NEWER-FUNDING",
+        "CLOSE-DURING-COMMIT-KEEPS-ACK-UNCERTAINTY-AND-BORROWED-OWNERS",
+        "CORRUPT-OR-NONCANONICAL-STORED-STATE-IS-HELD-WITHOUT-REPAIR",
+        "ACCESSOR-PORTS-ARE-REFUSED-WITHOUT-CALLING-THE-GETTER",
+        "NO-JOURNAL-RESULT-CREATES-ECONOMIC-OR-DISPATCH-AUTHORITY"
+      ],
+      "entry": "qualification/service-purchase-fulfillment.current.behavior.mjs",
+      "passed": 26,
+      "qualification": "PURCHASE_FULFILLMENT_DATA_PORT_COMPOSITION"
+    },
+    {
+      "caseIds": [
+        "CLAIM-IS-EXPLICIT-AND-DOES-NOT-CREATE-A-FULFILLMENT-OR-PAYMENT",
+        "ACTUAL-FULFILLMENT-OWNER-WRITES-THROUGH-THE-VERSIONED-STATE-PORT",
+        "DISTINCT-ORIGINAL-DELIVERIES-SHARE-ONE-FENCED-PURCHASE",
+        "EXPLICIT-HANDOFF-PRESERVES-THE-EXACT-UNKNOWN-DELIVERY-RECORD",
+        "STALE-WORKER-CANNOT-COMMIT-AFTER-OWNERSHIP-HANDOFF",
+        "REUSING-A-WORKER-NAME-STILL-RETIRES-THE-OLD-EPOCH",
+        "ABA-BUSINESS-JSON-CANNOT-BYPASS-THE-CACHED-ENVELOPE-REVISION",
+        "LOST-CAS-ACK-RECOVERS-THE-SAME-FUNDED-STATE-WITHOUT-ANOTHER-VERIFIER-CALL",
+        "MALFORMED-ACK-AFTER-COMMIT-IS-UNKNOWN-AND-DOES-NOT-ADVANCE-LOCAL-CACHE",
+        "LOST-COMPENSATION-ACK-PRESERVES-ORIGINAL-BYTES-ACROSS-A-NEW-OWNER",
+        "LOST-CLAIM-ACK-DOES-NOT-AUTOMATICALLY-ACQUIRE-OR-READ-AGAIN",
+        "LOGICAL-RELEASE-RETAINS-LIABILITY-AND-DOES-NOT-PROVE-PHYSICAL-RELEASE",
+        "STALE-RELEASE-CANNOT-RETIRE-A-NEWER-WORKER",
+        "FOREIGN-STORE-OR-EPOCH-TOKEN-IS-REFUSED-BEFORE-STATE-IS-EXPOSED",
+        "AN-EMPTY-SLOT-CANNOT-SKIP-THE-UNFUNDED-INITIAL-RECORD",
+        "STORAGE-TRANSITIONS-CANNOT-ERASE-FUNDING-OR-CHANGE-ORDER-BINDING",
+        "DELIVERY-HISTORY-AND-TERMINAL-RESULT-CANNOT-BE-REPLACED",
+        "COMPENSATION-ORIGINAL-CANNOT-BE-REMOVED-OR-REPLACED",
+        "COUNTER-EXHAUSTION-REFUSES-WRITES-INSTEAD-OF-WRAPPING",
+        "CORRUPT-OR-NONCANONICAL-ENVELOPE-IS-HELD-WITHOUT-REPAIR",
+        "SESSION-LOAD-CANNOT-SILENTLY-REFRESH-A-STALE-CAS-BASELINE",
+        "CLOSE-DURING-CAS-CANNOT-RETURN-A-CLEAN-ACKNOWLEDGEMENT",
+        "BORROWED-BACKEND-ACCESSORS-ARE-NOT-EXECUTED-DURING-ADMISSION"
+      ],
+      "entry": "qualification/service-purchase-fulfillment-cas.current.behavior.mjs",
+      "passed": 23,
+      "qualification": "FULFILLMENT_FENCED_CAS_DATA_COMPOSITION"
+    },
+    {
+      "caseIds": [
+        "recovery-is-explicit-before-any-liability-transition",
+        "unverified-expired-order-cannot-become-a-delivery-or-compensation-claim",
+        "actual-verified-funding-receipt-creates-full-liability-without-a-grant",
+        "grant-free-full-compensation-retains-one-original-and-never-sends-it",
+        "pending-funding-receipt-is-never-treated-as-verified",
+        "funding-copy-replay-does-not-reauthenticate-or-write",
+        "source-epoch-handoff-preserves-receipt-and-allows-readonly-liability-recovery",
+        "missing-funding-source-on-recovery-holds-the-existing-liability",
+        "wrong-source-store-is-held-before-a-funding-copy",
+        "two-retained-original-requests-track-partial-service-quantity-on-one-payment",
+        "unretained-service-original-cannot-become-a-delivery-reservation",
+        "another-grant-and-out-of-profile-resource-cannot-rebind-delivery",
+        "purchased-service-quantity-caps-reservations-independently-of-funding-units",
+        "unknown-delivery-blocks-compensation-without-erasing-owed-quantity",
+        "not-performed-releases-quantity-but-keeps-the-original-request-tombstone",
+        "terminal-delivery-proof-is-immutable-and-exact-replay-does-not-write",
+        "delivery-proof-for-another-original-or-quantity-is-rejected",
+        "partial-compensation-rounds-up-with-exact-bigint-arithmetic",
+        "large-atomic-price-does-not-round-through-number",
+        "funding-amount-above-the-existing-2-to-255-limit-is-refused",
+        "funding-amount-beyond-the-existing-77-digit-profile-is-refused",
+        "foreign-compensation-binding-or-price-is-refused-before-retention",
+        "retained-compensation-is-not-replaced-after-an-unknown-outcome",
+        "confirmed-compensation-replay-is-idempotent-and-proof-binding-is-exact",
+        "lost-funding-copy-acknowledgement-is-held-and-new-session-recovers-exact-record",
+        "lost-delivery-acknowledgement-does-not-deliver-twice-on-recovery",
+        "lost-compensation-acknowledgement-preserves-confirmed-original-without-another-payout",
+        "boolean-cas-acknowledgement-never-certifies-an-accepted-commit",
+        "fenced-old-session-cannot-overwrite-a-new-session-delivery",
+        "reentrant-close-after-cas-does-not-return-a-success-view",
+        "reentrant-close-after-proof-cannot-commit-delivery",
+        "missing-retained-original-on-recovery-holds-without-erasing-state",
+        "corrupt-state-is-not-repaired-or-canonicalized-during-recovery",
+        "stable-read-and-export-reuse-validated-state-without-whole-history-reparse",
+        "public-views-omit-private-original-bytes-and-close-never-closes-borrowed-stores"
+      ],
+      "entry": "qualification/service-purchase-order-fulfillment.behavior.mjs",
+      "passed": 35,
+      "qualification": "PURCHASE_ORDER_GRANT_FREE_FULFILLMENT_DATA"
+    },
+    {
+      "caseIds": [
+        "original-grant-finds-the-persisted-identity-without-a-supplied-grant-id",
+        "original-grant-missing-transaction-is-not-permission-for-a-new-payment",
+        "original-grant-another-capability-cannot-find-the-original-holder-grant",
+        "original-grant-a-foreign-holder-is-not-selected-by-the-same-transaction",
+        "original-grant-offer-id-is-an-exact-binding",
+        "original-grant-offer-version-is-an-exact-binding",
+        "original-grant-another-network-cannot-reuse-the-transaction",
+        "original-grant-reset-genesis-does-not-find-an-old-grant",
+        "original-grant-another-chain-identifier-is-not-the-same-funding",
+        "original-grant-asset-is-an-exact-binding",
+        "original-grant-payee-is-an-exact-binding",
+        "original-grant-a-similar-amount-is-not-the-original-payment",
+        "original-grant-resource-requirement-intent-and-funding-commitments-all-match",
+        "original-grant-reading-after-expiry-does-not-refresh-or-claim-current-authority",
+        "original-grant-a-stored-expired-grant-remains-original-history",
+        "original-grant-revocation-does-not-erase-the-funded-original",
+        "original-grant-held-request-units-are-observed-without-a-second-debit",
+        "original-grant-repeated-queries-keep-identical-records-and-no-clock-or-price-calls",
+        "original-grant-in-memory-state-reconstruction-keeps-the-exact-original",
+        "original-grant-lookup-does-not-provide-another-activation-or-capability",
+        "original-grant-missing-extra-and-extra-argument-inputs-are-refused",
+        "original-grant-accessor-input-is-refused-without-running-a-hook",
+        "original-grant-proxy-or-accessor-chain-data-cannot-run-user-hooks",
+        "original-grant-noncanonical-hashes-or-line-breaks-are-refused",
+        "original-grant-amount-and-chain-identifier-have-canonical-string-units",
+        "original-grant-reader-verifies-the-fixed-query-scope-before-its-one-store-read",
+        "original-grant-reader-a-false-verification-does-not-read-any-store",
+        "original-grant-reader-a-rejected-proof-cannot-read-and-does-not-poison-later-valid-input",
+        "original-grant-reader-real-ledger-grant-ids-cannot-replace-the-lookup-proof-scope",
+        "original-grant-reader-query-method-route-and-body-digest-are-closed-data",
+        "original-grant-reader-every-query-binding-is-covered-by-the-request-context",
+        "original-grant-reader-proof-request-id-mismatch-precedes-verification-and-read",
+        "original-grant-reader-a-verified-different-scope-cannot-authorize-this-lookup",
+        "original-grant-reader-pending-verification-is-held-without-a-store-read",
+        "original-grant-reader-a-verifier-thenable-hook-is-never-invoked",
+        "original-grant-reader-store-failure-is-sticky-and-not-retried",
+        "original-grant-reader-a-pending-store-read-cannot-produce-a-late-accepted-result",
+        "original-grant-reader-store-thenables-cannot-run-hooks-or-start-another-read",
+        "original-grant-reader-another-original-result-is-refused-before-output",
+        "original-grant-reader-result-flags-cannot-convert-history-into-authority",
+        "original-grant-reader-close-during-verification-prevents-the-store-read",
+        "original-grant-reader-close-during-store-read-prevents-an-accepted-result",
+        "original-grant-reader-verification-reentry-does-not-gain-a-store-read",
+        "original-grant-reader-store-reentry-is-held-with-only-one-read",
+        "original-grant-reader-close-is-logical-and-never-closes-the-borrowed-store"
+      ],
+      "entry": "qualification/original-funding-grant.behavior.mjs",
+      "passed": 45,
+      "qualification": "G2_ORIGINAL_FUNDING_GRANT_LOOKUP_DATA"
+    }
+  ],
+  "execution": {
+    "SQLite": 0,
+    "actualPrepare": 0,
+    "authenticatedFunding": false,
+    "freshProcessStoreReopen": false,
+    "installedSDKCore": 0,
+    "keys": 0,
+    "memoryPorts": true,
+    "nativeApplication": 0,
+    "nodeChildrenPerEntry": 0,
+    "nonceSearches": 0,
+    "payments": 0,
+    "signatures": 0,
+    "sockets": 0
+  },
+  "failed": 0,
+  "format": "RECORDED_API_MEMORY_DATA_V1",
+  "inputs": [
+    {
+      "bytes": 2677,
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb",
+      "path": "package.json",
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f"
+    },
+    {
+      "bytes": 19806,
+      "gitBlob": "ee45cade9e72125e3b8616551c664d9dbe4ef685",
+      "path": "qualification/original-funding-grant.behavior.mjs",
+      "sha256": "c4f94963fc589f42dd62879d7bd532153d5adf9e3929adc111807738612dbe46"
+    },
+    {
+      "bytes": 6150,
+      "gitBlob": "ebdb70d66f62b68b834f8b34ad9bb7dcc1f5cb3a",
+      "path": "qualification/purchased-delivery-policy.boundaries.mjs",
+      "sha256": "49f32f962d873b41d4dd77af47144348995a735c84372d39c56c981a16a5be71"
+    },
+    {
+      "bytes": 8498,
+      "gitBlob": "6b5b60d16451a820ac715228308cc137abe4d9e0",
+      "path": "qualification/recorded-delivery-ledger.fixture.mjs",
+      "sha256": "9e7a85bcf34e7813c4f36119b1676acebe7c0c3979737c9a24bcf358fc3be1e5"
+    },
+    {
+      "bytes": 18690,
+      "gitBlob": "5384b7ef2b284480a0eb33e3cef3c36f3c219269",
+      "path": "qualification/service-purchase-fulfillment-cas.current.behavior.mjs",
+      "sha256": "2f63bd15c906350e66dcf4c087c57c9e5687f4d0adcf684a0af6f81594ae3cf0"
+    },
+    {
+      "bytes": 20287,
+      "gitBlob": "9b1c3a8469020dbaca54ee3dc21035221d7a719b",
+      "path": "qualification/service-purchase-fulfillment.current.behavior.mjs",
+      "sha256": "b2d0892385dfd4f5b05be82472b2b5a5fb38897bb4accd332eabd616a076c26f"
+    },
+    {
+      "bytes": 24328,
+      "gitBlob": "313109070d73ed7c603ca4e3ab0275ea02ff9674",
+      "path": "qualification/service-purchase-order-fulfillment.behavior.mjs",
+      "sha256": "0dd0c95acff5373ffcd92d51e4eb8a032ad7e66f66db4dbfde7046bc00bcd312"
+    },
+    {
+      "bytes": 6185,
+      "gitBlob": "29d48bf4d6e1095e646c318b6aa69a50ce3c82a1",
+      "path": "qualification/service-purchase-order-fulfillment.fixture.mjs",
+      "sha256": "4859c661a8c943fc640f423854fb455a991bbb06f64771af1367e6746e82ca7d"
+    },
+    {
+      "bytes": 10386,
+      "gitBlob": "24d80165749b2841e9f67c5886ad13165de532eb",
+      "path": "qualification/service-purchase-order-recorded-delivery.application.mjs",
+      "sha256": "57692415ba94d98f158d3cd4df15efd3433745c637f08634ba02101f77f644b2"
+    },
+    {
+      "bytes": 20086,
+      "gitBlob": "12d4d066ec2240e55909f76acbd896212df37323",
+      "path": "qualification/service-purchase-order-recorded-delivery.behavior.mjs",
+      "sha256": "6b33617cb24322bb92f8e941d1725670acba712837724a6ce132933ae46e9703"
+    },
+    {
+      "bytes": 6273,
+      "gitBlob": "6b4b2bc9bc62085b0e29ccd87ae64fefd4a36853",
+      "path": "qualification/service-purchase-order-recorded-delivery.fixture.mjs",
+      "sha256": "2538db3f228c4a2435be0de480ad42292b45ddaaa9299c6fdc0cb038a1d23177"
+    },
+    {
+      "bytes": 4373,
+      "gitBlob": "e3fce93eb271e34a059e4262da1e5213a216a4bf",
+      "path": "qualification/service-purchase-original-storage.fixture.mjs",
+      "sha256": "6e832a9c66f4e3f1f7328def9668d65a32cbb71243ad7a3face9f17cc6236ac6"
+    },
+    {
+      "bytes": 967,
+      "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4",
+      "path": "src/canonical.js",
+      "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c"
+    },
+    {
+      "bytes": 2509,
+      "gitBlob": "59cb7582796dff0de9791657e53d6980147c89aa",
+      "path": "src/issued-expired-funding-receipt.js",
+      "sha256": "b4ce190574c656476f9092c975890f1b6d7576391351c9860f47058a87ffd644"
+    },
+    {
+      "bytes": 24719,
+      "gitBlob": "155be6ee91599e10043c0293de23d669e663b512",
+      "path": "src/service-credit-activation.js",
+      "sha256": "9e1a2ce00b2950b290ebd0797d3a770f51ad252288c630ada5ebcd6cef54233a"
+    },
+    {
+      "bytes": 9917,
+      "gitBlob": "a59133249ef5ada3b1666c476f7c02aa542c4513",
+      "path": "src/service-credit-application-deadline-owner-core.js",
+      "sha256": "27de310ebb7452e9be011e46d86e38b04614c259142bb47400ddbb9dedf00149"
+    },
+    {
+      "bytes": 56835,
+      "gitBlob": "914c325fe8c408d9936c7bb91f9ec53890cc290d",
+      "path": "src/service-credit-model.js",
+      "sha256": "f8e57c6e4b576c4b4c650d757ab9c86580c5bc4e7d457440092668b2894cefda"
+    },
+    {
+      "bytes": 5236,
+      "gitBlob": "0c80207672676006a6c13c80c67b8427d6a97b18",
+      "path": "src/service-credit-original-funding-grant-reader-core.js",
+      "sha256": "1cd5da104ea30503cb48e3951b09b3b00b593236f02a5b70dea332943ec6e7a6"
+    },
+    {
+      "bytes": 7995,
+      "gitBlob": "3affa8c70e08f26e48c3e213098e6e3036d6ffff",
+      "path": "src/service-credit-original-funding-grant.js",
+      "sha256": "61fd9aee09949462ae6fa0e1a0c0fd4e67f15f8c7be78612bfe9928559b6be70"
+    },
+    {
+      "bytes": 15100,
+      "gitBlob": "94d67559a11f87f283a5cd99d2aaf8074374eb0a",
+      "path": "src/service-credit-original-request-custody-contract.js",
+      "sha256": "483d20e90d78ba95a8c5d5458dd201910e8d42aecbdc0dc03812e7044a464054"
+    },
+    {
+      "bytes": 4003,
+      "gitBlob": "51c6391bc22f561ebff0005ced31e538aa83f4fa",
+      "path": "src/service-credit-pilot-original-payment-checkpoint.js",
+      "sha256": "930905f31824a6cadc16dfb84572cd4dc38a81e2fce4569b73b6bef29dec97d1"
+    },
+    {
+      "bytes": 10704,
+      "gitBlob": "44346a21f4c6d63b72d3b29294d826d9ac5a604c",
+      "path": "src/service-credit-purchased-original-recovery.js",
+      "sha256": "06ecfb702a2d9e78fab9544765fafbea0da74c12b2a54f95bcd16309cb13aa1d"
+    },
+    {
+      "bytes": 56046,
+      "gitBlob": "93e7b30b182587a38a829c965374cc3f99f540e0",
+      "path": "src/service-credit-zenon-funding-evidence.js",
+      "sha256": "bbe35586b07c5d890402e62feb26545ebbe8dede69eab466896a3c4b7ce7a95f"
+    },
+    {
+      "bytes": 12960,
+      "gitBlob": "28f2273be79cdc942c856b5e48db0c08f435107d",
+      "path": "src/service-purchase-fulfillment-cas-contract.js",
+      "sha256": "3191d87af68b39848a5f53e00b33a422b1bba2cd394387725d37eefce2a97017"
+    },
+    {
+      "bytes": 19679,
+      "gitBlob": "e887a04f38b1302102d6c32d07a94076d5d7cabf",
+      "path": "src/service-purchase-fulfillment.js",
+      "sha256": "4bd4b95fe45aeb013665bfa5784b8b042ab73c4b5d24d59315446fb95d2473d2"
+    },
+    {
+      "bytes": 16021,
+      "gitBlob": "27cbb1f456941383df7b34837eb4fceab79d3980",
+      "path": "src/service-purchase-order-application-core.js",
+      "sha256": "9706cf4f63722e1caf0c790a7dc19895bbb446233a995f44787ef86e6b205575"
+    },
+    {
+      "bytes": 17184,
+      "gitBlob": "d363cda7b1bbf0fb3c567f6ba425c137779ab8f5",
+      "path": "src/service-purchase-order-fulfillment-cas-contract.js",
+      "sha256": "34e704de7875b686b3b79efac1844f8c9dda85dec76e3cbcc6b0361db7d1e2c9"
+    },
+    {
+      "bytes": 19938,
+      "gitBlob": "60b90480592b374023af785fcf69654156829e6a",
+      "path": "src/service-purchase-order-fulfillment.js",
+      "sha256": "6e4d4d13219f798670cae46e8de0e4278f98398047c962aa417e5d8698fb9543"
+    },
+    {
+      "bytes": 17303,
+      "gitBlob": "c4abfa77f06789e7730c1f5dc415e6a7fb1c2515",
+      "path": "src/service-purchase-order-funding-application-core.js",
+      "sha256": "e7af5dd2cd8302b7b5d82f7e6d07b5e27637075f6591006367f7daad9535a3ac"
+    },
+    {
+      "bytes": 13764,
+      "gitBlob": "53bb536472d9522a84e1dd7193aedec8e7780191",
+      "path": "src/service-purchase-order-funding-cas-contract.js",
+      "sha256": "2511fe65a8a2cf4432a0871c2fca46c5553d84cc41a9286350b6f0260d095e79"
+    },
+    {
+      "bytes": 14449,
+      "gitBlob": "f953df048a147ebd4a0c5631a078747d5bc3689a",
+      "path": "src/service-purchase-order-funding.js",
+      "sha256": "4e8e04e679d32395d9f1696b16d0c2c853d8e3a93e4aef0e1bb53bb87e91765a"
+    },
+    {
+      "bytes": 10706,
+      "gitBlob": "a4eadd1b53b5bb203886f8a0d42f9a66f08a109e",
+      "path": "src/service-purchase-order-recorded-delivery.js",
+      "sha256": "724a37500f21acab5d2c85567e72be140f47c2858cccf66dcd9cfae2b44e2f37"
+    },
+    {
+      "bytes": 5158,
+      "gitBlob": "38d2cdbba760dcd7cdcbfb9fb66f83cbabc0e8ce",
+      "path": "src/service-purchase-storage-contract.js",
+      "sha256": "213f34a964acea11693f07f51fe99cc1eca1460ac5c98b2dd96cc0100a0159e6"
+    },
+    {
+      "bytes": 3270,
+      "gitBlob": "1dd81d8b5a54fe7cd1bd68eab540c993981b22c0",
+      "path": "src/service-purchase-terms.js",
+      "sha256": "9d3308103b5d573ef6f93f909b15e744f9e752911e602f3c32e882f18ebd6141"
+    },
+    {
+      "bytes": 39886,
+      "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291",
+      "path": "src/x402-wire.js",
+      "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56"
+    }
+  ],
+  "passed": 163,
+  "priorAttempt": {
+    "acceptedCases": 83,
+    "actualExit": 1,
+    "outcome": "FAILURE",
+    "outputComplete": true,
+    "privateOriginReportSha256": "afc9e812a06cd21ecfd7f5256fe5a6653ad2d98691cc65666cbf97a57e4865ac",
+    "reason": "The legacy fulfillment packet omitted the required actualPrepare field.",
+    "unqualifiedReportedPasses": 35,
+    "unstartedCases": 45
+  },
+  "productAcceptance": "NOT_ESTABLISHED",
+  "sourceRevision": "5e8b9f763daed5c6af0648a1b6e563d09ce110de",
+  "sourceTree": "9ca274e4e30c93152b0dd831e3f37aa5651829db",
+  "status": "PASS"
+}
