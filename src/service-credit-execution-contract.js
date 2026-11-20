@@ -765,9 +765,10 @@ export function prepareServiceCreditExecution(options) {
   }
   appendArrayValue(executions, execution);
   const next = makeState(state, executions);
-  return snapshot({
+  // makeState has already detached and frozen the entire next state.
+  return OBJECT_FREEZE({
     state: next,
-    execution: executionOutcome(next, executionId),
+    execution: snapshot(executionOutcome(next, executionId)),
     replayed: false,
   });
 }
@@ -807,11 +808,11 @@ export function fenceServiceCreditExecution(options) {
     replacement = { ...execution, fencePhase: 'MAY_HAVE_STARTED' };
   }
   const next = replaceExecution(state, replacement);
-  return snapshot({
-    fenceTransitionCandidate: {
+  return OBJECT_FREEZE({
+    fenceTransitionCandidate: OBJECT_FREEZE({
       state: next,
-      execution: executionOutcome(next, execution.executionId),
-    },
+      execution: snapshot(executionOutcome(next, execution.executionId)),
+    }),
   });
 }
 
@@ -877,9 +878,9 @@ export function completeServiceCreditExecution(options) {
     winner = 'SUCCEEDED';
   }
   const next = replaceExecution(state, replacement, generation);
-  return snapshot({
+  return OBJECT_FREEZE({
     state: next,
-    execution: executionOutcome(next, execution.executionId),
+    execution: snapshot(executionOutcome(next, execution.executionId)),
     transitioned: true,
     winner,
   });
@@ -918,9 +919,9 @@ export function markServiceCreditExecutionUnknown(options) {
     ? sealFor(replacement, input.reason)
     : state.generation;
   const next = replaceExecution(state, replacement, generation);
-  return snapshot({
+  return OBJECT_FREEZE({
     state: next,
-    execution: executionOutcome(next, execution.executionId),
+    execution: snapshot(executionOutcome(next, execution.executionId)),
     transitioned: true,
     winner: 'OUTCOME_UNKNOWN',
   });
@@ -970,7 +971,7 @@ export function recoverServiceCreditExecutions(options) {
     ? sealFor(trigger, trigger.uncertaintyReason)
     : state.generation;
   const next = makeState(state, executions, generation);
-  return snapshot({
+  return OBJECT_FREEZE({
     state: next,
     transitioned: true,
     noInvocationCount,
