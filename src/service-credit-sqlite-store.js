@@ -76,7 +76,6 @@ const STRING_INCLUDES = String.prototype.includes;
 const ARRAY_INCLUDES = Array.prototype.includes;
 const ARRAY_SORT = Array.prototype.sort;
 const STRING_FROM = String;
-const STRING_SLICE = String.prototype.slice;
 const SET_CONSTRUCTOR = Set;
 const SET_HAS = Set.prototype.has;
 const MAP_CONSTRUCTOR = Map;
@@ -732,12 +731,10 @@ function sameLedgerState(state, restoredState, stateJson) {
   return isDeepStrictEqual(state, restoredState) || canonicalJson(restoredState) === stateJson;
 }
 
-function publicChecksumFor(schemaVersion, revision, state) {
-  return `sha256:${crypto.createHash('sha256').update(canonicalJson({
-    revision,
-    schemaVersion,
-    state,
-  })).digest('hex')}`;
+function publicChecksumFor(schemaVersion, revision, stateJson) {
+  const header = `{"revision":${JSON_STRINGIFY(revision)},"schemaVersion":${JSON_STRINGIFY(schemaVersion)},"state":`;
+  return `sha256:${crypto.createHash('sha256')
+    .update(header).update(stateJson).update('}').digest('hex')}`;
 }
 
 function durableResultCommitmentFor(cachedResult) {
@@ -776,7 +773,7 @@ function frozenSnapshot(value) {
   return OBJECT_FREEZE(copy);
 }
 
-function publicEnvelopeFor(revision, state) {
+function publicEnvelopeFor(revision, state, stateJson = canonicalJson(state)) {
   const envelope = {
     schemaVersion: PUBLIC_LEDGER_ENVELOPE_SCHEMA_VERSION,
     revision,
@@ -784,7 +781,7 @@ function publicEnvelopeFor(revision, state) {
   };
   return OBJECT_FREEZE({
     ...envelope,
-    checksum: publicChecksumFor(envelope.schemaVersion, envelope.revision, envelope.state),
+    checksum: publicChecksumFor(envelope.schemaVersion, envelope.revision, stateJson),
   });
 }
 
@@ -795,16 +792,21 @@ function physicalEnvelopeFor(revision, ledgerState, ledgerStateJson, executionSt
     ledgerState,
     executionState,
   };
-  // The ledger text is already canonical and belongs to this ledger snapshot.
-  const contentJson = `{"executionState":${canonicalJson(executionState)},"ledgerState":${ledgerStateJson},`
-    + `"physicalVersion":${JSON_STRINGIFY(content.physicalVersion)},"revision":${JSON_STRINGIFY(revision)}}`;
+  // Hash the canonical payload fragments without assembling another envelope.
+  const executionKey = '"executionState":';
+  const ledgerKey = ',"ledgerState":';
+  const executionStateJson = canonicalJson(executionState);
+  const tail = `,"physicalVersion":${JSON_STRINGIFY(content.physicalVersion)},"revision":${JSON_STRINGIFY(revision)}}`;
   const checksum = `sha256:${crypto.createHash('sha256')
     .update(PHYSICAL_V2_CHECKSUM_DOMAIN)
-    .update('\0')
-    .update(contentJson)
+    .update('\0{' + executionKey)
+    .update(executionStateJson)
+    .update(ledgerKey)
+    .update(ledgerStateJson)
+    .update(tail)
     .digest('hex')}`;
   // The checksum sorts before every content key in the canonical envelope.
-  const text = `{"checksum":${JSON_STRINGIFY(checksum)},${REFLECT_APPLY(STRING_SLICE, contentJson, [1])}`;
+  const text = `{"checksum":${JSON_STRINGIFY(checksum)},${executionKey}${executionStateJson}${ledgerKey}${ledgerStateJson}${tail}`;
   return { envelope: OBJECT_FREEZE({ ...content, checksum }), text };
 }
 
@@ -1873,16 +1875,20 @@ export class ServiceCreditSqliteStore {
   load() {
     return this.#runPublicOperation(() => this.#runTransaction('load', () => {
       this.#validateDatabase();
-      const { physicalEnvelope } = this.#readLedger();
-      return frozenSnapshot(publicEnvelopeFor(physicalEnvelope.revision, physicalEnvelope.ledgerState));
+      const { physicalEnvelope, ledgerStateJson } = this.#readLedger();
+      return frozenSnapshot(publicEnvelopeFor(
+        physicalEnvelope.revision, physicalEnvelope.ledgerState, ledgerStateJson,
+      ));
     }));
   }
 
   getMetadata() {
     return this.#runPublicOperation(() => this.#runTransaction('getMetadata', () => {
       this.#validateDatabase();
-      const { physicalEnvelope } = this.#readLedger();
-      const publicEnvelope = publicEnvelopeFor(physicalEnvelope.revision, physicalEnvelope.ledgerState);
+      const { physicalEnvelope, ledgerStateJson } = this.#readLedger();
+      const publicEnvelope = publicEnvelopeFor(
+        physicalEnvelope.revision, physicalEnvelope.ledgerState, ledgerStateJson,
+      );
       return frozenSnapshot({
         schemaVersion: publicEnvelope.schemaVersion,
         modelVersion: publicEnvelope.state.modelVersion,
