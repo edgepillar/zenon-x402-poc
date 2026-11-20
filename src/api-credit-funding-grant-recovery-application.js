@@ -51,7 +51,7 @@ function createApplication(configuration,purchased,nonDp=false){
   captureFundingPostCheckpointRoute(c.fundingResourceUrl);
   let held=false,closed=false,active=false,closing=null,childClose=null,prepared=null,originalDigest=null,retained=null,selected=null;
   let prepareClaimed=false,commitClaimed=false,commitReturned=false,submissionClaimed=false,retains=0,reads=0,currentChecks=0;
-  let custodyActive=false,custodyUnknown=false,childCloseRequested=false;
+  let custodyActive=false,custodyUnknown=false,childCloseRequested=false,childCloseConfirmed=false;
   let childViewDepth=0,childViewUnknown=false;
   let fundingReturned=false,handoffClaimed=false,querySelection=null,queryReceipt=null,queryActive=false,queryUnknown=false,queryClosed=false,purchaseMatched=false;
   const opaque=new Set(),retainedFrame=F(()=>[c,childClose,prepared,retained,selected,querySelection,queryReceipt,opaque]);
@@ -71,6 +71,9 @@ function createApplication(configuration,purchased,nonDp=false){
       childViewUnknown=true;if(v!==undefined)keep(v);hold();fail();
     }
     finally{childViewDepth--;if(closing!==null)startChildClose();}
+  }
+  function childIsClosed(view){
+    return data(view,'lifecycle')==='CLOSED'&&data(view,'publicOperationActive')===false;
   }
   function available(){if(!invariant()){hold();fail();}if(closed||held||closing!==null)fail();const v=childView();if(!invariant()){hold();fail();}if(closed||held||closing!==null||data(v,'lifecycle')!=='OPEN'||data(v,'publicOperationActive')!==false)fail();}
   function custodyCall(name,args,kind){
@@ -202,7 +205,8 @@ function createApplication(configuration,purchased,nonDp=false){
       }
     }
     if(held){Object.defineProperty(copy,'held',{value:true,enumerable:true});Object.defineProperty(copy,'lifecycle',{value:'HELD',enumerable:true});}
-    else if(closed&&data(view,'lifecycle')!=='CLOSED')Object.defineProperty(copy,'lifecycle',{value:'CLOSING',enumerable:true});
+    // A child snapshot can report CLOSED before the parent's close is confirmed.
+    else if(closed&&(!childCloseConfirmed||!childIsClosed(view)))Object.defineProperty(copy,'lifecycle',{value:'CLOSING',enumerable:true});
     Object.defineProperty(copy,'grantQueryRecovery',{value:F({version:1,phase:held?'HELD':retained===null?'NOT_CAPTURED':'CAPTURED',
       prepareClaimed,commitClaimed,commitReturned,submissionClaimed,active,retains,reads,currentChecks,custodyActive,custodyUnknown,childCloseRequested,
       ...(childViewUnknown?{childViewUnknown:true}:{}),
@@ -216,7 +220,12 @@ function createApplication(configuration,purchased,nonDp=false){
     if(childCloseRequested||childViewDepth!==0||custodyActive||custodyUnknown||purchased&&(queryActive||queryUnknown))return;
     childCloseRequested=true;
     try{childClose=A(child.close,c.application,[]);observe(childClose,value=>{
-      try{const v=childView();if(value!==undefined||held||active||data(v,'lifecycle')!=='CLOSED'||data(v,'publicOperationActive')!==false)fail();closing.resolve(undefined);}
+      try{
+        const view=childView();
+        if(value!==undefined||held||active||!childIsClosed(view))fail();
+        childCloseConfirmed=true;
+        closing.resolve(undefined);
+      }
       catch{hold();closing.reject(error());}
     },()=>{hold();closing.reject(error());});}catch{hold();closing.reject(error());}
   }
