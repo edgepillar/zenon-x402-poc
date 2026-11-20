@@ -84,6 +84,16 @@ export function captureApiCreditRecordedResultInspectionOutput(value){
  status(c.status);if(c.backendStatus!==null)status(c.backendStatus);noAuthority(value);
  if(c.recordedResultInspectionVersion!==1||c.originalCheckpointPinsMatched!==true||c.currentAuthority!=='NOT_ESTABLISHED'||c.sameProcessObservationOnly!==true
   ||c.snapshotAtomicAcrossStores!==false||c.localReconciliationRequired!==(c.status==='CLIENT_RECONCILIATION_REQUIRED')||typeof c.resultAvailable!=='boolean')fail();
+ // The recovery reader skips the backend only when no local original exists.
+ // A completed backend observation otherwise supplies the status unless local reconciliation is required.
+ if (c.backendStatus === null) {
+   if (c.status !== 'CLIENT_ORIGINAL_NOT_RECORDED') fail();
+ } else if (
+   c.status === 'CLIENT_ORIGINAL_NOT_RECORDED'
+   || (!c.localReconciliationRequired && c.status !== c.backendStatus)
+ ) {
+   fail();
+ }
  if(c.resultAvailable){
   if(c.backendStatus!=='CACHED_SUCCESS'||!['CACHED_SUCCESS','CLIENT_RECONCILIATION_REQUIRED'].includes(c.status))fail();
   c.cachedResult=cache(c.cachedResult);
