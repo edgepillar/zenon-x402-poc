@@ -315,6 +315,14 @@ function requireIntentDigest(value) {
   bounded(value, 71);
   if (!test(INTENT_DIGEST, value)) rejectIntent();
 }
+function freezeIntent(core, checksum) {
+  const result = { ...core, checksum };
+  const text = intentCanonical(result);
+  bounded(text, 16384);
+  freeze(result);
+  apply(weakSet, intentTexts, [result, text]);
+  return result;
+}
 function validateIntent(input) {
   const r = record(input, INTENT_FIELDS);
   if (r.intentVersion !== 1 || r.profile !== PROFILE || r.state !== 'INTENT_RECORDED') rejectIntent();
@@ -327,12 +335,7 @@ function validateIntent(input) {
   const core = {};
   for (const key of INTENT_FIELDS) if (key !== 'checksum') core[key] = r[key];
   if (r.checksum !== intentDigest(INTENT_DOMAIN, core)) rejectIntent();
-  const result = { ...core, checksum: r.checksum };
-  const text = intentCanonical(result);
-  bounded(text, 16384);
-  freeze(result);
-  apply(weakSet, intentTexts, [result, text]);
-  return result;
+  return freezeIntent(core, r.checksum);
 }
 export function captureOriginalServiceDispatchIntent(original, binding) {
   if (arguments.length !== 2) rejectIntent();
@@ -348,7 +351,7 @@ export function captureOriginalServiceDispatchIntent(original, binding) {
     fundingRevision: b.fundingRevision, challengeDigest: b.challengeDigest, paymentDigest: b.paymentDigest,
     custodyPolicyDigest: intentDigest('zenon-x402:dispatch-intent-policy-v1', policy),
   };
-  return validateIntent({ ...core, checksum: intentDigest(INTENT_DOMAIN, core) });
+  return freezeIntent(core, intentDigest(INTENT_DOMAIN, core));
 }
 export function serializeOriginalServiceDispatchIntent(input) {
   if (arguments.length !== 1) rejectIntent();

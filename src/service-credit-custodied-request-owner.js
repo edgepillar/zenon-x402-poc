@@ -507,22 +507,25 @@ function createOwner(configuration, dispatchIntentEnabled, persistentCustody = f
       if (known !== undefined && known !== value.checksum) throw failure('INVALID_DATA');
       // All projected fields are bounded primitives or detached frozen policy.
       // As with V4, checksum authenticity is not inferred from interface shape.
-      const detached = CREATE(null), record = {};
+      const record = {};
       for (const field of RESPONSE_FIELDS) {
-        const item = field === 'custodyPolicy' ? capturedPolicy : value[field];
-        detached[field] = item;
-        record[field] = item;
+        record[field] = field === 'custodyPolicy' ? capturedPolicy : value[field];
       }
-      const detachedPolicy = CREATE(null);
-      for (const field of ['policyVersion', 'maxRequests', 'serviceResourceUrl']) {
-        detachedPolicy[field] = capturedPolicy[field];
-      }
-      detached.custodyPolicy = FREEZE(detachedPolicy);
-      return { record: FREEZE(record), text: STRINGIFY(FREEZE(detached)) };
+      return FREEZE(record);
     } catch {
       holdCustody();
       throw failure('CUSTODY_OUTCOME_UNKNOWN');
     }
+  }
+
+  function responseText(record) {
+    const detached = CREATE(null), detachedPolicy = CREATE(null);
+    for (const field of RESPONSE_FIELDS) detached[field] = record[field];
+    for (const field of ['policyVersion', 'maxRequests', 'serviceResourceUrl']) {
+      detachedPolicy[field] = record.custodyPolicy[field];
+    }
+    detached.custodyPolicy = FREEZE(detachedPolicy);
+    return STRINGIFY(FREEZE(detached));
   }
 
   function rememberResponse(key, observation) {
@@ -575,13 +578,14 @@ function createOwner(configuration, dispatchIntentEnabled, persistentCustody = f
     const written = responseForCurrent(callStore('recordOriginalResponseObservation',
       [{ grantId: key.grantId, requestId: key.requestId, responseJson: value }],
       'responseWrites'), key, before, original.record, intent.record);
+    const writtenText = responseText(written);
     const readback = responseForCurrent(callStore('getOriginalResponseObservation',
       [key], 'responseReads'), key, before, original.record, intent.record);
-    if (written.text !== readback.text || readback.record.responseJson !== value
+    if (writtenText !== responseText(readback) || readback.responseJson !== value
         || !sameFunding(before, currentFunding())) custodyChanged();
     refreshQuarantine();
     if (held()) throw failure('CUSTODY_OUTCOME_UNKNOWN');
-    rememberResponse(key, readback.record);
+    rememberResponse(key, readback);
     bump('responseReadbackConfirmations');
   }
 
@@ -944,7 +948,7 @@ function createOwner(configuration, dispatchIntentEnabled, persistentCustody = f
         if (responseRaw !== null) {
           if (dispatchIntent === null) custodyChanged();
           responseObservation = responseForCurrent(responseRaw, key, current, original,
-            dispatchIntent).record;
+            dispatchIntent);
         }
         rememberResponse(key, responseObservation);
       }
