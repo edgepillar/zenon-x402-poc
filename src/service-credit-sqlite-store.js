@@ -890,9 +890,12 @@ function assertDurableCrossLinks(configuration, ledgerState, executionState) {
     const execution = executionState.executions[index];
     const key = ledgerRequestKey(execution.request);
     const request = REFLECT_APPLY(MAP_GET, unlinked, [key]);
+    // Both records have already been normalized to their exact shapes.
     if (
       request === undefined
-      || canonicalJson(execution.request) !== canonicalJson(executionRequestProjection(request))
+      || !reservationMatchesLedger(request, execution.request)
+      || request.requestDigest !== execution.request.requestDigest
+      || request.costUnits !== execution.request.costUnits
     ) {
       failStore('SERVICE_CREDIT_STORE_CORRUPT');
     }
