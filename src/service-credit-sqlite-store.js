@@ -1266,7 +1266,8 @@ export class ServiceCreditSqliteStore {
       () => {
         this.#validateDatabase();
         const { executionState, physicalEnvelope } = this.#readLedger();
-        return receipt({
+        // Hydration already detached and froze the execution state.
+        return OBJECT_FREEZE({
           revision: physicalEnvelope.revision,
           executionState,
         });
@@ -1399,7 +1400,7 @@ export class ServiceCreditSqliteStore {
         if (claim.disposition !== 'APPLIED') failStore('SERVICE_CREDIT_STORE_INVARIANT_VIOLATION');
         const next = this.#persistCompound(previous, claim.ledgerState, claim.executionState);
         if (next.revision !== claim.nextRevision) failStore('SERVICE_CREDIT_STORE_INVARIANT_VIOLATION');
-        return { changed: true, result: receipt({ disposition: 'APPLIED',
+        return { changed: true, result: OBJECT_FREEZE({ disposition: 'APPLIED',
           revision: next.revision, executionState }) };
       });
       return outcome.result;
@@ -1825,7 +1826,7 @@ export class ServiceCreditSqliteStore {
         if (recovered === null || !recovered.transitioned) {
           return {
             changed: false,
-            result: receipt({
+            result: OBJECT_FREEZE({
               disposition: 'UNCHANGED',
               revision: physicalEnvelope.revision,
               noInvocationCount: 0,
@@ -1855,7 +1856,7 @@ export class ServiceCreditSqliteStore {
         const next = this.#persistCompound(previous, ledgerState, recovered.state);
         return {
           changed: true,
-          result: receipt({
+          result: OBJECT_FREEZE({
             disposition: 'APPLIED',
             revision: next.revision,
             noInvocationCount: recovered.noInvocationCount,
