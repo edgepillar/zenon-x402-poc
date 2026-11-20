@@ -882,6 +882,8 @@ function assertDurableCrossLinks(configuration, ledgerState, executionState) {
     REFLECT_APPLY(MAP_SET, unlinked, [ledgerRequestKey(request), request]);
   }
   let nonterminalCount = 0;
+  let lastResult = null;
+  let lastResultCommitment = null;
   for (let index = 0; index < executionState.executions.length; index += 1) {
     const execution = executionState.executions[index];
     const key = ledgerRequestKey(execution.request);
@@ -913,11 +915,17 @@ function assertDurableCrossLinks(configuration, ledgerState, executionState) {
         failStore('SERVICE_CREDIT_STORE_CORRUPT');
       }
     } else if (execution.terminalClassification === 'SUCCEEDED') {
-      if (
-        request.state !== REQUEST_STATE.SUCCEEDED
-        || request.cachedResult === null
-        || execution.resultCommitment !== durableResultCommitmentFor(request.cachedResult)
-      ) {
+      const result = request.cachedResult;
+      if (request.state !== REQUEST_STATE.SUCCEEDED || result === null) {
+        failStore('SERVICE_CREDIT_STORE_CORRUPT');
+      }
+      // Repeated results in this pass can share a digest, while each
+      // execution must still match its own persisted commitment.
+      if (lastResult === null || !isDeepStrictEqual(result, lastResult)) {
+        lastResult = result;
+        lastResultCommitment = durableResultCommitmentFor(result);
+      }
+      if (execution.resultCommitment !== lastResultCommitment) {
         failStore('SERVICE_CREDIT_STORE_CORRUPT');
       }
     } else if (
