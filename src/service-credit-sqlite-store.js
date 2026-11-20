@@ -976,7 +976,7 @@ function receipt(value) {
   return frozenSnapshot(value);
 }
 
-function assertCapacity(configuration, state) {
+function serializeLedgerState(configuration, state) {
   if (
     !exactKeys(state, ['schemaVersion', 'modelVersion', 'offers', 'grants', 'requests'])
     || !Array.isArray(state.offers)
@@ -989,10 +989,14 @@ function assertCapacity(configuration, state) {
     state.offers.length > configuration.maxOffers
     || state.grants.length > configuration.maxGrants
     || state.requests.length > configuration.maxRequests
-    || Buffer.byteLength(canonicalJson(state)) > configuration.maxStateBytes
   ) {
     failStore('SERVICE_CREDIT_STORE_CAPACITY_EXCEEDED');
   }
+  const text = canonicalJson(state);
+  if (Buffer.byteLength(text) > configuration.maxStateBytes) {
+    failStore('SERVICE_CREDIT_STORE_CAPACITY_EXCEEDED');
+  }
+  return text;
 }
 
 function serializePhysicalEnvelope(configuration, envelope) {
@@ -1931,7 +1935,7 @@ export class ServiceCreditSqliteStore {
 
   #persistCompound(physicalEnvelope, ledgerState, executionState) {
     this.#assertPersistableState(ledgerState);
-    assertCapacity(this.#configuration, ledgerState);
+    serializeLedgerState(this.#configuration, ledgerState);
     assertDurableCrossLinks(this.#configuration, ledgerState, executionState);
     if (physicalEnvelope.revision === Number.MAX_SAFE_INTEGER) {
       failStore('SERVICE_CREDIT_STORE_CAPACITY_EXCEEDED');
@@ -1955,7 +1959,7 @@ export class ServiceCreditSqliteStore {
       now: this.#configuration.now,
     });
     const state = model.exportState();
-    assertCapacity(this.#configuration, state);
+    serializeLedgerState(this.#configuration, state);
     const envelope = physicalEnvelopeFor(0, state, null);
     const text = serializePhysicalEnvelope(this.#configuration, envelope);
     this.#runTransaction('create', () => {
@@ -1975,12 +1979,10 @@ export class ServiceCreditSqliteStore {
     return this.#runPublicOperation(() => {
       const outcome = this.#runTransaction(operation, () => {
         this.#validateDatabase();
-        const { executionState, physicalEnvelope, model } = this.#readLedger();
+        const { executionState, physicalEnvelope, model, ledgerStateJson } = this.#readLedger();
         if (executionState !== null && legacyRequestMutation(operation)) {
           failStore('SERVICE_CREDIT_STORE_LEGACY_EXECUTION_MUTATION_BLOCKED');
         }
-        const beforeState = model.exportState();
-        const beforeCanonical = canonicalJson(beforeState);
         let result;
         let deferredDomainError = null;
         try {
@@ -1991,11 +1993,10 @@ export class ServiceCreditSqliteStore {
           deferredDomainError = fixedModelFailure(code);
         }
         const afterState = model.exportState();
-        const afterCanonical = canonicalJson(afterState);
-        const changed = beforeCanonical !== afterCanonical;
+        const changed = ledgerStateJson !== canonicalJson(afterState);
         if (changed) {
           this.#assertPersistableState(afterState);
-          assertCapacity(this.#configuration, afterState);
+          serializeLedgerState(this.#configuration, afterState);
           if (physicalEnvelope.revision === Number.MAX_SAFE_INTEGER) {
             failStore('SERVICE_CREDIT_STORE_CAPACITY_EXCEEDED');
           }
@@ -2040,7 +2041,7 @@ export class ServiceCreditSqliteStore {
       ) {
         failStore('SERVICE_CREDIT_STORE_CORRUPT');
       }
-      const { model, normalizedState } = this.#hydrateLedgerState(envelope.ledgerState);
+      const { model, normalizedState, ledgerStateJson } = this.#hydrateLedgerState(envelope.ledgerState);
       let normalizedExecutionState = null;
       if (envelope.executionState !== null) {
         normalizedExecutionState = invokeExecutionContract(
@@ -2059,7 +2060,7 @@ export class ServiceCreditSqliteStore {
         normalizedExecutionState,
       );
       if (
-        canonicalJson(normalizedState) !== canonicalJson(envelope.ledgerState)
+        canonicalJson(normalizedState) !== ledgerStateJson
         || normalizedEnvelope.checksum !== envelope.checksum
         || canonicalJson(envelope) !== text
       ) {
@@ -2070,6 +2071,7 @@ export class ServiceCreditSqliteStore {
         executionState: normalizedExecutionState,
         physicalEnvelope: normalizedEnvelope,
         model,
+        ledgerStateJson,
       };
     } catch (error) {
       const code = storeErrorCode(error);
@@ -2093,10 +2095,10 @@ export class ServiceCreditSqliteStore {
       ) {
         failStore('SERVICE_CREDIT_STORE_CORRUPT');
       }
-      const { model, normalizedState } = this.#hydrateLedgerState(envelope.state);
+      const { model, normalizedState, ledgerStateJson } = this.#hydrateLedgerState(envelope.state);
       const normalizedEnvelope = publicEnvelopeFor(envelope.revision, normalizedState);
       if (
-        canonicalJson(normalizedState) !== canonicalJson(envelope.state)
+        canonicalJson(normalizedState) !== ledgerStateJson
         || normalizedEnvelope.checksum !== envelope.checksum
         || canonicalJson(envelope) !== text
       ) {
@@ -2165,7 +2167,7 @@ export class ServiceCreditSqliteStore {
     ) {
       failStore('SERVICE_CREDIT_STORE_CORRUPT');
     }
-    assertCapacity(this.#configuration, state);
+    const ledgerStateJson = serializeLedgerState(this.#configuration, state);
     let model;
     try {
       model = InMemoryServiceCreditModel.fromState({
@@ -2178,7 +2180,7 @@ export class ServiceCreditSqliteStore {
     } catch {
       failStore('SERVICE_CREDIT_STORE_CORRUPT');
     }
-    return { model, normalizedState: model.exportState() };
+    return { model, normalizedState: model.exportState(), ledgerStateJson };
   }
 
   #validateDatabase(expectedVersion = SERVICE_CREDIT_SQLITE_SCHEMA_VERSION) {
