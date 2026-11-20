@@ -52,7 +52,7 @@ function createApplication(configuration,purchased,nonDp=false){
   let held=false,closed=false,active=false,closing=null,childClose=null,prepared=null,originalDigest=null,retained=null,selected=null;
   let prepareClaimed=false,commitClaimed=false,commitReturned=false,submissionClaimed=false,retains=0,reads=0,currentChecks=0;
   let custodyActive=false,custodyUnknown=false,childCloseRequested=false;
-  let childViewDepth=0;
+  let childViewDepth=0,childViewUnknown=false;
   let fundingReturned=false,handoffClaimed=false,querySelection=null,queryReceipt=null,queryActive=false,queryUnknown=false,queryClosed=false,purchaseMatched=false;
   const opaque=new Set(),retainedFrame=F(()=>[c,childClose,prepared,retained,selected,querySelection,queryReceipt,opaque]);
   function hold(){held=true;HELD.add(retainedFrame);}
@@ -60,10 +60,16 @@ function createApplication(configuration,purchased,nonDp=false){
   function childView(){
     // Borrowed inspection can reenter this parent. Do not admit work or stop
     // the child while that synchronous borrower has not returned.
+    if(childViewUnknown)fail();
     childViewDepth++;
-    try{const v=A(child.inspect,c.application,[]);if(v===null||typeof v!=='object'||types.isProxy(v)||Object.getPrototypeOf(v)!==Object.prototype||!Object.isFrozen(v))fail();
+    let v;
+    try{v=A(child.inspect,c.application,[]);if(v===null||typeof v!=='object'||types.isProxy(v)||Object.getPrototypeOf(v)!==Object.prototype||!Object.isFrozen(v))fail();
       if(data(v,'held')!==false)hold();return v;
-    }catch{hold();fail();}
+    }catch{
+      // A throw or opaque return does not establish a completed inspection.
+      // Retain it without another borrow or a competing stop.
+      childViewUnknown=true;if(v!==undefined)keep(v);hold();fail();
+    }
     finally{childViewDepth--;if(closing!==null)startChildClose();}
   }
   function available(){if(!invariant()){hold();fail();}if(closed||held||closing!==null)fail();const v=childView();if(!invariant()){hold();fail();}if(closed||held||closing!==null||data(v,'lifecycle')!=='OPEN'||data(v,'publicOperationActive')!==false)fail();}
@@ -179,18 +185,35 @@ function createApplication(configuration,purchased,nonDp=false){
     handoffToService:handoff,submitOriginal:input=>delegate('submitOriginal',input)};
   for(const name of OPS)out[name]=F(function(input){return start(work[name],arguments.length,input);});
   out.inspect=F(function inspect(){
-    if(arguments.length!==0)fail();const view=childView(),copy={};
-    for(const name of K(view)){if(typeof name!=='string'||name==='grantQueryRecovery')fail();Object.defineProperty(copy,name,{value:data(view,name),enumerable:true,configurable:true});}
+    if(arguments.length!==0)fail();
+    let view=null;
+    if(!childViewUnknown){
+      try{view=childView();}catch{if(!childViewUnknown)fail();}
+    }
+    // Report the local hold without borrowing the child. Child activity
+    // remains unknown when no synchronous receipt was established.
+    const copy={};
+    if(view===null){
+      Object.defineProperty(copy,'publicOperationActive',{value:null,enumerable:true});
+    }else{
+      for(const name of K(view)){
+        if(typeof name!=='string'||name==='grantQueryRecovery')fail();
+        Object.defineProperty(copy,name,{value:data(view,name),enumerable:true,configurable:true});
+      }
+    }
     if(held){Object.defineProperty(copy,'held',{value:true,enumerable:true});Object.defineProperty(copy,'lifecycle',{value:'HELD',enumerable:true});}
     else if(closed&&data(view,'lifecycle')!=='CLOSED')Object.defineProperty(copy,'lifecycle',{value:'CLOSING',enumerable:true});
     Object.defineProperty(copy,'grantQueryRecovery',{value:F({version:1,phase:held?'HELD':retained===null?'NOT_CAPTURED':'CAPTURED',
       prepareClaimed,commitClaimed,commitReturned,submissionClaimed,active,retains,reads,currentChecks,custodyActive,custodyUnknown,childCloseRequested,
+      ...(childViewUnknown?{childViewUnknown:true}:{}),
       checkpointDigest:selected?.checkpointDigest??null,queryDigest:selected?.queryDigest??null,
       proofGeneration:false,...(purchased?{queryDispatchRequested:handoffClaimed}:{queryDispatch:false}),
       ...(purchased?{purchasedGrantHandoff:F({version:1,fundingReturned,handoffClaimed,queryActive,queryUnknown,queryCloseObserved:queryClosed,purchaseMatched,maximumQueries:1,grantAuthority:'NOT_REVALIDATED',deliveryLiability:'UNCHANGED'})}:{}),store:'BORROWED_SELECTED_SPENDING_OWNER',nativePersistence:'NOT_QUALIFIED',authority:'NONE'}),enumerable:true});return F(copy);
   });
   function startChildClose(){
-    if(closing===null||childCloseRequested||childViewDepth!==0||custodyActive||custodyUnknown||purchased&&(queryActive||queryUnknown))return;
+    if(closing===null)return;
+    if(childViewUnknown){closing.reject(error());return;}
+    if(childCloseRequested||childViewDepth!==0||custodyActive||custodyUnknown||purchased&&(queryActive||queryUnknown))return;
     childCloseRequested=true;
     try{childClose=A(child.close,c.application,[]);observe(childClose,value=>{
       try{const v=childView();if(value!==undefined||held||active||data(v,'lifecycle')!=='CLOSED'||data(v,'publicOperationActive')!==false)fail();closing.resolve(undefined);}

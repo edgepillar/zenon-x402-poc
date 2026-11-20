@@ -121,8 +121,14 @@ check('recovery-admission-invalid-arity-does-not-borrow-child-inspection', async
 });
 check('recovery-admission-inspection-refusal-stays-held-without-child-work', async () => {
   const f = recoveryAdmissionFixture(); f.viewAction = () => { throw Error('declared inspection refusal'); };
-  await assert.rejects(f.prepare()); assert.equal(f.entries.length, 0); assert.equal(f.root.inspect().held, true);
-  await assert.rejects(f.prepare()); await assert.rejects(f.root.close()); assert.equal(f.closeCalls, 1);
+  await assert.rejects(f.prepare()); assert.equal(f.entries.length, 0);
+  const inspections = f.viewEntries, view = f.root.inspect();
+  assert.equal(view.held, true); assert.equal(view.lifecycle, 'HELD');
+  assert.equal(view.publicOperationActive, null); assert.equal(view.grantQueryRecovery.childViewUnknown, true);
+  assert.equal(view.grantQueryRecovery.prepareClaimed, false);
+  await assert.rejects(f.prepare());
+  const close = f.root.close(); assert.equal(f.root.close(), close); await assert.rejects(close);
+  assert.equal(f.viewEntries, inspections); assert.equal(f.closeCalls, 0);
 });
 check('recovery-admission-late-entered-result-cannot-repair-stop-or-original-custody', async () => {
   const f = recoveryAdmissionFixture(); await f.fund(); await f.handoff();

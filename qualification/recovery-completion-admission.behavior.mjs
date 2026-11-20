@@ -13,8 +13,8 @@ function deferred() {
 const input = F({ originalRequest: '{"requestId":"retained.original","body":"same-bytes"}' });
 const receipt = F({ phase: 'DECLARED_RECORDED_RESULT', originalRequest: input.originalRequest });
 
-function fixture({ completion = null, borrowed = null, pending = false } = {}) {
-  const s = { calls: 0, closes: 0, reads: 0, current: 0, injected: false, completing: false, lifecycle: 'OPEN' };
+function fixture({ completion = null, borrowed = null, pending = false, firstView = null } = {}) {
+  const s = { calls: 0, closes: 0, inspections: 0, reads: 0, current: 0, injected: false, completing: false, lifecycle: 'OPEN' };
   const result = deferred(); let root, closing = null, nested = null, closesInside = null;
   const child = {};
   for (const name of ['prepareOriginalFunding', 'commitOriginalFunding', 'submitOriginalFunding', 'handoffToService']) {
@@ -29,15 +29,18 @@ function fixture({ completion = null, borrowed = null, pending = false } = {}) {
   });
   child.inspect = F(function inspect() {
     assert.equal(arguments.length, 0);
+    s.inspections++;
+    if (s.inspections === 1 && firstView !== null) return firstView();
     const view = { lifecycle: s.lifecycle, held: false, publicOperationActive: false };
     if (s.completing && !s.injected) {
       s.injected = true;
-      if (completion !== null) completion(view);
+      const selected = completion === null ? undefined : completion(view);
       if (borrowed === 'close') {
         closing = root.close(); closing.catch(() => {}); closesInside = s.closes;
       } else if (borrowed === 'operation') {
         nested = root.submitOriginal(input); nested.catch(() => {});
       }
+      if (selected !== undefined) return selected;
     }
     return F(view);
   });
@@ -57,6 +60,15 @@ function held(f) {
   const v = f.root.inspect(); assert.equal(v.held, true); assert.equal(v.lifecycle, 'HELD');
   assert.equal(v.grantQueryRecovery.active, false);
   assert.equal(f.s.calls, 1); assert.equal(f.s.reads, 0); assert.equal(f.s.current, 0);
+}
+function localHold(f) {
+  const v = f.root.inspect();
+  assert.equal(Object.isFrozen(v), true);
+  assert.equal(v.lifecycle, 'HELD');
+  assert.equal(v.held, true);
+  assert.equal(v.publicOperationActive, null);
+  assert.equal(v.grantQueryRecovery.childViewUnknown, true);
+  assert.equal(v.grantQueryRecovery.active, false);
 }
 async function refusal(options) {
   const f = fixture(options);
@@ -106,6 +118,40 @@ check('recovery-completion-late-child-success-cannot-repair-a-stopped-parent', a
   const close = f.root.close(); close.catch(() => {});
   f.result.resolve(receipt); await assert.rejects(operation); await assert.rejects(close);
   held(f); assert.equal(f.root.close(), close); assert.equal(f.s.closes, 1);
+});
+check('recovery-completion-pending-inspection-refuses-child-stop-and-retains-original', async () => {
+  const pending = deferred();
+  const f = fixture({ completion: () => pending.promise, borrowed: 'close' });
+  await assert.rejects(f.root.submitOriginal(input), /API_CREDIT_FUNDING_GRANT_RECOVERY_UNAVAILABLE/);
+  const close = f.closing();
+  assert.equal(f.root.close(), close);
+  await assert.rejects(close, /API_CREDIT_FUNDING_GRANT_RECOVERY_UNAVAILABLE/);
+  assert.equal(f.closesInside(), 0);
+  localHold(f);
+  pending.reject(new Error('declared late inspection rejection'));
+  await Promise.resolve();
+  localHold(f);
+  await assert.rejects(f.root.submitOriginal(input));
+  assert.deepEqual([f.s.calls, f.s.inspections, f.s.closes, f.s.reads], [1, 2, 0, 0]);
+});
+check('recovery-completion-inspection-throw-refuses-a-later-child-stop', async () => {
+  const first = fixture({ firstView() { throw new Error('declared initial inspection failure'); } });
+  localHold(first);
+  const initialClose = first.root.close();
+  assert.equal(first.root.close(), initialClose);
+  await assert.rejects(initialClose);
+  await assert.rejects(first.root.submitOriginal(input));
+  localHold(first);
+  assert.deepEqual([first.s.calls, first.s.inspections, first.s.closes], [0, 1, 0]);
+
+  const f = fixture({ completion() { throw new Error('declared inspection failure'); } });
+  await assert.rejects(f.root.submitOriginal(input));
+  const close = f.root.close();
+  await assert.rejects(close, /API_CREDIT_FUNDING_GRANT_RECOVERY_UNAVAILABLE/);
+  assert.equal(f.root.close(), close);
+  localHold(f);
+  await assert.rejects(f.root.submitOriginal(input));
+  assert.deepEqual([f.s.calls, f.s.inspections, f.s.closes, f.s.reads], [1, 2, 0, 0]);
 });
 
 const results = []; let active = null, reported = false;
