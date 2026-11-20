@@ -4,13 +4,27 @@ import assert from 'node:assert/strict';
 import { resultInspectionFixture as fixture } from './api-credit-recorded-result-inspection.fixture.mjs';
 import { createServiceCreditCustodiedBackendRecoveryCore as core,readServiceCreditExactOriginalBackendRecoveryState as read } from '../src/service-credit-custodied-backend-recovery-core.js';
 import { captureApiCreditRecordedResultInspection as project } from '../src/api-credit-recorded-result-inspection.js';
-import { runServiceCreditRecoveryInspectionOwner as legacyOwner } from '../src/service-credit-recovery-inspection-owner.js';
+import {
+ captureServiceCreditRecoveryInspectionResult as redact,
+ runServiceCreditRecoveryInspectionOwner as redactedOwner,
+} from '../src/service-credit-recovery-inspection-owner.js';
 
 const F=Object.freeze,checks=[];function check(id,run){checks.push({id,run});}
 async function opened(options){const r=await fixture(options);r.expected=r.manifest();r.store=r.ports.openBackend(r.expected);r.connection=await r.ports.openPayer(r.expected,r.store);return r;}
 async function stopped(r){await r.connection.close();r.ports.closeBackend(r.store);}
 function query(r,bytes=r.packet.serializedCheckpoint,pins=r.packet.expectedPins){return read(r.connection,r.key,r.input.authorizationHeader,pins,bytes);}
 function unchanged(r,before){assert.equal(JSON.stringify(r.model.exportState()),before);assert.equal(r.originalCounts.funding,1);assert.equal(r.originalCounts.grants,1);}
+
+function redacted(r, overrides = {}) {
+ return redactedOwner({
+  manifest: r.manifest(),
+  authorizationHeader: r.input.authorizationHeader,
+  serializedCheckpoint: r.packet.serializedCheckpoint,
+  ports: r.ports,
+  requireOpening: r.guard,
+  ...overrides,
+ });
+}
 
 check('exact-checkpoint-branded-read-keeps-the-existing-frozen-client-facade-and-three-argument-method',async()=>{
  const r=await opened(),keys=Reflect.ownKeys(r.connection),before=JSON.stringify(r.model.exportState());
@@ -26,10 +40,68 @@ check('exact-checkpoint-product-owner-returns-the-identical-projection-with-two-
  assert.deepEqual(result,golden);assert.equal(r.checkpointReads,2);assert.equal(r.localReads,2);assert.equal(r.backendReads,1);
  assert.equal(r.payerCloseCalls,1);assert.equal(r.backendCloseCalls,1);unchanged(r,before);
 });
-check('exact-checkpoint-legacy-redacted-owner-retains-its-independent-outer-byte-checks',async()=>{
- const r=await fixture(),result=await legacyOwner({manifest:r.manifest(),authorizationHeader:r.input.authorizationHeader,
-  serializedCheckpoint:r.packet.serializedCheckpoint,ports:r.ports,requireOpening:r.guard});
- assert.equal(r.checkpointReads,4);assert.equal(r.backendReads,1);assert.equal(Object.hasOwn(result,'cachedResult'),false);assert.equal(Object.hasOwn(result,'responseJson'),false);
+check('exact-checkpoint-redacted-owner-uses-two-witness-reads-with-the-same-output', async () => {
+ const r = await fixture();
+ const expected = redact(r.observation());
+ const before = JSON.stringify(r.model.exportState());
+ assert.deepEqual(await redacted(r), expected);
+ assert.equal(r.checkpointReads, 2);
+ assert.equal(r.localReads, 2);
+ assert.equal(r.backendReads, 1);
+ assert.equal(r.payerCloseCalls, 1);
+ assert.equal(r.backendCloseCalls, 1);
+ assert.equal(Object.hasOwn(expected, 'cachedResult'), false);
+ assert.equal(Object.hasOwn(expected, 'responseJson'), false);
+ unchanged(r, before);
+});
+check('exact-checkpoint-redacted-owner-refuses-different-independent-bytes-before-the-query', async () => {
+ const r = await fixture();
+ await assert.rejects(redacted(r, { serializedCheckpoint: ' ' + r.packet.serializedCheckpoint }));
+ assert.equal(r.checkpointReads, 1);
+ assert.equal(r.localReads, 0);
+ assert.equal(r.backendReads, 0);
+ assert.equal(r.payerCloseCalls, 1);
+ assert.equal(r.backendCloseCalls, 1);
+});
+check('exact-checkpoint-redacted-owner-refuses-drift-without-a-second-query', async () => {
+ const r = await fixture({ changedCheckpoint: true });
+ await assert.rejects(redacted(r));
+ assert.equal(r.checkpointReads, 2);
+ assert.equal(r.backendReads, 1);
+ assert.equal(r.payerCloseCalls, 1);
+ assert.equal(r.backendCloseCalls, 1);
+});
+check('exact-checkpoint-redacted-owner-rechecks-an-absent-original-without-querying-the-backend', async () => {
+ for (const changedCheckpoint of [false, true]) {
+  const r = await fixture({ absentOriginal: true, changedCheckpoint });
+  if (changedCheckpoint) await assert.rejects(redacted(r));
+  else assert.equal((await redacted(r)).status, 'CLIENT_ORIGINAL_NOT_RECORDED');
+  assert.equal(r.checkpointReads, 2);
+  assert.equal(r.localReads, 1);
+  assert.equal(r.backendReads, 0);
+  assert.equal(r.payerCloseCalls, 1);
+  assert.equal(r.backendCloseCalls, 1);
+ }
+});
+check('exact-checkpoint-redacted-owner-keeps-outer-checks-for-an-unbranded-reader', async () => {
+ const r = await fixture();
+ const ports = F({
+  ...r.ports,
+  openPayer: F(async (manifest, backend) => F({ ...(await r.ports.openPayer(manifest, backend)) })),
+ });
+ assert.deepEqual(await redacted(r, { ports }), redact(r.observation()));
+ assert.equal(r.checkpointReads, 4);
+ assert.equal(r.backendReads, 1);
+ assert.equal(r.payerCloseCalls, 1);
+ assert.equal(r.backendCloseCalls, 1);
+});
+check('exact-checkpoint-redacted-owner-without-independent-bytes-keeps-the-ordinary-reader', async () => {
+ const r = await fixture({ absentOriginal: true });
+ assert.equal((await redacted(r, { serializedCheckpoint: null })).status, 'CLIENT_ORIGINAL_NOT_RECORDED');
+ assert.equal(r.checkpointReads, 1);
+ assert.equal(r.backendReads, 0);
+ assert.equal(r.payerCloseCalls, 1);
+ assert.equal(r.backendCloseCalls, 1);
 });
 check('exact-checkpoint-wrong-independent-bytes-refuse-before-any-original-or-backend-query',async()=>{
  const r=await opened(),before=JSON.stringify(r.model.exportState());assert.throws(()=>query(r,' '+r.packet.serializedCheckpoint));
@@ -94,7 +166,7 @@ const cases=[];for(const{id,run}of checks){try{await run();cases.push({id,status
 const failed=cases.filter(c=>c.status!=='PASS').length;
 console.log(JSON.stringify({qualification:'G1_G2_EXACT_CHECKPOINT_QUERY_DATA',passed:cases.length-failed,failed,cases,
  actualCombinedCoreAndProductOwner:true,declaredSQLProofFileEpochAndChannelPortsOnly:true,inMemoryReferenceReconstructionOnly:true,
- previousRecordedOwnerCheckpointReads:4,currentRecordedOwnerCheckpointReads:2,legacyRedactedOwnerCheckpointReads:4,backendReadsPerExactQuery:1,frozenFacadeMethodsChanged:false,
+ previousRecordedOwnerCheckpointReads:4,currentRecordedOwnerCheckpointReads:2,previousRedactedOwnerCheckpointReads:4,currentRedactedOwnerCheckpointReads:2,backendReadsPerExactQuery:1,frozenFacadeMethodsChanged:false,
  nativeExecutions:0,SDK:0,SQLite:0,keys:0,signatures:0,sockets:0,nonceSearches:0,nodeChildren:0,actualPrepare:0,payouts:0,
  nativeLatencyImprovement:'NOT_ESTABLISHED',nativeIOImprovement:'NOT_ESTABLISHED',nativeContention:'NOT_EXECUTED',nativeReopenAcceptance:'NOT_ESTABLISHED',LinuxAcceptance:'NOT_ESTABLISHED'}));
 if(failed)process.exitCode=1;

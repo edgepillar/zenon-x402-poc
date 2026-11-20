@@ -121,6 +121,10 @@ function view(status, local = null, backend = null) {
   });
 }
 
+export function hasServiceCreditExactOriginalBackendRecoveryReader(connection) {
+  return EXACT_CHECKPOINT_READERS.has(connection);
+}
+
 /** Independently retained bytes join the SAME two checkpoint reads in a
  * branded V6 no-dispatch connection. The frozen facade is unchanged. */
 export function readServiceCreditExactOriginalBackendRecoveryState(connection, key, authorizationHeader, expectedPins, serializedCheckpoint) {
