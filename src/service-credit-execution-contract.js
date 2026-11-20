@@ -501,7 +501,7 @@ function normalizeExecution(value, ledgerId, generationId, rootPolicy, code) {
   };
 }
 
-function normalizeState(value) {
+function normalizeState(value, previousState) {
   const code = CODE.invalidState;
   const input = exactDataObject(value, ROOT_KEYS, code);
   const policy = normalizePolicy(input.policy, code);
@@ -527,19 +527,30 @@ function normalizeState(value) {
     fail(code);
   }
   const values = exactDataArray(input.executions, input.capacity, code);
+  let retained = null;
+  if (
+    previousState !== undefined
+    && REFLECT_APPLY(WEAK_SET_HAS, NORMALIZED_STATES, [previousState])
+    && input.ledgerId === previousState.ledgerId
+    && input.policy === previousState.policy
+    && input.capacity === previousState.capacity
+    && expectedGenerationId === previousState.generation.generationId
+  ) {
+    retained = new SET_CONSTRUCTOR();
+    for (let index = 0; index < previousState.executions.length; index += 1) {
+      setAdd(retained, previousState.executions[index]);
+    }
+  }
   const executions = [];
   const requestKeys = new SET_CONSTRUCTOR();
   const executionIds = new SET_CONSTRUCTOR();
   let prior = null;
   for (let index = 0; index < values.length; index += 1) {
     const value = values[index];
-    const execution = normalizeExecution(
-      value,
-      input.ledgerId,
-      expectedGenerationId,
-      policy,
-      code,
-    );
+    // An unchanged entry is the exact frozen record validated in this scope.
+    const execution = retained !== null && setHas(retained, value)
+      ? value
+      : normalizeExecution(value, input.ledgerId, expectedGenerationId, policy, code);
     const key = requestKey(execution.request);
     if (
       setHas(requestKeys, key)
@@ -608,7 +619,7 @@ function makeState(state, executions, generation = state.generation) {
     capacity: state.capacity,
     generation,
     executions: sortedCopy(executions, compareExecution),
-  });
+  }, state);
 }
 
 function replaceExecution(state, replacement, generation = state.generation) {
