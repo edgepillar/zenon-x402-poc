@@ -2817,8 +2817,8 @@
     },
     {
       "path": "src/service-credit-execution-contract.js",
-      "bytes": 31489,
-      "sha256": "4b3177ea98a24aa45da57a2e7b55c75f2bde20ab6ca4b606b7436c2b2cdb722d",
+      "bytes": 32010,
+      "sha256": "96e89fb0b23b85b0d980b319194916c62c287c11b5356c49f53054e8fa281061",
       "format": "module"
     },
     {

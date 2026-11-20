@@ -397,6 +397,20 @@ function requestKey(request) {
   return `${request.grantId}\0${request.requestId}`;
 }
 
+function requestInsertionIndex(executions, key) {
+  let first = 0;
+  let last = executions.length;
+  while (first < last) {
+    const middle = (first + last) >>> 1;
+    if (requestKey(executions[middle].request) < key) {
+      first = middle + 1;
+    } else {
+      last = middle;
+    }
+  }
+  return first;
+}
+
 function compareExecution(left, right) {
   const leftKey = requestKey(left.request);
   const rightKey = requestKey(right.request);
@@ -612,13 +626,15 @@ function checkedState(value) {
 }
 
 function makeState(state, executions, generation = state.generation) {
+  // Preparation inserts at its ordered position. Replacing or recovering
+  // an execution keeps its request key, and normalization checks this order.
   return normalizeState({
     contractVersion: CONTRACT_VERSION,
     ledgerId: state.ledgerId,
     policy: state.policy,
     capacity: state.capacity,
     generation,
-    executions: sortedCopy(executions, compareExecution),
+    executions,
   }, state);
 }
 
@@ -712,14 +728,9 @@ export function prepareServiceCreditExecution(options) {
   if (!NUMBER_IS_SAFE_INTEGER(wallClockDeadlineMs)) fail(CODE.invalidInput);
 
   const key = requestKey(request);
-  let existing = null;
-  for (let index = 0; index < state.executions.length; index += 1) {
-    if (requestKey(state.executions[index].request) === key) {
-      existing = state.executions[index];
-      break;
-    }
-  }
-  if (existing) {
+  const insertion = requestInsertionIndex(state.executions, key);
+  const existing = insertion < state.executions.length ? state.executions[insertion] : null;
+  if (existing !== null && requestKey(existing.request) === key) {
     if (
       !sameJson(existing.request, request)
       || !sameJson(existing.policy, policy)
@@ -760,15 +771,18 @@ export function prepareServiceCreditExecution(options) {
     uncertaintyReason: null,
   };
   const executions = [];
-  for (let index = 0; index < state.executions.length; index += 1) {
-    setArrayValue(executions, index, state.executions[index]);
+  for (let index = 0; index < insertion; index += 1) {
+    appendArrayValue(executions, state.executions[index]);
   }
   appendArrayValue(executions, execution);
+  for (let index = insertion; index < state.executions.length; index += 1) {
+    appendArrayValue(executions, state.executions[index]);
+  }
   const next = makeState(state, executions);
   // makeState has already detached and frozen the entire next state.
   return OBJECT_FREEZE({
     state: next,
-    execution: snapshot(executionOutcome(next, executionId)),
+    execution: snapshot(next.executions[insertion]),
     replayed: false,
   });
 }
