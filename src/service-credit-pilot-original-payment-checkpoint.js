@@ -5,6 +5,9 @@ const B = ['requestId', 'paymentHash', 'origin', 'contextId'];
 const K = ['requestBody', 'paymentPayload', 'paymentRequirements', 'context'];
 const C = ['version', 'authorization', 'binding', 'originalBytes', 'digests'];
 const freeze = Object.freeze;
+const validatedCheckpoints = new WeakSet();
+const hasValidatedCheckpoint = validatedCheckpoints.has.bind(validatedCheckpoints);
+const rememberValidatedCheckpoint = validatedCheckpoints.add.bind(validatedCheckpoints);
 function bad() { throw new TypeError('Invalid original-payment checkpoint'); }
 function record(v, keys) {
   if (!v || typeof v !== 'object') bad();
@@ -68,11 +71,15 @@ export function captureOriginalPaymentCheckpoint(input) {
   const v = record(input, ['binding', 'originalBytes']);
   const b = binding(v.binding), bytes = record(v.originalBytes, K), d = {};
   for (const k of K) d[k] = fingerprint(bytes[k], k);
-  return freeze({ checkpoint: make(b, bytes, d),
+  const checkpoint = make(b, bytes, d);
+  rememberValidatedCheckpoint(checkpoint);
+  return freeze({ checkpoint,
     pins: freeze({ binding: freeze({ ...b }), digests: freeze({ ...d }) }) });
 }
 export function encodeOriginalPaymentCheckpoint(checkpoint) {
-  const s = canonical(checked(checkpoint));
+  // Capture and restore validate every field and freeze the complete record.
+  const c = hasValidatedCheckpoint(checkpoint) ? checkpoint : checked(checkpoint);
+  const s = canonical(c);
   if (Buffer.byteLength(s) > 32768) bad();
   return s;
 }
@@ -85,5 +92,6 @@ export function restoreOriginalPaymentCheckpoint(serialized, expectedPins) {
   if (canonical(c) !== serialized) bad();
   for (const k of B) if (c.binding[k] !== b[k]) bad();
   for (const k of K) if (c.digests[k] !== d[k]) bad();
+  rememberValidatedCheckpoint(c);
   return c;
 }
