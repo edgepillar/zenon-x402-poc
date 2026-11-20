@@ -79,11 +79,6 @@ const ARRAY_SORT = Array.prototype.sort;
 const STRING_FROM = String;
 const SET_CONSTRUCTOR = Set;
 const SET_HAS = Set.prototype.has;
-const MAP_CONSTRUCTOR = Map;
-const MAP_SET = Map.prototype.set;
-const MAP_GET = Map.prototype.get;
-const MAP_DELETE = Map.prototype.delete;
-const MAP_FOR_EACH = Map.prototype.forEach;
 const JSON_STRINGIFY = JSON.stringify;
 const IS_PROXY = utilTypes.isProxy;
 
@@ -811,8 +806,15 @@ function physicalEnvelopeFor(revision, ledgerState, ledgerStateJson, executionSt
   return { envelope: OBJECT_FREEZE({ ...content, checksum }), text };
 }
 
-function ledgerRequestKey(request) {
-  return `${request.grantId}\0${request.requestId}`;
+function requestSortsBefore(left, right) {
+  return left.grantId < right.grantId
+    || (left.grantId === right.grantId && left.requestId < right.requestId);
+}
+
+function requiresExecutionLink(request) {
+  return request.state === REQUEST_STATE.RESERVED
+    || request.state === REQUEST_STATE.EXECUTING
+    || request.state === REQUEST_STATE.OUTCOME_UNKNOWN;
 }
 
 function executionRequestProjection(request) {
@@ -882,24 +884,21 @@ function assertDurableCrossLinks(configuration, ledgerState, executionState) {
   if (executionState.capacity > configuration.maxRequests) {
     failStore('SERVICE_CREDIT_STORE_CAPACITY_EXCEEDED');
   }
-  if (executionState.executions.length === 0) {
-    if (hasNonterminalLedgerRequest(ledgerState)) failStore('SERVICE_CREDIT_STORE_CORRUPT');
-    return;
-  }
-  // The validated ledger has one request per (grantId, requestId). Remove
-  // each match so two executions cannot consume the same request link.
-  const unlinked = new MAP_CONSTRUCTOR();
-  for (let index = 0; index < ledgerState.requests.length; index += 1) {
-    const request = ledgerState.requests[index];
-    REFLECT_APPLY(MAP_SET, unlinked, [ledgerRequestKey(request), request]);
-  }
+  // Both validated lists are ordered by grant and request ID. Each request
+  // is consumed at most once, and unlinked rows must be settled or released.
+  const requests = ledgerState.requests;
+  let requestIndex = 0;
   let nonterminalCount = 0;
   let lastResult = null;
   let lastResultCommitment = null;
   for (let index = 0; index < executionState.executions.length; index += 1) {
     const execution = executionState.executions[index];
-    const key = ledgerRequestKey(execution.request);
-    const request = REFLECT_APPLY(MAP_GET, unlinked, [key]);
+    while (requestIndex < requests.length
+      && requestSortsBefore(requests[requestIndex], execution.request)) {
+      if (requiresExecutionLink(requests[requestIndex])) failStore('SERVICE_CREDIT_STORE_CORRUPT');
+      requestIndex += 1;
+    }
+    const request = requestIndex < requests.length ? requests[requestIndex] : undefined;
     // Both records have already been normalized to their exact shapes.
     if (
       request === undefined
@@ -909,7 +908,7 @@ function assertDurableCrossLinks(configuration, ledgerState, executionState) {
     ) {
       failStore('SERVICE_CREDIT_STORE_CORRUPT');
     }
-    REFLECT_APPLY(MAP_DELETE, unlinked, [key]);
+    requestIndex += 1;
     if (execution.terminalClassification === 'NONE') {
       nonterminalCount += 1;
       if (
@@ -948,15 +947,9 @@ function assertDurableCrossLinks(configuration, ledgerState, executionState) {
     }
   }
   if (nonterminalCount > 1) failStore('SERVICE_CREDIT_STORE_CORRUPT');
-  REFLECT_APPLY(MAP_FOR_EACH, unlinked, [request => {
-    if (
-      request.state === REQUEST_STATE.RESERVED
-      || request.state === REQUEST_STATE.EXECUTING
-      || request.state === REQUEST_STATE.OUTCOME_UNKNOWN
-    ) {
-      failStore('SERVICE_CREDIT_STORE_CORRUPT');
-    }
-  }]);
+  for (; requestIndex < requests.length; requestIndex += 1) {
+    if (requiresExecutionLink(requests[requestIndex])) failStore('SERVICE_CREDIT_STORE_CORRUPT');
+  }
 }
 
 function legacyRequestMutation(operation) {
@@ -978,14 +971,7 @@ function sameExecutionConfiguration(state, candidate) {
 
 function hasNonterminalLedgerRequest(ledgerState) {
   for (let index = 0; index < ledgerState.requests.length; index += 1) {
-    const state = ledgerState.requests[index].state;
-    if (
-      state === REQUEST_STATE.RESERVED
-      || state === REQUEST_STATE.EXECUTING
-      || state === REQUEST_STATE.OUTCOME_UNKNOWN
-    ) {
-      return true;
-    }
+    if (requiresExecutionLink(ledgerState.requests[index])) return true;
   }
   return false;
 }
