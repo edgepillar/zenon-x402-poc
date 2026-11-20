@@ -4,7 +4,7 @@ import { dirname, join } from 'node:path';
 import { Writable, finished, pipeline } from 'node:stream';
 import {
   PROFILE_ID, inspectCurrentQualificationProfile, requireUnchangedProfile,
-  requireCompleteCaseResults,
+  requireCompleteCaseResults, describeCurrentQualificationRefusal,
 } from './current-qualification-profile-v3.mjs';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -131,7 +131,10 @@ async function main() {
     else process.env[selectionKey]=previousSelection;
   }
 }
-main().catch(() => {
+main().catch(error => {
   process.exitCode = 1;
-  process.stderr.write('Current qualification refused or incomplete; no broader qualification is established.\n');
+  const refusal = describeCurrentQualificationRefusal(error);
+  const detail = refusal === null ? '' : ' ' + refusal.code
+    + (refusal.sourcePath === null ? '' : ' ' + refusal.sourcePath);
+  process.stderr.write('Current qualification refused or incomplete.' + detail + '\n');
 });

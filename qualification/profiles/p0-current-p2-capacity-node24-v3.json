@@ -191,15 +191,15 @@
     },
     {
       "path": "scripts/current-qualification-profile-v3.mjs",
-      "bytes": 10441,
-      "LF": 193,
-      "sha256": "cf5bdc90c7a4316780c5b7030d7d82c14ea72efa513c09c98231540cfd3b3135"
+      "bytes": 11107,
+      "LF": 210,
+      "sha256": "4ca30aaf0551e1f08929a450d061ebeb126a79ea67fc58bd0724186705a3907d"
     },
     {
       "path": "scripts/run-current-qualification-v3.mjs",
-      "bytes": 7614,
-      "LF": 137,
-      "sha256": "bb2b8cf6baa9714f09089e3dc66c8a41357cf1da1f673b8bc1681fcc6674732f"
+      "bytes": 7818,
+      "LF": 140,
+      "sha256": "4b3604f8ceec5a501123faa873e7b6271b5ec3a647e20114e6572a444c0e64c4"
     },
     {
       "path": "scripts/x402-runtime-dependency-contract.mjs",

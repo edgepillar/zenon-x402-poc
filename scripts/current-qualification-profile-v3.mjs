@@ -50,8 +50,15 @@ const freeze = value => {
   }
   return value;
 };
-function refuse(code) {
-  const error = new Error(code); error.code = code; throw error;
+const refusals = new WeakMap();
+function refuse(code, sourcePath = null) {
+  const error = new Error(code);
+  error.code = code;
+  refusals.set(error, Object.freeze({ code, sourcePath }));
+  throw error;
+}
+export function describeCurrentQualificationRefusal(error) {
+  return refusals.get(error) ?? null;
 }
 function exact(value, keys) {
   if (value === null || Array.isArray(value) || typeof value !== 'object'
@@ -118,16 +125,16 @@ const identity = value => [value.dev, value.ino, value.uid, value.gid, value.mod
 function same(left, right) { return left.every((value, index) => value === right[index]); }
 function boundedFile(repoRoot, relative, cap) {
   const path = join(repoRoot, relative);
-  if (resolve(repoRoot, relative) !== path || !path.startsWith(repoRoot + sep)) refuse('SOURCE_PATH');
+  if (resolve(repoRoot, relative) !== path || !path.startsWith(repoRoot + sep)) refuse('SOURCE_PATH', relative);
   // Check the leaf through its descriptor. The caller selects a trusted,
   // physical checkout; this is not authentication of hostile parent directories.
   const before = lstatSync(path, { bigint: true }), beforeId = identity(before);
   if (!before.isFile() || before.nlink !== 1n || before.size < 1n || before.size > BigInt(cap))
-    refuse('SOURCE_FILE');
+    refuse('SOURCE_FILE', relative);
   const fd = openSync(path, constants.O_RDONLY | constants.O_NOFOLLOW);
   let raw;
   try {
-    if (!same(identity(fstatSync(fd, { bigint: true })), beforeId)) refuse('SOURCE_IDENTITY');
+    if (!same(identity(fstatSync(fd, { bigint: true })), beforeId)) refuse('SOURCE_IDENTITY', relative);
     // The extra byte still detects growth beyond the observed file size.
     // Keep all identity, EOF and complete-content/hash checks unchanged.
     const readBound = Number(before.size) + 1, buffer = Buffer.alloc(readBound);
@@ -135,11 +142,21 @@ function boundedFile(repoRoot, relative, cap) {
     while (used < readBound && (count = readSync(fd, buffer, used, readBound - used, null)) !== 0)
       used += count;
     if (used !== Number(before.size) || !same(identity(fstatSync(fd, { bigint: true })), beforeId))
-      refuse('SOURCE_CHANGED');
+      refuse('SOURCE_CHANGED', relative);
     raw = buffer.subarray(0, used);
   } finally { closeSync(fd); }
-  if (!same(identity(lstatSync(path, { bigint: true })), beforeId)) refuse('SOURCE_CHANGED');
+  if (!same(identity(lstatSync(path, { bigint: true })), beforeId)) refuse('SOURCE_CHANGED', relative);
   return { raw, identity: beforeId, sha256: createHash('sha256').update(raw).digest('hex') };
+}
+function sourceLayoutMatches(raw, expectedLineFeeds) {
+  if (raw[raw.length - 1] !== 0x0a) return false;
+  let lineFeeds = 0;
+  for (let index = 0; index < raw.length; index += 1) {
+    const byte = raw[index];
+    if (byte === 0x0a) lineFeeds += 1;
+    else if (byte !== 0x09 && byte !== 0x0d && (byte < 0x20 || byte > 0x7e)) return false;
+  }
+  return lineFeeds === expectedLineFeeds;
 }
 export function inspectCurrentQualificationProfile(repoRoot) {
   if (typeof repoRoot !== 'string' || resolve(repoRoot) !== repoRoot) refuse('SOURCE_ROOT');
@@ -148,26 +165,26 @@ export function inspectCurrentQualificationProfile(repoRoot) {
   if (process.versions.node !== profile.runtime.node
       || !profile.runtime.platforms.includes(process.platform + '-' + process.arch))
     refuse('RUNTIME_NOT_SELECTED');
-  const texts = new Map();
+  let packageText, lockText;
   const rows = profile.sources.map(source => {
-    const file = boundedFile(repoRoot, source.path, 131072), text = file.raw.toString('utf8');
+    const file = boundedFile(repoRoot, source.path, 131072);
     if (file.raw.length !== source.bytes || file.sha256 !== source.sha256
-        || text.split('\n').length - 1 !== source.LF || !text.endsWith('\n')
-        || /[^\x09\x0a\x0d\x20-\x7e]/.test(text)) refuse('SOURCE_PIN_MISMATCH');
-    texts.set(source.path, text);
+        || !sourceLayoutMatches(file.raw, source.LF)) refuse('SOURCE_PIN_MISMATCH', source.path);
     if (source.path === 'package.json') {
+      packageText = file.raw.toString('utf8');
       let pkg;
-      try { pkg = JSON.parse(text); } catch { refuse('PACKAGE_JSON'); }
+      try { pkg = JSON.parse(packageText); } catch { refuse('PACKAGE_JSON', source.path); }
       if (pkg.name !== profile.packageContract.name || pkg.type !== 'module'
           || pkg.engines?.node !== profile.packageContract.nodeEngine
           || pkg.dependencies?.['@x402/core'] !== profile.packageContract.x402CoreDeclared
           || pkg.devDependencies?.['@x402/core'] !== undefined)
-        refuse('PACKAGE_CONTRACT');
+        refuse('PACKAGE_CONTRACT', source.path);
+    } else if (source.path === 'package-lock.json') {
+      lockText = file.raw.toString('utf8');
     }
     return { path: source.path, sha256: file.sha256, identity: file.identity };
   });
-  const runtimeDependencyContract = inspectX402RuntimeDependencyText(
-    texts.get('package.json'), texts.get('package-lock.json'));
+  const runtimeDependencyContract = inspectX402RuntimeDependencyText(packageText, lockText);
   return freeze({ profile, manifestSha256: manifest.sha256, manifestIdentity: manifest.identity,
     rows, runtimeDependencyContract });
 }
