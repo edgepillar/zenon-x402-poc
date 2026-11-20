@@ -1,7 +1,5 @@
 import { types } from 'node:util';
-import { captureApiCreditFundingGrantRecoveryProfile } from './api-credit-funding-grant-recovery-record.js';
-import { decodeApiCreditOriginalGrantQueryProfile, consumeApiCreditOriginalGrantQueryProfile,
- releaseApiCreditOriginalGrantQueryProfile } from './api-credit-original-grant-query-profile.js';
+import { captureApiCreditFundingGrantRecoveryReadyProfile } from './api-credit-funding-grant-recovery-record.js';
 import { captureApiCreditOriginalGrantQueryOutput } from './api-credit-original-grant-query-owner.js';
 import { captureServiceCreditOriginalFundingGrantResult } from './service-credit-original-funding-grant.js';
 
@@ -31,25 +29,23 @@ function purchase(value){
  * funding. No grant ID is guessed before the provider observation. This is a
  * powerless comparison token, not proof, dispatch or activation authority. */
 export function captureApiCreditPurchasedGrantQuery(expectedPurchase,profileJson,expectedOriginal,lookupPolicy){
- if(arguments.length!==4||new.target!==undefined)fail();let token;
+ if(arguments.length!==4||new.target!==undefined)fail();
  try{
   const p=purchase(expectedPurchase),original=fields(expectedOriginal,['resourceUrl','serializedCheckpoint','expectedPins']);
   const policy=fields(lookupPolicy,['caBase64','maxTotalMs'],true);
   if(typeof policy.caBase64!=='string'||policy.caBase64.length>8192||!positive(policy.maxTotalMs)||policy.maxTotalMs>60000)fail();
-  const recovery=captureApiCreditFundingGrantRecoveryProfile(profileJson,original);
-  token=decodeApiCreditOriginalGrantQueryProfile(profileJson);if(token.originalGrantQueryVersion!==1)fail();
-  const selected=consumeApiCreditOriginalGrantQueryProfile(token),identity=selected.query.originalFunding;
+  const { profile: selected, transactionHash } = captureApiCreditFundingGrantRecoveryReadyProfile(profileJson,original);
+  const identity=selected.query.originalFunding;
   if(identity.offerId!==p.offerId||identity.offerVersion!==p.offerVersion||identity.holderId!==p.holderId
    ||identity.capabilityCommitment!==p.capabilityCommitment||identity.grantFundingCommitment!==p.fundingCommitment)fail();
   if(selected.transport.caBase64!==policy.caBase64
    ||selected.transport.requestDeadlineMs+selected.transport.closeGraceMs>policy.maxTotalMs)fail();
-  if(selected.checkpointDigest!==recovery.checkpointDigest||selected.queryDigest!==recovery.queryDigest)fail();
   const result=F({purchasedGrantQueryVersion:1,authority:'NONE'});
   SELECTED.set(result,{purchase:p,identity,resourceUrl:original.resourceUrl,
-   paymentHash:recovery.transactionHash,checkpointDigest:selected.checkpointDigest,
+   paymentHash:transactionHash,checkpointDigest:selected.checkpointDigest,
    queryDigest:selected.queryDigest,requestId:selected.query.requestId,consumed:false});
   return result;
- }catch{fail();}finally{if(token!==undefined)releaseApiCreditOriginalGrantQueryProfile(token);}
+ }catch{fail();}
 }
 /** Require the same original query and selected grant after its existing owner
  * has observed close. Units/absolute expiry must match the captured purchase.

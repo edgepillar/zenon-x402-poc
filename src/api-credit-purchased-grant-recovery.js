@@ -2,9 +2,7 @@ import { types } from 'node:util';
 import { createHash } from 'node:crypto';
 import { captureApiCreditPurchaseExpectation } from './api-credit-purchase-expectation.js';
 import { restoreOriginalPaymentCheckpoint } from './service-credit-pilot-original-payment-checkpoint.js';
-import { captureApiCreditFundingGrantRecoveryProfile } from './api-credit-funding-grant-recovery-record.js';
-import { decodeApiCreditOriginalGrantQueryProfile, consumeApiCreditOriginalGrantQueryProfile,
-  releaseApiCreditOriginalGrantQueryProfile } from './api-credit-original-grant-query-profile.js';
+import { captureApiCreditFundingGrantRecoveryReadyProfile } from './api-credit-funding-grant-recovery-record.js';
 import { captureApiCreditOriginalGrantQueryOutput } from './api-credit-original-grant-query-owner.js';
 import { captureServiceCreditOriginalFundingGrantResult } from './service-credit-original-funding-grant.js';
 
@@ -48,15 +46,12 @@ export function claimApiCreditPurchasedGrantRecoverySelection(selection,expected
  * bound. The SAME file must still close before this profile reaches transport. */
 export function bindApiCreditPurchasedGrantRecoveryProfile(selection,profileJson){
   if(arguments.length!==2||new.target!==undefined)fail();const s=state(selection);if(!s.claimed||s.bound)fail();s.bound=true;
-  const recovered=captureApiCreditFundingGrantRecoveryProfile(profileJson,s.original);let token;
-  try{
-    token=decodeApiCreditOriginalGrantQueryProfile(profileJson);if(token.originalGrantQueryVersion!==1)fail();
-    const ready=consumeApiCreditOriginalGrantQueryProfile(token),q=ready.query.originalFunding,p=s.purchase;
-    if(q.offerId!==p.offerId||q.offerVersion!==p.offerVersion||q.holderId!==p.holderId
-        ||q.capabilityCommitment!==p.capabilityCommitment||q.grantFundingCommitment!==p.fundingCommitment
-        ||recovered.transactionHash!==selection.paymentHash||ready.checkpointDigest!==selection.checkpointDigest)fail();
-    s.ready=ready;return ready;
-  }finally{if(token!==undefined)releaseApiCreditOriginalGrantQueryProfile(token);}
+  const { profile: ready, transactionHash } = captureApiCreditFundingGrantRecoveryReadyProfile(profileJson,s.original);
+  const q=ready.query.originalFunding,p=s.purchase;
+  if(q.offerId!==p.offerId||q.offerVersion!==p.offerVersion||q.holderId!==p.holderId
+      ||q.capabilityCommitment!==p.capabilityCommitment||q.grantFundingCommitment!==p.fundingCommitment
+      ||transactionHash!==selection.paymentHash||ready.checkpointDigest!==selection.checkpointDigest)fail();
+  s.ready=ready;return ready;
 }
 /** A closed historical query may report ACTIVE, EXPIRED, REVOKED or absence.
  * Recorded units/absolute expiry must remain the purchased terms. Expiry does

@@ -31,17 +31,28 @@ function profile(textInput){
     return F({original:JSON.parse(textInput).originalPayment,captured,transactionHash:token.paymentHash});}
   finally{if(token!==undefined)releaseApiCreditOriginalGrantQueryProfile(token);}
 }
-/** Existing proof DATA is detached and bound to the independently selected
- * original checkpoint/pins before custody. No key, proof/signature verification,
- * provider read, store, SDK or new payment authority is entered. */
-export function captureApiCreditFundingGrantRecoveryProfile(textInput,expectedOriginal){
-  if(arguments.length!==2)fail();const expected=fields(expectedOriginal,['resourceUrl','serializedCheckpoint','expectedPins']);
+function captureMatchedProfile(textInput,expectedOriginal){
+  const expected=fields(expectedOriginal,['resourceUrl','serializedCheckpoint','expectedPins']);
   const pins=snapshot(expected.expectedPins);restoreOriginalPaymentCheckpoint(expected.serializedCheckpoint,pins);
   const selected=profile(textInput);
   if(selected.original.resourceUrl!==expected.resourceUrl||selected.original.serializedCheckpoint!==expected.serializedCheckpoint
       ||canonicalJson(selected.original.expectedPins)!==canonicalJson(pins))fail();
+  return { selected, pins };
+}
+/** Existing proof DATA is detached and bound to the independently selected
+ * original checkpoint/pins before custody. No key, proof/signature verification,
+ * provider read, store, SDK or new payment authority is entered. */
+export function captureApiCreditFundingGrantRecoveryProfile(textInput,expectedOriginal){
+  if(arguments.length!==2)fail();
+  const { selected, pins } = captureMatchedProfile(textInput,expectedOriginal);
   return F({profileJson:textInput,expectedPins:pins,transactionHash:selected.transactionHash,
     checkpointDigest:selected.captured.checkpointDigest,queryDigest:selected.captured.queryDigest,authority:'NONE'});
+}
+/** Return the ready query from the same independent-original comparison. */
+export function captureApiCreditFundingGrantRecoveryReadyProfile(textInput,expectedOriginal){
+  if(arguments.length!==2)fail();
+  const { selected } = captureMatchedProfile(textInput,expectedOriginal);
+  return F({ profile: selected.captured, transactionHash: selected.transactionHash });
 }
 function capture(reservation,signerRaw,profileJson){
   const signer=inspectOriginalFundingSignerContextRecord(signerRaw,reservation);if(signer.phase!=='SIGNED')fail();
