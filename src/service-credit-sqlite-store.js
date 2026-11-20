@@ -852,22 +852,29 @@ function grantLifecycleUnchanged(ledgerState, grant) {
   return false;
 }
 
-function findLedgerRequest(ledgerState, grantId, requestId) {
-  for (let index = 0; index < ledgerState.requests.length; index += 1) {
-    const request = ledgerState.requests[index];
-    if (request.grantId === grantId && request.requestId === requestId) return request;
+function findRequestRecord(records, key, requestOf) {
+  let first = 0;
+  let last = records.length;
+  while (first < last) {
+    const middle = (first + last) >>> 1;
+    const record = records[middle];
+    const request = requestOf(record);
+    if (request.grantId === key.grantId && request.requestId === key.requestId) return record;
+    if (requestSortsBefore(request, key)) {
+      first = middle + 1;
+    } else {
+      last = middle;
+    }
   }
   return null;
 }
 
+function findLedgerRequest(ledgerState, grantId, requestId) {
+  return findRequestRecord(ledgerState.requests, { grantId, requestId }, request => request);
+}
+
 function findDurableExecutionByRequest(executionState, grantId, requestId) {
-  for (let index = 0; index < executionState.executions.length; index += 1) {
-    const execution = executionState.executions[index];
-    if (execution.request.grantId === grantId && execution.request.requestId === requestId) {
-      return execution;
-    }
-  }
-  return null;
+  return findRequestRecord(executionState.executions, { grantId, requestId }, execution => execution.request);
 }
 
 function findDurableExecution(executionState, executionId) {
