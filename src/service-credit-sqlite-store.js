@@ -1813,8 +1813,11 @@ export class ServiceCreditSqliteStore {
         const model = this.#modelAt(physicalEnvelope.ledgerState, wallClockNowMs);
         for (let index = 0; index < executionState.executions.length; index += 1) {
           const before = executionState.executions[index];
+          // Terminal records have no recovery transition. Skip them before
+          // searching the recovered history for the unfinished execution.
+          if (before.terminalClassification !== 'NONE') continue;
           const after = findDurableExecution(recovered.state, before.executionId);
-          if (before.terminalClassification !== 'NONE' || after === null) continue;
+          if (after === null) continue;
           if (after.terminalClassification === 'NOT_INVOKED') {
             this.#releaseExecutingWithoutDurableUnknown(model, before.request);
           } else if (after.terminalClassification === 'OUTCOME_UNKNOWN') {
