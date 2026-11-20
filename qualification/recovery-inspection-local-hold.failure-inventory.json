@@ -1,0 +1,22 @@
+{
+  "G0G5": "OPEN",
+  "currentCandidateUnexpectedCancellations": 0,
+  "currentCandidateUnexpectedFailures": 0,
+  "currentCandidateUnexpectedSkips": 0,
+  "historicalFailureAndUNKNOWNRecordsUnchanged": true,
+  "nativeQualification": "NOT_EXECUTED",
+  "predecessorInventory": {
+    "bytes": 544,
+    "path": "qualification/recorded-http-close.failure-inventory.json",
+    "sha256": "7849bd877914223fcfa21b719f741fc14cb0c072a48e4b6b24e60cb0825812ec"
+  },
+  "priorCandidate": {
+    "actualExit": 1,
+    "localReportSha256": "06e36af365e4dcdc1c3aeb2c1e5275caea1f51356e2eb277ca7fc52f42d93306",
+    "outcome": "FAILURE",
+    "outputComplete": true,
+    "sourceGitBlob": "6d164c46a1b7095ceb9cbdc301ff4886152385a5"
+  },
+  "qualification": "G2_RECOVERY_INSPECTION_LOCAL_HOLD_FAILURE_CLASSIFICATION",
+  "version": 1
+}

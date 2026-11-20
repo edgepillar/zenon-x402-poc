@@ -1,0 +1,88 @@
+{
+  "G0G5Acceptance": "OPEN",
+  "all404PackageRowsAndBareEdgesUnchanged": true,
+  "buyerSourceGraphUnchanged": false,
+  "currentLocalData": {
+    "additionalSupervisorHarnessControls": 43,
+    "allSourceBoundControls": 2726,
+    "freshRegressionManagedCommands": 2,
+    "freshRegressionNodeChildren": 42,
+    "new": 2,
+    "reexecuted": 917,
+    "retainedExact": 1626,
+    "separateHarnessReexecuted": 181,
+    "separateHarnessRetained": 0,
+    "sourceBoundDistinct": 2545
+  },
+  "currentReporterCoreMetadataPlan": "NOT_EXECUTED",
+  "failureInventory": {
+    "bytes": 806,
+    "path": "qualification/recovery-inspection-local-hold.failure-inventory.json",
+    "sha256": "e8cccd8ff44d757828282de23109b8ddde21b9a71b4f52a9a3881ee2b37ec6e1"
+  },
+  "hostedSelectionChanged": false,
+  "nativeQualification": "NOT_EXECUTED",
+  "nativeSourceGraphs": {
+    "buyer": 180,
+    "bytes": 3429596,
+    "provider": 105,
+    "rootMetadataFiles": 1,
+    "sourceModules": 246,
+    "sourceOnly": true,
+    "union": 247,
+    "unionIncludesRootMetadata": true
+  },
+  "newCasesIncludedInHostedCI": false,
+  "predecessorProfile": {
+    "bytes": 3041,
+    "path": "qualification/profiles/api-credit-application-source-v97.json",
+    "sha256": "f15693c37de0b1712db355a5206d9e7821696ccd683f4b7146c231eea0cdc33f"
+  },
+  "product": "ONE_FUNDING_ONE_GRANT_MANY_METERED_CALLS_ORIGINAL_REPLAY_RECOVERY",
+  "profileStorage": "EXACT_PREDECESSOR_PROOF_REFERENCE_WITH_EXPLICIT_SOURCE_AND_ROLE_REPLACEMENTS",
+  "proofManifest": {
+    "bytes": 102104,
+    "path": "qualification/recovery-inspection-local-hold.proof-manifest.json",
+    "sha256": "0f229ef92c37cfe60bc95148b8075fa9e160b5a4a3de8431bf33eee1f792c36f"
+  },
+  "providerSourceGraphUnchanged": true,
+  "qualifiedCodeRevision": "2da55a4a8d92ea53237da9e13201fb0b747e7306",
+  "selectedHostedCIControls": 108,
+  "selectedHostedCISourceInputs": 22,
+  "sourceDelta": [
+    {
+      "bytes": 17537,
+      "gitBlob": "8a85aadc0c6a427e909cf9ed64d456cf466c4a2d",
+      "path": "src/api-credit-funding-grant-recovery-application.js",
+      "sha256": "f7305512675316dd3b1171b0a5c46508e0d7f54253cb9ca5e2064700f1fdc874"
+    },
+    {
+      "bytes": 9362,
+      "gitBlob": "d44ad8cea572c73c4220c47a9d17aa9048343bb3",
+      "path": "qualification/recovery-completion-admission.behavior.mjs",
+      "sha256": "a67f8e23510ce45b38f8963768ae5f5219f8fef3d503d3ea63b44e67cb7c56b3"
+    },
+    {
+      "bytes": 12586,
+      "gitBlob": "4b07dde2bc7b42016403b58dcf07ff17698c3bec",
+      "path": "qualification/recovery-application-admission.behavior.mjs",
+      "sha256": "32c7046624df53c749b02c0b5e5fc02f596660534f25b9bc7253d76a0796fb73"
+    },
+    {
+      "bytes": 121331,
+      "gitBlob": "b80cb3ae8f5f7c3c08efe35924778ed0dde54e59",
+      "path": "src/api-credit-module-catalog.json",
+      "sha256": "64e6424f973c1c81ad1fdcf97c17e3e230fb7c225af8538522e0396a46f46758"
+    },
+    {
+      "bytes": 6414,
+      "gitBlob": "136b06e23b2ca7cbad2ff51bc43beb64b10d5bf7",
+      "path": "src/api-credit-native-package-admission.js",
+      "sha256": "f8c6d8eb409d4d0b2af4b1b8675f404b41d262d301fc38110416cde272fbe510"
+    }
+  ],
+  "sourceMain": "2066bfbc2ad3b9f983893b7c5c8ff3d599204566",
+  "sourceMainTree": "e88b636d80a0ebe7d78b3400d7c15f703060633f",
+  "status": "SOURCE_AND_DECLARED_MEMORY_DATA_CANDIDATE",
+  "version": 98
+}
