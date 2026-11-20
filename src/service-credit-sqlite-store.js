@@ -995,13 +995,15 @@ function assertCapacity(configuration, state) {
   }
 }
 
-function assertPhysicalEnvelopeCapacity(configuration, envelope) {
+function serializePhysicalEnvelope(configuration, envelope) {
+  const text = canonicalJson(envelope);
   if (
-    Buffer.byteLength(canonicalJson(envelope))
+    Buffer.byteLength(text)
       > configuration.maxStateBytes + MAX_PHYSICAL_ENVELOPE_OVERHEAD_BYTES
   ) {
     failStore('SERVICE_CREDIT_STORE_CAPACITY_EXCEEDED');
   }
+  return text;
 }
 
 function syncParentDirectory(parent) {
@@ -1165,10 +1167,10 @@ export class ServiceCreditSqliteStore {
           }
         }
         const next = physicalEnvelopeFor(envelope.revision, state, null);
-        assertPhysicalEnvelopeCapacity(configuration, next);
+        const text = serializePhysicalEnvelope(configuration, next);
         const updated = store.#database.prepare(
           `UPDATE ${TABLE_NAME} SET envelope = ? WHERE singleton = 1`,
-        ).run(canonicalJson(next));
+        ).run(text);
         if (updated.changes !== 1) failStore('SERVICE_CREDIT_STORE_CORRUPT');
         store.#database.exec(`PRAGMA user_version = ${SERVICE_CREDIT_SQLITE_SCHEMA_VERSION}`);
         store.#validateDatabase();
@@ -1842,15 +1844,16 @@ export class ServiceCreditSqliteStore {
   load() {
     return this.#runPublicOperation(() => this.#runTransaction('load', () => {
       this.#validateDatabase();
-      const { publicEnvelope } = this.#readLedger();
-      return frozenSnapshot(publicEnvelope);
+      const { physicalEnvelope } = this.#readLedger();
+      return frozenSnapshot(publicEnvelopeFor(physicalEnvelope.revision, physicalEnvelope.ledgerState));
     }));
   }
 
   getMetadata() {
     return this.#runPublicOperation(() => this.#runTransaction('getMetadata', () => {
       this.#validateDatabase();
-      const { publicEnvelope } = this.#readLedger();
+      const { physicalEnvelope } = this.#readLedger();
+      const publicEnvelope = publicEnvelopeFor(physicalEnvelope.revision, physicalEnvelope.ledgerState);
       return frozenSnapshot({
         schemaVersion: publicEnvelope.schemaVersion,
         modelVersion: publicEnvelope.state.modelVersion,
@@ -1935,10 +1938,10 @@ export class ServiceCreditSqliteStore {
       ledgerState,
       executionState,
     );
-    assertPhysicalEnvelopeCapacity(this.#configuration, next);
+    const text = serializePhysicalEnvelope(this.#configuration, next);
     const updated = this.#database.prepare(
       `UPDATE ${TABLE_NAME} SET envelope = ? WHERE singleton = 1 AND envelope = ?`,
-    ).run(canonicalJson(next), canonicalJson(physicalEnvelope));
+    ).run(text, canonicalJson(physicalEnvelope));
     if (updated.changes !== 1) failStore('SERVICE_CREDIT_STORE_CORRUPT');
     return next;
   }
@@ -1951,14 +1954,14 @@ export class ServiceCreditSqliteStore {
     const state = model.exportState();
     assertCapacity(this.#configuration, state);
     const envelope = physicalEnvelopeFor(0, state, null);
-    assertPhysicalEnvelopeCapacity(this.#configuration, envelope);
+    const text = serializePhysicalEnvelope(this.#configuration, envelope);
     this.#runTransaction('create', () => {
       this.#database.exec(`PRAGMA application_id = ${APPLICATION_ID}`);
       this.#database.exec(`PRAGMA user_version = ${SERVICE_CREDIT_SQLITE_SCHEMA_VERSION}`);
       this.#database.exec(TABLE_SQL);
       this.#database.prepare(
         `INSERT INTO ${TABLE_NAME}(singleton, envelope) VALUES (1, ?)`,
-      ).run(canonicalJson(envelope));
+      ).run(text);
       this.#validateDatabase();
       this.#readLedger();
       return null;
@@ -1999,10 +2002,10 @@ export class ServiceCreditSqliteStore {
             afterState,
             executionState,
           );
-          assertPhysicalEnvelopeCapacity(this.#configuration, next);
+          const text = serializePhysicalEnvelope(this.#configuration, next);
           const updated = this.#database.prepare(
             `UPDATE ${TABLE_NAME} SET envelope = ? WHERE singleton = 1`,
-          ).run(canonicalJson(next));
+          ).run(text);
           if (updated.changes !== 1) failStore('SERVICE_CREDIT_STORE_CORRUPT');
         }
         return { changed, deferredDomainError, result };
@@ -2059,11 +2062,10 @@ export class ServiceCreditSqliteStore {
       ) {
         failStore('SERVICE_CREDIT_STORE_CORRUPT');
       }
-      assertPhysicalEnvelopeCapacity(this.#configuration, normalizedEnvelope);
+      serializePhysicalEnvelope(this.#configuration, normalizedEnvelope);
       return {
         executionState: normalizedExecutionState,
         physicalEnvelope: normalizedEnvelope,
-        publicEnvelope: publicEnvelopeFor(envelope.revision, normalizedState),
         model,
       };
     } catch (error) {
