@@ -8,7 +8,7 @@ import { captureOriginalFundingSpendingFileProfile } from './original-funding-sp
 import { inspectOriginalFundingSpendingState } from './original-funding-spending-reservations.js';
 import { captureOriginalFundingUncertaintyAgeLimits, inspectOriginalFundingUncertaintyAge } from './original-funding-uncertainty-age.js';
 
-const F = Object.freeze, DESC = Object.getOwnPropertyDescriptor, OWN = Object.hasOwn, PP = Promise.prototype, THEN = PP.then;
+const F = Object.freeze, DESC = Object.getOwnPropertyDescriptor, OWN = Object.hasOwn, PP = Promise.prototype, THEN = DESC(PP, 'then');
 const CTOR = DESC(PP, 'constructor'), SPECIES = DESC(Promise, Symbol.species), ACTIVE = new Set(), FAILED = new Set(), SEEN = new WeakSet();
 const AGE_OUTPUTS = new WeakSet();
 const OUTPUT = ['signerInspectionVersion', 'status', 'paymentId', 'originalDigest', 'fundingResourceUrl', 'inputDigestMatched', 'transactionHash',
@@ -27,9 +27,9 @@ function data(value, name) {
 function method(owner, name) { const fn = data(owner, name); if (typeof fn !== 'function' || types.isProxy(fn) || !Object.isFrozen(fn)) fail('OWNER'); return fn; }
 function same(a, b) { return !!a && !!b && Reflect.ownKeys(a).length === Reflect.ownKeys(b).length && Reflect.ownKeys(b).every(k => OWN(a, k) && a[k] === b[k]); }
 function discardUnexpectedPromise(value) {
-  if (types.isPromise(value) && !types.isProxy(value) && Object.getPrototypeOf(value) === PP && PP.then === THEN
+  if (types.isPromise(value) && !types.isProxy(value) && Object.getPrototypeOf(value) === PP && same(DESC(PP, 'then'), THEN)
       && DESC(Object.prototype, 'then') === undefined && same(DESC(PP, 'constructor'), CTOR) && same(DESC(Promise, Symbol.species), SPECIES)) {
-    const d = DESC(value, 'constructor'); if (!d || OWN(d, 'value') && d.value === Promise) { try { Reflect.apply(THEN, value, [() => {}, () => {}]); } catch {} }
+    const d = DESC(value, 'constructor'); if (!d || OWN(d, 'value') && d.value === Promise) { try { Reflect.apply(THEN.value, value, [() => {}, () => {}]); } catch {} }
   }
 }
 function voidReceipt(value) { if (value !== undefined) { discardUnexpectedPromise(value); fail('CLOSE_UNKNOWN'); } }
@@ -116,7 +116,12 @@ function run(configuration, withAge) {
   }
   function readRaw(fn, receiver, args) {
     c.requireOpening(); let value;
-    try { value = Reflect.apply(fn, receiver, args); } catch { frame.readUnknown = true; throw new TypeError('ORIGINAL_FUNDING_SIGNER_READ_UNKNOWN'); }
+    try { value = Reflect.apply(fn, receiver, args); } catch {
+      // The legacy single read can clean up a synchronous refusal when its
+      // owner still proves retirement. Age inspection holds a failed read.
+      if (withAge) frame.readUnknown = true;
+      fail('READ_UNKNOWN');
+    }
     if (value !== null && typeof value !== 'string') {
       frame.readUnknown = true; frame.opaqueRead = value; discardUnexpectedPromise(value); fail('READ_UNKNOWN');
     }
@@ -151,8 +156,9 @@ function run(configuration, withAge) {
       spending = inspectOriginalFundingSpendingState(before, file.storageProfile.policy);
       if (firstDay < spending.lastDay) fail('CLOCK_ROLLBACK');
     }
-    frame.stage = 'READ'; const raw = withAge ? readRaw(read, custody, [expected.paymentId]) : Reflect.apply(read, custody, [expected.paymentId]);
-    discardUnexpectedPromise(raw); c.requireOpening(); result = captureApiCreditSignerInspectionResult(raw, expected);
+    frame.stage = 'READ';
+    const raw = readRaw(read, custody, [expected.paymentId]);
+    result = captureApiCreditSignerInspectionResult(raw, expected);
     c.requireOpening(); if (!state(view(), 'OPEN', true)) fail('OWNER');
     if (withAge) {
       frame.stage = 'SPENDING_RECHECK'; const after = spendingRead(); if (after !== before) fail('SPENDING_CHANGED');

@@ -2691,8 +2691,8 @@
     },
     {
       "path": "src/original-funding-signer-inspection-owner.js",
-      "bytes": 14333,
-      "sha256": "72949fb651d8dee7f2615027d04e26f9b7c5051d971eedc260919d2754a0a8ea",
+      "bytes": 14392,
+      "sha256": "803a46c21ed37e7e04068661863b2cbbff080b5d3e1d7a4700486355a92f88b9",
       "format": "module"
     },
     {
@@ -2925,14 +2925,14 @@
     },
     {
       "path": "src/service-credit-recovery-inspection-owner.js",
-      "bytes": 10887,
-      "sha256": "4114d63ec8a0b0a43dde8f156356d6e2c132f216272b4f771b40bb1d3347b680",
+      "bytes": 12410,
+      "sha256": "fda0bb2ee10776f835b7c0d96fb26240a75011885ab07b46509c06233a202320",
       "format": "module"
     },
     {
       "path": "src/service-credit-sqlite-store.js",
-      "bytes": 85768,
-      "sha256": "d990402f712bc2db1fa979f50401371a2ded7c9bb9a1011a3e70479ec3d2ca2f",
+      "bytes": 86142,
+      "sha256": "7284543b6d728be685e922df55b4e4c5ecaa9dc983978d41a406d2b780905659",
       "format": "module"
     },
     {
