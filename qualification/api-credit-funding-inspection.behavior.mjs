@@ -64,8 +64,12 @@ function coordinator(options = {}) {
     }),
     writeResult: F((line, guard) => { guard(); assert.equal(r.owned.s.closed, true); r.writes.push(line); return options.write ? options.write(r) : Promise.resolve(undefined); }),
     close: F(() => { r.closes++; r.channelClosed = true; return Promise.resolve(undefined); }),
-    inspect: F(() => F({ lifecycle: r.channelClosed ? 'CLOSED' : 'OPEN', held: false, reading: false, writing: false })),
-    clock: F(() => r.now), armTimer: F((budget, callback) => { const token = { budget, callback }; r.timers.push(token); return token; }), cancelTimer: F(token => { token.cancelled = true; }),
+    inspect: F(() => {
+      const view = F({ lifecycle: r.channelClosed ? 'CLOSED' : 'OPEN', held: false, reading: false, writing: false });
+      return options.channelView ? options.channelView(r, view) : view;
+    }),
+    clock: F(() => r.now), armTimer: F((budget, callback) => { const token = { budget, callback }; r.timers.push(token); return token; }),
+    cancelTimer: F(token => { token.cancelled = true; if (options.cancelTimer) return options.cancelTimer(r, token); }),
   });
   return { r, run: () => coordinate({ arguments: args(argv()), ports }) };
 }
@@ -239,6 +243,57 @@ check('funding-inspection-actual-coordinator-writes-the-original-only-after-the-
 });
 check('funding-inspection-invalid-coordinator-profile-is-refused-before-store-entry', async () => {
   const f=coordinator();f.r.text='{}';const r=await f.run();assert.equal(r.status,'BOOTSTRAP_REFUSED');assert.equal(f.r.reads,0);assert.equal(f.r.writes.length,0);
+});
+check('funding-inspection-final-channel-view-must-return-within-the-close-window', async () => {
+  for (const [finish, clean] of [[999_999_999n, true], [1_000_000_000n, false]]) {
+    let afterCloseTimer = false, finalViews = 0;
+    const f = coordinator({
+      cancelTimer(r, token) {
+        if (token === r.timers[1]) queueMicrotask(() => { afterCloseTimer = true; });
+      },
+      channelView(r, view) {
+        if (afterCloseTimer && ++finalViews === 2) r.now = finish;
+        return view;
+      },
+    });
+    const result = await f.run();
+    assert.equal(finalViews, 2);
+    assert.equal(result.status, clean ? 'CLOSED' : 'CLOSE_UNKNOWN');
+    assert.equal(result.exitCode, clean ? 0 : 4);
+    assert.equal(result.channelClosedObserved, clean);
+    assert.equal(result.outputWriteObserved, true);
+    assert.equal(result.automaticRetry, false);
+    assert.deepEqual([f.r.reads, f.r.writes.length, f.r.owned.s.closes, f.r.closes], [1, 1, 1, 1]);
+    assert.equal(f.r.timers.length, 2);
+    assert.ok(f.r.timers.every(token => token.cancelled));
+  }
+});
+check('funding-inspection-close-expiry-defers-timer-retirement-until-the-view-returns', async () => {
+  let expired = false, reading = false, cancelledDuringView = false;
+  const f = coordinator({
+    channelView(r, view) {
+      if (!expired) {
+        expired = true;
+        reading = true;
+        r.now = 1_000_000_000n;
+        r.timers[1].callback();
+        reading = false;
+      }
+      return view;
+    },
+    cancelTimer(r, token) {
+      if (token === r.timers[1] && reading) cancelledDuringView = true;
+    },
+  });
+  const result = await f.run();
+  assert.equal(expired, true);
+  assert.equal(cancelledDuringView, false);
+  assert.equal(result.status, 'CLOSE_UNKNOWN');
+  assert.equal(result.channelClosedObserved, false);
+  assert.equal(result.automaticRetry, false);
+  assert.deepEqual([f.r.reads, f.r.writes.length, f.r.owned.s.closes, f.r.closes], [1, 1, 1, 1]);
+  assert.equal(f.r.timers.length, 2);
+  assert.ok(f.r.timers.every(token => token.cancelled));
 });
 check('funding-inspection-coordinator-rejects-a-foreign-payment-or-resource-before-output', async () => {
   for (const change of [{paymentHash:'f'.repeat(64)},{fundingResourceUrl:'https://foreign.example.test/funding'}]) {

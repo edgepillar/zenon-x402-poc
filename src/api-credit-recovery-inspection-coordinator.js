@@ -125,8 +125,9 @@ function createCoordinator(configuration, signer, recorded = false, funding = fa
     if (value !== undefined) { frame.unknown = true; keepOpaque(value); fail(); }
   }
   function closedNow() {
+    // The last channel view must also return before the close deadline.
     return frame.closeDeadline !== null && clock() < frame.closeDeadline && channelClosed()
-      && clock() < frame.closeDeadline && channelClosed();
+      && clock() < frame.closeDeadline && channelClosed() && clock() < frame.closeDeadline;
   }
   async function closeKnown() {
     frame.closeRequested = true;
@@ -151,10 +152,8 @@ function createCoordinator(configuration, signer, recorded = false, funding = fa
       out.resolve(!failed);
     }
     try { frame.closeReceipt = p.close(); } catch { finish(false); }
-    try { observe(frame.closeReceipt, value => {
-      if (terminal) return;
-      try { finish(value === undefined && closedNow()); } catch { finish(false); }
-    }, () => finish(false)); } catch { finish(false); }
+    try { observe(frame.closeReceipt, value => finish(value === undefined), () => finish(false)); }
+    catch { finish(false); }
     if (!terminal) {
       arming = true;
       try {

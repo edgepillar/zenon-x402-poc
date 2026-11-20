@@ -2559,8 +2559,8 @@
     },
     {
       "path": "src/api-credit-recovery-inspection-coordinator.js",
-      "bytes": 16081,
-      "sha256": "9a0d600444cdec12291908909bc9b9a09aabe03550024b7d5e7f5e99d309b9a7",
+      "bytes": 16100,
+      "sha256": "8c7e895cb54170464868fb2173757fdcefc348efce4d0091ed098c5c6cd0ff84",
       "format": "module"
     },
     {
