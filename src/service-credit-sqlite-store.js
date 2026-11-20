@@ -1957,9 +1957,17 @@ export class ServiceCreditSqliteStore {
 
   #persistCompound(previous, ledgerState, executionState) {
     const { physicalEnvelope, physicalEnvelopeJson } = previous;
-    const ledgerStateJson = this.#persistableStateJson(ledgerState);
-    serializeLedgerState(this.#configuration, ledgerState, ledgerStateJson);
-    assertDurableCrossLinks(this.#configuration, ledgerState, executionState);
+    // A revision-only claim reuses both immutable states validated by the
+    // read in this transaction. Different snapshots still need full checks.
+    const sameContent = ledgerState === physicalEnvelope.ledgerState
+      && executionState === physicalEnvelope.executionState;
+    const ledgerStateJson = sameContent
+      ? previous.ledgerStateJson
+      : this.#persistableStateJson(ledgerState);
+    if (!sameContent) {
+      serializeLedgerState(this.#configuration, ledgerState, ledgerStateJson);
+      assertDurableCrossLinks(this.#configuration, ledgerState, executionState);
+    }
     if (physicalEnvelope.revision === Number.MAX_SAFE_INTEGER) {
       failStore('SERVICE_CREDIT_STORE_CAPACITY_EXCEEDED');
     }
