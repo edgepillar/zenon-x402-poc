@@ -2,7 +2,7 @@ import { types } from 'node:util';
 import { createHash } from 'node:crypto';
 import { captureApiCreditPurchaseExpectation } from './api-credit-purchase-expectation.js';
 import { restoreOriginalPaymentCheckpoint } from './service-credit-pilot-original-payment-checkpoint.js';
-import { captureApiCreditFundingGrantRecoveryReadyProfile } from './api-credit-funding-grant-recovery-record.js';
+import { captureApiCreditFundingGrantRecoveryReadyProfile, captureApiCreditFundingGrantRecoveryReadyRecord } from './api-credit-funding-grant-recovery-record.js';
 import { captureApiCreditOriginalGrantQueryOutput } from './api-credit-original-grant-query-owner.js';
 import { captureServiceCreditOriginalFundingGrantResult } from './service-credit-original-funding-grant.js';
 
@@ -42,16 +42,28 @@ export function claimApiCreditPurchasedGrantRecoverySelection(selection,expected
   if(e.fundingResourceUrl!==selection.fundingResourceUrl||e.paymentHash!==selection.paymentHash
       ||e.checkpointDigest!==selection.checkpointDigest||accountId!==s.purchase.holderId)fail();
 }
-/** Only the existing owner's independently digest-bound ready record can be
- * bound. The SAME file must still close before this profile reaches transport. */
-export function bindApiCreditPurchasedGrantRecoveryProfile(selection,profileJson){
-  if(arguments.length!==2||new.target!==undefined)fail();const s=state(selection);if(!s.claimed||s.bound)fail();s.bound=true;
-  const { profile: ready, transactionHash } = captureApiCreditFundingGrantRecoveryReadyProfile(profileJson,s.original);
+function claimBinding(selection){
+  const s=state(selection);if(!s.claimed||s.bound)fail();s.bound=true;return s;
+}
+function bindReady(selection,s,{profile:ready,transactionHash}){
   const q=ready.query.originalFunding,p=s.purchase;
   if(q.offerId!==p.offerId||q.offerVersion!==p.offerVersion||q.holderId!==p.holderId
       ||q.capabilityCommitment!==p.capabilityCommitment||q.grantFundingCommitment!==p.fundingCommitment
       ||transactionHash!==selection.paymentHash||ready.checkpointDigest!==selection.checkpointDigest)fail();
   s.ready=ready;return ready;
+}
+/** Bind the purchase to a ready profile selected by the caller. */
+export function bindApiCreditPurchasedGrantRecoveryProfile(selection,profileJson){
+  if(arguments.length!==2||new.target!==undefined)fail();
+  const s=claimBinding(selection);
+  return bindReady(selection,s,captureApiCreditFundingGrantRecoveryReadyProfile(profileJson,s.original));
+}
+/** Apply the same purchase comparison to the independently pinned file row.
+ * The file owner still has to confirm close before transport. */
+export function bindApiCreditPurchasedGrantRecoveryRecord(selection,raw,expected){
+  if(arguments.length!==3||new.target!==undefined)fail();
+  const s=claimBinding(selection);
+  return bindReady(selection,s,captureApiCreditFundingGrantRecoveryReadyRecord(raw,expected,s.original));
 }
 /** A closed historical query may report ACTIVE, EXPIRED, REVOKED or absence.
  * Recorded units/absolute expiry must remain the purchased terms. Expiry does

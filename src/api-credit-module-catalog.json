@@ -2463,8 +2463,8 @@
     },
     {
       "path": "src/api-credit-funding-grant-recovery-record.js",
-      "bytes": 7703,
-      "sha256": "a46588f3b26c651b06627d1c686e2fb258ad4a45a36c3ac9c3c7174b57644fba",
+      "bytes": 9103,
+      "sha256": "3fe7796ebed15c04ef1fdb8b9f4fd0e81fdce74136df4e4689cf3ad85087a52f",
       "format": "module"
     },
     {
@@ -2541,8 +2541,8 @@
     },
     {
       "path": "src/api-credit-purchased-grant-recovery.js",
-      "bytes": 5505,
-      "sha256": "d1bbc0643cfd67cec86146aee21fe1c5391d3d715558d748ce6000bd4eb8eff1",
+      "bytes": 6025,
+      "sha256": "c429b36c00a894bec73288910856b0b95e3295417e8f14d2bdd55326086c038c",
       "format": "module"
     },
     {
@@ -2583,8 +2583,8 @@
     },
     {
       "path": "src/api-credit-stored-grant-query-owner.js",
-      "bytes": 9689,
-      "sha256": "1c21c8e2af412a377bb424a346c5eecf84b67cd4333ec35836bf4dc4b51d5b1a",
+      "bytes": 9048,
+      "sha256": "1f9e53b38003005b53115724c7925d2f379623b79c8ab8547a608b9c688e677f",
       "format": "module"
     },
     {

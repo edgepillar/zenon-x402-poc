@@ -2,9 +2,8 @@ import { types } from 'node:util';
 import { canonicalJson } from './canonical.js';
 import { captureOriginalFundingSpendingFileProfile } from './original-funding-spending-file-profile.js';
 import { captureApiCreditStoredGrantQueryExpected } from './api-credit-stored-grant-query-profile.js';
-import { projectApiCreditFundingGrantRecoveryRecord } from './api-credit-funding-grant-recovery-record.js';
-import { decodeApiCreditOriginalGrantQueryProfile,consumeApiCreditOriginalGrantQueryProfile,releaseApiCreditOriginalGrantQueryProfile } from './api-credit-original-grant-query-profile.js';
-import { claimApiCreditPurchasedGrantRecoverySelection,bindApiCreditPurchasedGrantRecoveryProfile } from './api-credit-purchased-grant-recovery.js';
+import { captureApiCreditFundingGrantRecoveryReadyRecord } from './api-credit-funding-grant-recovery-record.js';
+import { claimApiCreditPurchasedGrantRecoverySelection,bindApiCreditPurchasedGrantRecoveryRecord } from './api-credit-purchased-grant-recovery.js';
 
 const F=Object.freeze,D=Object.getOwnPropertyDescriptor,O=Object.hasOwn,A=Reflect.apply,NP=Promise,PP=NP.prototype;
 const THEN=D(PP,'then'),CTOR=D(PP,'constructor'),SPECIES=D(NP,Symbol.species),ACTIVE=new Set(),HELD=new Set(),SEEN=new WeakSet();
@@ -77,16 +76,11 @@ export function resolveApiCreditStoredGrantQueryOwner(configuration){
     opening();current();opening();frame.raw=call(frame.read,frame.custody,[expected.paymentId],'read');
     opening();current();opening();
     if(frame.raw===null)fail();
-    const projected=projectApiCreditFundingGrantRecoveryRecord(frame.raw,F({paymentId:expected.paymentId,originalDigest:expected.originalDigest,checkpointDigest:expected.checkpointDigest,queryDigest:expected.queryDigest}));
-    // Check the externally retained FULL profile digest before consuming any
-    // row-supplied CA/route/budget/proof as transport configuration.
-    if(projected.profileDigest!==expected.profileDigest)fail();
-    if(purchased)frame.captured=bindApiCreditPurchasedGrantRecoveryProfile(p.purchaseSelection,projected.profileJson);
-    else{
-      let ready;
-      try{ready=decodeApiCreditOriginalGrantQueryProfile(projected.profileJson);if(ready.originalGrantQueryVersion!==1)fail();frame.captured=consumeApiCreditOriginalGrantQueryProfile(ready);}
-      finally{if(ready!==undefined)releaseApiCreditOriginalGrantQueryProfile(ready);}
-    }
+    const pins=F({paymentId:expected.paymentId,originalDigest:expected.originalDigest,checkpointDigest:expected.checkpointDigest,
+      queryDigest:expected.queryDigest,profileDigest:expected.profileDigest});
+    frame.captured=purchased
+      ? bindApiCreditPurchasedGrantRecoveryRecord(p.purchaseSelection,frame.raw,pins)
+      : captureApiCreditFundingGrantRecoveryReadyRecord(frame.raw,pins,null).profile;
     const a=frame.captured,q=a.query.originalFunding,policy=file.storageProfile.policy;
     if(a.route.fundingResourceUrl!==expected.fundingResourceUrl||q.transactionId!=='zenontx:'+expected.paymentHash||a.query.requestId!==expected.requestId
         ||a.checkpointDigest!==expected.checkpointDigest||a.queryDigest!==expected.queryDigest
