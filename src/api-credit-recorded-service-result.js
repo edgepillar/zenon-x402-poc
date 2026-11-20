@@ -189,7 +189,15 @@ export function createApiCreditRecordedServiceResultApplication(configuration){
   if(arguments.length!==0||!invariant())fail('INPUT');const view=borrow(methods.inspect,app,[]),copy={};
   for(const key of Reflect.ownKeys(view)){if(typeof key!=='string'||key==='recordedServiceResults')fail();Object.defineProperty(copy,key,{value:own(view,key),enumerable:true,configurable:true});}
   if(held){Object.defineProperty(copy,'held',{value:true,enumerable:true});Object.defineProperty(copy,'lifecycle',{value:'HELD',enumerable:true});}
-  else if(closed&&copy.lifecycle!=='CLOSED')Object.defineProperty(copy,'lifecycle',{value:'CLOSING',enumerable:true});
+  // The child's view can close before this wrapper observes the close receipt
+  // and drains its own active submission.
+  else if (closed && (
+   !baseCloseClean || active
+   || D(copy, 'lifecycle')?.value !== 'CLOSED'
+   || D(copy, 'publicOperationActive')?.value !== false
+  )) {
+   Object.defineProperty(copy, 'lifecycle', { value: 'CLOSING', enumerable: true });
+  }
   Object.defineProperty(copy,'recordedServiceResults',{value:F({version:1,active,held,closed,submissionCallbacksEntered,recordedResults,replaysReturned,
    authority:'NONE',nativeAcceptance:'NOT_ESTABLISHED'}),enumerable:true});return F(copy);
  });
