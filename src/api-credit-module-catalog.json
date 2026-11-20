@@ -2931,8 +2931,8 @@
     },
     {
       "path": "src/service-credit-sqlite-store.js",
-      "bytes": 88353,
-      "sha256": "1a9683e5263e4642111084f221bea6c1f435190860e8da5dc9cc54f95c95dc1a",
+      "bytes": 88249,
+      "sha256": "3b958d40445921cd416f838663686e38b84ba5fc9f7c1928ca723fad8323b3d6",
       "format": "module"
     },
     {

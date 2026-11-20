@@ -76,6 +76,7 @@ const STRING_INCLUDES = String.prototype.includes;
 const ARRAY_INCLUDES = Array.prototype.includes;
 const ARRAY_SORT = Array.prototype.sort;
 const STRING_FROM = String;
+const STRING_SLICE = String.prototype.slice;
 const SET_CONSTRUCTOR = Set;
 const SET_HAS = Set.prototype.has;
 const MAP_CONSTRUCTOR = Map;
@@ -733,19 +734,6 @@ function publicChecksumFor(schemaVersion, revision, state) {
   })).digest('hex')}`;
 }
 
-function physicalV2ChecksumFor(physicalVersion, revision, ledgerState, executionState) {
-  return `sha256:${crypto.createHash('sha256')
-    .update(PHYSICAL_V2_CHECKSUM_DOMAIN)
-    .update('\0')
-    .update(canonicalJson({
-      executionState,
-      ledgerState,
-      physicalVersion,
-      revision,
-    }))
-    .digest('hex')}`;
-}
-
 function durableResultCommitmentFor(cachedResult) {
   return `sha256:${crypto.createHash('sha256')
     .update(DURABLE_RESULT_COMMITMENT_DOMAIN)
@@ -795,21 +783,21 @@ function publicEnvelopeFor(revision, state) {
 }
 
 function physicalEnvelopeFor(revision, ledgerState, executionState) {
-  const envelope = {
+  const content = {
     physicalVersion: SERVICE_CREDIT_SQLITE_SCHEMA_VERSION,
     revision,
     ledgerState,
     executionState,
   };
-  return OBJECT_FREEZE({
-    ...envelope,
-    checksum: physicalV2ChecksumFor(
-      envelope.physicalVersion,
-      envelope.revision,
-      envelope.ledgerState,
-      envelope.executionState,
-    ),
-  });
+  const contentJson = canonicalJson(content);
+  const checksum = `sha256:${crypto.createHash('sha256')
+    .update(PHYSICAL_V2_CHECKSUM_DOMAIN)
+    .update('\0')
+    .update(contentJson)
+    .digest('hex')}`;
+  // The checksum sorts before every content key in the canonical envelope.
+  const text = `{"checksum":${JSON_STRINGIFY(checksum)},${REFLECT_APPLY(STRING_SLICE, contentJson, [1])}`;
+  return { envelope: OBJECT_FREEZE({ ...content, checksum }), text };
 }
 
 function ledgerRequestKey(request) {
@@ -1008,15 +996,13 @@ function serializeLedgerState(configuration, state) {
   return text;
 }
 
-function serializePhysicalEnvelope(configuration, envelope) {
-  const text = canonicalJson(envelope);
+function assertPhysicalEnvelopeSize(configuration, text) {
   if (
     Buffer.byteLength(text)
       > configuration.maxStateBytes + MAX_PHYSICAL_ENVELOPE_OVERHEAD_BYTES
   ) {
     failStore('SERVICE_CREDIT_STORE_CAPACITY_EXCEEDED');
   }
-  return text;
 }
 
 function syncParentDirectory(parent) {
@@ -1179,8 +1165,8 @@ export class ServiceCreditSqliteStore {
             failStore('SERVICE_CREDIT_STORE_MIGRATION_UNSAFE');
           }
         }
-        const next = physicalEnvelopeFor(envelope.revision, state, null);
-        const text = serializePhysicalEnvelope(configuration, next);
+        const { text } = physicalEnvelopeFor(envelope.revision, state, null);
+        assertPhysicalEnvelopeSize(configuration, text);
         const updated = store.#database.prepare(
           `UPDATE ${TABLE_NAME} SET envelope = ? WHERE singleton = 1`,
         ).run(text);
@@ -1961,12 +1947,12 @@ export class ServiceCreditSqliteStore {
     if (physicalEnvelope.revision === Number.MAX_SAFE_INTEGER) {
       failStore('SERVICE_CREDIT_STORE_CAPACITY_EXCEEDED');
     }
-    const next = physicalEnvelopeFor(
+    const { envelope: next, text } = physicalEnvelopeFor(
       physicalEnvelope.revision + 1,
       ledgerState,
       executionState,
     );
-    const text = serializePhysicalEnvelope(this.#configuration, next);
+    assertPhysicalEnvelopeSize(this.#configuration, text);
     const updated = this.#database.prepare(
       `UPDATE ${TABLE_NAME} SET envelope = ? WHERE singleton = 1 AND envelope = ?`,
     ).run(text, physicalEnvelopeJson);
@@ -1981,8 +1967,8 @@ export class ServiceCreditSqliteStore {
     });
     const state = model.exportState();
     serializeLedgerState(this.#configuration, state);
-    const envelope = physicalEnvelopeFor(0, state, null);
-    const text = serializePhysicalEnvelope(this.#configuration, envelope);
+    const { text } = physicalEnvelopeFor(0, state, null);
+    assertPhysicalEnvelopeSize(this.#configuration, text);
     this.#runTransaction('create', () => {
       this.#database.exec(`PRAGMA application_id = ${APPLICATION_ID}`);
       this.#database.exec(`PRAGMA user_version = ${SERVICE_CREDIT_SQLITE_SCHEMA_VERSION}`);
@@ -2036,12 +2022,12 @@ export class ServiceCreditSqliteStore {
             failStore('SERVICE_CREDIT_STORE_CAPACITY_EXCEEDED');
           }
           assertDurableCrossLinks(this.#configuration, afterState, executionState);
-          const next = physicalEnvelopeFor(
+          const { text } = physicalEnvelopeFor(
             physicalEnvelope.revision + 1,
             afterState,
             executionState,
           );
-          const text = serializePhysicalEnvelope(this.#configuration, next);
+          assertPhysicalEnvelopeSize(this.#configuration, text);
           const updated = this.#database.prepare(
             `UPDATE ${TABLE_NAME} SET envelope = ? WHERE singleton = 1`,
           ).run(text);
@@ -2089,7 +2075,7 @@ export class ServiceCreditSqliteStore {
         normalizedState,
         normalizedExecutionState,
       );
-      const normalizedEnvelope = physicalEnvelopeFor(
+      const { envelope: normalizedEnvelope, text: physicalEnvelopeJson } = physicalEnvelopeFor(
         envelope.revision,
         normalizedState,
         normalizedExecutionState,
@@ -2101,7 +2087,7 @@ export class ServiceCreditSqliteStore {
       ) {
         failStore('SERVICE_CREDIT_STORE_CORRUPT');
       }
-      const physicalEnvelopeJson = serializePhysicalEnvelope(this.#configuration, normalizedEnvelope);
+      assertPhysicalEnvelopeSize(this.#configuration, physicalEnvelopeJson);
       return {
         executionState: normalizedExecutionState,
         physicalEnvelope: normalizedEnvelope,
