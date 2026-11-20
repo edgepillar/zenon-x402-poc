@@ -72,7 +72,11 @@ const ARRAY_SORT = Array.prototype.sort;
 const STRING_FROM = String;
 const SET_CONSTRUCTOR = Set;
 const SET_HAS = Set.prototype.has;
-const SET_ADD = Set.prototype.add;
+const MAP_CONSTRUCTOR = Map;
+const MAP_SET = Map.prototype.set;
+const MAP_GET = Map.prototype.get;
+const MAP_DELETE = Map.prototype.delete;
+const MAP_FOR_EACH = Map.prototype.forEach;
 const JSON_STRINGIFY = JSON.stringify;
 const IS_PROXY = utilTypes.isProxy;
 
@@ -864,24 +868,29 @@ function assertDurableCrossLinks(configuration, ledgerState, executionState) {
   if (executionState.capacity > configuration.maxRequests) {
     failStore('SERVICE_CREDIT_STORE_CAPACITY_EXCEEDED');
   }
-  const linked = new SET_CONSTRUCTOR();
+  if (executionState.executions.length === 0) {
+    if (hasNonterminalLedgerRequest(ledgerState)) failStore('SERVICE_CREDIT_STORE_CORRUPT');
+    return;
+  }
+  // The validated ledger has one request per (grantId, requestId). Remove
+  // each match so two executions cannot consume the same request link.
+  const unlinked = new MAP_CONSTRUCTOR();
+  for (let index = 0; index < ledgerState.requests.length; index += 1) {
+    const request = ledgerState.requests[index];
+    REFLECT_APPLY(MAP_SET, unlinked, [ledgerRequestKey(request), request]);
+  }
   let nonterminalCount = 0;
   for (let index = 0; index < executionState.executions.length; index += 1) {
     const execution = executionState.executions[index];
-    const request = findLedgerRequest(
-      ledgerState,
-      execution.request.grantId,
-      execution.request.requestId,
-    );
+    const key = ledgerRequestKey(execution.request);
+    const request = REFLECT_APPLY(MAP_GET, unlinked, [key]);
     if (
-      request === null
+      request === undefined
       || canonicalJson(execution.request) !== canonicalJson(executionRequestProjection(request))
     ) {
       failStore('SERVICE_CREDIT_STORE_CORRUPT');
     }
-    const key = ledgerRequestKey(request);
-    if (REFLECT_APPLY(SET_HAS, linked, [key])) failStore('SERVICE_CREDIT_STORE_CORRUPT');
-    REFLECT_APPLY(SET_ADD, linked, [key]);
+    REFLECT_APPLY(MAP_DELETE, unlinked, [key]);
     if (execution.terminalClassification === 'NONE') {
       nonterminalCount += 1;
       if (
@@ -914,17 +923,15 @@ function assertDurableCrossLinks(configuration, ledgerState, executionState) {
     }
   }
   if (nonterminalCount > 1) failStore('SERVICE_CREDIT_STORE_CORRUPT');
-  for (let index = 0; index < ledgerState.requests.length; index += 1) {
-    const request = ledgerState.requests[index];
+  REFLECT_APPLY(MAP_FOR_EACH, unlinked, [request => {
     if (
-      (request.state === REQUEST_STATE.RESERVED
-        || request.state === REQUEST_STATE.EXECUTING
-        || request.state === REQUEST_STATE.OUTCOME_UNKNOWN)
-      && !REFLECT_APPLY(SET_HAS, linked, [ledgerRequestKey(request)])
+      request.state === REQUEST_STATE.RESERVED
+      || request.state === REQUEST_STATE.EXECUTING
+      || request.state === REQUEST_STATE.OUTCOME_UNKNOWN
     ) {
       failStore('SERVICE_CREDIT_STORE_CORRUPT');
     }
-  }
+  }]);
 }
 
 function legacyRequestMutation(operation) {
