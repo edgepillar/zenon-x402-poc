@@ -25,6 +25,9 @@ function observe(value, yes, no) {
   const ctor = D(value, 'constructor'); if (ctor && (!OWN(ctor, 'value') || ctor.value !== NP)) fail();
   const branch = A(THEN, value, [yes, no]); A(THEN, branch, [() => {}, () => {}]);
 }
+function observeOpaqueReceipt(value) {
+  try { observe(value, () => {}, () => {}); } catch {}
+}
 function capability() {
   let resolve, reject; const promise = new NP((yes, no) => { resolve = yes; reject = no; });
   Object.defineProperty(promise, 'constructor', { value: NP }); observe(promise, () => {}, () => {}); return { promise, resolve, reject };
@@ -61,7 +64,7 @@ export function runApiCreditOriginalGrantQueryOwner(configuration) {
       || t.requestDeadlineMs + t.closeGraceMs > 60000) fail(); USED.add(c.profile);
   const out = capability(), frame = { profile: c.profile, transport: null, opaqueOpen: null, readReceipt: null, closeReceipt: null,
     readEntered: false, readSettled: false, closeEntered: false, candidate: null, guardReceipt: null, timer: null, timerCancelled: false,
-    last: null, deadline: null, held: false, terminal: false };
+    opaqueTimerArm: null, opaqueTimerCancel: null, last: null, deadline: null, held: false, terminal: false };
   function hold() {
     frame.held = true; frame.candidate = null; HELD.add(frame);
     if (!frame.terminal) { frame.terminal = true; out.reject(new TypeError('API_CREDIT_ORIGINAL_GRANT_QUERY_UNKNOWN')); }
@@ -74,7 +77,7 @@ export function runApiCreditOriginalGrantQueryOwner(configuration) {
       // Retain an unjoined guard result without assimilating thenables or
       // reading diagnostics. A late result never repairs opening authority.
       frame.guardReceipt = receipt;
-      try { observe(receipt, () => {}, () => {}); } catch {}
+      observeOpaqueReceipt(receipt);
       fail();
     }
     // Either borrowed callback may synchronously revoke this operation. No
@@ -84,7 +87,13 @@ export function runApiCreditOriginalGrantQueryOwner(configuration) {
   }
   function cancelTimer() {
     if (frame.timer === null || frame.timerCancelled) return; frame.timerCancelled = true;
-    if (p.cancelTimer(frame.timer) !== undefined) fail(); frame.timer = null;
+    const receipt = p.cancelTimer(frame.timer);
+    if (receipt !== undefined) {
+      frame.opaqueTimerCancel = receipt;
+      observeOpaqueReceipt(receipt);
+      fail();
+    }
+    frame.timer = null;
   }
   function requestClose() {
     if (frame.transport === null || frame.closeEntered || frame.readEntered && !frame.readSettled) return;
@@ -119,8 +128,19 @@ export function runApiCreditOriginalGrantQueryOwner(configuration) {
   }
   try {
     frame.deadline = clock() + BigInt(t.requestDeadlineMs + t.closeGraceMs) * 1000000n;
-    frame.timer = p.armTimer(t.requestDeadlineMs + t.closeGraceMs, F(() => { frame.timer = null; hold(); requestClose(); }));
-    if (frame.timer === null || frame.timer === undefined) fail(); guard();
+    const handle = p.armTimer(t.requestDeadlineMs + t.closeGraceMs, F(() => {
+      if (frame.terminal) return;
+      frame.timer = null;
+      hold();
+      requestClose();
+    }));
+    if (handle === null || handle === undefined || types.isPromise(handle) || types.isProxy(handle)) {
+      frame.opaqueTimerArm = handle;
+      observeOpaqueReceipt(handle);
+      fail();
+    }
+    frame.timer = handle;
+    guard();
     frame.opaqueOpen = p.openTransport(c.profile); frame.transport = frame.opaqueOpen;
     if (frame.transport === null || typeof frame.transport !== 'object' || types.isProxy(frame.transport) || types.isPromise(frame.transport)) {
       frame.transport = null; fail();

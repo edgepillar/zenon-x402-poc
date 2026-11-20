@@ -134,6 +134,15 @@ check('grant-query-owner-sticky-transport-unknown-cannot-publish', async () => {
 check('grant-query-owner-rechecks-after-timer-cancellation', async () => { const f = fixture({ cancel(s) { s.work = 1; } }); await assert.rejects(f.run()); assert.equal(f.s.cancelled, 1); });
 check('grant-query-owner-timer-cancellation-must-return-void', async () => { const f = fixture({ cancel() { return true; } }); await assert.rejects(f.run()); });
 check('grant-query-owner-timer-cancellation-error-keeps-ownership', async () => { const f = fixture({ cancel() { throw Error('declared'); } }); await assert.rejects(f.run()); assert.equal(f.s.closes, 1); });
+check('grant-query-owner-rejected-timer-cancellation-remains-unknown-after-one-close', async () => {
+  const retirement = deferred();
+  const f = fixture({ cancel() { return retirement.promise; } });
+  await assert.rejects(f.run(), /API_CREDIT_ORIGINAL_GRANT_QUERY_UNKNOWN/);
+  retirement.reject(Error('declared timer retirement failed'));
+  await new Promise(resolve => setImmediate(resolve));
+  assert.deepEqual([f.s.opens, f.s.reads, f.s.closes, f.s.cancelled], [1, 1, 1, 1]);
+  assert.throws(f.run);
+});
 check('grant-query-owner-expiry-does-not-compete-with-a-pending-read', async () => {
   const f = fixture({ read(s, result, d) { return d.promise; } }), pending = f.run();
   f.s.now = 200000000n; f.s.timers[0].callback(); await assert.rejects(pending); assert.equal(f.s.closes, 0);
@@ -165,6 +174,15 @@ check('grant-query-owner-another-funding-response-cannot-match', async () => {
 check('grant-query-owner-early-clock-regression-refuses-before-transport', async () => { let calls = 0; const f = fixture({ clock() { return calls++ ? -1n : 0n; } }); await assert.rejects(f.run()); assert.equal(f.s.opens, 0); });
 check('grant-query-owner-expiry-at-close-boundary-is-not-a-late-success', async () => { const f = fixture({ close(s) { s.closed = true; s.now = 200000000n; return Promise.resolve(closedReceipt()); } }); await assert.rejects(f.run()); });
 check('grant-query-owner-synchronous-timer-expiry-never-opens-transport', async () => { const f = fixture({ arm(s, t) { t.callback(); return t; } }); await assert.rejects(f.run()); assert.equal(f.s.opens, 0); });
+check('grant-query-owner-pending-timer-handle-prevents-opening-and-is-never-cancelled', async () => {
+  const armed = deferred();
+  const f = fixture({ arm() { return armed.promise; } });
+  await assert.rejects(f.run(), /API_CREDIT_ORIGINAL_GRANT_QUERY_UNKNOWN/);
+  armed.resolve(f.s.timers[0]);
+  await flush();
+  assert.deepEqual([f.s.opens, f.s.reads, f.s.closes, f.s.cancelled], [0, 0, 0, 0]);
+  assert.throws(f.run);
+});
 check('grant-query-owner-outer-guard-expiry-vetoes-a-valid-result', async () => { const f = fixture({ read(s, result) { s.externalExpired = true; return Promise.resolve(result); } }); await assert.rejects(f.run()); });
 check('grant-query-owner-close-rejection-is-not-retried', async () => { const f = fixture({ close() { return Promise.reject(Error('declared close')); } }); await assert.rejects(f.run()); assert.equal(f.s.closes, 1); assert.throws(f.run); });
 check('grant-query-output-cannot-clear-reservations-or-add-dispatch', async () => { const f = fixture(), result = await f.run(); for (const edit of [{ spendingReservation: 'RELEASED' }, { mayDispatchService: true }, { nativeResourceRelease: 'ESTABLISHED' }]) assert.throws(() => capture(F({ ...result, ...edit }))); });

@@ -2517,8 +2517,8 @@
     },
     {
       "path": "src/api-credit-original-grant-query-owner.js",
-      "bytes": 11319,
-      "sha256": "399f4d66d136a13b644816f60bb9076b4c2caae3992348e9124c22854ceb0d32",
+      "bytes": 11779,
+      "sha256": "927db11a725febbd423a14e0d936387c876e50878134590a20208316da88a15b",
       "format": "module"
     },
     {
