@@ -1326,7 +1326,8 @@ export class ServiceCreditSqliteStore {
       }));
       const outcome = this.#runTransaction('initializeDurableExecution', () => {
         this.#validateDatabase();
-        const { executionState, physicalEnvelope } = this.#readLedger();
+        const previous = this.#readLedger();
+        const { executionState, physicalEnvelope } = previous;
         if (physicalEnvelope.revision !== expectedRevision) {
           return {
             changed: false,
@@ -1357,7 +1358,7 @@ export class ServiceCreditSqliteStore {
           failStore('SERVICE_CREDIT_STORE_EXECUTION_INITIALIZATION_UNSAFE');
         }
         const next = this.#persistCompound(
-          physicalEnvelope,
+          previous,
           physicalEnvelope.ledgerState,
           candidate,
         );
@@ -1384,7 +1385,8 @@ export class ServiceCreditSqliteStore {
       const expectedRevision = captureExpectedRevision(input.expectedRevision);
       const outcome = this.#runTransaction('claimDurableExecutionOwnership', () => {
         this.#validateDatabase();
-        const { executionState, physicalEnvelope } = this.#readLedger();
+        const previous = this.#readLedger();
+        const { executionState, physicalEnvelope } = previous;
         const claim = selectServiceCreditExecutionOwnershipClaim(OBJECT_FREEZE({
           revision: physicalEnvelope.revision, ledgerState: physicalEnvelope.ledgerState,
           executionState,
@@ -1395,7 +1397,7 @@ export class ServiceCreditSqliteStore {
         }
         if (claim.disposition === 'DISABLED') failStore('SERVICE_CREDIT_STORE_DURABLE_EXECUTION_DISABLED');
         if (claim.disposition !== 'APPLIED') failStore('SERVICE_CREDIT_STORE_INVARIANT_VIOLATION');
-        const next = this.#persistCompound(physicalEnvelope, claim.ledgerState, claim.executionState);
+        const next = this.#persistCompound(previous, claim.ledgerState, claim.executionState);
         if (next.revision !== claim.nextRevision) failStore('SERVICE_CREDIT_STORE_INVARIANT_VIOLATION');
         return { changed: true, result: receipt({ disposition: 'APPLIED',
           revision: next.revision, executionState }) };
@@ -1421,7 +1423,8 @@ export class ServiceCreditSqliteStore {
       }
       const outcome = this.#runTransaction('prepareDurableExecution', () => {
         this.#validateDatabase();
-        const { executionState, physicalEnvelope } = this.#readLedger();
+        const previous = this.#readLedger();
+        const { executionState, physicalEnvelope } = previous;
         if (physicalEnvelope.revision !== expectedRevision) {
           return {
             changed: false,
@@ -1502,7 +1505,7 @@ export class ServiceCreditSqliteStore {
           failStore('SERVICE_CREDIT_STORE_INVARIANT_VIOLATION');
         }
         const ledgerState = model.exportState();
-        const next = this.#persistCompound(physicalEnvelope, ledgerState, prepared.state);
+        const next = this.#persistCompound(previous, ledgerState, prepared.state);
         return {
           changed: true,
           result: receipt({
@@ -1529,7 +1532,8 @@ export class ServiceCreditSqliteStore {
       }
       const outcome = this.#runTransaction('persistDurableExecutionFence', () => {
         this.#validateDatabase();
-        const { executionState, physicalEnvelope } = this.#readLedger();
+        const previous = this.#readLedger();
+        const { executionState, physicalEnvelope } = previous;
         if (physicalEnvelope.revision !== expectedRevision) {
           return {
             changed: false,
@@ -1576,7 +1580,7 @@ export class ServiceCreditSqliteStore {
           failStore('SERVICE_CREDIT_STORE_INVARIANT_VIOLATION');
         }
         const ledgerState = model.exportState();
-        const next = this.#persistCompound(physicalEnvelope, ledgerState, fenced.state);
+        const next = this.#persistCompound(previous, ledgerState, fenced.state);
         return {
           changed: true,
           result: receipt({
@@ -1609,7 +1613,8 @@ export class ServiceCreditSqliteStore {
       const resultCommitment = durableResultCommitmentFor(cachedResult);
       const outcome = this.#runTransaction('completeDurableExecution', () => {
         this.#validateDatabase();
-        const { executionState, physicalEnvelope } = this.#readLedger();
+        const previous = this.#readLedger();
+        const { executionState, physicalEnvelope } = previous;
         if (physicalEnvelope.revision !== expectedRevision) {
           return {
             changed: false,
@@ -1686,7 +1691,7 @@ export class ServiceCreditSqliteStore {
           failStore('SERVICE_CREDIT_STORE_INVARIANT_VIOLATION');
         }
         const ledgerState = model.exportState();
-        const next = this.#persistCompound(physicalEnvelope, ledgerState, completed.state);
+        const next = this.#persistCompound(previous, ledgerState, completed.state);
         return {
           changed: true,
           result: receipt({
@@ -1719,7 +1724,8 @@ export class ServiceCreditSqliteStore {
       }
       const outcome = this.#runTransaction('markDurableExecutionUnknown', () => {
         this.#validateDatabase();
-        const { executionState, physicalEnvelope } = this.#readLedger();
+        const previous = this.#readLedger();
+        const { executionState, physicalEnvelope } = previous;
         if (physicalEnvelope.revision !== expectedRevision) {
           return {
             changed: false,
@@ -1765,7 +1771,7 @@ export class ServiceCreditSqliteStore {
           requestId: current.request.requestId,
         });
         const ledgerState = model.exportState();
-        const next = this.#persistCompound(physicalEnvelope, ledgerState, unknown.state);
+        const next = this.#persistCompound(previous, ledgerState, unknown.state);
         return {
           changed: true,
           result: receipt({
@@ -1790,7 +1796,8 @@ export class ServiceCreditSqliteStore {
       const expectedRevision = captureExpectedRevision(input.expectedRevision);
       const outcome = this.#runTransaction('recoverDurableExecutionsAfterRestart', () => {
         this.#validateDatabase();
-        const { executionState, physicalEnvelope } = this.#readLedger();
+        const previous = this.#readLedger();
+        const { executionState, physicalEnvelope } = previous;
         if (physicalEnvelope.revision !== expectedRevision) {
           return {
             changed: false,
@@ -1841,7 +1848,7 @@ export class ServiceCreditSqliteStore {
           }
         }
         const ledgerState = model.exportState();
-        const next = this.#persistCompound(physicalEnvelope, ledgerState, recovered.state);
+        const next = this.#persistCompound(previous, ledgerState, recovered.state);
         return {
           changed: true,
           result: receipt({
@@ -1942,7 +1949,8 @@ export class ServiceCreditSqliteStore {
     return released.request;
   }
 
-  #persistCompound(physicalEnvelope, ledgerState, executionState) {
+  #persistCompound(previous, ledgerState, executionState) {
+    const { physicalEnvelope, physicalEnvelopeJson } = previous;
     this.#assertPersistableState(ledgerState);
     serializeLedgerState(this.#configuration, ledgerState);
     assertDurableCrossLinks(this.#configuration, ledgerState, executionState);
@@ -1957,7 +1965,7 @@ export class ServiceCreditSqliteStore {
     const text = serializePhysicalEnvelope(this.#configuration, next);
     const updated = this.#database.prepare(
       `UPDATE ${TABLE_NAME} SET envelope = ? WHERE singleton = 1 AND envelope = ?`,
-    ).run(text, canonicalJson(physicalEnvelope));
+    ).run(text, physicalEnvelopeJson);
     if (updated.changes !== 1) failStore('SERVICE_CREDIT_STORE_CORRUPT');
     return next;
   }
@@ -2089,10 +2097,11 @@ export class ServiceCreditSqliteStore {
       ) {
         failStore('SERVICE_CREDIT_STORE_CORRUPT');
       }
-      serializePhysicalEnvelope(this.#configuration, normalizedEnvelope);
+      const physicalEnvelopeJson = serializePhysicalEnvelope(this.#configuration, normalizedEnvelope);
       return {
         executionState: normalizedExecutionState,
         physicalEnvelope: normalizedEnvelope,
+        physicalEnvelopeJson,
         model,
         ledgerStateJson,
       };
