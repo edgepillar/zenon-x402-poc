@@ -58,6 +58,7 @@ const ARRAY_IS_ARRAY = Array.isArray;
 const NUMBER_IS_SAFE_INTEGER = Number.isSafeInteger;
 const OBJECT_HAS_OWN = Object.hasOwn;
 const OBJECT_FREEZE = Object.freeze;
+const MODEL_GET_GRANT = InMemoryServiceCreditModel.prototype.getGrant;
 const READ_ONLY_MODEL_METHODS = OBJECT_FREEZE({
   getOffer: InMemoryServiceCreditModel.prototype.getOffer,
   getActivation: InMemoryServiceCreditModel.prototype.getActivation,
@@ -838,6 +839,15 @@ function reservationMatchesLedger(request, input) {
     && request.canonicalBodyDigest === input.canonicalBodyDigest
     && request.selectedContentType === input.selectedContentType
     && request.maxCostUnits === input.maxCostUnits;
+}
+
+function grantLifecycleUnchanged(ledgerState, grant) {
+  if (grant === null) return true;
+  for (let index = 0; index < ledgerState.grants.length; index += 1) {
+    const previous = ledgerState.grants[index];
+    if (previous.grantId === grant.grantId) return previous.lifecycle === grant.lifecycle;
+  }
+  return false;
 }
 
 function findLedgerRequest(ledgerState, grantId, requestId) {
@@ -2022,17 +2032,18 @@ export class ServiceCreditSqliteStore {
           failStore('SERVICE_CREDIT_STORE_LEGACY_EXECUTION_MUTATION_BLOCKED');
         }
         let result;
-        let readOnly = false;
+        let exactRead = false;
         let deferredDomainError = null;
+        const grantRead = operation === 'getGrant';
         try {
-          if (OBJECT_HAS_OWN(READ_ONLY_MODEL_METHODS, operation)) {
+          if (grantRead || OBJECT_HAS_OWN(READ_ONLY_MODEL_METHODS, operation)) {
             const prototype = REFLECT_GET_PROTOTYPE_OF(model);
             const descriptor = prototype === InMemoryServiceCreditModel.prototype
               ? REFLECT_GET_OWN_PROPERTY_DESCRIPTOR(prototype, operation)
               : undefined;
-            readOnly = descriptor !== undefined
+            exactRead = descriptor !== undefined
               && OBJECT_HAS_OWN(descriptor, 'value')
-              && descriptor.value === READ_ONLY_MODEL_METHODS[operation]
+              && descriptor.value === (grantRead ? MODEL_GET_GRANT : READ_ONLY_MODEL_METHODS[operation])
               && REFLECT_GET_OWN_PROPERTY_DESCRIPTOR(model, operation) === undefined;
           }
           result = model[operation](input);
@@ -2041,9 +2052,12 @@ export class ServiceCreditSqliteStore {
           if (code === null) throw error;
           deferredDomainError = fixedModelFailure(code);
         }
-        // The exact read-only model methods leave the validated ledger intact.
-        // getGrant still needs the state comparison because it refreshes expiry.
-        if (readOnly) return { changed: false, deferredDomainError, result };
+        // The exact getGrant method refreshes only the matched grant's lifecycle.
+        // A changed lifecycle or a failed read still takes the full write checks.
+        if (exactRead && (!grantRead || (deferredDomainError === null
+          && grantLifecycleUnchanged(physicalEnvelope.ledgerState, result)))) {
+          return { changed: false, deferredDomainError, result };
+        }
         const afterState = model.exportState();
         const afterStateJson = canonicalJson(afterState);
         const changed = ledgerStateJson !== afterStateJson;
