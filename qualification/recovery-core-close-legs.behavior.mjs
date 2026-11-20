@@ -22,6 +22,8 @@ function fixture(options = {}) {
   const pending = deferred();
   const backendError = Object.hasOwn(options, 'backendError') ? options.backendError : F(new TypeError('DECLARED_BACKEND_STOP'));
   const clientError = Object.hasOwn(options, 'clientError') ? options.clientError : F(new TypeError('DECLARED_CLIENT_STOP'));
+  const backendReceipt = Object.hasOwn(options, 'backendReceipt')
+    ? options.backendReceipt : F({ status: 'CLOSED', declaredReaderOnly: true });
   const receipt = Object.hasOwn(options, 'receipt') ? options.receipt : pending.promise;
   let connection;
   function reenter() {
@@ -47,7 +49,7 @@ function fixture(options = {}) {
       assert.equal(arguments.length, 0); s.backendStops++;
       if (options.reentry === 'BACKEND') reenter();
       if (options.backendThrows) throw backendError;
-      return F({ status: 'CLOSED', declaredReaderOnly: true });
+      return backendReceipt;
     }),
   });
   connection = create(client, backend, 'grant.declared.original', 'DECLARED_BORROWED_READER');
@@ -84,6 +86,30 @@ check('recovery-core-close-late-client-success-cannot-repair-the-backend-refusal
   throwsSame(() => f.connection.close(), f.backendError); stoppedOnce(f);
   f.pending.resolve(undefined); await f.receipt;
   throwsSame(() => f.connection.close(), f.backendError); stoppedOnce(f); unavailable(f);
+});
+check('recovery-core-close-unknown-backend-outcome-preserves-independent-local-close', async () => {
+  const f = fixture({ backendReceipt: F({ status: 'OUTCOME_UNKNOWN' }) });
+  assert.throws(() => f.connection.close(), { code: 'SERVICE_CREDIT_CUSTODIED_BACKEND_RECOVERY_BACKEND_CLOSE_UNCONFIRMED' });
+  f.pending.resolve(undefined);
+  await f.receipt;
+  stoppedOnce(f);
+  unavailable(f);
+});
+check('recovery-core-close-late-backend-success-cannot-confirm-an-unjoined-stop', async () => {
+  const backend = deferred();
+  const f = fixture({ backendReceipt: backend.promise });
+  let first;
+  assert.throws(() => f.connection.close(), (value) => {
+    first = value;
+    return value.code === 'SERVICE_CREDIT_CUSTODIED_BACKEND_RECOVERY_BACKEND_CLOSE_UNCONFIRMED';
+  });
+  backend.resolve(F({ status: 'CLOSED' }));
+  f.pending.resolve(undefined);
+  await backend.promise;
+  await f.receipt;
+  throwsSame(() => f.connection.close(), first);
+  stoppedOnce(f);
+  unavailable(f);
 });
 check('recovery-core-close-client-refusal-is-retained-without-a-second-stop', () => {
   const f = fixture({ clientThrows: true });

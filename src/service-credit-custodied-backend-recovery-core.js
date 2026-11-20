@@ -42,6 +42,17 @@ function sameCloseDescriptor(left, right) {
   return true;
 }
 
+function isKnownBackendClose(receipt) {
+  // Borrowed readers can return void or the native reader's CLOSED outcome.
+  if (receipt === undefined) return true;
+  if (receipt === null || typeof receipt !== 'object' || CLOSE_IS_PROXY(receipt)
+      || CLOSE_IS_PROMISE(receipt) || CLOSE_PROTOTYPE(receipt) !== Object.prototype
+      || CLOSE_DESCRIPTOR(receipt, 'then') !== undefined
+      || CLOSE_DESCRIPTOR(Object.prototype, 'then') !== undefined) return false;
+  const status = CLOSE_DESCRIPTOR(receipt, 'status');
+  return status?.enumerable === true && CLOSE_OWN(status, 'value') && status.value === 'CLOSED';
+}
+
 // A failed backend stop must not suppress the known client stop. Retain its
 // receipt and observe only a supported genuine promise, without assimilating
 // an opaque receipt or treating it as replacement cleanup authority.
@@ -135,11 +146,11 @@ export function createServiceCreditCustodiedBackendRecoveryCore(client, backend,
   let closeRequested = false, closeComplete = false, closeFailed = false, closeFailure;
   let closeReceipt;
   const closeFailures = { backend: null, local: null, reentry: null };
-  function rememberCloseFailure(owner, value) {
+  function rememberCloseFailure(owner, value, receipt = value) {
     unavailable = true;
-    if (closeFailures[owner] === null) closeFailures[owner] = FREEZE({ value });
+    if (closeFailures[owner] === null) closeFailures[owner] = FREEZE({ value: receipt });
     if (!closeFailed) { closeFailed = true; closeFailure = value; }
-    observeFailedCloseReceipt(value);
+    observeFailedCloseReceipt(receipt);
   }
 
   function readBackendRecoveryState(keyValue, authorizationHeader, expectedPins, exactCheckpoint, actualArity) {
@@ -289,7 +300,12 @@ export function createServiceCreditCustodiedBackendRecoveryCore(client, backend,
     // known client's cleanup, authorize another stop or repair a prior failure.
     closeRequested = true;
     closed = true;
-    try { BACKEND_CLOSE(); } catch (value) { rememberCloseFailure('backend', value); }
+    try {
+      const receipt = BACKEND_CLOSE();
+      if (!isKnownBackendClose(receipt)) {
+        rememberCloseFailure('backend', failure('BACKEND_CLOSE_UNCONFIRMED'), receipt);
+      }
+    } catch (value) { rememberCloseFailure('backend', value); }
     try { closeReceipt = LOCAL_CLOSE(); } catch (value) { rememberCloseFailure('local', value); }
     closeComplete = true;
     if (closeFailed) {
