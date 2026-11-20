@@ -1814,11 +1814,15 @@ export class ServiceCreditSqliteStore {
           failStore('SERVICE_CREDIT_STORE_DURABLE_EXECUTION_DISABLED');
         }
         const wallClockNowMs = this.#captureTrustedNow();
-        const recovered = invokeExecutionContract(() => recoverServiceCreditExecutions({
-          state: executionState,
-          wallClockNowMs,
-        }));
-        if (!recovered.transitioned) {
+        // The ledger read already hydrated the state. Terminal executions
+        // do not need another hydration to decide that recovery has no work.
+        const recovered = hasNonterminalExecution(executionState)
+          ? invokeExecutionContract(() => recoverServiceCreditExecutions({
+            state: executionState,
+            wallClockNowMs,
+          }))
+          : null;
+        if (recovered === null || !recovered.transitioned) {
           return {
             changed: false,
             result: receipt({
