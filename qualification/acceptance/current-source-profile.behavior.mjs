@@ -6,6 +6,7 @@ import {
   planCurrentApiCreditSourceProfile as plan,
   checkCurrentApiCreditSourceProfile as check,
   combineCurrentApiCreditSourceProfile as combine,
+  compareCurrentApiCreditSourceProfile as compare,
 } from './current-source-profile-core.js';
 
 const hash = b => createHash('sha256').update(b).digest('hex');
@@ -149,6 +150,67 @@ await test('receipt-coverage-edit-rejected',()=>{const f=fixture(),p=f.start(),r
 await test('receipt-authority-or-native-claim-rejected',()=>{for(const [k,v] of [['authority','GRANT'],['nativeExecutions',1],['productAcceptance','PASS'],['packageSourceFilesRead',1]]){const f=fixture(),p=f.start(),r=copy(check(p,f.read));r[k]=v;refuses(()=>combine(p,[r]),'RECEIPT');}});
 await test('receipt-getters-not-entered',()=>{const f=fixture(),p=f.start(),r=copy(check(p,f.read));let n=0;Object.defineProperty(r,'authority',{enumerable:true,get(){n++;throw Error();}});refuses(()=>combine(p,[r]),'FIELDS');assert.equal(n,0);});
 await test('receipt-array-proxy-not-entered',()=>{const f=fixture(),p=f.start();let n=0;refuses(()=>combine(p,new Proxy([],{get(){n++;throw Error();}})));assert.equal(n,0);});
+await test('drift-report-compares-shared-source-once-and-reads-no-packages',()=>{
+  const f=fixture(),p=f.start(),seen=[];
+  const r=compare(p,Object.freeze((path,limit)=>{assert.equal(limit,1048576);seen.push(path);return f.files.get(path);}));
+  assert.equal(r.status,'BASELINE_INPUTS_MATCH');
+  assert.equal(r.attemptedInputs,9);assert.equal(r.matchedInputs,9);
+  assert.deepEqual(r.differences,[]);assert.deepEqual(r.affectedRoles,[]);
+  assert.equal(new Set(seen).size,seen.length);
+  assert.ok(!seen.some(path=>path.startsWith('node_modules/')));
+  assert.equal(r.packageSourceFilesRead,0);assert.equal(r.productAcceptance,'NOT_ESTABLISHED');
+  refuses(()=>combine(p,[r]));
+});
+await test('drift-report-returns-all-changes-with-the-reviewed-roles',()=>{
+  const f=fixture(),p=f.start(),seen=[];
+  f.files.set('src/shared.js',Buffer.from('export const shared = 2;'));
+  f.files.delete(entries[0]);
+  f.files.set(extra[1],Buffer.alloc(0));
+  f.files.set(catalogs[1],Buffer.concat([f.files.get(catalogs[1]),Buffer.from(' ')]));
+  const r=compare(p,Object.freeze(path=>{seen.push(path);return f.files.get(path)??null;}));
+  assert.equal(r.status,'SOURCE_DRIFT');
+  assert.deepEqual(r.affectedRoles,['buyer','provider']);
+  assert.equal(r.catalogReviewRequired,true);assert.equal(r.matchedInputs,5);
+  const byPath=new Map(r.differences.map(d=>[d.path,d]));
+  assert.deepEqual(byPath.get('src/shared.js').roles,['buyer','provider']);
+  assert.equal(byPath.get('src/shared.js').observed.bytes,byPath.get('src/shared.js').expected.bytes);
+  assert.equal(byPath.get(entries[0]).change,'MISSING');
+  assert.equal(byPath.get(entries[0]).observed,null);
+  assert.deepEqual(byPath.get(extra[1]).roles,['provider']);
+  assert.deepEqual(byPath.get(extra[1]).observed,{bytes:0,sha256:hash(Buffer.alloc(0))});
+  assert.equal(byPath.get(catalogs[1]).catalog,true);
+  assert.ok(!seen.some(path=>path.startsWith('node_modules/')));
+});
+await test('drift-report-keeps-unavailable-and-missing-distinct',async()=>{
+  const f=fixture(),p=f.start();
+  const r=compare(p,Object.freeze(path=>{
+    if(path===catalogs[0])throw Error('declared read failure');
+    if(path===entries[0])return Promise.reject(Error('declared incomplete read'));
+    if(path===entries[1])return null;
+    return f.files.get(path);
+  }));
+  assert.equal(r.status,'OBSERVATION_INCOMPLETE');
+  assert.equal(r.differences.length,3);
+  const result=new Map(r.differences.map(d=>[d.path,d.change]));
+  assert.equal(result.get(catalogs[0]),'UNAVAILABLE');
+  assert.equal(result.get(entries[0]),'UNAVAILABLE');
+  assert.equal(result.get(entries[1]),'MISSING');
+  assert.equal(r.catalogReviewRequired,true);
+  await Promise.resolve();
+});
+await test('drift-report-refuses-an-unbranded-baseline-before-observation',()=>{
+  const f=fixture(),p=f.start();
+  let reads=0;const observe=Object.freeze(()=>{reads++;return null;});
+  refuses(()=>compare({...p},observe),'PLAN');
+  assert.equal(reads,0);
+});
+await test('argument-baseline-root-is-an-exclusive-comparison-mode',()=>{
+  const d='a'.repeat(64),root='/reviewed source/checkout';
+  const a=args(['--profile-sha256',d,'--baseline-root',root]);
+  assert.equal(a.baselineRoot,root);assert.equal(a.receipts,null);assert.equal(a.shardCount,1);
+  refuses(()=>args(['--profile-sha256',d,'--baseline-root','relative/checkout']),'ARGUMENTS');
+  refuses(()=>args(['--profile-sha256',d,'--baseline-root',root,'--shard','0/2']),'ARRAY');
+});
 await test('argument-full-and-shard-and-merge-modes',()=>{const d='a'.repeat(64);assert.equal(args(['--profile-sha256',d]).shardCount,1);assert.equal(args(['--profile-sha256',d,'--shard','1/8']).shardIndex,1);assert.equal(args(['--profile-sha256',d,'--merge-receipts','qualification/receipts.json']).receipts,'qualification/receipts.json');assert.equal(args(['--help']).help,true);});
 await test('argument-ambiguity-and-traversal-rejected',()=>{for(const v of [[],['--profile-sha256','auto'],['--profile-sha256','a'.repeat(64),'--shard','01/8'],['--profile-sha256','a'.repeat(64),'--shard','8/8'],['--profile-sha256','a'.repeat(64),'--merge-receipts','qualification/../private.json'],['--help','extra']])refuses(()=>args(v));});
 await test('prototype-json-hook-prevents-observation',()=>{const f=fixture(),raw=f.sync();let n=0;Object.defineProperty(Object.prototype,'toJSON',{configurable:true,value(){n++;throw Error();}});try{refuses(()=>plan(raw,hash(raw),f.read),'INPUT');assert.equal(n,0);}finally{delete Object.prototype.toJSON;}});

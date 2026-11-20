@@ -59,11 +59,12 @@ function qualification(v,q,read){const p=json(v.sourceProfile,262144),r=json(v.r
 export function parseCurrentApiCreditSourceProfileArguments(args){
  const values=dense(args,4);if(values.length===1&&values[0]==='--help')return F({help:true});
  if(![2,4].includes(values.length)||values[0]!=='--profile-sha256'||typeof values[1]!=='string'||!SHA.test(values[1]))fail('ARGUMENTS');
- const out={help:false,profileSha256:values[1],shardIndex:0,shardCount:1,receipts:null};
+ const out={help:false,profileSha256:values[1],shardIndex:0,shardCount:1,receipts:null,baselineRoot:null};
  if(values.length===4){
   if(values[2]==='--shard'&&typeof values[3]==='string'&&/^(?:0|[1-9][0-9]?)\/(?:[1-9]|1[0-6])$/.test(values[3])){
    const [index,total]=values[3].split('/').map(Number);if(index>=total)fail('ARGUMENTS');out.shardIndex=index;out.shardCount=total;
   }else if(values[2]==='--merge-receipts'&&typeof values[3]==='string'&&values[3].startsWith('qualification/')&&values[3].endsWith('.json'))out.receipts=path(values[3]);
+  else if(values[2]==='--baseline-root'&&typeof values[3]==='string'&&values[3].startsWith('/')&&values[3].length<=4096&&!values[3].includes('\0'))out.baselineRoot=values[3];
   else fail('ARGUMENTS');
  }
  return F(out);
@@ -84,23 +85,64 @@ export function planCurrentApiCreditSourceProfile(manifestBytes,expectedDigest,r
  const extra=dense(m.supplementalSources,3).map(row);if(extra.length!==3||extra.some((r,i)=>r.path!==EXTRA[i]||r.format!=='module'))fail('SUPPLEMENT');
  const q=fields(m.dataQualification,['sourceProfile','result','sourceBoundControls','executedControls','retainedControls','expectedResultQualification']);reference(q.sourceProfile);reference(q.result);
  count(q.sourceBoundControls);count(q.executedControls);count(q.retainedControls);if(!q.executedControls||q.executedControls+q.retainedControls!==q.sourceBoundControls||typeof q.expectedResultQualification!=='string'||!/^G[0-9]_[A-Z0-9_]+$/.test(q.expectedResultQualification))fail('QUALIFICATION');
- const read=reader(readSource),sources=new Map(),aliases=new Map(),packages=[];let byteTotal=0;
- function source(r){const alias=aliases.get(r.path.toLowerCase());if(alias!==undefined&&alias!==r.path)fail('SOURCE_ALIAS');aliases.set(r.path.toLowerCase(),r.path);
+ const read=reader(readSource),sources=new Map(),aliases=new Map(),memberships=new Map(),packages=[];let byteTotal=0;
+ function source(r,role){const alias=aliases.get(r.path.toLowerCase());if(alias!==undefined&&alias!==r.path)fail('SOURCE_ALIAS');aliases.set(r.path.toLowerCase(),r.path);
+  if(!memberships.has(r.path))memberships.set(r.path,new Set());memberships.get(r.path).add(role);
   const old=sources.get(r.path);if(old){if(JSON.stringify(old)!==JSON.stringify(r))fail('SOURCE_CONFLICT');return;}byteTotal+=r.bytes;if(byteTotal>8388608)fail('SOURCE_BUDGET');sources.set(r.path,r);}
  for(const c of selected){const cat=fields(json(read(c),262144),['version','rows','edges']);if(cat.version!==1)fail('CATALOG_VERSION');const rows=dense(cat.rows,1024).map(row),map=new Map(),aliases=new Set();
-  for(const r of rows){if(aliases.has(r.path.toLowerCase()))fail('CATALOG_ALIAS');aliases.add(r.path.toLowerCase());map.set(r.path,r);if(!r.path.startsWith('node_modules/'))source(r);}
+  for(const r of rows){if(aliases.has(r.path.toLowerCase()))fail('CATALOG_ALIAS');aliases.add(r.path.toLowerCase());map.set(r.path,r);if(!r.path.startsWith('node_modules/'))source(r,c.role);}
   const dep=rows.filter(r=>r.path.startsWith('node_modules/')).sort((a,b)=>a.path<b.path?-1:a.path>b.path?1:0);packages.push(dep);
   if(rows.filter(r=>r.path.startsWith('src/')).length!==c.sourceRows||dep.length!==c.packageRows||!map.has('package.json')||!map.has(app[c.role+'Entry']))fail('CATALOG_COUNT');
   const bare=dense(cat.edges,32),seen=new Set();if(bare.length!==c.bareEdges)fail('CATALOG_COUNT');
   for(const v of bare){const e=fields(v,['parent','specifier','path']);if(!map.has(e.parent)||!map.has(e.path)||!e.parent.startsWith('src/')||!e.path.startsWith('node_modules/')||typeof e.specifier!=='string'||!e.specifier.length||e.specifier.length>256||/^(?:\.|\/)|[:\\]/.test(e.specifier)||seen.has(e.parent+'\n'+e.specifier))fail('EDGE');seen.add(e.parent+'\n'+e.specifier);}
  }
- if(JSON.stringify(packages[0])!==JSON.stringify(packages[1]))fail('DEPENDENCY_CONFLICT');for(const r of extra)source(r);
+ if(JSON.stringify(packages[0])!==JSON.stringify(packages[1]))fail('DEPENDENCY_CONFLICT');
+ source(extra[0],'buyer');source(extra[1],'provider');for(const role of ROLES)source(extra[2],role);
  qualification({sourceProfile:read(q.sourceProfile),result:read(q.result)},q,read);
  const rows=[...sources.values()].sort((a,b)=>a.path<b.path?-1:a.path>b.path?1:0),sourceSetSha256=sha(JSON.stringify(rows));
  const plan=F({profileVersion:1,profileSha256:expectedDigest,sourceBaseline:m.sourceBaseline,totalSources:rows.length,totalSourceBytes:byteTotal,sourceSetSha256,packageCatalogRows:packages[0].length,sourceBoundControls:q.sourceBoundControls});
- PLANS.set(plan,{rows,mode:null,attempted:new Set()});return plan;
+ PLANS.set(plan,{rows,catalogs:selected,memberships,mode:null,attempted:new Set()});return plan;
 }
 function planState(plan){if(plan===null||typeof plan!=='object'||types.isProxy(plan)||!PLANS.has(plan))fail('PLAN');return PLANS.get(plan);}
+/** Compare the reviewed inputs with one candidate tree. A null receipt means
+ * a missing path. Unreadable or opaque receipts leave the observation open. */
+export function compareCurrentApiCreditSourceProfile(plan,readSource) {
+  if(arguments.length!==2||!invariant()||typeof readSource!=='function'||types.isProxy(readSource)||!Object.isFrozen(readSource))fail('INPUT');
+  const {rows,catalogs,memberships}=planState(plan);
+  const inputs=[
+    ...catalogs.map(r=>({row:r,roles:[r.role],catalog:true})),
+    ...rows.map(r=>({row:r,roles:ROLES.filter(role=>memberships.get(r.path).has(role)),catalog:false})),
+  ];
+  if(inputs.length>2048)fail('READ_BUDGET');
+  const differences=[];
+  let matched=0,totalBytes=0,unavailable=false;
+  for(const {row,roles,catalog} of inputs) {
+    let observed=null,change='UNAVAILABLE';
+    try {
+      const receipt=A(readSource,undefined,[row.path,1048576]);
+      if(receipt===null)change='MISSING';
+      else {
+        const raw=bytes(receipt,1048576);
+        totalBytes+=raw.length;
+        observed=F({bytes:raw.length,sha256:sha(raw)});
+        change=observed.bytes===row.bytes&&observed.sha256===row.sha256?'MATCH':'CHANGED';
+      }
+    } catch {}
+    if(!invariant())fail('INTRINSICS');
+    if(totalBytes>16777216)fail('READ_BUDGET');
+    if(change==='MATCH'){matched++;continue;}
+    unavailable ||= change==='UNAVAILABLE';
+    differences.push(F({path:row.path,roles:F(roles),catalog,change,
+      expected:F({bytes:row.bytes,sha256:row.sha256}),observed}));
+  }
+  return F({kind:'API_CREDIT_SOURCE_DRIFT_REPORT',
+    status:unavailable?'OBSERVATION_INCOMPLETE':differences.length?'SOURCE_DRIFT':'BASELINE_INPUTS_MATCH',
+    profileSha256:plan.profileSha256,sourceBaseline:plan.sourceBaseline,sourceSetSha256:plan.sourceSetSha256,
+    attemptedInputs:inputs.length,matchedInputs:matched,observedBytes:totalBytes,
+    differences:F(differences),affectedRoles:F(ROLES.filter(role=>differences.some(d=>d.roles.includes(role)))),
+    catalogReviewRequired:differences.some(d=>d.catalog),packageSourceFilesRead:0,
+    snapshotAtomic:false,applicationProgramsExecuted:0,filesWritten:0,productAcceptance:'NOT_ESTABLISHED',authority:'NONE'});
+}
 function result(plan,shard,checked){return F({kind:'API_CREDIT_SOURCE_CHECK_SHARD',status:'SOURCE_MATCH',profileSha256:plan.profileSha256,sourceBaseline:plan.sourceBaseline,sourceSetSha256:plan.sourceSetSha256,
  shard:F(shard),checkedSources:F(checked),totalSources:plan.totalSources,totalSourceBytes:plan.totalSourceBytes,packageCatalogRows:plan.packageCatalogRows,packageSourceFilesRead:0,
  installedNamespace:'NOT_ESTABLISHED',runtimeQualification:'NOT_ESTABLISHED',sourceBoundControls:plan.sourceBoundControls,nativeExecutions:0,applicationProgramsExecuted:0,filesWritten:0,productAcceptance:'NOT_ESTABLISHED',authority:'NONE'});}

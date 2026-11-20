@@ -13,6 +13,28 @@ failure inventory. Both documents must be present with the recorded byte
 lengths and SHA-256 digests. A source match leaves installed namespace,
 application launch, Linux product acceptance and G0-G5 open.
 
+## Compare a later checkout
+
+Run this from the candidate checkout. Use the existing reviewed checkout for
+the manifest, its catalogs and proof documents, with the reviewed manifest
+digest supplied independently.
+
+```sh
+node scripts/report-current-api-credit-profile.mjs --profile-sha256 MANIFEST_SHA256 \
+  --baseline-root /absolute/path/to/reviewed-checkout
+```
+
+The drift report reads each pinned application path and both catalogs once
+from the candidate. It lists changed, missing and unavailable inputs and the
+affected buyer or provider scope. A changed or unavailable catalog requires
+review of that role's graph, including any newly selected inputs. Select
+qualification runs using the affected inputs and the individual control
+graphs. The report supplies source observations with product acceptance open.
+
+Exit 0 reports matched baseline inputs, exit 2 reports observed drift and
+exit 1 reports an incomplete or refused observation. The comparison opens
+no installed package files and runs no application or qualification program.
+
 ## Retained source-profile history
 
 ### V98 recorded source description

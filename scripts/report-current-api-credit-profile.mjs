@@ -1,10 +1,11 @@
 import { constants, lstatSync, openSync, fstatSync, readSync, closeSync } from 'node:fs';
-import { dirname, join, parse } from 'node:path';
+import { dirname, join, parse, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Buffer } from 'node:buffer';
 import {
   parseCurrentApiCreditSourceProfileArguments,
   planCurrentApiCreditSourceProfile,
+  compareCurrentApiCreditSourceProfile,
   checkCurrentApiCreditSourceProfile,
   combineCurrentApiCreditSourceProfile,
 } from '../qualification/acceptance/current-source-profile-core.js';
@@ -32,14 +33,21 @@ function recheck(entries) {
 }
 // Metadata-only source observation. No application/package import, writer or
 // child process. Before/open/after identity checks are not an atomic snapshot.
-function readRelative(name, exactBytes = null) {
+function readRelative(name, exactBytes = null, root = ROOT, allowMissing = false) {
   if (typeof name !== 'string' || name.length > 512 || !/^[-A-Za-z0-9_@.+/]+$/.test(name)
     || name.startsWith('/') || name.split('/').some(p => !p || p === '.' || p === '..')
     || name.startsWith('node_modules/') || ++reads > 2048) fail();
-  const target = join(ROOT, name), ancestors = directories(dirname(target));
-  const before = lstatSync(target, { bigint: true });
+  const target = join(root, name);
+  let ancestors, before;
+  try {
+    ancestors = directories(dirname(target));
+    before = lstatSync(target, { bigint: true });
+  } catch (error) {
+    if (allowMissing && error?.code === 'ENOENT') return null;
+    throw error;
+  }
   if (!before.isFile() || before.isSymbolicLink() || before.nlink !== 1n
-    || before.size < 1n || before.size > BigInt(MAX_FILE)
+    || (!allowMissing && before.size < 1n) || before.size > BigInt(MAX_FILE)
     || exactBytes !== null && before.size !== BigInt(exactBytes)) fail();
   const size = Number(before.size);
   if ((total += size) > 16777216) fail();
@@ -61,15 +69,21 @@ function readRelative(name, exactBytes = null) {
   recheck(ancestors);
   return raw;
 }
-const readSource = Object.freeze((name, size) => readRelative(name, size));
 try {
   const args = parseCurrentApiCreditSourceProfileArguments(process.argv.slice(2));
   if (args.help) {
-    process.stdout.write('Usage: node scripts/report-current-api-credit-profile.mjs --profile-sha256 HEX [--shard INDEX/COUNT | --merge-receipts qualification/receipts.json]\nSource identities only; no application/package execution or acceptance promotion.\n');
+    process.stdout.write('Usage: node scripts/report-current-api-credit-profile.mjs --profile-sha256 HEX [--shard INDEX/COUNT | --merge-receipts qualification/receipts.json | --baseline-root ABSOLUTE_CHECKOUT]\nSource identities only; no application/package execution or acceptance promotion.\n');
   } else {
-    const plan = planCurrentApiCreditSourceProfile(readRelative(MANIFEST), args.profileSha256, readSource);
+    const baseline = args.baselineRoot ?? ROOT;
+    if (args.baselineRoot !== null && resolve(baseline) !== baseline) fail();
+    const readSource = Object.freeze((name, size) => readRelative(name, size, baseline));
+    const plan = planCurrentApiCreditSourceProfile(readRelative(MANIFEST, null, baseline), args.profileSha256, readSource);
     let result;
-    if (args.receipts !== null) {
+    if (args.baselineRoot !== null) {
+      result = compareCurrentApiCreditSourceProfile(plan, Object.freeze(name => readRelative(name, null, ROOT, true)));
+      if (result.status === 'SOURCE_DRIFT') process.exitCode = 2;
+      else if (result.status === 'OBSERVATION_INCOMPLETE') process.exitCode = 1;
+    } else if (args.receipts !== null) {
       const raw = readRelative(args.receipts);
       if (raw.length > 524288) fail();
       const text = raw.toString('utf8');
