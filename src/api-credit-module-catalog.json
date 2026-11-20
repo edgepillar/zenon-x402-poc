@@ -2709,8 +2709,8 @@
     },
     {
       "path": "src/original-funding-spending-reservations.js",
-      "bytes": 13772,
-      "sha256": "7e499e30d83ce54f06af1905cd434e63ff4f92b5578ed8470eb07ab15c29a856",
+      "bytes": 13833,
+      "sha256": "f9c009cdb9c5ccdc2e0934c91ef609cf9dd250d697ac308b4b0e6480b4cf7dad",
       "format": "module"
     },
     {
