@@ -3,8 +3,11 @@ import { captureApiCreditRecordedResultInspection } from './api-credit-recorded-
 import { types } from 'node:util';
 import { encodeOriginalPaymentCheckpoint } from './service-credit-pilot-original-payment-checkpoint.js';
 
-const F = Object.freeze, DESC = Object.getOwnPropertyDescriptor, OWN = Object.hasOwn, PP = Promise.prototype, THEN = PP.then;
-const ACTIVE = new Set(), FAILED = new Set(), BACKENDS = new WeakSet(), PAYERS = new WeakSet();
+const F = Object.freeze, DESC = Object.getOwnPropertyDescriptor, OWN = Object.hasOwn, NATIVE_PROMISE = Promise;
+const KEYS = Reflect.ownKeys, APPLY = Reflect.apply;
+const PP = NATIVE_PROMISE.prototype, THEN = DESC(PP, 'then');
+const CONSTRUCTOR = DESC(PP, 'constructor'), SPECIES = DESC(NATIVE_PROMISE, Symbol.species);
+const ACTIVE = new Set(), HELD = new Set(), BACKENDS = new WeakSet(), PAYERS = new WeakSet();
 function fail(stage) { const e = new TypeError('SERVICE_CREDIT_RECOVERY_INSPECTION_FAILED'); Object.defineProperty(e, 'stage', { value: stage, enumerable: true }); Object.defineProperty(e, 'stack', { value: e.message }); throw F(e); }
 function fields(value, names) {
   if (value === null || typeof value !== 'object' || types.isProxy(value) || Object.getPrototypeOf(value) !== Object.prototype
@@ -18,14 +21,32 @@ function data(value, name) {
   const d = DESC(value, name); if (!d?.enumerable || !OWN(d, 'value')) fail('OBSERVATION'); return d.value;
 }
 function method(owner, name) { const fn = data(owner, name); if (typeof fn !== 'function' || types.isProxy(fn) || !Object.isFrozen(fn)) fail('OBSERVATION'); return fn; }
-function observe(p, yes, no) {
-  if (PP.then !== THEN || DESC(Object.prototype, 'then') !== undefined || !types.isPromise(p) || types.isProxy(p)
-      || Object.getPrototypeOf(p) !== PP || Reflect.ownKeys(p).some(k => k !== 'constructor')) fail('PROMISE');
-  const d = DESC(p, 'constructor'); if (d && (!OWN(d, 'value') || d.value !== Promise)) fail('PROMISE');
-  const bridge = Reflect.apply(THEN, p, [yes, no]); Reflect.apply(THEN, bridge, [() => {}, () => {}]);
+function sameDescriptor(actual, expected) {
+  if (actual === undefined || expected === undefined) return false;
+  const keys = KEYS(expected);
+  if (KEYS(actual).length !== keys.length) return false;
+  for (let i = 0; i < keys.length; i++) {
+    const key = keys[i]; if (!OWN(actual, key) || actual[key] !== expected[key]) return false;
+  }
+  return true;
 }
-function signal() { let resolve, reject; const promise = new Promise((a, b) => { resolve = a; reject = b; });
-  Object.defineProperty(promise, 'constructor', { value: Promise }); observe(promise, () => {}, () => {}); return { promise, resolve, reject }; }
+function observe(p, yes, no) {
+  if (!sameDescriptor(DESC(PP, 'then'), THEN) || !sameDescriptor(DESC(PP, 'constructor'), CONSTRUCTOR)
+      || !sameDescriptor(DESC(NATIVE_PROMISE, Symbol.species), SPECIES)
+      || DESC(Object.prototype, 'then') !== undefined || !types.isPromise(p) || types.isProxy(p)
+      || Object.getPrototypeOf(p) !== PP) fail('PROMISE');
+  const keys = KEYS(p);
+  for (let i = 0; i < keys.length; i++) if (keys[i] !== 'constructor') fail('PROMISE');
+  const d = DESC(p, 'constructor'); if (d && (!OWN(d, 'value') || d.value !== NATIVE_PROMISE)) fail('PROMISE');
+  const bridge = APPLY(THEN.value, p, [yes, no]); APPLY(THEN.value, bridge, [() => {}, () => {}]);
+}
+function signal() {
+  let resolve, reject;
+  const promise = new NATIVE_PROMISE((a, b) => { resolve = a; reject = b; });
+  Object.defineProperty(promise, 'constructor', { value: NATIVE_PROMISE });
+  observe(promise, () => {}, () => {});
+  return { promise, resolve, reject };
+}
 function closedPayer(payer) {
   const view = Reflect.apply(method(payer, 'snapshot'), payer, []), owned = data(view, 'client');
   const resource = data(owned, 'resource'), close = data(owned, 'close');
@@ -72,42 +93,54 @@ export async function runServiceCreditRecordedResultInspectionOwner(configuratio
   if (arguments.length !== 1) fail('INPUT'); return runInspection(configuration, true);
 }
 async function runInspection(configuration, recorded) {
-  if (ACTIVE.size + FAILED.size >= 16) fail('INPUT');
+  if (ACTIVE.size + HELD.size >= 16) fail('INPUT');
   const c = fields(configuration, ['manifest', 'authorizationHeader', 'serializedCheckpoint', 'ports', 'requireOpening']);
   const p = fields(c.ports, ['openBackend', 'openPayer', 'closeBackend']);
   for (const fn of [...Object.values(p), c.requireOpening]) if (typeof fn !== 'function' || types.isProxy(fn) || !Object.isFrozen(fn)) fail('INPUT');
   if (typeof c.authorizationHeader !== 'string' || !c.authorizationHeader.startsWith('ServiceCredit ') || c.authorizationHeader.length > 1024
       || /[\r\n\0]/.test(c.authorizationHeader) || c.serializedCheckpoint !== null && typeof c.serializedCheckpoint !== 'string') fail('INPUT');
   if (recorded && (typeof c.serializedCheckpoint !== 'string' || c.serializedCheckpoint.length === 0 || c.serializedCheckpoint.length > 32768)) fail('INPUT');
-  const frame = { backend: null, backendKnown: false, payer: null, payerKnown: false, payerEntered: false,
-    payerStopEntered: false, payerStop: null, backendStopEntered: false, backendStopReturned: false, stage: 'INPUT' };
+  const frame = { backend: null, backendEntered: false, backendKnown: false, payer: null, payerKnown: false, payerEntered: false,
+    payerStopEntered: false, payerStop: null, backendStopEntered: false, backendStopReturned: false,
+    openingUnknown: false, openingReceipt: null, stage: 'INPUT' };
   ACTIVE.add(frame); let result = null, bad = false, reason = 'INPUT';
+  function requireOpening() {
+    const receipt = c.requireOpening();
+    if (receipt === undefined) return;
+    // A returned receipt can still borrow the profile or an acquired owner.
+    // Retain it without starting another read or competing with its cleanup.
+    frame.openingReceipt = receipt;
+    frame.openingUnknown = true;
+    try { observe(receipt, () => {}, () => {}); } catch {}
+    fail(frame.stage);
+  }
   try {
-    c.requireOpening(); frame.stage = 'BACKEND_OPEN'; frame.backend = p.openBackend(c.manifest);
+    requireOpening(); frame.stage = 'BACKEND_OPEN'; frame.backendEntered = true;
+    frame.backend = p.openBackend(c.manifest);
     if (frame.backend === null || typeof frame.backend !== 'object' || types.isProxy(frame.backend) || types.isPromise(frame.backend) || BACKENDS.has(frame.backend)) fail(frame.stage);
     BACKENDS.add(frame.backend); frame.backendKnown = true;
-    c.requireOpening(); frame.stage = 'PAYER_OPEN'; frame.payerEntered = true;
+    requireOpening(); frame.stage = 'PAYER_OPEN'; frame.payerEntered = true;
     const ready = signal();
     observe(p.openPayer(c.manifest, frame.backend), owner => { frame.payer = owner; ready.resolve(undefined); }, ready.reject); await ready.promise;
     if (frame.payer === null || typeof frame.payer !== 'object' || types.isProxy(frame.payer) || PAYERS.has(frame.payer)) fail(frame.stage);
     method(frame.payer, 'close'); method(frame.payer, 'snapshot'); method(frame.payer, 'readOriginalBackendRecoveryState');
-    PAYERS.add(frame.payer); frame.payerKnown = true; c.requireOpening();
+    PAYERS.add(frame.payer); frame.payerKnown = true; requireOpening();
     const checkpoint = () => {
       if (c.serializedCheckpoint === null) return;
       const current = Reflect.apply(method(frame.payer, 'readOriginalPaymentCheckpoint'), frame.payer, [c.manifest.expectedCheckpointPins]);
       if (encodeOriginalPaymentCheckpoint(current) !== c.serializedCheckpoint) fail('CHECKPOINT');
     };
-    c.requireOpening(); if (!recorded) checkpoint(); frame.stage = 'ORIGINAL_READ';
+    requireOpening(); if (!recorded) checkpoint(); frame.stage = 'ORIGINAL_READ';
     const observed = recorded
       ? readServiceCreditExactOriginalBackendRecoveryState(frame.payer, c.manifest.requestKey, c.authorizationHeader, c.manifest.expectedCheckpointPins, c.serializedCheckpoint)
       : Reflect.apply(method(frame.payer, 'readOriginalBackendRecoveryState'), frame.payer,
         [c.manifest.requestKey, c.authorizationHeader, c.manifest.expectedCheckpointPins]);
-    c.requireOpening(); if (!recorded) checkpoint(); frame.stage = recorded ? 'RECORDED_RESULT' : 'REDACTED_RESULT';
+    requireOpening(); if (!recorded) checkpoint(); frame.stage = recorded ? 'RECORDED_RESULT' : 'REDACTED_RESULT';
     result = recorded ? captureApiCreditRecordedResultInspection(observed, c.manifest) : captureServiceCreditRecoveryInspectionResult(observed);
   } catch { bad = true; reason = frame.stage; }
   finally {
-    let payerClean = !frame.payerEntered;
-    if (frame.payerKnown) {
+    let payerClean = !frame.payerEntered && !frame.openingUnknown;
+    if (frame.payerKnown && !frame.openingUnknown) {
       frame.payerStopEntered = true;
       try {
         frame.payerStop = Reflect.apply(method(frame.payer, 'close'), frame.payer, []);
@@ -121,10 +154,14 @@ async function runInspection(configuration, recorded) {
       try { const value = p.closeBackend(frame.backend); if (value !== undefined) { try { observe(value, () => {}, () => {}); } catch {} fail('BACKEND_CLOSE'); }
         frame.backendStopReturned = true;
       } catch { bad = true; reason = 'BACKEND_CLOSE'; }
-    } else if (frame.backendKnown) { bad = true; reason = 'PAYER_CLOSE'; }
+    } else if (frame.backendKnown && !frame.openingUnknown) { bad = true; reason = 'PAYER_CLOSE'; }
+    if (!bad && result !== null && frame.backendStopReturned) {
+      frame.stage = 'AFTER_CLOSE';
+      try { requireOpening(); } catch { bad = true; reason = frame.stage; }
+    }
     ACTIVE.delete(frame);
-    if (bad || !frame.backendStopReturned) FAILED.add(frame);
+    if (frame.openingUnknown || (frame.backendEntered && !frame.backendStopReturned)) HELD.add(frame);
   }
   if (bad || result === null || !frame.backendStopReturned) fail(reason);
-  try { c.requireOpening(); } catch { FAILED.add(frame); fail('AFTER_CLOSE'); } return result;
+  return result;
 }
