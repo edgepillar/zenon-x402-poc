@@ -1,0 +1,330 @@
+{
+  "G0G5": "OPEN",
+  "archiveFilesExtracted": 0,
+  "checkInputs": [
+    {
+      "bytes": 15230,
+      "gitBlob": "17094f7c308f28d7cd1fd28e66b1fb62910a509b",
+      "path": "qualification/acceptance/current-source-profile.behavior.mjs",
+      "sha256": "224be7c62cfbfa695e8757bd30f53dfda871c67ce3c0451432f488239117d280"
+    },
+    {
+      "bytes": 15977,
+      "gitBlob": "860c700b9f08020131513f2455dcc451af95b351",
+      "path": "qualification/acceptance/current-source-profile-core.js",
+      "sha256": "055d9af7382ccdbcb538a06f23e708ef5abfd1996ac3ead98eda730e6402e605"
+    },
+    {
+      "bytes": 42896,
+      "gitBlob": "87a1c06272df8a74fcf57ef24238c5dae3805451",
+      "path": "docs/CURRENT_API_CREDIT_SOURCE_PROFILE.md",
+      "sha256": "3f4619731b674899fa12dd0881a0b757556268818e5a0890f045d1e185f29f2f"
+    }
+  ],
+  "checkerCodeRevision": "6800fe718ea2cde27db04315163de25fca36bd13",
+  "command": {
+    "actualExit": 0,
+    "commandRecordSha256": "88d2a0258421353725c0c2b6cb6e369ab73d3f6ca91641cea4164a364ed3f08b",
+    "outputComplete": true,
+    "retainedStderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "retainedStdout": {
+      "bytes": 4357,
+      "sha256": "6a12fad509338df432dc260c05fc9aa1fa899f02f0eadbee9f5013bc27e6f2f0"
+    },
+    "taskRecordSha256": "84fdab2e0d878e1aa94f67383b308f66746df4b46394f2f3ee2cc2c6adfd5216"
+  },
+  "evidenceDocumentsChecked": 2,
+  "managedCommands": 1,
+  "managedTasksClosed": 1,
+  "memoryData": {
+    "G0G5Acceptance": "OPEN",
+    "SDK": 0,
+    "SQLite": 0,
+    "actualPrepare": 0,
+    "applicationFilesRead": 0,
+    "cases": [
+      {
+        "id": "full-source-match-keeps-all-gates-open",
+        "status": "PASS"
+      },
+      {
+        "id": "shards-combine-in-any-order-with-exact-union",
+        "status": "PASS"
+      },
+      {
+        "id": "manifest-digest-mismatch-before-callback",
+        "status": "PASS"
+      },
+      {
+        "id": "manifest-proxy-byte-input-no-hooks",
+        "status": "PASS"
+      },
+      {
+        "id": "byte-input-own-conversion-hooks-not-entered",
+        "status": "PASS"
+      },
+      {
+        "id": "shared-byte-storage-rejected",
+        "status": "PASS"
+      },
+      {
+        "id": "resizable-byte-storage-rejected",
+        "status": "PASS"
+      },
+      {
+        "id": "malformed-utf8-rejected-after-digest",
+        "status": "PASS"
+      },
+      {
+        "id": "malformed-json-rejected",
+        "status": "PASS"
+      },
+      {
+        "id": "extra-manifest-fields-rejected",
+        "status": "PASS"
+      },
+      {
+        "id": "runtime-version-drift-rejected",
+        "status": "PASS"
+      },
+      {
+        "id": "supported-profile-claim-rejected",
+        "status": "PASS"
+      },
+      {
+        "id": "native-promotion-rejected",
+        "status": "PASS"
+      },
+      {
+        "id": "catalog-role-swap-rejected",
+        "status": "PASS"
+      },
+      {
+        "id": "supplement-traversal-rejected",
+        "status": "PASS"
+      },
+      {
+        "id": "qualification-count-mismatch-rejected",
+        "status": "PASS"
+      },
+      {
+        "id": "catalog-byte-drift-rejected",
+        "status": "PASS"
+      },
+      {
+        "id": "catalog-row-count-mismatch-rejected",
+        "status": "PASS"
+      },
+      {
+        "id": "case-alias-catalog-rejected",
+        "status": "PASS"
+      },
+      {
+        "id": "conflicting-source-rows-rejected",
+        "status": "PASS"
+      },
+      {
+        "id": "cross-catalog-case-alias-rejected",
+        "status": "PASS"
+      },
+      {
+        "id": "conflicting-dependency-catalog-rejected",
+        "status": "PASS"
+      },
+      {
+        "id": "unknown-bare-edge-target-rejected",
+        "status": "PASS"
+      },
+      {
+        "id": "duplicate-bare-edge-rejected",
+        "status": "PASS"
+      },
+      {
+        "id": "native-evidence-flag-rejected",
+        "status": "PASS"
+      },
+      {
+        "id": "source-plan-reads-both-selected-evidence-documents-once",
+        "status": "PASS"
+      },
+      {
+        "id": "missing-proof-document-refuses-source-plan",
+        "status": "PASS"
+      },
+      {
+        "id": "changed-failure-inventory-bytes-refuse-source-plan",
+        "status": "PASS"
+      },
+      {
+        "id": "profile-and-result-evidence-mismatch-refused-before-support-reads",
+        "status": "PASS"
+      },
+      {
+        "id": "swapped-evidence-roles-refused-before-support-reads",
+        "status": "PASS"
+      },
+      {
+        "id": "result-must-reference-the-selected-source-profile",
+        "status": "PASS"
+      },
+      {
+        "id": "evidence-identity-does-not-accept-a-nonobject-record",
+        "status": "PASS"
+      },
+      {
+        "id": "callback-must-be-frozen-and-not-proxy",
+        "status": "PASS"
+      },
+      {
+        "id": "opaque-thenable-is-not-entered",
+        "status": "PASS"
+      },
+      {
+        "id": "promise-rejection-observed-without-byte-admission",
+        "status": "PASS"
+      },
+      {
+        "id": "callback-throw-sanitized-and-attempt-consumed",
+        "status": "PASS"
+      },
+      {
+        "id": "source-drift-consumes-failed-shard",
+        "status": "PASS"
+      },
+      {
+        "id": "copied-plan-is-unbranded",
+        "status": "PASS"
+      },
+      {
+        "id": "invalid-shard-ranges-rejected-before-source-read",
+        "status": "PASS"
+      },
+      {
+        "id": "shard-mode-cannot-change-after-attempt",
+        "status": "PASS"
+      },
+      {
+        "id": "missing-shard-does-not-promote-full-match",
+        "status": "PASS"
+      },
+      {
+        "id": "duplicate-shard-rejected",
+        "status": "PASS"
+      },
+      {
+        "id": "foreign-profile-receipt-rejected",
+        "status": "PASS"
+      },
+      {
+        "id": "foreign-source-set-receipt-rejected",
+        "status": "PASS"
+      },
+      {
+        "id": "receipt-coverage-edit-rejected",
+        "status": "PASS"
+      },
+      {
+        "id": "receipt-authority-or-native-claim-rejected",
+        "status": "PASS"
+      },
+      {
+        "id": "receipt-getters-not-entered",
+        "status": "PASS"
+      },
+      {
+        "id": "receipt-array-proxy-not-entered",
+        "status": "PASS"
+      },
+      {
+        "id": "argument-full-and-shard-and-merge-modes",
+        "status": "PASS"
+      },
+      {
+        "id": "argument-ambiguity-and-traversal-rejected",
+        "status": "PASS"
+      },
+      {
+        "id": "prototype-json-hook-prevents-observation",
+        "status": "PASS"
+      }
+    ],
+    "failed": 0,
+    "keys": 0,
+    "nativeExecutions": 0,
+    "nodeChildren": 0,
+    "nonceSearches": 0,
+    "passed": 51,
+    "payouts": 0,
+    "qualification": "G0_CURRENT_SOURCE_PROFILE_DATA",
+    "signatures": 0,
+    "sockets": 0,
+    "status": "PASS"
+  },
+  "nativeApplicationCommands": 0,
+  "productAcceptance": "NOT_ESTABLISHED",
+  "qualification": "G0_CURRENT_SOURCE_EVIDENCE_AND_BYTES",
+  "selectedInputSetSha256": "fb20fb0d511aea8f5420f3414e90665320d9838c1a04b07189ccd289f29e4a82",
+  "sourceInputArchive": {
+    "bytes": 849647,
+    "decompressedBytes": 3913934,
+    "members": 254,
+    "sha256": "205a77576f9193339c92954ee3ccbda41f6dcb01507296b11551736be1431d27"
+  },
+  "sourceManifestSha256": "6479a7b98505a1c80c41bf32944eae015561be94d4d49afffa90d0136348212a",
+  "sourceObservation": {
+    "applicationProgramsExecuted": 0,
+    "authority": "NONE",
+    "checkedSourceBytes": 3429596,
+    "checkedSources": 247,
+    "filesWritten": 0,
+    "gates": [
+      {
+        "id": "G0",
+        "status": "OPEN"
+      },
+      {
+        "id": "G1",
+        "status": "OPEN"
+      },
+      {
+        "id": "G2",
+        "status": "OPEN"
+      },
+      {
+        "id": "G3a",
+        "status": "OPEN"
+      },
+      {
+        "id": "G3b",
+        "status": "OPEN"
+      },
+      {
+        "id": "G4",
+        "status": "OPEN"
+      },
+      {
+        "id": "G5",
+        "status": "OPEN"
+      }
+    ],
+    "installedNamespace": "NOT_ESTABLISHED",
+    "kind": "API_CREDIT_CURRENT_SOURCE_CHECK",
+    "nativeExecutions": 0,
+    "observedShards": 1,
+    "packageCatalogRows": 404,
+    "packageSourceFilesRead": 0,
+    "productAcceptance": "NOT_ESTABLISHED",
+    "profileSha256": "6479a7b98505a1c80c41bf32944eae015561be94d4d49afffa90d0136348212a",
+    "runtimeQualification": "NOT_ESTABLISHED",
+    "snapshotAtomic": false,
+    "sourceBaseline": "2066bfbc2ad3b9f983893b7c5c8ff3d599204566",
+    "sourceBoundControls": 2545,
+    "sourceSetSha256": "157d4c10189fac8c3218fcd22f05874eee2e143585cb41be51af8d77c202bfc5",
+    "status": "SOURCE_MATCH"
+  },
+  "sourceRevision": "e2f04edaabd5b2e3d4ed1d71bdac21a1f201f93f",
+  "status": "PASS"
+}
