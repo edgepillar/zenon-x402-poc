@@ -29,12 +29,15 @@ function fixture() {
   const ref = (path, value) => {
     const raw=encode(value);files.set(path,raw);return {path,bytes:raw.length,sha256:hash(raw)};
   };
-  const profile = {status:'SOURCE_AND_DECLARED_MEMORY_DATA_CANDIDATE',nativeQualification:'NOT_EXECUTED',G0G5Acceptance:'OPEN',currentLocalData:{sourceBoundDistinct:2}};
-  const result = {status:'PASS',qualification:'G2_FIXTURE_DATA',passed:1,failed:0,sourceBoundDistinctControls:2,retainedExactControls:1,G0G5Acceptance:'OPEN'};
+  const proofManifest = ref('qualification/fixture.proof-manifest.json',{controls:2});
+  const failureInventory = ref('qualification/fixture.failure-inventory.json',{unexpectedFailures:0});
+  const profile = {status:'SOURCE_AND_DECLARED_MEMORY_DATA_CANDIDATE',nativeQualification:'NOT_EXECUTED',G0G5Acceptance:'OPEN',currentLocalData:{sourceBoundDistinct:2},proofManifest,failureInventory};
+  const sourceProfile = ref('qualification/profile.json',profile);
+  const result = {status:'PASS',qualification:'G2_FIXTURE_DATA',passed:1,failed:0,sourceBoundDistinctControls:2,retainedExactControls:1,G0G5Acceptance:'OPEN',sourceProfile,proofManifest,failureInventory};
   for (const k of ['nativeExecutions','SDK','SQLite','keys','signatures','sockets','nonceSearches','nodeChildren','actualPrepare','payouts']) result[k]=0;
   const m = {profileVersion:1,profileId:'API_CREDIT_CURRENT_SOURCE_V1',sourceBaseline:'1'.repeat(40),
     application:{buyerEntry:entries[0],providerEntry:entries[1]},catalogs:[],supplementalSources,
-    dataQualification:{sourceProfile:ref('qualification/profile.json',profile),result:ref('qualification/result.json',result),sourceBoundControls:2,executedControls:1,retainedControls:1,expectedResultQualification:'G2_FIXTURE_DATA'},
+    dataQualification:{sourceProfile,result:ref('qualification/result.json',result),sourceBoundControls:2,executedControls:1,retainedControls:1,expectedResultQualification:'G2_FIXTURE_DATA'},
     runtime:{nodeVersion:'24.19.0',sdkVersion:'1.0.5',x402CoreVersion:'2.23.0'},
     acceptance:{supportedProfileEstablished:false,acceptedEntryCommand:null,nativeQualification:'NOT_EXECUTED',installedNamespace:'NOT_ESTABLISHED',linuxProductAcceptance:'NOT_ESTABLISHED',G0G5:'OPEN'}};
   function sync() { m.catalogs=cats.map((c,i)=>({role:i?'provider':'buyer',...ref(catalogs[i],c),sourceRows:2,packageRows:1,bareEdges:1}));return encode(m); }
@@ -81,6 +84,55 @@ await test('conflicting-dependency-catalog-rejected',()=>{const f=fixture();f.ca
 await test('unknown-bare-edge-target-rejected',()=>{const f=fixture();f.cats[0].edges[0].path='node_modules/missing.js';refuses(()=>f.start(),'EDGE');});
 await test('duplicate-bare-edge-rejected',()=>{const f=fixture();f.cats[0].edges.push({...f.cats[0].edges[0]});refuses(()=>f.start());});
 await test('native-evidence-flag-rejected',()=>{const f=fixture();const p=JSON.parse(f.files.get('qualification/result.json'));p.SDK=1;f.m.dataQualification.result=f.ref('qualification/result.json',p);refuses(()=>f.start(),'QUALIFICATION');});
+function updateEvidence(f,update) {
+  const q=f.m.dataQualification;
+  const profile=JSON.parse(f.files.get(q.sourceProfile.path)), result=JSON.parse(f.files.get(q.result.path));
+  update(profile,result);
+  q.sourceProfile=f.ref(q.sourceProfile.path,profile);
+  result.sourceProfile=q.sourceProfile;
+  q.result=f.ref(q.result.path,result);
+}
+const proofPath='qualification/fixture.proof-manifest.json';
+const failuresPath='qualification/fixture.failure-inventory.json';
+await test('source-plan-reads-both-selected-evidence-documents-once',()=>{
+  const f=fixture(); f.start();
+  assert.deepEqual(f.reads.slice(-4),['qualification/profile.json','qualification/result.json',proofPath,failuresPath]);
+  assert.equal(f.reads.filter(p=>p===proofPath||p===failuresPath).length,2);
+});
+await test('missing-proof-document-refuses-source-plan',()=>{
+  const f=fixture(); f.files.delete(proofPath);
+  refuses(()=>f.start(),'READ');
+});
+await test('changed-failure-inventory-bytes-refuse-source-plan',()=>{
+  const f=fixture(); f.files.set(failuresPath,Buffer.alloc(f.files.get(failuresPath).length,32));
+  refuses(()=>f.start(),'IDENTITY');
+});
+await test('profile-and-result-evidence-mismatch-refused-before-support-reads',()=>{
+  const f=fixture(); updateEvidence(f,(_,result)=>{result.failureInventory={...result.failureInventory,sha256:'0'.repeat(64)};});
+  refuses(()=>f.start(),'EVIDENCE_REFERENCE');
+  assert.equal(f.reads.includes(proofPath)||f.reads.includes(failuresPath),false);
+});
+await test('swapped-evidence-roles-refused-before-support-reads',()=>{
+  const f=fixture(); updateEvidence(f,(profile,result)=>{
+    const proof=profile.proofManifest, failures=profile.failureInventory;
+    profile.proofManifest=result.proofManifest=failures;
+    profile.failureInventory=result.failureInventory=proof;
+  });
+  refuses(()=>f.start(),'EVIDENCE_REFERENCE');
+  assert.equal(f.reads.includes(proofPath)||f.reads.includes(failuresPath),false);
+});
+await test('result-must-reference-the-selected-source-profile',()=>{
+  const f=fixture(), q=f.m.dataQualification, r=JSON.parse(f.files.get(q.result.path));
+  r.sourceProfile={...q.sourceProfile,sha256:'0'.repeat(64)};
+  q.result=f.ref(q.result.path,r);
+  refuses(()=>f.start(),'EVIDENCE_REFERENCE');
+});
+await test('evidence-identity-does-not-accept-a-nonobject-record',()=>{
+  const f=fixture(); updateEvidence(f,(profile,result)=>{
+    profile.proofManifest=result.proofManifest=f.ref(proofPath,[]);
+  });
+  refuses(()=>f.start(),'OBJECT');
+});
 await test('callback-must-be-frozen-and-not-proxy',()=>{const f=fixture(),raw=f.sync();refuses(()=>plan(raw,hash(raw),()=>{}),'READER');refuses(()=>plan(raw,hash(raw),new Proxy(f.read,{})),'READER');});
 await test('opaque-thenable-is-not-entered',()=>{const f=fixture(),p=f.start();let n=0;const value=Object.defineProperty({},'then',{get(){n++;throw Error();}});refuses(()=>check(p,Object.freeze(()=>value)),'BYTES');assert.equal(n,0);});
 await test('promise-rejection-observed-without-byte-admission',async()=>{const f=fixture(),p=f.start();refuses(()=>check(p,Object.freeze(()=>Promise.reject(Error('synthetic')))),'BYTES');await Promise.resolve();});

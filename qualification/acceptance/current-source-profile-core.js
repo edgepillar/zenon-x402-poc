@@ -39,12 +39,22 @@ function json(raw,max){const b=bytes(raw,max),text=Buffer.prototype.toString.cal
 function reader(fn){if(typeof fn!=='function'||types.isProxy(fn)||!Object.isFrozen(fn))fail('READER');let reads=0,total=0;
  return r=>{if(!invariant()||++reads>2048||(total+=r.bytes)>16777216)fail('READ_BUDGET');let value;try{value=A(fn,undefined,[r.path,r.bytes]);}catch{fail('READ');}
  const b=bytes(value,r.bytes);if(!invariant()||b.length!==r.bytes||sha(b)!==r.sha256)fail('IDENTITY');return b;};}
-function qualification(v,q){const p=json(v.sourceProfile,262144),r=json(v.result,262144);
+function qualification(v,q,read){const p=json(v.sourceProfile,262144),r=json(v.result,262144);
  if(p.status!=='SOURCE_AND_DECLARED_MEMORY_DATA_CANDIDATE'||p.G0G5Acceptance!=='OPEN'||p.nativeQualification!=='NOT_EXECUTED'
   ||r.status!=='PASS'||r.qualification!==q.expectedResultQualification||r.failed!==0||r.passed!==q.executedControls
   ||r.sourceBoundDistinctControls!==q.sourceBoundControls||r.retainedExactControls!==q.retainedControls||r.G0G5Acceptance!=='OPEN'
   ||p.currentLocalData?.sourceBoundDistinct!==q.sourceBoundControls)fail('QUALIFICATION');
  for(const key of ['nativeExecutions','SDK','SQLite','keys','signatures','sockets','nonceSearches','nodeChildren','actualPrepare','payouts'])if(r[key]!==0)fail('QUALIFICATION');
+ if(!same(reference(r.sourceProfile),q.sourceProfile))fail('EVIDENCE_REFERENCE');
+ const evidence=[
+  ['proofManifest','.proof-manifest.json'],
+  ['failureInventory','.failure-inventory.json'],
+ ].map(([key,suffix])=>{
+  const ref=reference(p[key]);
+  if(!ref.path.startsWith('qualification/')||!ref.path.endsWith(suffix)||!same(ref,reference(r[key])))fail('EVIDENCE_REFERENCE');
+  return ref;
+ });
+ for(const ref of evidence)plain(json(read(ref),1048576));
 }
 export function parseCurrentApiCreditSourceProfileArguments(args){
  const values=dense(args,4);if(values.length===1&&values[0]==='--help')return F({help:true});
@@ -85,7 +95,7 @@ export function planCurrentApiCreditSourceProfile(manifestBytes,expectedDigest,r
   for(const v of bare){const e=fields(v,['parent','specifier','path']);if(!map.has(e.parent)||!map.has(e.path)||!e.parent.startsWith('src/')||!e.path.startsWith('node_modules/')||typeof e.specifier!=='string'||!e.specifier.length||e.specifier.length>256||/^(?:\.|\/)|[:\\]/.test(e.specifier)||seen.has(e.parent+'\n'+e.specifier))fail('EDGE');seen.add(e.parent+'\n'+e.specifier);}
  }
  if(JSON.stringify(packages[0])!==JSON.stringify(packages[1]))fail('DEPENDENCY_CONFLICT');for(const r of extra)source(r);
- qualification({sourceProfile:read(q.sourceProfile),result:read(q.result)},q);
+ qualification({sourceProfile:read(q.sourceProfile),result:read(q.result)},q,read);
  const rows=[...sources.values()].sort((a,b)=>a.path<b.path?-1:a.path>b.path?1:0),sourceSetSha256=sha(JSON.stringify(rows));
  const plan=F({profileVersion:1,profileSha256:expectedDigest,sourceBaseline:m.sourceBaseline,totalSources:rows.length,totalSourceBytes:byteTotal,sourceSetSha256,packageCatalogRows:packages[0].length,sourceBoundControls:q.sourceBoundControls});
  PLANS.set(plan,{rows,mode:null,attempted:new Set()});return plan;

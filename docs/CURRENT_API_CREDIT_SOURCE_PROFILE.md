@@ -1,5 +1,31 @@
 # Current API-credit source profile
 
+Select `MANIFEST_SHA256` from the reviewed revision of the
+[current manifest](../qualification/acceptance/api-credit-current.source-profile.json).
+
+```sh
+node scripts/report-current-api-credit-profile.mjs --profile-sha256 MANIFEST_SHA256
+```
+
+The checker compares the selected application source bytes and verifies that
+the DATA result and the source profile select the same proof manifest and
+failure inventory. Both documents must be present with the recorded byte
+lengths and SHA-256 digests. A source match leaves installed namespace,
+application launch, Linux product acceptance and G0-G5 open.
+
+## Retained source-profile history
+
+### V98 recorded source description
+
+The V98 application source and declared-memory DATA manifest has SHA-256
+`6479a7b98505a1c80c41bf32944eae015561be94d4d49afffa90d0136348212a`.
+The [V98 result](../qualification/recovery-inspection-local-hold.actual-local-result.json)
+records 2,545 source-bound application controls, including 919 fresh controls.
+The 181 Linux memory-harness controls and 43 supervisor memory controls have
+their own scopes.
+
+### V96 recorded source description
+
 The current manifest selects the V96 source and declared-memory DATA candidate.
 Its independent SHA-256 is `3c9b1a94f9f567ddaedab1364cb7c44e45462e94c5baffec163c3e0160e49796`.
 
@@ -29,7 +55,6 @@ recovery, physical release, Linux product acceptance and an accepted entry
 command remain unestablished. All G0-G5 product gates remain OPEN. The unchanged
 108-control/22-input hosted selection requires its own exact-head check.
 
-## Retained source-profile history
 
 Descriptions below keep their recorded version scopes. References to current
 describe that recorded version and are not new V96 observations.
