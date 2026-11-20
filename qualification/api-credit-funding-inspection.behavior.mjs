@@ -133,7 +133,16 @@ check('funding-inspection-foreign-payment-headers-are-refused-and-the-known-owne
   const f=fixture({state:(s,v)=>F({...v,paymentHeader:'foreign'})});assert.throws(f.run);assert.equal(f.s.closes,1);
 });
 check('funding-inspection-query-failure-stops-only-the-known-quiescent-owner', () => {
-  const f=fixture({state(){throw Error('synthetic query failure');}});assert.throws(f.run);assert.equal(f.s.closes,1);assert.equal(f.s.closed,true);
+  const f = fixture({
+    state(s) { s.quarantined = true; throw Error('declared query failure'); },
+    view(s) {
+      return F({ payerFundingInspectionLifecycleVersion: 1, active: false, quarantined: s.quarantined === true,
+        closed: s.closed, databaseOpen: !s.closed });
+    },
+  });
+  assert.throws(f.run);
+  assert.equal(f.s.closes, 1);
+  assert.equal(f.s.closed, true);
 });
 check('funding-inspection-expiry-after-a-returned-read-closes-the-known-store-and-withholds-output', () => {
   const f=fixture({state:(s,v)=>{s.expired=true;return v;}});assert.throws(f.run);assert.equal(f.s.closes,1);assert.equal(f.s.closed,true);
@@ -147,12 +156,57 @@ check('funding-inspection-unobservable-open-promise-is-not-assimilated-or-adopte
 check('funding-inspection-unjoined-read-promise-retains-the-store-instead-of-closing-an-active-borrower', async () => {
   const f=fixture({state:()=>Promise.reject(Error('synthetic async read'))});assert.throws(f.run);await Promise.resolve();assert.equal(f.s.closes,0);
 });
+check('funding-inspection-pending-opening-view-ends-the-inspection-without-a-second-look', async () => {
+  let finish;
+  const pending = new Promise(resolve => { finish = resolve; });
+  const f = fixture({ view: () => pending });
+  assert.throws(f.run);
+  assert.deepEqual(f.s.trace, ['open-existing', 'view']);
+  finish(F({ payerFundingInspectionLifecycleVersion: 1, active: false, quarantined: false, closed: false, databaseOpen: true }));
+  await pending;
+  assert.throws(f.run);
+  assert.deepEqual(f.s.trace, ['open-existing', 'view']);
+  assert.equal(f.s.closes, 0);
+});
+check('funding-inspection-unreturned-view-keeps-the-owner-without-a-retry', () => {
+  const f = fixture({ view() { throw Error('declared inspection unavailable'); } });
+  assert.throws(f.run);
+  assert.deepEqual(f.s.trace, ['open-existing', 'view']);
+  assert.equal(f.s.closes, 0);
+});
+check('funding-inspection-holds-an-already-busy-store-after-the-first-view', () => {
+  let views = 0;
+  const f = fixture({ view: () => F({ payerFundingInspectionLifecycleVersion: 1, active: ++views === 1,
+    quarantined: false, closed: false, databaseOpen: true }) });
+  assert.throws(f.run);
+  assert.deepEqual(f.s.trace, ['open-existing', 'view']);
+  assert.equal(views, 1);
+  assert.equal(f.s.closes, 0);
+});
+check('funding-inspection-holds-a-promise-like-checkpoint-before-reading-state', () => {
+  let joined = 0;
+  const f = fixture({ checkpoint: () => F({ then() { joined++; } }) });
+  assert.throws(f.run);
+  assert.equal(joined, 0);
+  assert.deepEqual(f.s.trace, ['open-existing', 'view', 'checkpoint']);
+  assert.equal(f.s.closes, 0);
+});
 check('funding-inspection-still-active-store-is-retained-without-a-competing-close', () => {
   const f=fixture({state:(s,v)=>{s.active=true;return v;}});assert.throws(f.run);assert.equal(f.s.closes,0);
 });
 check('funding-inspection-physical-close-failure-is-one-attempt-and-no-result', () => {
   const f=fixture({close(){throw Error('synthetic close unknown');}});assert.throws(f.run);assert.equal(f.s.closes,1);
   assert.throws(f.run);assert.equal(f.s.closes,1);assert.equal(f.s.opened,1);
+});
+check('funding-inspection-requires-the-idle-store-to-remain-open-before-calling-close', () => {
+  let views = 0;
+  const f = fixture({ view: () => {
+    const closed = ++views === 2;
+    return F({ payerFundingInspectionLifecycleVersion: 1, active: false, quarantined: false, closed, databaseOpen: !closed });
+  } });
+  assert.throws(f.run);
+  assert.equal(views, 2);
+  assert.equal(f.s.closes, 0);
 });
 check('funding-inspection-a-void-close-requires-a-fresh-closed-quiescent-native-view', () => {
   const f=fixture({view:s=>F({payerFundingInspectionLifecycleVersion:1,active:false,quarantined:false,closed:false,databaseOpen:true})});

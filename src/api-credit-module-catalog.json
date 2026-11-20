@@ -2469,8 +2469,8 @@
     },
     {
       "path": "src/api-credit-funding-inspection-owner.js",
-      "bytes": 11693,
-      "sha256": "0244a551fb9cf6599c7885d85160eff72d8383149077319e87398a57d5cedce7",
+      "bytes": 12388,
+      "sha256": "ba5d14be5ba6887133fdd612dadaca6e1de5ba24c64bdccbe7e12047c107befa",
       "format": "module"
     },
     {

@@ -31,8 +31,10 @@ function state(raw, profile) {
       || c.resourceUrl !== profile.fundingResourceUrl || c.challengeHeader !== profile.challengeHeader || c.paymentHeader !== profile.paymentHeader) fail();
   return F({ revision: c.revision, status: c.status, ambiguityLatched: c.ambiguityLatched });
 }
-function view(raw, closed) {
-  return data(raw, 'payerFundingInspectionLifecycleVersion') === 1 && data(raw, 'active') === false && data(raw, 'quarantined') === false
+function view(raw, closed, allowQuarantine = false) {
+  const quarantined = data(raw, 'quarantined');
+  return data(raw, 'payerFundingInspectionLifecycleVersion') === 1 && data(raw, 'active') === false
+    && (quarantined === false || (allowQuarantine && quarantined === true))
     && data(raw, 'closed') === closed && data(raw, 'databaseOpen') === !closed;
 }
 function checkpoint(raw) {
@@ -90,15 +92,38 @@ export function runApiCreditFundingInspectionOwner(configuration) {
       frame.opaqueGuard = receipt; frame.unknown = true; discard(receipt); fail();
     }
   };
+  function readReceipt(value, allowAbsent = false) {
+    if (value === null && allowAbsent) return null;
+    if (value !== null && typeof value === 'object' && !IS_PROXY(value) && !IS_PROMISE(value)
+        && PROTOTYPE(value) === OBJECT_PROTOTYPE && D(value, 'then') === undefined
+        && D(OBJECT_PROTOTYPE, 'then') === undefined) return value;
+    frame.opaqueRead = value;
+    frame.unknown = true;
+    discard(value);
+    fail();
+  }
+  function inspectStore(closed, allowQuarantine = false) {
+    try {
+      const observed = readReceipt(p.inspectStore(frame.store));
+      if (!view(observed, closed, allowQuarantine)) fail();
+      return observed;
+    } catch (error) {
+      frame.unknown = true;
+      throw error;
+    }
+  }
   function read(invoke) {
-    guard(); const value = invoke();
-    if (types.isProxy(value) || types.isPromise(value)) { frame.opaqueRead = value; frame.unknown = true; discard(value); fail(); }
-    guard(); return value;
+    guard();
+    const value = readReceipt(invoke(), true);
+    guard();
+    return value;
   }
   try {
     guard(); frame.openEntered = true; frame.opaqueOpen = p.openExisting(c.profile);
     if (frame.opaqueOpen === null || typeof frame.opaqueOpen !== 'object' || types.isProxy(frame.opaqueOpen) || types.isPromise(frame.opaqueOpen)) { discard(frame.opaqueOpen); fail(); }
-    frame.store = frame.opaqueOpen; guard(); if (!view(p.inspectStore(frame.store), false)) fail();
+    frame.store = frame.opaqueOpen;
+    guard();
+    if (data(inspectStore(false, true), 'quarantined')) fail();
     const firstCheckpoint = read(() => p.readCheckpoint(frame.store, profile.expectedPins));
     const before = state(read(() => p.readState(frame.store)), profile);
     const after = state(read(() => p.readState(frame.store)), profile);
@@ -119,12 +144,13 @@ export function runApiCreditFundingInspectionOwner(configuration) {
   finally {
     if (frame.store !== null && !frame.unknown) {
       try {
-        // Never compete with an observed still-active store. Cleanup itself
-        // is not cancelled by the expired outer observation window.
-        if (data(p.inspectStore(frame.store), 'active') !== false) fail();
+        // Cleanup can retire a known open, idle quarantined store once.
+        // The outer observation window can expire independently of cleanup.
+        inspectStore(false, true);
         frame.closeEntered = true; frame.opaqueClose = p.closeStore(frame.store); frame.closeReturned = frame.opaqueClose === undefined;
         if (!frame.closeReturned) { discard(frame.opaqueClose); fail(); }
-        if (!view(p.inspectStore(frame.store), true)) fail(); frame.closed = true;
+        inspectStore(true);
+        frame.closed = true;
       } catch { frame.unknown = true; }
     } else if (frame.openEntered) frame.unknown = true;
     if (frame.unknown) HELD.add(frame);
