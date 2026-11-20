@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import { types as utilTypes } from 'node:util';
+import { isDeepStrictEqual, types as utilTypes } from 'node:util';
 import { captureServiceCreditOriginalFundingIdentity, matchesServiceCreditOriginalFundingGrant,
   createServiceCreditOriginalFundingGrantResult } from './service-credit-original-funding-grant.js';
 
@@ -225,6 +225,21 @@ function canonicalJson(value) {
 
 function sha256Commitment(value) {
   return `sha256:${crypto.createHash('sha256').update(canonicalJson(value)).digest('hex')}`;
+}
+
+function requestDigestInput(request, grant, costUnits) {
+  return {
+    modelVersion: request.modelVersion,
+    grantId: request.grantId,
+    offerId: grant.offerId,
+    offerVersion: grant.offerVersion,
+    method: request.method,
+    routeId: request.routeId,
+    canonicalBodyDigest: request.canonicalBodyDigest,
+    selectedContentType: request.selectedContentType,
+    maxCostUnits: request.maxCostUnits,
+    costUnits,
+  };
 }
 
 function sameJson(left, right) {
@@ -978,6 +993,8 @@ export class InMemoryServiceCreditModel {
       const heldByGrant = new Map();
       const consumedByGrant = new Map();
       let priorRequest = null;
+      let lastDigestInput = null;
+      let expectedDigest = null;
       for (const input of requests) {
         const record = normalizeExportedRequest(input);
         if (
@@ -1003,18 +1020,13 @@ export class InMemoryServiceCreditModel {
         ) {
           failState();
         }
-        const expectedDigest = sha256Commitment({
-          modelVersion: record.modelVersion,
-          grantId: record.grantId,
-          offerId: grant.offerId,
-          offerVersion: grant.offerVersion,
-          method: record.method,
-          routeId: record.routeId,
-          canonicalBodyDigest: record.canonicalBodyDigest,
-          selectedContentType: record.selectedContentType,
-          maxCostUnits: record.maxCostUnits,
-          costUnits: record.costUnits,
-        });
+        const digestInput = requestDigestInput(record, grant, record.costUnits);
+        // Distinct request IDs can share a digest when all committed fields
+        // match. Each stored digest still has to match the computed value.
+        if (lastDigestInput === null || !isDeepStrictEqual(digestInput, lastDigestInput)) {
+          expectedDigest = sha256Commitment(digestInput);
+          lastDigestInput = digestInput;
+        }
         if (record.requestDigest !== expectedDigest) failState();
         const grantRequests = model.#requests.get(record.grantId);
         if (grantRequests.has(record.requestId)) failState();
@@ -1240,18 +1252,7 @@ export class InMemoryServiceCreditModel {
       const offer = this.#offers.get(offerKey(grant.offerId, grant.offerVersion));
       if (!offer) fail('INVARIANT_VIOLATION');
       const costUnits = this.#serverCost(offer, grant, normalized);
-      const requestDigest = sha256Commitment({
-        modelVersion: normalized.modelVersion,
-        grantId: grant.grantId,
-        offerId: grant.offerId,
-        offerVersion: grant.offerVersion,
-        method: normalized.method,
-        routeId: normalized.routeId,
-        canonicalBodyDigest: normalized.canonicalBodyDigest,
-        selectedContentType: normalized.selectedContentType,
-        maxCostUnits: normalized.maxCostUnits,
-        costUnits,
-      });
+      const requestDigest = sha256Commitment(requestDigestInput(normalized, grant, costUnits));
 
       if (costUnits > normalized.maxCostUnits) fail('COST_NOT_AUTHORIZED');
       if (costUnits > grant.availableUnits) fail('INSUFFICIENT_UNITS');
