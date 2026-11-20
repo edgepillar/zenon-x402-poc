@@ -2,6 +2,7 @@ import { fileURLToPath } from 'node:url';
 // Pure command/lifecycle/model DATA with declared native children and a memory
 // CAS port. Invalid signature-shaped fixture bytes are never signed/verified.
 import assert from 'node:assert/strict';
+import { Buffer } from 'node:buffer';
 import { createHash } from 'node:crypto';
 import { PassThrough, Writable } from 'node:stream';
 import { captureBuyerOriginalFundingCommandLimits as legacyLimits, captureBuyerApiCreditCommandLimits as limits,
@@ -133,6 +134,38 @@ check('funding-and-both-recovery-factories-refuse-api-limits-before-child-captur
 check('legacy-channel-refuses-api-limits-without-reserving-the-streams', async () => {
   const h = fixture(); assert.throws(() => legacyChannel({ input: h.input, output: h.output, limits: limits() }));
   const c = channel({ input: h.input, output: h.output, limits: limits() }); await c.close(); await h.root.close();
+});
+check('command-channel-retains-fragmented-utf8-after-consuming-a-buffered-line', async () => {
+  const input = new PassThrough();
+  const output = new Writable({ write(chunk, encoding, done) { done(); } });
+  const connection = channel({ input, output, limits: { maxLineBytes: 256, maxInputBytes: 512 } });
+  const symbol = Buffer.from('\u20ac');
+  const first = connection.readCommand();
+  input.write(Buffer.concat([Buffer.from('first\nx'), symbol.subarray(0, 1)]));
+  assert.equal(await first, 'first');
+  const second = connection.readCommand();
+  input.write(symbol.subarray(1));
+  input.end('\nlast\n');
+  assert.equal(await second, 'x\u20ac');
+  assert.equal(await connection.readCommand(), 'last');
+  assert.equal(await connection.readCommand(), null);
+  assert.equal(connection.inspect().inputBytes, Buffer.byteLength('first\nx\u20ac\nlast\n'));
+  await connection.close();
+});
+check('command-channel-applies-the-total-input-limit-after-all-prior-lines-drain', async () => {
+  const input = new PassThrough();
+  const output = new Writable({ write(chunk, encoding, done) { done(); } });
+  const connection = channel({ input, output, limits: { maxLineBytes: 256, maxInputBytes: 300 } });
+  for (const value of ['a'.repeat(149), 'b'.repeat(149)]) {
+    const pending = connection.readCommand();
+    input.write(value + '\n');
+    assert.equal(await pending, value);
+  }
+  const refused = assert.rejects(connection.readCommand(), { code: 'buyer_command_line_channel_input_limit' });
+  input.write('extra\n');
+  await refused;
+  assert.equal(connection.inspect().inputBytes, 300);
+  await assert.rejects(connection.close(), { code: 'buyer_command_line_channel_close_unknown' });
 });
 check('invalid-api-opening-budget-refuses-before-the-client-opener', async () => {
   const h = fixture(); let entered = 0;

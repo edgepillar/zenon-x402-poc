@@ -2457,8 +2457,8 @@
     },
     {
       "path": "src/buyer-command-line-channel.js",
-      "bytes": 11874,
-      "sha256": "ccbb7bb59d57d7e39186ab8ebf5431b519295591e5a9de81e98865c4fd8b7e1c",
+      "bytes": 12395,
+      "sha256": "88b66dc9085f669c436707a8cd8c501af5a69646181c38105275bc498b7a9715",
       "format": "module"
     },
     {

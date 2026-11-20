@@ -10,6 +10,7 @@ const ON = Readable.prototype.on, W_ON = Writable.prototype.on;
 const PAUSE = Readable.prototype.pause, RESUME = Readable.prototype.resume;
 const R_DESTROY = Readable.prototype.destroy, W_DESTROY = Writable.prototype.destroy;
 const WRITE = Writable.prototype.write;
+const ALLOC = Buffer.alloc, COPY = Buffer.prototype.copy;
 const NativePromise = Promise, THEN = NativePromise.prototype.then;
 const COUNT = EventEmitter.prototype.listenerCount;
 const RESERVED = new WeakSet(), FAILED_CONSTRUCTIONS = new Set();
@@ -61,8 +62,9 @@ export function createBuyerApiCreditCommandLineChannel(configuration) {
 
 function createChannel(configuration, apiCredit) {
   const { input, output, limits } = captureConfiguration(configuration, apiCredit);
-  const bytes = Buffer.alloc(limits.maxInputBytes), decoder = new TextDecoder('utf8', { fatal: true, ignoreBOM: true });
-  let start = 0, end = 0, inputBytes = 0, outputBytes = 0, reads = 0, writes = 0;
+  const decoder = new TextDecoder('utf8', { fatal: true, ignoreBOM: true });
+  let bytes = ALLOC(0), start = 0, end = 0, scan = 0;
+  let inputBytes = 0, outputBytes = 0, reads = 0, writes = 0;
   let reading = null, writing = null, writeCallbackPending = false;
   let closing = null, held = false, lifecycle = 'OPEN', ended = false;
   let inputClosed = false, outputClosed = false, inputStop = false, outputStop = false;
@@ -84,16 +86,22 @@ function createChannel(configuration, apiCredit) {
   }
   function deliver() {
     if (reading === null || closing !== null) return;
-    const at = bytes.indexOf(10, start);
-    // Only initialized bytes up to end belong to this channel.
-    if (at >= start && at < end) {
+    const offset = bytes.subarray(scan, end).indexOf(10);
+    if (offset !== -1) {
+      const at = scan + offset;
       const size = at - start;
       if (size > limits.maxLineBytes) { abandon('input_limit'); return; }
       let line;
       try { line = decoder.decode(bytes.subarray(start, at)); } catch { abandon('utf8_rejected'); return; }
       start = at + 1;
+      if (start === end) start = end = 0;
+      scan = start;
       const out = reading; reading = null; APPLY(PAUSE, input, []); out.resolve(line);
-    } else if (end - start > limits.maxLineBytes) abandon('input_limit');
+      return;
+    }
+    // Keep partial lines intact and search only the next bytes received.
+    scan = end;
+    if (end - start > limits.maxLineBytes) abandon('input_limit');
     else if (ended) {
       if (end !== start) { abandon('truncated_line'); return; }
       const out = reading; reading = null; out.resolve(null);
@@ -105,11 +113,25 @@ function createChannel(configuration, apiCredit) {
       abandon('input_limit'); return;
     }
     inputBytes += chunk.length;
-    if (end + chunk.length > bytes.length && start > 0) {
-      bytes.copy(bytes, 0, start, end); end -= start; start = 0;
+    try {
+      if (end + chunk.length > bytes.length) {
+        const unread = end - start;
+        const needed = unread + chunk.length;
+        const next = needed <= bytes.length ? bytes
+          : ALLOC(Math.min(limits.maxInputBytes, Math.max(needed, bytes.length * 2)));
+        APPLY(COPY, bytes, [next, 0, start, end]);
+        bytes = next;
+        scan -= start;
+        start = 0;
+        end = unread;
+      }
+      APPLY(COPY, chunk, [bytes, end]);
+    } catch {
+      abandon('input_unknown');
+      return;
     }
-    if (end + chunk.length > bytes.length) { abandon('input_limit'); return; }
-    chunk.copy(bytes, end); end += chunk.length; deliver();
+    end += chunk.length;
+    deliver();
   }
   function writeDone() {
     const current = writing;
@@ -122,6 +144,7 @@ function createChannel(configuration, apiCredit) {
     if (arguments.length !== 0) return rejected('input_rejected');
     if (closing !== null) return closing.promise;
     closing = pending(); lifecycle = held ? 'HELD' : 'CLOSING';
+    bytes = null;
     if (reading !== null) { const out = reading; reading = null; out.resolve(null); }
     if (writing !== null) { const out = writing.out; writing = null; out.reject(error('closed')); }
     // Reserve and attempt each leg independently before inspecting completion.
@@ -169,9 +192,9 @@ function createChannel(configuration, apiCredit) {
     }),
     writeResult: F(function writeResult(line) {
       if (arguments.length !== 1 || writing !== null || closing !== null || held) return rejected('write_unavailable');
-      if (typeof line !== 'string' || line.indexOf('\n') !== line.length - 1 || !line.endsWith('\n')
-          || Buffer.from(line, 'utf8').toString('utf8') !== line) return rejected('output_rejected');
+      if (typeof line !== 'string' || line.indexOf('\n') !== line.length - 1 || !line.endsWith('\n')) return rejected('output_rejected');
       const chunk = Buffer.from(line, 'utf8');
+      if (chunk.toString('utf8') !== line) return rejected('output_rejected');
       if (chunk.length - 1 > limits.maxLineBytes || outputBytes + chunk.length > limits.maxOutputBytes) {
         abandon('output_limit'); return rejected('output_limit');
       }
