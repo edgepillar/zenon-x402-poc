@@ -29,7 +29,8 @@ function envelope() {
     backendOptions: { databasePath: '/synthetic/recovery/backend.sqlite', limits: { busyTimeoutMs: 20, maxStateBytes: 65536, maxOffers: 8, maxGrants: 8, maxRequests: 128 } },
     requestKey: { grantId: 'grant.synthetic', requestId: 'request.original' }, authorizationHeader: 'ServiceCredit declared-original-proof' }));
 }
-function observed(status = 'CACHED_SUCCESS') { return F({ status, backend: F({ status }), authority: 'NONE', mayDispatchService: false,
+function observed(status = 'CACHED_SUCCESS', backendStatus = status) { return F({ status,
+  backend: backendStatus === null ? null : F({ status: backendStatus }), authority: 'NONE', mayDispatchService: false,
   mayStartPayment: false, maySignPayment: false, deliveryConfirmed: false, serviceDelivery: 'NOT_ESTABLISHED' }); }
 function owned(options = {}) {
   const profile = decode(canonicalJson(envelope())), captured = consume(profile); release(profile);
@@ -106,11 +107,40 @@ check('inspection-owner-reuses-exact-checkpoint-and-closes-payer-before-backend-
   assert.equal(r.closeCalls, 1); assert.equal(r.backendCloseCalls, 1); assert.ok(!JSON.stringify(result).includes(r.captured.authorizationHeader));
 });
 check('inspection-redaction-keeps-cache-and-absence-powerless-and-excludes-extra-payloads', () => {
-  for (const status of ['CACHED_SUCCESS', 'NOT_RECORDED', 'CLIENT_RECONCILIATION_REQUIRED', 'UNAUTHORIZED']) {
-    const r = output(redact(observed(status))); assert.equal(r.mayStartPayment, false); assert.equal(r.maySignPayment, false); assert.equal(r.mayDispatchService, false);
+  const statuses = [
+    ['CACHED_SUCCESS', 'CACHED_SUCCESS'],
+    ['CLIENT_ORIGINAL_NOT_RECORDED', null],
+    ['NOT_RECORDED', 'NOT_RECORDED'],
+    ['CLIENT_RECONCILIATION_REQUIRED', 'CACHED_SUCCESS'],
+    ['CLIENT_RECONCILIATION_REQUIRED', 'OUTCOME_UNKNOWN'],
+    ['UNAUTHORIZED', 'UNAUTHORIZED'],
+  ];
+  for (const [status, backendStatus] of statuses) {
+    const r = output(redact(observed(status, backendStatus)));
+    assert.equal(r.status, status); assert.equal(r.backendStatus, backendStatus);
+    assert.equal(r.localReconciliationRequired, status === 'CLIENT_RECONCILIATION_REQUIRED');
+    assert.equal(r.mayStartPayment, false); assert.equal(r.maySignPayment, false); assert.equal(r.mayDispatchService, false);
     assert.equal(r.deliveryConfirmed, false); assert.throws(() => output(F({ ...r, authorizationHeader: 'private' })));
   }
   assert.throws(() => redact(F({ ...observed(), mayDispatchService: true })));
+});
+check('inspection-redaction-requires-consistent-client-and-backend-statuses', () => {
+  const valid = redact(observed());
+  for (const [status, backendStatus] of [
+    ['CACHED_SUCCESS', null],
+    ['CLIENT_ORIGINAL_NOT_RECORDED', 'NOT_RECORDED'],
+    ['CLIENT_RECONCILIATION_REQUIRED', null],
+    ['CACHED_SUCCESS', 'OUTCOME_UNKNOWN'],
+  ]) {
+    const localReconciliationRequired = status === 'CLIENT_RECONCILIATION_REQUIRED';
+    assert.throws(() => redact(observed(status, backendStatus)), { stage: 'REDACTED_RESULT' });
+    assert.throws(() => output(F({ ...valid, status, backendStatus, localReconciliationRequired })), { stage: 'REDACTED_RESULT' });
+  }
+});
+check('inspection-owner-rejects-an-inconsistent-observation-and-closes-each-owner-once', async () => {
+  const r = owned({ result: observed('CACHED_SUCCESS', null) });
+  await assert.rejects(r.run(), { stage: 'REDACTED_RESULT' });
+  assert.deepEqual(r.trace, ['backend-open', 'payer-open', 'read', 'payer-close', 'backend-close']);
 });
 check('inspection-owner-read-failure-still-closes-proven-quiescent-owners-without-output', async () => {
   const r = owned({ readThrow: true }); await assert.rejects(r.run()); assert.equal(r.closeCalls, 1); assert.equal(r.backendCloseCalls, 1);
@@ -159,6 +189,18 @@ check('inspection-coordinator-late-native-result-never-writes-or-upgrades-unknow
 check('inspection-coordinator-rejects-result-authority-and-does-not-write-partial-history', async () => {
   const r = coordinator({ inspect: r => { consume(r.profile); release(r.profile); return Promise.resolve(F({ ...redact(observed()), mayStartPayment: true })); } });
   const result = await r.run(); assert.equal(result.status, 'CLOSE_UNKNOWN'); assert.equal(r.writes.length, 0); assert.equal(r.closes, 1);
+});
+check('inspection-coordinator-rejects-an-inconsistent-redacted-status-before-output', async () => {
+  const r = coordinator({ inspect: r => {
+    consume(r.profile);
+    release(r.profile);
+    return Promise.resolve(F({ ...redact(observed()), backendStatus: null }));
+  } });
+  const result = await r.run();
+  assert.equal(result.status, 'CLOSE_UNKNOWN');
+  assert.equal(r.inspectionCalls, 1);
+  assert.equal(r.writes.length, 0);
+  assert.equal(r.closes, 1);
 });
 check('inspection-coordinator-write-loss-or-close-failure-never-retries-the-read', async () => {
   for (const options of [{ write: () => Promise.reject(Error('declared write loss')) }, { close: () => Promise.reject(Error('declared close loss')) }]) {

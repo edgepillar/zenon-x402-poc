@@ -1,5 +1,5 @@
 import { readServiceCreditExactOriginalBackendRecoveryState } from './service-credit-custodied-backend-recovery-core.js';
-import { captureApiCreditRecordedResultInspection } from './api-credit-recorded-result-inspection.js';
+import { captureApiCreditRecordedResultInspection, recoveryInspectionStatusMatchesBackend } from './api-credit-recorded-result-inspection.js';
 import { types } from 'node:util';
 import { encodeOriginalPaymentCheckpoint } from './service-credit-pilot-original-payment-checkpoint.js';
 
@@ -73,7 +73,9 @@ export function captureServiceCreditRecoveryInspectionResult(observed) {
   for (const name of ['mayDispatchService', 'mayStartPayment', 'maySignPayment', 'deliveryConfirmed']) if (data(observed, name) !== false) fail('REDACTED_RESULT');
   if (data(observed, 'authority') !== 'NONE' || data(observed, 'serviceDelivery') !== 'NOT_ESTABLISHED') fail('REDACTED_RESULT');
   const status = data(observed, 'status'), backend = data(observed, 'backend'), backendStatus = backend === null ? null : data(backend, 'status');
-  if (typeof status !== 'string' || !/^[A-Z_]{1,64}$/.test(status) || backendStatus !== null && (typeof backendStatus !== 'string' || !/^[A-Z_]{1,64}$/.test(backendStatus))) fail('REDACTED_RESULT');
+  if (typeof status !== 'string' || !/^[A-Z_]{1,64}$/.test(status)
+      || backendStatus !== null && (typeof backendStatus !== 'string' || !/^[A-Z_]{1,64}$/.test(backendStatus))
+      || !recoveryInspectionStatusMatchesBackend(status, backendStatus)) fail('REDACTED_RESULT');
   return F({ inspectionVersion: 1, status, backendStatus, originalCheckpointPinsMatched: true,
     localReconciliationRequired: status === 'CLIENT_RECONCILIATION_REQUIRED', authority: 'NONE', mayDispatchService: false,
     mayStartPayment: false, maySignPayment: false, deliveryConfirmed: false, serviceDelivery: 'NOT_ESTABLISHED',
@@ -88,6 +90,7 @@ export function captureServiceCreditRecoveryInspectionOutput(value) {
       || c.serviceDelivery !== 'NOT_ESTABLISHED' || c.sameProcessObservationOnly !== true
       || typeof c.status !== 'string' || !/^[A-Z_]{1,64}$/.test(c.status)
       || c.backendStatus !== null && (typeof c.backendStatus !== 'string' || !/^[A-Z_]{1,64}$/.test(c.backendStatus))
+      || !recoveryInspectionStatusMatchesBackend(c.status, c.backendStatus)
       || c.localReconciliationRequired !== (c.status === 'CLIENT_RECONCILIATION_REQUIRED')) fail('REDACTED_RESULT');
   for (const k of ['mayDispatchService', 'mayStartPayment', 'maySignPayment', 'deliveryConfirmed']) if (c[k] !== false) fail('REDACTED_RESULT');
   return F(c);

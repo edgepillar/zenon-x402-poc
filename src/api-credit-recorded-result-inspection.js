@@ -15,6 +15,15 @@ function record(v){if(v===null||typeof v!=='object'||types.isProxy(v)||!Object.i
 function data(v,key){record(v);const d=D(v,key);if(!d?.enumerable||!OWN(d,'value'))fail();return d.value;}
 function exact(v,names){record(v);if(Reflect.ownKeys(v).length!==names.length)fail();const out={};for(const k of names)out[k]=data(v,k);return out;}
 function status(v){if(typeof v!=='string'||!/^[A-Z_]{1,64}$/.test(v))fail();return v;}
+
+// A missing local original skips the backend read. After a backend read,
+// local reconciliation is the only reason to override the observed status.
+export function recoveryInspectionStatusMatchesBackend(clientStatus, backendStatus) {
+  if (backendStatus === null) return clientStatus === 'CLIENT_ORIGINAL_NOT_RECORDED';
+  return clientStatus !== 'CLIENT_ORIGINAL_NOT_RECORDED'
+    && (clientStatus === 'CLIENT_RECONCILIATION_REQUIRED' || clientStatus === backendStatus);
+}
+
 function cache(v){const c=exact(v,['statusCode','contentType','resultCode']);if(c.statusCode!==200||c.contentType!=='application/json')fail();
  const key=snapshotOriginalServiceRequestCustodyKey({grantId:'cached',requestId:c.resultCode});return F({...c,resultCode:key.requestId});}
 function noAuthority(v){
@@ -84,16 +93,7 @@ export function captureApiCreditRecordedResultInspectionOutput(value){
  status(c.status);if(c.backendStatus!==null)status(c.backendStatus);noAuthority(value);
  if(c.recordedResultInspectionVersion!==1||c.originalCheckpointPinsMatched!==true||c.currentAuthority!=='NOT_ESTABLISHED'||c.sameProcessObservationOnly!==true
   ||c.snapshotAtomicAcrossStores!==false||c.localReconciliationRequired!==(c.status==='CLIENT_RECONCILIATION_REQUIRED')||typeof c.resultAvailable!=='boolean')fail();
- // The recovery reader skips the backend only when no local original exists.
- // A completed backend observation otherwise supplies the status unless local reconciliation is required.
- if (c.backendStatus === null) {
-   if (c.status !== 'CLIENT_ORIGINAL_NOT_RECORDED') fail();
- } else if (
-   c.status === 'CLIENT_ORIGINAL_NOT_RECORDED'
-   || (!c.localReconciliationRequired && c.status !== c.backendStatus)
- ) {
-   fail();
- }
+ if (!recoveryInspectionStatusMatchesBackend(c.status, c.backendStatus)) fail();
  if(c.resultAvailable){
   if(c.backendStatus!=='CACHED_SUCCESS'||!['CACHED_SUCCESS','CLIENT_RECONCILIATION_REQUIRED'].includes(c.status))fail();
   c.cachedResult=cache(c.cachedResult);
