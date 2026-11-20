@@ -449,6 +449,8 @@ def exchange(node, repo, outdir, name, profile, credential, commands, expected, 
     offer_refusal = name == "offer-refusal"
     require(not journal or credential is None and not commands and peer is None)
     require(not offer_refusal or credential == b"" and not commands and not expected and peer is None)
+    if credential is not None and not offer_refusal:
+        require(0 < len(commands) == len(expected))
     writers = []
     child_ends = []
     all_fds = set()
@@ -557,14 +559,14 @@ def exchange(node, repo, outdir, name, profile, credential, commands, expected, 
                                 # A reply for a command not fully written is not a barrier.
                                 require(at < report["commandsWritten"] and at == command_index)
                             report["repliesMatched"] += 1
-                            if command_writer is not None:
+                            if command_writer is not None and at + 1 < len(commands):
                                 if peer is not None and at == 2:
                                     # BOUND is not a grant: pause before handoff,
                                     # enter the one preselected local ACTIVATE,
                                     # then require its exact original-grant ACK.
                                     peer.activate()
                                     report["providerActivationMatchedBeforeHandoff"] = True
-                                command_index += 1; command_writer["data"] = commands[command_index]; command_writer["offset"] = 0
+                                command_index = at + 1; command_writer["data"] = commands[command_index]; command_writer["offset"] = 0
                                 selector.register(command_writer["fd"], selectors.EVENT_WRITE, command_writer)
         require(not reply_buffer and report["repliesMatched"] == len(expected))
         require(credential is None or report["commandsWritten"] == len(commands))
