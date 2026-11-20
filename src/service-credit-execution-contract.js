@@ -22,6 +22,9 @@ const JSON_STRINGIFY = JSON.stringify;
 const SET_CONSTRUCTOR = Set;
 const SET_HAS = Set.prototype.has;
 const SET_ADD = Set.prototype.add;
+const WEAK_SET_HAS = WeakSet.prototype.has;
+const WEAK_SET_ADD = WeakSet.prototype.add;
+const NORMALIZED_STATES = new WeakSet();
 const IS_PROXY = utilTypes.isProxy;
 
 const CONTRACT_VERSION = 1;
@@ -572,7 +575,7 @@ function normalizeState(value) {
       fail(code);
     }
   }
-  return snapshot({
+  const state = snapshot({
     contractVersion: CONTRACT_VERSION,
     ledgerId: input.ledgerId,
     policy,
@@ -586,6 +589,15 @@ function normalizeState(value) {
     },
     executions,
   });
+  REFLECT_APPLY(WEAK_SET_ADD, NORMALIZED_STATES, [state]);
+  return state;
+}
+
+function checkedState(value) {
+  // A transition can borrow the exact immutable snapshot from hydration.
+  return REFLECT_APPLY(WEAK_SET_HAS, NORMALIZED_STATES, [value])
+    ? value
+    : normalizeState(value);
 }
 
 function makeState(state, executions, generation = state.generation) {
@@ -675,7 +687,7 @@ export function hydrateServiceCreditExecutionContract(state) {
 export function prepareServiceCreditExecution(options) {
   if (arguments.length !== 1) fail(CODE.invalidInput);
   const input = exactDataObject(options, PREPARE_KEYS, CODE.invalidInput);
-  const state = normalizeState(input.state);
+  const state = checkedState(input.state);
   const request = normalizeRequest(input.request, CODE.invalidInput);
   const policy = normalizePolicy(input.policy, CODE.invalidInput);
   if (
@@ -752,7 +764,7 @@ export function prepareServiceCreditExecution(options) {
 export function fenceServiceCreditExecution(options) {
   if (arguments.length !== 1) fail(CODE.invalidInput);
   const input = exactDataObject(options, FENCE_KEYS, CODE.invalidInput);
-  const state = normalizeState(input.state);
+  const state = checkedState(input.state);
   if (!nonnegativeSafeInteger(input.wallClockNowMs)) fail(CODE.invalidInput);
   const execution = findExecution(state, input.executionId);
   if (execution.terminalClassification !== 'NONE') {
@@ -795,7 +807,7 @@ export function fenceServiceCreditExecution(options) {
 export function completeServiceCreditExecution(options) {
   if (arguments.length !== 1) fail(CODE.invalidInput);
   const input = exactDataObject(options, COMPLETE_KEYS, CODE.invalidInput);
-  const state = normalizeState(input.state);
+  const state = checkedState(input.state);
   if (
     typeof input.resultCommitment !== 'string'
     || !regexpMatches(SHA256_COMMITMENT, input.resultCommitment)
@@ -865,7 +877,7 @@ export function completeServiceCreditExecution(options) {
 export function markServiceCreditExecutionUnknown(options) {
   if (arguments.length !== 1) fail(CODE.invalidInput);
   const input = exactDataObject(options, UNKNOWN_KEYS, CODE.invalidInput);
-  const state = normalizeState(input.state);
+  const state = checkedState(input.state);
   if (
     typeof input.reason !== 'string'
     || !arrayHas(EXTERNAL_UNCERTAINTY_REASONS, input.reason)
@@ -906,7 +918,7 @@ export function markServiceCreditExecutionUnknown(options) {
 export function recoverServiceCreditExecutions(options) {
   if (arguments.length !== 1) fail(CODE.invalidInput);
   const input = exactDataObject(options, RECOVER_KEYS, CODE.invalidInput);
-  const state = normalizeState(input.state);
+  const state = checkedState(input.state);
   if (!nonnegativeSafeInteger(input.wallClockNowMs)) fail(CODE.invalidInput);
 
   let noInvocationCount = 0;
