@@ -40,6 +40,15 @@ function observe(p, yes, no) {
   const d = DESC(p, 'constructor'); if (d && (!OWN(d, 'value') || d.value !== NATIVE_PROMISE)) fail('PROMISE');
   const bridge = APPLY(THEN.value, p, [yes, no]); APPLY(THEN.value, bridge, [() => {}, () => {}]);
 }
+
+/** The caller may proceed only after a synchronous void guard receipt. */
+export function requireServiceCreditRecoveryOpeningReceipt(receipt, stage, retainUnknown) {
+  if (receipt === undefined) return;
+  if (retainUnknown !== undefined) retainUnknown(receipt);
+  try { observe(receipt, () => {}, () => {}); } catch {}
+  fail(stage);
+}
+
 function signal() {
   let resolve, reject;
   const promise = new NATIVE_PROMISE((a, b) => { resolve = a; reject = b; });
@@ -104,23 +113,22 @@ async function runInspection(configuration, recorded) {
     payerStopEntered: false, payerStop: null, backendStopEntered: false, backendStopReturned: false,
     openingUnknown: false, openingReceipt: null, stage: 'INPUT' };
   ACTIVE.add(frame); let result = null, bad = false, reason = 'INPUT';
-  function requireOpening() {
-    const receipt = c.requireOpening();
-    if (receipt === undefined) return;
+  function retainOpeningReceipt(receipt) {
     // A returned receipt can still borrow the profile or an acquired owner.
     // Retain it without starting another read or competing with its cleanup.
     frame.openingReceipt = receipt;
     frame.openingUnknown = true;
-    try { observe(receipt, () => {}, () => {}); } catch {}
-    fail(frame.stage);
+  }
+  function requireOpening() {
+    requireServiceCreditRecoveryOpeningReceipt(c.requireOpening(), frame.stage, retainOpeningReceipt);
   }
   try {
     requireOpening(); frame.stage = 'BACKEND_OPEN'; frame.backendEntered = true;
     frame.backend = p.openBackend(c.manifest);
     if (frame.backend === null || typeof frame.backend !== 'object' || types.isProxy(frame.backend) || types.isPromise(frame.backend) || BACKENDS.has(frame.backend)) fail(frame.stage);
     BACKENDS.add(frame.backend); frame.backendKnown = true;
-    requireOpening(); frame.stage = 'PAYER_OPEN'; frame.payerEntered = true;
     const ready = signal();
+    requireOpening(); frame.stage = 'PAYER_OPEN'; frame.payerEntered = true;
     observe(p.openPayer(c.manifest, frame.backend), owner => { frame.payer = owner; ready.resolve(undefined); }, ready.reject); await ready.promise;
     if (frame.payer === null || typeof frame.payer !== 'object' || types.isProxy(frame.payer) || PAYERS.has(frame.payer)) fail(frame.stage);
     method(frame.payer, 'close'); method(frame.payer, 'snapshot'); method(frame.payer, 'readOriginalBackendRecoveryState');

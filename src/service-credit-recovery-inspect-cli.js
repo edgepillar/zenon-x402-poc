@@ -8,7 +8,11 @@ import {
   snapshotOriginalServiceRequestCustodyPolicy,
   snapshotOriginalServiceRequestCustodyKey,
 } from './service-credit-original-request-custody-contract.js';
-import { runServiceCreditRecoveryInspectionOwner, runServiceCreditRecordedResultInspectionOwner } from './service-credit-recovery-inspection-owner.js';
+import {
+  requireServiceCreditRecoveryOpeningReceipt,
+  runServiceCreditRecoveryInspectionOwner,
+  runServiceCreditRecordedResultInspectionOwner,
+} from './service-credit-recovery-inspection-owner.js';
 import { consumeApiCreditRecoveryInspectionProfile, releaseApiCreditRecoveryInspectionProfile } from './api-credit-recovery-inspection-profile.js';
 
 const FREEZE = Object.freeze, KEYS = Reflect.ownKeys, DESC = Object.getOwnPropertyDescriptor;
@@ -86,21 +90,26 @@ export async function inspectServiceCreditCapturedRecordedResult(profile, requir
 async function inspectCapturedProfile(profile, requireOpening, recorded) {
   try {
     if (typeof requireOpening !== 'function' || IS_PROXY(requireOpening) || !Object.isFrozen(requireOpening)) fail();
-    requireOpening(); const captured = consumeApiCreditRecoveryInspectionProfile(profile);
+    requireServiceCreditRecoveryOpeningReceipt(requireOpening(), 'INPUT');
+    const captured = consumeApiCreditRecoveryInspectionProfile(profile);
     return await inspectCaptured(captured.manifest, captured.authorizationHeader, captured.serializedCheckpoint, requireOpening, recorded);
   } finally { try { releaseApiCreditRecoveryInspectionProfile(profile); } catch {} }
 }
 async function inspectCaptured(manifest, proof, serializedCheckpoint, requireOpening, recorded = false) {
-  requireOpening(); const { ServiceCreditSqliteStore } = await import('./service-credit-sqlite-store.js');
-  requireOpening(); const { openServiceCreditCustodiedSqliteBackendRecoveryClientV6 } = await import('./service-credit-custodied-backend-recovery-client.js');
-  requireOpening(); const OPEN_BACKEND = ServiceCreditSqliteStore.openExisting, CLOSE_BACKEND = ServiceCreditSqliteStore.prototype.close;
+  requireServiceCreditRecoveryOpeningReceipt(requireOpening(), 'MODULES');
+  const { ServiceCreditSqliteStore } = await import('./service-credit-sqlite-store.js');
+  requireServiceCreditRecoveryOpeningReceipt(requireOpening(), 'MODULES');
+  const { openServiceCreditCustodiedSqliteBackendRecoveryClientV6 } = await import('./service-credit-custodied-backend-recovery-client.js');
+  requireServiceCreditRecoveryOpeningReceipt(requireOpening(), 'MODULES');
+  const OPEN_BACKEND = ServiceCreditSqliteStore.openExisting, CLOSE_BACKEND = ServiceCreditSqliteStore.prototype.close;
+  // The inspection owner checks the receipt immediately before each opener.
   const ports = FREEZE({
     openBackend: FREEZE(function openExistingBackend(c) {
-      requireOpening(); return APPLY(OPEN_BACKEND, ServiceCreditSqliteStore, [{ databasePath: c.backendDatabasePath, allowedRoot: c.allowedRoot,
+      return APPLY(OPEN_BACKEND, ServiceCreditSqliteStore, [{ databasePath: c.backendDatabasePath, allowedRoot: c.allowedRoot,
         deriveCost: FREEZE(function inspectionCannotDeriveCost() { fail(); }), ...c.backendLimits }]);
     }),
     openPayer: FREEZE(function openExistingPayer(c, backendStore) {
-      requireOpening(); return openServiceCreditCustodiedSqliteBackendRecoveryClientV6({ databasePath: c.payerDatabasePath, allowedRoot: c.allowedRoot,
+      return openServiceCreditCustodiedSqliteBackendRecoveryClientV6({ databasePath: c.payerDatabasePath, allowedRoot: c.allowedRoot,
         backendStore, fundingResourceUrl: c.fundingResourceUrl, custodyPolicy: c.custodyPolicy, selectedGrantId: c.selectedGrantId, deadlineMs: c.deadlineMs });
     }),
     closeBackend: FREEZE(function closeExistingBackend(store) { return APPLY(CLOSE_BACKEND, store, []); })
