@@ -165,7 +165,9 @@ export function createApiCreditRecordedServiceResultApplication(configuration){
   active=true;const out=capability();
   try{
    const prior=lookup(expected);if(closed||held)fail();
-   if(prior!==null){liveService();finish(out,result(expected,prior,true),null);}
+   // The borrowed read may have changed the service owner's availability.
+   liveService();
+   if(prior!==null){finish(out,result(expected,prior,true),null);}
    else{
     submissionCallbacksEntered++;const operation=APPLY(methods.submitOriginal,app,[selected]);
     observe(operation,value=>{
