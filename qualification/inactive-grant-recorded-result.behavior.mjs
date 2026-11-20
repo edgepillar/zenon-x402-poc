@@ -40,7 +40,7 @@ async function selected(lifecycle = 'REVOKED') {
   const options = { issuedFrame: f.f.x.d.config.issuedFrame, resourceUrl: c.resourceUrl, selection: c.selection };
   return { ...f, grant: stored, options, capture: binding(options), hash: f.root.snapshot().binding.transactionHash };
 }
-async function restored(lifecycle = 'REVOKED', outcome = 'SUCCEEDED') {
+async function restored(lifecycle = 'REVOKED', outcome = 'SUCCEEDED', providerOptions = {}) {
   const first = await fixture(), grant = first.ledger.activate();
   if (outcome === 'SUCCEEDED') {
     first.owner.admitOriginalCommittedServiceGrant(); first.send(first.serviceRequest('original')); await flush();
@@ -51,7 +51,7 @@ async function restored(lifecycle = 'REVOKED', outcome = 'SUCCEEDED') {
     if (outcome === 'OUTCOME_UNKNOWN') first.ledger.m.markOutcomeUnknown({ grantId: grant.grantId, requestId: 'original' });
   }
   const state = first.ledger.m.exportState(); await first.owner.close();
-  const next = await fixture({ provider: { state } });
+  const next = await fixture({ provider: { ...providerOptions, state } });
   if (lifecycle === 'REVOKED') next.ledger.m.revokeGrant({ grantId: grant.grantId });
   else next.ledger.setNow(1000);
   return { first, next, grantId: grant.grantId };
@@ -124,6 +124,23 @@ check('expired-at-current-grant-read-can-recover-even-when-stored-history-was-ac
   assert.equal(admission.history.record.storedLifecycle, 'ACTIVE'); assert.equal(admission.serviceMode, 'RECORDED_RESULT_ONLY');
   const reply = next.send(next.serviceRequest('original')); await flush(); assert.equal(reply.res.statusCode, 200);
   assert.equal(next.ledger.m.getGrant(grantId).lifecycle, 'EXPIRED'); assert.equal(next.s.debits + next.s.executions, 0); await next.owner.close();
+});
+check('provider-recorded-replay-holds-an-unconfirmed-read-without-new-ledger-work-or-reader-close', async () => {
+  const pending = deferred();
+  const { next } = await restored('REVOKED', 'SUCCEEDED', { resultRead: () => pending.promise });
+  const before = canonicalJson(next.ledger.m.exportState());
+  assert.equal(next.owner.admitOriginalCommittedServiceGrant().serviceMode, 'RECORDED_RESULT_ONLY');
+  const reply = next.send(next.serviceRequest('original'));
+  await flush();
+  assert.equal(reply.res.statusCode, 503);
+  await assert.rejects(next.owner.close());
+  assert.equal(next.s.resultReaderCloses, 0);
+  pending.resolve(result('UNAVAILABLE'));
+  await flush();
+  assert.equal(next.s.resultReads, 1);
+  assert.equal(next.s.resultReaderCloses, 0);
+  assert.equal(next.s.debits + next.s.executions, 0);
+  assert.equal(canonicalJson(next.ledger.m.exportState()), before);
 });
 check('inactive-recorded-mode-refuses-new-request-id-without-reserving-credit', async () => {
   for (const lifecycle of ['EXPIRED', 'REVOKED']) {
@@ -276,13 +293,43 @@ check('recorded-http-refusal-writer-defers-reader-close-and-retains-held', async
   assert.equal(f.s.closes, 1);
 });
 check('recorded-http-promise-read-is-retained-with-no-late-reply-or-retry', async () => {
-  const p = deferred(), f = reader({ read: () => p.promise }); await assert.rejects(f.root.handle(F({}), F({})));
-  p.resolve(result()); await flush(); await assert.rejects(f.root.close()); assert.equal(f.s.reads, 1); assert.equal(f.s.frames.length, 1); assert.equal(f.s.frames[0].statusCode, 503);
+  const p = deferred(), f = reader({ read: () => p.promise });
+  await assert.rejects(f.root.handle(F({}), F({})));
+  const closing = f.root.close();
+  await assert.rejects(closing, /SERVICE_CREDIT_RECORDED_HTTP_SESSION_CLOSE_HELD/);
+  assert.equal(f.s.closes, 0);
+  p.resolve(result());
+  await flush();
+  assert.equal(f.root.close(), closing);
+  assert.equal(f.s.closes, 0);
+  assert.equal(f.s.reads, 1);
+  assert.equal(f.s.frames.length, 1);
+  assert.equal(f.s.frames[0].statusCode, 503);
 });
 check('recorded-http-unknown-read-is-not-retried-after-a-later-success', async () => {
   let broken = true; const f = reader({ read() { if (broken) throw Error('declared read lost'); return result(); } });
   await assert.rejects(f.root.handle(F({}), F({}))); broken = false; await assert.rejects(f.root.handle(F({}), F({})));
   assert.equal(f.s.reads, 1); assert.ok(f.s.frames.every(v => v.statusCode === 503)); await assert.rejects(f.root.close());
+  assert.equal(f.s.closes, 0);
+});
+check('recorded-http-retains-an-unconfirmed-writer-without-another-reply-or-reader-close', async () => {
+  for (const late of ['fulfilled', 'rejected']) {
+    const pending = deferred(), f = reader({ write: () => pending.promise });
+    await assert.rejects(f.root.handle(F({}), F({})));
+    const closing = f.root.close();
+    await assert.rejects(closing, /SERVICE_CREDIT_RECORDED_HTTP_SESSION_CLOSE_HELD/);
+    await assert.rejects(f.root.handle(F({}), F({})));
+    assert.equal(f.s.closes, 0);
+    assert.equal(f.s.frames.length, 1);
+    if (late === 'fulfilled') pending.resolve(undefined);
+    else pending.reject(new Error('declared late response failure'));
+    await flush();
+    await assert.rejects(f.root.handle(F({}), F({})));
+    assert.equal(f.root.close(), closing);
+    assert.equal(f.s.closes, 0);
+    assert.equal(f.s.frames.length, 1);
+    assert.equal(f.s.reads, 1);
+  }
 });
 check('recorded-http-nonvoid-writer-and-close-receipts-stay-held', async () => {
   const f = reader({ write: () => Promise.resolve(undefined) }); await held(f); assert.equal(f.s.frames.length, 1);

@@ -89,9 +89,31 @@ export function createServiceCreditRecordedHttpSessionCore(options) {
   const methods = [c.readOriginal, c.closeReader, c.writeResponse];
   if (methods.some(fn => typeof fn !== 'function' || types.isProxy(fn) || !Object.isFrozen(fn)) || new Set(methods).size !== 3) fail();
   const grantId = c.admittedGrantId, READ = c.readOriginal, CLOSE = c.closeReader, WRITE = c.writeResponse;
-  let closed = false, held = false, activeHandles = 0, closing = null, readerCloseStarted = false;
+  let closed = false, held = false, activeHandles = 0, closing = null, closeDecided = false;
+  let readUnconfirmed = false, writeUnconfirmed = false;
   const opaque = [], retained = F(() => [READ, CLOSE, WRITE, opaque]);
   function hold(value) { held = true; HELD.add(retained); if (value !== undefined) { opaque.push(value); discard(value); } }
+  function readReceipt(request) {
+    let receipt;
+    try {
+      receipt = A(READ, undefined, [request]);
+      if (receipt !== null && typeof receipt === 'object' && !types.isProxy(receipt) && !types.isPromise(receipt)
+          && Object.getPrototypeOf(receipt) === Object.prototype && D(receipt, 'then') === undefined
+          && D(Object.prototype, 'then') === undefined) return receipt;
+    } catch {}
+    readUnconfirmed = true;
+    hold(receipt);
+    return null;
+  }
+  function writeReply(destination, selected) {
+    let receipt;
+    try {
+      receipt = A(WRITE, undefined, [destination, selected]);
+      if (receipt === undefined) return;
+    } catch {}
+    writeUnconfirmed = true;
+    hold(receipt);
+  }
   const handle = F(async function handle(request, destination) {
     const admitted = arguments.length === 2 && invariant() && !closed && !held && activeHandles === 0;
     activeHandles++;
@@ -100,24 +122,23 @@ export function createServiceCreditRecordedHttpSessionCore(options) {
       if (!invariant()) hold();
       if (admitted) {
         try {
-          const value = A(READ, undefined, [request]);
-          if (types.isPromise(value)) { hold(value); fail(); }
+          const value = readReceipt(request);
           if (!invariant()) { hold(); fail(); }
-          if (!closed && !held && invariant()) selected = response(value, grantId);
+          if (!closed && !held) selected = response(value, grantId);
         } catch { hold(); }
       }
-      const value = A(WRITE, undefined, [destination, selected]);
-      if (value !== undefined) { hold(value); fail(); }
+      if (!writeUnconfirmed) writeReply(destination, selected);
     } catch { hold(); }
     finally { activeHandles--; finishClose(); }
     if (held) fail();
   });
   function finishClose() {
     // A refusal still borrows the writer. Do not enter reader close while a
-    // read or a response callback is on the stack.
-    if (closing === null || activeHandles !== 0 || readerCloseStarted) return;
-    readerCloseStarted = true;
+    // callback is on the stack or its completion remains unconfirmed.
+    if (closing === null || activeHandles !== 0 || closeDecided) return;
+    closeDecided = true;
     try {
+      if (readUnconfirmed || writeUnconfirmed) fail();
       const value = A(CLOSE, undefined, []);
       if (types.isPromise(value)) { hold(value); fail(); }
       const result = capturedResult(value);

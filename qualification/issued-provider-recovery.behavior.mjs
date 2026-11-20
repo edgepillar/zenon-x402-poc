@@ -78,7 +78,8 @@ async function app(options={}){
    readCommittedGrant:F((store,id)=>{assert.equal(store,service);s.grantReads++;if(options.grantRead)return options.grantRead(s,f,ledger,id);return ledger.m.getGrant(id);}),
    createServiceSession:F(c=>{s.sessions++;assert.equal(c.store,service);
     if(c.replayOnly===true){s.replaySessions++;return recordedSession(F({admittedGrantId:c.admittedGrantId,
-     readOriginal:F(req=>{s.resultReads++;const r=ledger.m.getRequest({grantId:c.admittedGrantId,requestId:req.declaredRequestId??'request.original'});
+     readOriginal:F(req=>{s.resultReads++;if(options.resultRead)return options.resultRead(req);
+      const r=ledger.m.getRequest({grantId:c.admittedGrantId,requestId:req.declaredRequestId??'request.original'});
       return declaredRecordedOutcome(r===null?'NOT_RECORDED':r.state==='SUCCEEDED'?'CACHED_SUCCESS':r.state==='OUTCOME_UNKNOWN'?'OUTCOME_UNKNOWN':'RECONCILIATION_REQUIRED',r);}),
      closeReader:F(()=>{s.resultReaderCloses++;return declaredRecordedOutcome('CLOSED');}),
      writeResponse:F((res,frame)=>{res.statusCode=frame.statusCode;res.end(frame.body);})}));}
