@@ -2859,8 +2859,8 @@
     },
     {
       "path": "src/service-credit-model.js",
-      "bytes": 56835,
-      "sha256": "f8e57c6e4b576c4b4c650d757ab9c86580c5bc4e7d457440092668b2894cefda",
+      "bytes": 56782,
+      "sha256": "d19c18b775730a0bc857478ba529cb851f93f9f4817a42c33661f42be0645466",
       "format": "module"
     },
     {

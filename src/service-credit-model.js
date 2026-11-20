@@ -201,12 +201,6 @@ function isSdkSafeChainIdentifier(value) {
   );
 }
 
-function cloneJson(value) {
-  if (value === null || typeof value !== 'object') return value;
-  if (Array.isArray(value)) return value.map(cloneJson);
-  return Object.fromEntries(Object.keys(value).map(key => [key, cloneJson(value[key])]));
-}
-
 function deepFreeze(value) {
   if (value !== null && typeof value === 'object' && !Object.isFrozen(value)) {
     for (const child of Object.values(value)) deepFreeze(child);
@@ -216,7 +210,10 @@ function deepFreeze(value) {
 }
 
 function snapshot(value) {
-  return deepFreeze(cloneJson(value));
+  if (value === null || typeof value !== 'object') return value;
+  if (Array.isArray(value)) return Object.freeze(value.map(snapshot));
+  const entries = Object.keys(value).map(key => [key, snapshot(value[key])]);
+  return Object.freeze(Object.fromEntries(entries));
 }
 
 function canonicalJson(value) {
@@ -858,7 +855,6 @@ export class InMemoryServiceCreditModel {
   exportState() {
     return this.#runPublicOperation(() => {
       const offers = [...this.#offers.values()]
-        .map(value => ({ ...value }))
         .sort((left, right) => (
           compareText(left.offerId, right.offerId)
           || left.offerVersion - right.offerVersion
