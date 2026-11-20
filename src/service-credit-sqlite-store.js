@@ -12,7 +12,7 @@ import {
 } from 'node:fs';
 import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
-import { types as utilTypes } from 'node:util';
+import { isDeepStrictEqual, types as utilTypes } from 'node:util';
 import {
   InMemoryServiceCreditModel,
   REQUEST_STATE,
@@ -724,6 +724,12 @@ function canonicalJson(value) {
     output += `${JSON_STRINGIFY(key)}:${canonicalJson(value[key])}`;
   }
   return `${output}}`;
+}
+
+function sameLedgerState(state, restoredState, stateJson) {
+  // Both states contain detached JSON data. Preserve the canonical check when
+  // a representation difference prevents the direct comparison.
+  return isDeepStrictEqual(state, restoredState) || canonicalJson(restoredState) === stateJson;
 }
 
 function publicChecksumFor(schemaVersion, revision, state) {
@@ -2080,16 +2086,17 @@ export class ServiceCreditSqliteStore {
         normalizedState,
         normalizedExecutionState,
       );
-      const normalizedLedgerStateJson = canonicalJson(normalizedState);
+      if (!sameLedgerState(envelope.ledgerState, normalizedState, ledgerStateJson)) {
+        failStore('SERVICE_CREDIT_STORE_CORRUPT');
+      }
       const { envelope: normalizedEnvelope, text: physicalEnvelopeJson } = physicalEnvelopeFor(
         envelope.revision,
         normalizedState,
-        normalizedLedgerStateJson,
+        ledgerStateJson,
         normalizedExecutionState,
       );
       if (
-        normalizedLedgerStateJson !== ledgerStateJson
-        || normalizedEnvelope.checksum !== envelope.checksum
+        normalizedEnvelope.checksum !== envelope.checksum
         // Exact bytes from the canonical builder already prove the layout.
         || (physicalEnvelopeJson !== text && canonicalJson(envelope) !== text)
       ) {
@@ -2128,7 +2135,7 @@ export class ServiceCreditSqliteStore {
       const { normalizedState, ledgerStateJson } = this.#hydrateLedgerState(envelope.state);
       const normalizedEnvelope = publicEnvelopeFor(envelope.revision, normalizedState);
       if (
-        canonicalJson(normalizedState) !== ledgerStateJson
+        !sameLedgerState(envelope.state, normalizedState, ledgerStateJson)
         || normalizedEnvelope.checksum !== envelope.checksum
         || canonicalJson(envelope) !== text
       ) {
@@ -2342,9 +2349,8 @@ export class ServiceCreditSqliteStore {
         deriveCost: this.#configuration.deriveCost,
         now: this.#configuration.now,
       }, state);
-      const recoveredJson = canonicalJson(recovered.exportState());
       const text = stateJson ?? canonicalJson(state);
-      if (recoveredJson !== text) {
+      if (!sameLedgerState(state, recovered.exportState(), text)) {
         failStore('SERVICE_CREDIT_STORE_INVARIANT_VIOLATION');
       }
       return text;
