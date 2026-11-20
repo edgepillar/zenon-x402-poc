@@ -190,7 +190,10 @@ test('closing during backend lookup prevents the second local read', () => {
 });
 test('closed connection fences future reads and exact close promise identity remains', async () => {
   const f = fixture(); const p = f.connection.close(); assert.equal(p, f.closePromise); assert.equal(f.connection.close(), p);
-  assert.throws(f.read, errorCode('CLOSED')); assert.equal(f.backendCloses, 1); assert.equal(f.localCloses, 2); await p;
+  assert.throws(f.read, errorCode('CLOSED'));
+  assert.equal(f.backendCloses, 1);
+  assert.equal(f.localCloses, 1);
+  await p;
 });
 test('the borrowed child methods are captured once before mutation', () => {
   const f = fixture(); f.client.readOriginalRecoveryState = () => { throw Error('MUTATED'); }; f.backend.readExactOriginal = () => { throw Error('MUTATED'); };

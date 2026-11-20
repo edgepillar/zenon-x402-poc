@@ -42,21 +42,23 @@ function sameCloseDescriptor(left, right) {
   return true;
 }
 
-function isKnownBackendClose(receipt) {
-  // Borrowed readers can return void or the native reader's CLOSED outcome.
-  if (receipt === undefined) return true;
-  if (receipt === null || typeof receipt !== 'object' || CLOSE_IS_PROXY(receipt)
-      || CLOSE_IS_PROMISE(receipt) || CLOSE_PROTOTYPE(receipt) !== Object.prototype
-      || CLOSE_DESCRIPTOR(receipt, 'then') !== undefined
-      || CLOSE_DESCRIPTOR(Object.prototype, 'then') !== undefined) return false;
-  const status = CLOSE_DESCRIPTOR(receipt, 'status');
-  return status?.enumerable === true && CLOSE_OWN(status, 'value') && status.value === 'CLOSED';
+function isSynchronousRecord(receipt) {
+  return receipt !== null && typeof receipt === 'object' && !CLOSE_IS_PROXY(receipt)
+    && !CLOSE_IS_PROMISE(receipt) && CLOSE_PROTOTYPE(receipt) === Object.prototype
+    && CLOSE_DESCRIPTOR(receipt, 'then') === undefined
+    && CLOSE_DESCRIPTOR(Object.prototype, 'then') === undefined;
 }
 
-// A failed backend stop must not suppress the known client stop. Retain its
-// receipt and observe only a supported genuine promise, without assimilating
-// an opaque receipt or treating it as replacement cleanup authority.
-function observeFailedCloseReceipt(value) {
+function recordStatus(receipt) {
+  if (!isSynchronousRecord(receipt)) return null;
+  const status = CLOSE_DESCRIPTOR(receipt, 'status');
+  return status?.enumerable === true && CLOSE_OWN(status, 'value')
+    && typeof status.value === 'string' && status.value.length > 0 ? status.value : null;
+}
+
+// Retain uncertain read and close receipts. Observe a supported genuine
+// promise without allowing a late settlement to confirm the operation.
+function observeUnconfirmedReceipt(value) {
   try {
     if (CLOSE_IS_PROXY(value) || !CLOSE_IS_PROMISE(value)
         || CLOSE_PROTOTYPE(value) !== CLOSE_PROMISE_PROTOTYPE
@@ -142,7 +144,7 @@ export function createServiceCreditCustodiedBackendRecoveryCore(client, backend,
   const LOCAL_CHECKPOINT = originalPaymentCheckpointEnabled ? client.readOriginalPaymentCheckpoint : null;
   client = null;
   backend = null;
-  let closed = false, reading = false, unavailable = false;
+  let closed = false, reading = false, unavailable = false, readCompletionUnknown = false;
   let closeRequested = false, closeComplete = false, closeFailed = false, closeFailure;
   let closeReceipt;
   const closeFailures = { backend: null, local: null, reentry: null };
@@ -150,7 +152,20 @@ export function createServiceCreditCustodiedBackendRecoveryCore(client, backend,
     unavailable = true;
     if (closeFailures[owner] === null) closeFailures[owner] = FREEZE({ value: receipt });
     if (!closeFailed) { closeFailed = true; closeFailure = value; }
-    observeFailedCloseReceipt(receipt);
+    observeUnconfirmedReceipt(receipt);
+  }
+
+  function refuseUnjoinedRead(owner, receipt) {
+    readCompletionUnknown = true;
+    const error = failure(owner === 'local' ? 'LOCAL_READ_UNCONFIRMED' : 'BACKEND_READ_UNCONFIRMED');
+    rememberCloseFailure(owner, error, receipt);
+    throw error;
+  }
+
+  function readLocalRecord(read, input) {
+    const receipt = read(input);
+    if (receipt !== null && !isSynchronousRecord(receipt)) refuseUnjoinedRead('local', receipt);
+    return receipt;
   }
 
   function readBackendRecoveryState(keyValue, authorizationHeader, expectedPins, exactCheckpoint, actualArity) {
@@ -179,7 +194,7 @@ export function createServiceCreditCustodiedBackendRecoveryCore(client, backend,
     let checkpoint = null, checkpointText = null, checkpointPins = null;
     try {
       if (originalPaymentCheckpointEnabled) {
-        checkpoint = LOCAL_CHECKPOINT(expectedPins);
+        checkpoint = readLocalRecord(LOCAL_CHECKPOINT, expectedPins);
         // Child reads can synchronously close this connection.
         if (closed) throw failure('CLOSED');
         if (checkpoint === null) throw failure('ORIGINAL_PAYMENT_CHECKPOINT_UNAVAILABLE');
@@ -191,13 +206,13 @@ export function createServiceCreditCustodiedBackendRecoveryCore(client, backend,
         checkpointPins = FREEZE({ binding: checkpoint.binding, digests: checkpoint.digests });
         checkpoint = null;
       }
-      before = LOCAL_READ(key);
+      before = readLocalRecord(LOCAL_READ, key);
       if (closed) throw failure('CLOSED');
       if (before === null) {
         // The exact-byte product lane still closes its witness around an
         // absent-original observation, even though no backend query is made.
         if (exactCheckpoint !== null) {
-          checkpoint = LOCAL_CHECKPOINT(checkpointPins);
+          checkpoint = readLocalRecord(LOCAL_CHECKPOINT, checkpointPins);
           if (closed) throw failure('CLOSED');
           if (checkpoint === null || CHECKPOINT_TEXT(checkpoint) !== checkpointText) {
             throw failure('ORIGINAL_PAYMENT_CHECKPOINT_CHANGED');
@@ -216,11 +231,13 @@ export function createServiceCreditCustodiedBackendRecoveryCore(client, backend,
       envelope = FREEZE({ url: '/service-credit/v1/execute', method: 'POST',
         rawHeaders: FREEZE(['Authorization', authorizationHeader]) });
       const observed = BACKEND_READ(envelope, expected);
+      const status = recordStatus(observed);
+      if (status === null) refuseUnjoinedRead('backend', observed);
       if (closed) throw failure('CLOSED');
-      after = LOCAL_READ(key);
+      after = readLocalRecord(LOCAL_READ, key);
       if (closed) throw failure('CLOSED');
       if (originalPaymentCheckpointEnabled) {
-        checkpoint = LOCAL_CHECKPOINT(checkpointPins);
+        checkpoint = readLocalRecord(LOCAL_CHECKPOINT, checkpointPins);
         if (checkpoint === null || CHECKPOINT_TEXT(checkpoint) !== checkpointText) {
           throw failure('ORIGINAL_PAYMENT_CHECKPOINT_CHANGED');
         }
@@ -234,12 +251,13 @@ export function createServiceCreditCustodiedBackendRecoveryCore(client, backend,
             || after.responseStatus !== responseStatus))) {
         throw failure('CLIENT_BINDING_CHANGED');
       }
+      if (recordStatus(observed) !== status) throw failure('BACKEND_OUTCOME_CHANGED');
       const uncertain = after.funding.status !== 'BOUND' || after.funding.ambiguityLatched
         || after.uncertainty.custody || after.uncertainty.submission || after.uncertainty.undrained
         || after.uncertainty.declaredFundingAmbiguitySeen
         || after.dispatchIntent !== null;
-      if (observed.status === 'UNAVAILABLE' || observed.status === 'CLOSED') unavailable = true;
-      return view(uncertain ? 'CLIENT_RECONCILIATION_REQUIRED' : observed.status, after, observed);
+      if (status === 'UNAVAILABLE' || status === 'CLOSED') unavailable = true;
+      return view(uncertain ? 'CLIENT_RECONCILIATION_REQUIRED' : status, after, observed);
     } catch (error) {
       if (closed) throw failure('CLOSED');
       unavailable = true;
@@ -267,10 +285,11 @@ export function createServiceCreditCustodiedBackendRecoveryCore(client, backend,
       if (arguments.length !== 1) throw failure('INVALID_INPUT');
       if (closed) throw failure('CLOSED');
       if (reading) throw failure('BUSY');
+      if (readCompletionUnknown) throw failure('UNAVAILABLE');
       // The standalone read joins the same synchronous admission fence.
       reading = true;
       try {
-        const value = LOCAL_CHECKPOINT(expectedPins);
+        const value = readLocalRecord(LOCAL_CHECKPOINT, expectedPins);
         if (closed) throw failure('CLOSED');
         return value;
       } catch (error) {
@@ -289,7 +308,10 @@ export function createServiceCreditCustodiedBackendRecoveryCore(client, backend,
     return LOCAL_SUBMIT(args[0]);
   });
   const close = FREEZE(function close(...args) {
-    if (args.length !== 0) return APPLY(LOCAL_CLOSE, undefined, args);
+    if (args.length !== 0) {
+      if (readCompletionUnknown && closeFailures.local !== null) throw closeFailure;
+      return APPLY(LOCAL_CLOSE, undefined, args);
+    }
     if (closeRequested) {
       if (!closeComplete && !closeFailed) rememberCloseFailure('reentry', failure('CLOSE_REENTRY'));
       if (closeFailed) throw closeFailure;
@@ -300,16 +322,21 @@ export function createServiceCreditCustodiedBackendRecoveryCore(client, backend,
     // known client's cleanup, authorize another stop or repair a prior failure.
     closeRequested = true;
     closed = true;
-    try {
-      const receipt = BACKEND_CLOSE();
-      if (!isKnownBackendClose(receipt)) {
-        rememberCloseFailure('backend', failure('BACKEND_CLOSE_UNCONFIRMED'), receipt);
-      }
-    } catch (value) { rememberCloseFailure('backend', value); }
-    try { closeReceipt = LOCAL_CLOSE(); } catch (value) { rememberCloseFailure('local', value); }
+    // A read without a synchronous receipt can still borrow its owner.
+    if (closeFailures.backend === null) {
+      try {
+        const receipt = BACKEND_CLOSE();
+        if (receipt !== undefined && recordStatus(receipt) !== 'CLOSED') {
+          rememberCloseFailure('backend', failure('BACKEND_CLOSE_UNCONFIRMED'), receipt);
+        }
+      } catch (value) { rememberCloseFailure('backend', value); }
+    }
+    if (closeFailures.local === null) {
+      try { closeReceipt = LOCAL_CLOSE(); } catch (value) { rememberCloseFailure('local', value); }
+    }
     closeComplete = true;
     if (closeFailed) {
-      observeFailedCloseReceipt(closeReceipt);
+      observeUnconfirmedReceipt(closeReceipt);
       throw closeFailure;
     }
     return closeReceipt;
@@ -318,6 +345,7 @@ export function createServiceCreditCustodiedBackendRecoveryCore(client, backend,
     if (arguments.length !== 0) throw failure('INVALID_INPUT');
     return FREEZE({ client: LOCAL_SNAPSHOT(), closed, reading, unavailable,
       storeOwnership, authority: 'NONE', serviceDelivery: 'NOT_ESTABLISHED',
+      ...(readCompletionUnknown ? { readCompletionUnknown: true } : {}),
       ...(LOCAL_SUBMIT === null ? {} : { serviceDispatchCapability: 'EXPLICIT_CALLER_TRANSPORT_ONLY' }) });
   });
   const consumer = FREEZE({

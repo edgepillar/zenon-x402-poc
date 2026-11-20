@@ -68,6 +68,22 @@ check('recorded-inspection-nonvoid-payer-stop-retains-the-borrowed-backend-and-w
 check('recorded-inspection-backend-close-failure-is-retained-without-a-second-stop-or-result',async()=>{
  const r=await fixture({backendCloseThrow:true});await assert.rejects(r.run());assert.equal(r.payerCloseCalls,1);assert.equal(r.backendCloseCalls,1);
 });
+check('recorded-inspection-unjoined-backend-read-stops-the-query-and-holds-the-store', async () => {
+  const pending = deferred();
+  const r = await fixture({ outcome: () => pending.promise });
+  const before = JSON.stringify(r.model.exportState());
+  await assert.rejects(r.run(), { stage: 'PAYER_CLOSE' });
+  assert.equal(r.backendReads, 1);
+  assert.equal(r.localReads, 1);
+  assert.equal(r.checkpointReads, 1);
+  assert.equal(r.payerCloseCalls, 1);
+  assert.equal(r.readerClosed, false);
+  pending.resolve(r.outcome());
+  await flush();
+  assert.equal(r.payer.snapshot().readCompletionUnknown, true);
+  assert.equal(r.backendCloseCalls, 0);
+  unchanged(r, before);
+});
 check('recorded-inspection-foreign-request-grant-or-original-body-never-matches-the-local-record',async()=>{
  const r=await fixture(),v=r.observation(),m=r.manifest();
  for(const [key,value]of [['grantId','foreign'],['requestId','foreign'],['canonicalBodyDigest','sha256:'+'f'.repeat(64)],['maxCostUnits',2]])

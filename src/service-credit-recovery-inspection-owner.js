@@ -60,6 +60,7 @@ function closedPayer(payer) {
   const view = Reflect.apply(method(payer, 'snapshot'), payer, []), owned = data(view, 'client');
   const resource = data(owned, 'resource'), close = data(owned, 'close');
   return data(view, 'closed') === true && data(view, 'reading') === false && typeof data(view, 'unavailable') === 'boolean'
+    && DESC(view, 'readCompletionUnknown') === undefined
     && data(view, 'storeOwnership') === 'PAYER_OWNED_BACKEND_BORROWED'
     && data(resource, 'phase') === 'RELEASED' && data(resource, 'slotHeld') === false && data(resource, 'admissionClosed') === true
     && data(resource, 'storeCloseAttempts') === 1 && data(resource, 'storeCloseOutcome') === 'RETURNED'
