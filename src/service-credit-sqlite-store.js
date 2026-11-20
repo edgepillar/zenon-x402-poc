@@ -975,7 +975,7 @@ function receipt(value) {
   return frozenSnapshot(value);
 }
 
-function serializeLedgerState(configuration, state) {
+function serializeLedgerState(configuration, state, stateJson) {
   if (
     !exactKeys(state, ['schemaVersion', 'modelVersion', 'offers', 'grants', 'requests'])
     || !Array.isArray(state.offers)
@@ -991,7 +991,7 @@ function serializeLedgerState(configuration, state) {
   ) {
     failStore('SERVICE_CREDIT_STORE_CAPACITY_EXCEEDED');
   }
-  const text = canonicalJson(state);
+  const text = stateJson ?? canonicalJson(state);
   if (Buffer.byteLength(text) > configuration.maxStateBytes) {
     failStore('SERVICE_CREDIT_STORE_CAPACITY_EXCEEDED');
   }
@@ -1943,8 +1943,8 @@ export class ServiceCreditSqliteStore {
 
   #persistCompound(previous, ledgerState, executionState) {
     const { physicalEnvelope, physicalEnvelopeJson } = previous;
-    this.#assertPersistableState(ledgerState);
-    const ledgerStateJson = serializeLedgerState(this.#configuration, ledgerState);
+    const ledgerStateJson = this.#persistableStateJson(ledgerState);
+    serializeLedgerState(this.#configuration, ledgerState, ledgerStateJson);
     assertDurableCrossLinks(this.#configuration, ledgerState, executionState);
     if (physicalEnvelope.revision === Number.MAX_SAFE_INTEGER) {
       failStore('SERVICE_CREDIT_STORE_CAPACITY_EXCEEDED');
@@ -2017,10 +2017,11 @@ export class ServiceCreditSqliteStore {
         // getGrant still needs the state comparison because it refreshes expiry.
         if (readOnly) return { changed: false, deferredDomainError, result };
         const afterState = model.exportState();
-        const changed = ledgerStateJson !== canonicalJson(afterState);
+        const afterStateJson = canonicalJson(afterState);
+        const changed = ledgerStateJson !== afterStateJson;
         if (changed) {
-          this.#assertPersistableState(afterState);
-          const afterStateJson = serializeLedgerState(this.#configuration, afterState);
+          this.#persistableStateJson(afterState, afterStateJson);
+          serializeLedgerState(this.#configuration, afterState, afterStateJson);
           if (physicalEnvelope.revision === Number.MAX_SAFE_INTEGER) {
             failStore('SERVICE_CREDIT_STORE_CAPACITY_EXCEEDED');
           }
@@ -2089,7 +2090,8 @@ export class ServiceCreditSqliteStore {
       if (
         normalizedLedgerStateJson !== ledgerStateJson
         || normalizedEnvelope.checksum !== envelope.checksum
-        || canonicalJson(envelope) !== text
+        // Exact bytes from the canonical builder already prove the layout.
+        || (physicalEnvelopeJson !== text && canonicalJson(envelope) !== text)
       ) {
         failStore('SERVICE_CREDIT_STORE_CORRUPT');
       }
@@ -2334,15 +2336,18 @@ export class ServiceCreditSqliteStore {
     }
   }
 
-  #assertPersistableState(state) {
+  #persistableStateJson(state, stateJson) {
     try {
       const recovered = InMemoryServiceCreditModel.fromState({
         deriveCost: this.#configuration.deriveCost,
         now: this.#configuration.now,
       }, state);
-      if (canonicalJson(recovered.exportState()) !== canonicalJson(state)) {
+      const recoveredJson = canonicalJson(recovered.exportState());
+      const text = stateJson ?? canonicalJson(state);
+      if (recoveredJson !== text) {
         failStore('SERVICE_CREDIT_STORE_INVARIANT_VIOLATION');
       }
+      return text;
     } catch (error) {
       const code = storeErrorCode(error);
       throw storeFailure(code ?? 'SERVICE_CREDIT_STORE_INVARIANT_VIOLATION');
