@@ -782,14 +782,16 @@ function publicEnvelopeFor(revision, state) {
   });
 }
 
-function physicalEnvelopeFor(revision, ledgerState, executionState) {
+function physicalEnvelopeFor(revision, ledgerState, ledgerStateJson, executionState) {
   const content = {
     physicalVersion: SERVICE_CREDIT_SQLITE_SCHEMA_VERSION,
     revision,
     ledgerState,
     executionState,
   };
-  const contentJson = canonicalJson(content);
+  // The ledger text is already canonical and belongs to this ledger snapshot.
+  const contentJson = `{"executionState":${canonicalJson(executionState)},"ledgerState":${ledgerStateJson},`
+    + `"physicalVersion":${JSON_STRINGIFY(content.physicalVersion)},"revision":${JSON_STRINGIFY(revision)}}`;
   const checksum = `sha256:${crypto.createHash('sha256')
     .update(PHYSICAL_V2_CHECKSUM_DOMAIN)
     .update('\0')
@@ -1154,8 +1156,8 @@ export class ServiceCreditSqliteStore {
     try {
       store.#runTransaction('migrateExisting', () => {
         store.#validateDatabase(LEGACY_SQLITE_SCHEMA_VERSION);
-        const { envelope, model } = store.#readLegacyLedger();
-        const state = model.exportState();
+        const { envelope, ledgerStateJson } = store.#readLegacyLedger();
+        const state = envelope.state;
         for (let index = 0; index < state.requests.length; index += 1) {
           const requestState = state.requests[index].state;
           if (
@@ -1165,7 +1167,7 @@ export class ServiceCreditSqliteStore {
             failStore('SERVICE_CREDIT_STORE_MIGRATION_UNSAFE');
           }
         }
-        const { text } = physicalEnvelopeFor(envelope.revision, state, null);
+        const { text } = physicalEnvelopeFor(envelope.revision, state, ledgerStateJson, null);
         assertPhysicalEnvelopeSize(configuration, text);
         const updated = store.#database.prepare(
           `UPDATE ${TABLE_NAME} SET envelope = ? WHERE singleton = 1`,
@@ -1942,7 +1944,7 @@ export class ServiceCreditSqliteStore {
   #persistCompound(previous, ledgerState, executionState) {
     const { physicalEnvelope, physicalEnvelopeJson } = previous;
     this.#assertPersistableState(ledgerState);
-    serializeLedgerState(this.#configuration, ledgerState);
+    const ledgerStateJson = serializeLedgerState(this.#configuration, ledgerState);
     assertDurableCrossLinks(this.#configuration, ledgerState, executionState);
     if (physicalEnvelope.revision === Number.MAX_SAFE_INTEGER) {
       failStore('SERVICE_CREDIT_STORE_CAPACITY_EXCEEDED');
@@ -1950,6 +1952,7 @@ export class ServiceCreditSqliteStore {
     const { envelope: next, text } = physicalEnvelopeFor(
       physicalEnvelope.revision + 1,
       ledgerState,
+      ledgerStateJson,
       executionState,
     );
     assertPhysicalEnvelopeSize(this.#configuration, text);
@@ -1966,8 +1969,8 @@ export class ServiceCreditSqliteStore {
       now: this.#configuration.now,
     });
     const state = model.exportState();
-    serializeLedgerState(this.#configuration, state);
-    const { text } = physicalEnvelopeFor(0, state, null);
+    const ledgerStateJson = serializeLedgerState(this.#configuration, state);
+    const { text } = physicalEnvelopeFor(0, state, ledgerStateJson, null);
     assertPhysicalEnvelopeSize(this.#configuration, text);
     this.#runTransaction('create', () => {
       this.#database.exec(`PRAGMA application_id = ${APPLICATION_ID}`);
@@ -2017,7 +2020,7 @@ export class ServiceCreditSqliteStore {
         const changed = ledgerStateJson !== canonicalJson(afterState);
         if (changed) {
           this.#assertPersistableState(afterState);
-          serializeLedgerState(this.#configuration, afterState);
+          const afterStateJson = serializeLedgerState(this.#configuration, afterState);
           if (physicalEnvelope.revision === Number.MAX_SAFE_INTEGER) {
             failStore('SERVICE_CREDIT_STORE_CAPACITY_EXCEEDED');
           }
@@ -2025,6 +2028,7 @@ export class ServiceCreditSqliteStore {
           const { text } = physicalEnvelopeFor(
             physicalEnvelope.revision + 1,
             afterState,
+            afterStateJson,
             executionState,
           );
           assertPhysicalEnvelopeSize(this.#configuration, text);
@@ -2075,13 +2079,15 @@ export class ServiceCreditSqliteStore {
         normalizedState,
         normalizedExecutionState,
       );
+      const normalizedLedgerStateJson = canonicalJson(normalizedState);
       const { envelope: normalizedEnvelope, text: physicalEnvelopeJson } = physicalEnvelopeFor(
         envelope.revision,
         normalizedState,
+        normalizedLedgerStateJson,
         normalizedExecutionState,
       );
       if (
-        canonicalJson(normalizedState) !== ledgerStateJson
+        normalizedLedgerStateJson !== ledgerStateJson
         || normalizedEnvelope.checksum !== envelope.checksum
         || canonicalJson(envelope) !== text
       ) {
@@ -2117,7 +2123,7 @@ export class ServiceCreditSqliteStore {
       ) {
         failStore('SERVICE_CREDIT_STORE_CORRUPT');
       }
-      const { model, normalizedState, ledgerStateJson } = this.#hydrateLedgerState(envelope.state);
+      const { normalizedState, ledgerStateJson } = this.#hydrateLedgerState(envelope.state);
       const normalizedEnvelope = publicEnvelopeFor(envelope.revision, normalizedState);
       if (
         canonicalJson(normalizedState) !== ledgerStateJson
@@ -2126,7 +2132,7 @@ export class ServiceCreditSqliteStore {
       ) {
         failStore('SERVICE_CREDIT_STORE_CORRUPT');
       }
-      return { envelope: normalizedEnvelope, model };
+      return { envelope: normalizedEnvelope, ledgerStateJson };
     } catch (error) {
       const code = storeErrorCode(error);
       throw storeFailure(code ?? 'SERVICE_CREDIT_STORE_CORRUPT');
