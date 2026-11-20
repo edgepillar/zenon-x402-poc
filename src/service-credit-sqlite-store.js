@@ -58,6 +58,12 @@ const ARRAY_IS_ARRAY = Array.isArray;
 const NUMBER_IS_SAFE_INTEGER = Number.isSafeInteger;
 const OBJECT_HAS_OWN = Object.hasOwn;
 const OBJECT_FREEZE = Object.freeze;
+const READ_ONLY_MODEL_METHODS = OBJECT_FREEZE({
+  getOffer: InMemoryServiceCreditModel.prototype.getOffer,
+  getActivation: InMemoryServiceCreditModel.prototype.getActivation,
+  readOriginalFundingGrant: InMemoryServiceCreditModel.prototype.readOriginalFundingGrant,
+  getRequest: InMemoryServiceCreditModel.prototype.getRequest,
+});
 const OBJECT_DEFINE_PROPERTY = Object.defineProperty;
 const OBJECT_CREATE = Object.create;
 const OBJECT_KEYS = Object.keys;
@@ -1984,14 +1990,28 @@ export class ServiceCreditSqliteStore {
           failStore('SERVICE_CREDIT_STORE_LEGACY_EXECUTION_MUTATION_BLOCKED');
         }
         let result;
+        let readOnly = false;
         let deferredDomainError = null;
         try {
+          if (OBJECT_HAS_OWN(READ_ONLY_MODEL_METHODS, operation)) {
+            const prototype = REFLECT_GET_PROTOTYPE_OF(model);
+            const descriptor = prototype === InMemoryServiceCreditModel.prototype
+              ? REFLECT_GET_OWN_PROPERTY_DESCRIPTOR(prototype, operation)
+              : undefined;
+            readOnly = descriptor !== undefined
+              && OBJECT_HAS_OWN(descriptor, 'value')
+              && descriptor.value === READ_ONLY_MODEL_METHODS[operation]
+              && REFLECT_GET_OWN_PROPERTY_DESCRIPTOR(model, operation) === undefined;
+          }
           result = model[operation](input);
         } catch (error) {
           const code = modelErrorCode(error);
           if (code === null) throw error;
           deferredDomainError = fixedModelFailure(code);
         }
+        // The exact read-only model methods leave the validated ledger intact.
+        // getGrant still needs the state comparison because it refreshes expiry.
+        if (readOnly) return { changed: false, deferredDomainError, result };
         const afterState = model.exportState();
         const changed = ledgerStateJson !== canonicalJson(afterState);
         if (changed) {
